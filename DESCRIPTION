@@ -1,13 +1,14 @@
 Package: nichenetr
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Linking Extracellular Protein Signals to Target Genes
 Version: 0.1.0
-Author: Robin Browaeys
-Maintainer: The package maintainer robin.browaeys@ugent.be
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Authors@R: person("Robin", "Browaeys", email = "robin.browaeys@ugent.be",
+  role = c("aut", "cre"))
+Description: This package allows you the investigate intercellular communication from a computational perspective. Functionalities of this package (e.g. including predicting extracellular upstream regulators) build upon a probabilistic model of ligand-target links that was inferred by data-integration.
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 URL: https://github.com/browaeysrobin/nichenetr
 BugReports: https://github.com/browaeysrobin/nichenetr/issues
+RoxygenNote: 6.0.1
+Imports: tidyverse
