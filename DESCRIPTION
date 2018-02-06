@@ -11,6 +11,7 @@ LazyData: true
 URL: https://github.com/browaeysrobin/nichenetr
 BugReports: https://github.com/browaeysrobin/nichenetr/issues
 RoxygenNote: 6.0.1
+Depends: R (>= 3.0.0)
 Imports: tidyverse
 Suggests: knitr,
     rmarkdown,

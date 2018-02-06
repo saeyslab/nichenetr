@@ -2,8 +2,8 @@ citHeader("To cite nichenetr in publications use:")
 
 citEntry(entry = "Article",
   title        = "Linking extracellular protein signals to target genes with {nichenetr}",
-  author       = personList(as.person("Robin Browaeys"),
-                   as.person("Wouter Saelens")),
+  author       = personList(as.person("Robin","Browaeys"),
+                   as.person("Wouter", "Saelens")),
   journal      = "Hopefully Nature Methtods ;-)",
   year         = "Hopefully 2018",
   volume       = "40",
