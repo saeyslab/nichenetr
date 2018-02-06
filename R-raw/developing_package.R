@@ -21,6 +21,7 @@
 
 devtools::use_package("tidyverse")
 devtools::use_package("igraph")
+devtools::use_package("devtools")
 #' @import tidyverse
 
 
