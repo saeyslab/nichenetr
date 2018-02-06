@@ -11,16 +11,16 @@
 #'
 #' @return A matrix containing the probability scores of ligand-target links.
 #'
-#' @importFrom igraph page_rank ajdacency_to_dataframe
+#' @importFrom igraph page_rank
 #'
-#' @example
+#' @examples
 #' ## Generate the ligand-target matrix from loaded weighted_networks
-#' construct_ligand_target_matrix(lr_network, sig_network, gr_network)
+#' construct_ligand_target_matrix(mtcars, mtcars, mtcars)
 #'
 #' @export
 #'
 construct_ligand_target_matrix <- function(lr_network, sig_network, gr_network) {
-  requireNamespace("igraph")
+  # requireNamespace("igraph")
   # input check
   if (!is.data.frame(lr_network))
     stop("lr_network must be a data frame or tibble object")
@@ -29,5 +29,5 @@ construct_ligand_target_matrix <- function(lr_network, sig_network, gr_network) 
   if (!is.data.frame(gr_network))
     stop("gr_network must be a data frame or tibble object")
 
-  ligand_to_target
+  ligand_to_target = lr_network
 }

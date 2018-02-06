@@ -6,9 +6,17 @@
 \title{Random sample of something}
 \format{A data frame dink
 \describe{
-  \item{price}{price, in US dollars}
-  \item{carat}{weight of the diamond}
-  ...
+  \item{mpg}{price, in US dollars}
+  \item{cyl}{weight of the diamond}
+  \item{disp}{price, in US dollars}
+  \item{hp}{weight of the diamond}
+  \item{drat}{price, in US dollars}
+  \item{wt}{weight of the diamond}
+  \item{qsec}{price, in US dollars}
+  \item{vs}{weight of the diamond}
+  \item{am}{weight of the diamond}
+  \item{gear}{price, in US dollars}
+  \item{carb}{weight of the diamond}
   }}
 \source{
 \url{superdeporte.es}

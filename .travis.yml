@@ -1,5 +1,7 @@
 language: r
+r: bioc-devel
 sudo: required
 dist: trusty
 cache: packages
 bioc_required: true
+warnings_are_errors: true

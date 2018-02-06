@@ -20,6 +20,7 @@
 # install.packages("devtools")
 
 devtools::use_package("tidyverse")
+devtools::use_package("igraph")
 #' @import tidyverse
 
 
