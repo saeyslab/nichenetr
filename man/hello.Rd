@@ -24,6 +24,7 @@ blababjlballdfdfjdlfjdfkdfjdmfkldjfkdqjfmsldqjfmkldqfjsdqmlfjsdqmlfjsdqmfjqmfjsd
 dfdfdfdfddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddfdfdf
 }
 \examples{
-hello("Hadley")
+a = hello("Hadley")
+print(a)
 hello("World")
 }

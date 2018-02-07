@@ -1,32 +1,52 @@
 ## description of data
 
 
-#' Random sample of something
+#' Ligand-receptor network
 #'
-#' A dataset containing random samples of something
+#' A data.frame/tibble describing ligand-receptor interactions and the data source describing this interaction.
 #'
-#' @format A data frame dink
+#' @format A data frame/tibble
 #' \describe{
-#'   \item{mpg}{price, in US dollars}
-#'   \item{cyl}{weight of the diamond}
-#'   \item{disp}{price, in US dollars}
-#'   \item{hp}{weight of the diamond}
-#'   \item{drat}{price, in US dollars}
-#'   \item{wt}{weight of the diamond}
-#'   \item{qsec}{price, in US dollars}
-#'   \item{vs}{weight of the diamond}
-#'   \item{am}{weight of the diamond}
-#'   \item{gear}{price, in US dollars}
-#'   \item{carb}{weight of the diamond}
+#'   \item{from}{the ligand}
+#'   \item{to}{receptor of the ligand}
+#'   \item{source}{name of data source describing the interaction}
 #'   }
 #'
-#' @source \url{superdeporte.es}
-"mtcars"
-#' Random sample of something
+"lr_network"
+
+#' Signaling network
 #'
-#' A dataset containing random samples of something
+#' A data.frame/tibble describing gene-gene interactions such as common PPI, phosphorylation,...
 #'
-#' @format A vector
+#' @format A data frame/tibble
+#' \describe{
+#'   \item{from}{source gene}
+#'   \item{to}{target gene}
+#'   \item{source}{name of data source describing the interaction}
+#'   }
 #'
-#' @source \url{superdeporte.es}
-"x"
+"sig_network"
+
+#' Gene regulatory network
+#'
+#' A data.frame/tibble describing gene regulatory interactions such as TF-target interactions
+#'
+#' @format A data frame/tibble
+#' \describe{
+#'   \item{from}{regulatory gene}
+#'   \item{to}{target gene}
+#'   \item{source}{name of data source describing the interaction}
+#'   }
+#'
+"gr_network"
+#' Data source weights
+#'
+#' A data.frame/tibble describing weight associated to each data source. These weights will be used for weighted aggregagion of source networks
+#'
+#' @format A data frame/tibble
+#' \describe{
+#'   \item{source}{name of data source}
+#'   \item{weight}{weight associated to a data source}
+#'   }
+#'
+"source_weights_df"

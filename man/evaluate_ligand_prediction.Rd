@@ -21,6 +21,6 @@ A matrix containing the probability scores of ligand-target links.
 }
 \examples{
 ## Generate the ligand-target matrix from loaded weighted_networks
-evaluate_ligand_prediction(mtcars, mtcars, mtcars)
+evaluate_ligand_prediction(lr_network, sig_network, gr_network)
 
 }

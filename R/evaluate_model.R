@@ -15,7 +15,7 @@
 #'
 #' @examples
 #' ## Generate the ligand-target matrix from loaded weighted_networks
-#' evaluate_ligand_prediction(mtcars, mtcars, mtcars)
+#' evaluate_ligand_prediction(lr_network, sig_network, gr_network)
 #'
 #' @export
 #'
@@ -48,7 +48,7 @@ evaluate_ligand_prediction <- function(lr_network, sig_network, gr_network) {
 #'
 #' @examples
 #' ## Generate the ligand-target matrix from loaded weighted_networks
-#' evaluate_target_prediction(mtcars, mtcars, mtcars)
+#' evaluate_target_prediction(lr_network, sig_network, gr_network)
 #'
 #' @export
 #'

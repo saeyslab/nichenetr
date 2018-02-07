@@ -13,13 +13,14 @@
 #'
 #' @return a string
 #' @examples
-#' hello("Hadley")
+#' a = hello("Hadley")
+#' print(a)
 #' hello("World")
 #' @family test functions #### does not work yet
 #'
 #' @export
 #'
-hello <- function(a = "world") {
+hello = function(a = "world") {
   # print(paste0(c("Hello,",a)))
   paste0("Hello, ",a)
 }
