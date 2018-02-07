@@ -1,7 +1,40 @@
-# context("Construct ligand-target matrix functions")
+context("Model construction functions")
 #
-# test_that("Construct ligand-target matrix", {
-#   time <- runif(1000)
-#   groups <- cut(time, breaks = 4, labels = F)
-#   expect_equal(construct_ligand_target_matrix(time, groups), 1)
-# })
+test_that("Construct weighted networks: correct sum", {
+  lrn_toy = tibble(from = "A", to = "B", source = "toy_lr")
+  sign_toy = tibble(from = c("B","B"), to = c("C","C"), source = c("toy_sig1","toy_sig2"))
+  grn_toy = tibble(from = "C", to = "D", source = "toy_grn")
+  source_weights_df_toy = tibble(source = c("toy_lr","toy_sig1","toy_sig2","toy_grn"), weight = c(0.5,1,0.5,1))
+
+  expected_wn = tibble(from = c("A","B","C"),
+                       to = c("B","C","D"),
+                       weight =c(0.5,1.5,1))
+
+  expect_equal(construct_weighted_networks(lrn_toy, sign_toy, grn_toy, source_weights_df_toy) %>% bind_rows(), expected_wn)
+})
+test_that("Construct weighted networks: input weights not higher than 1", {
+  lrn_toy = tibble(from = "A", to = "B", source = "toy_lr")
+  sign_toy = tibble(from = c("B","B"), to = c("C","C"), source = c("toy_sig1","toy_sig2"))
+  grn_toy = tibble(from = "C", to = "D", source = "toy_grn")
+  source_weights_df_toy = tibble(source = c("toy_lr","toy_sig1","toy_sig2","toy_grn"), weight = c(0.5,2,0.5,1))
+
+  expect_error(construct_weighted_networks(lrn_toy, sign_toy, grn_toy, source_weights_df_toy) %>% bind_rows())
+})
+test_that("Add new data sources: common input base network", {
+  lr_toy = tibble(from = "A", to = "B", source = "toy")
+  new_lr_network = add_new_datasource(lr_toy, lr_network,1,source_weights_df)
+  expect_equal(new_lr_network$network, bind_rows(lr_network, lr_toy))
+  expect_equal(new_lr_network$source_weights_df %>% filter(source == "toy") %>% .$weight, 1)
+
+})
+test_that("Add new data sources: NULL input base network", {
+  lr_toy = tibble(from = "A", to = "B", source = "toy")
+  output = add_new_datasource(new_source = lr_toy, network = NULL,new_weight = 1,source_weights_df = source_weights_df)
+  expect_equal(output$network, lr_toy)
+  expect_equal(output$source_weights_df %>% filter(source == "toy") %>% .$weight, 1)
+
+})
+test_that("Add new data sources: weight higher than 0", {
+  lr_toy = tibble(from = "A", to = "B", source = "toy")
+  expect_error(add_new_datasource(new_source = lr_toy, network = NULL,new_weight = 1.2, source_weights_df = source_weights_df))
+})

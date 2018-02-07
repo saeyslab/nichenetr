@@ -23,8 +23,7 @@ A list containing 3 elements (lr, sig, gr): the integrated weighted ligand-recep
 }
 \examples{
 ## Generate the weighted networks from input source networks
-library(tidyverse)
-weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 
 
 }

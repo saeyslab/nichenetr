@@ -15,8 +15,7 @@
 #'
 #' @examples
 #' ## Generate the weighted networks from input source networks
-#' library(tidyverse)
-#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #'
 #'
 #' @export
@@ -29,14 +28,16 @@ construct_weighted_networks = function(lr_network, sig_network, gr_network,sourc
     stop("sig_network must be a data frame or tibble object")
   if (!is.data.frame(gr_network))
     stop("gr_network must be a data frame or tibble object")
-  if (!is.data.frame(source_weights_df))
-    stop("source_weights_df must be a data frame or tibble object")
+  if (!is.data.frame(source_weights_df) || sum((source_weights_df$weight > 1)) != 0)
+    stop("source_weights_df must be a data frame or tibble object and no data source weight may be higher than 1 ")
+
+  requireNamespace("tidyverse")
   # remove data sources for which weight equals 0
   source_weights_df = source_weights_df %>% filter(weight > 0)
   # perform weighted network aggregation
-  lr_network_w = lr_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight))
-  sig_network_w = sig_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight))
-  gr_network_w = gr_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight))
+  lr_network_w = lr_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight)) %>% ungroup()
+  sig_network_w = sig_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight)) %>% ungroup()
+  gr_network_w = gr_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight)) %>% ungroup()
 
   weighted_networks = list(lr = lr_network_w, sig = sig_network_w, gr = gr_network_w)
 }
@@ -67,13 +68,19 @@ add_new_datasource = function(new_source, network, new_weight,source_weights_df)
   # input check
   if (!is.data.frame(new_source))
     stop("new_source must be a data frame or tibble object")
-  if (!is.data.frame(network))
+  if (!is.data.frame(network) && !is.null(network))
     stop("network must be a data frame or tibble object")
   if (!is.numeric(new_weight) && length(new_weight) != 1 && (new_weight >= 0 | new_weight <= 1))
     stop("new_weight must be a one number between 0 and 1")
-  if (!is.data.frame(source_weights_df))
-    stop("source_weights_df must be a data frame or tibble object")
-  # remove data sources with weight equals 0
+  if (!is.data.frame(source_weights_df) || sum((source_weights_df$weight > 1)) != 0 || new_weight > 1)
+    stop("source_weights_df must be a data frame or tibble object and no data source weight may be higher than 1")
+
+
+  requireNamespace("tidyverse")
+
+  if (is.null(network)){
+    return(list(network = new_source, source_weights_df = tibble(source = new_source$source %>% unique(),weight = new_weight)))
+  }
   network = network %>% bind_rows(new_source)
   source_weights_df = source_weights_df %>% bind_rows(tibble(source = new_source$source %>% unique(),weight = new_weight))
 
@@ -109,6 +116,8 @@ construct_ligand_target_matrix = function(lr_network, sig_network, gr_network) {
     stop("sig_network must be a data frame or tibble object")
   if (!is.data.frame(gr_network))
     stop("gr_network must be a data frame or tibble object")
+
+  requireNamespace("tidyverse")
 
   ligand_to_target = lr_network
 }
