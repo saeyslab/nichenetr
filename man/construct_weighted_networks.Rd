@@ -16,7 +16,7 @@ construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_d
 \item{source_weights_df}{A data frame / tibble containing the weights associated to each individual data source. Sources with higher weights will contribute more to the final model performance (required columns: source, weight). Note that only interactions described by sources included here, will be retained during model construction.}
 }
 \value{
-A list containing 3 elements: the integrated weighted ligand-receptor, signaling and gene regulatory networks in data frame / tibble format.
+A list containing 3 elements (lr, sig, gr): the integrated weighted ligand-receptor, signaling and gene regulatory networks in data frame / tibble format.
 }
 \description{
 \code{construct_weighted_networks} construct layer-specific weighted integrated networks from input source networks via weighted aggregation.
