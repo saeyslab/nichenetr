@@ -19,9 +19,12 @@
 library(tidyverse)
 # install.packages("devtools")
 
-devtools::use_package("tidyverse")
-devtools::use_package("igraph")
+# devtools::use_package("tidyverse")
 
+devtools::use_package("dplyr")
+devtools::use_package("tidyr")
+devtools::use_package("igraph")
+devtools::use_package("Matrix")
 
 # test data
 # x = sample(1000)
@@ -34,9 +37,9 @@ lr_network = readRDS("../staticNicheNet/results/networks/conf_ccc_complete_human
 sig_network = readRDS("../staticNicheNet/results/networks/conf_signaling_net_dec2017_121orths.rds")
 gr_network = readRDS("../staticNicheNet/results/networks/conf_grn_human_nov2017_121orths.rds")
 
-lr_network = lr_network %>% rename(source = evidence) %>% select(from,to,source)
-sig_network = sig_network %>% rename(source = type) %>% select(from,to,source)
-gr_network = gr_network  %>% rename(source = type) %>% select(from,to,source)
+lr_network = lr_network %>% rename(source = evidence) %>% select(from,to,source) %>% mutate(from = humanentrez2humansymbol[from], to = humanentrez2humansymbol[to]) %>% drop_na()
+sig_network = sig_network %>% rename(source = type) %>% select(from,to,source) %>% mutate(from = humanentrez2humansymbol[from], to = humanentrez2humansymbol[to]) %>% drop_na()
+gr_network = gr_network  %>% rename(source = type) %>% select(from,to,source) %>% mutate(from = humanentrez2humansymbol[from], to = humanentrez2humansymbol[to]) %>% drop_na()
 
 devtools::use_data(lr_network,sig_network,overwrite = T,compress = "bzip2")
 devtools::use_data(gr_network,overwrite = T,compress = "xz")

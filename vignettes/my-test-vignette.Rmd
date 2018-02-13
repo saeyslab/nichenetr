@@ -26,6 +26,8 @@ Vignettes are long form documentation commonly included in packages. Because the
 
 Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build Kthe vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
 
+You should have minimally 4 GB RAM!
+
 ## Styles
 
 The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:

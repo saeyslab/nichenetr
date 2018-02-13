@@ -4,7 +4,7 @@
 \alias{construct_weighted_networks}
 \title{Construct weighted layer-specific networks}
 \usage{
-construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df, n_output_networks = 2)
 }
 \arguments{
 \item{lr_network}{A data frame / tibble containing ligand-receptor interactions (required columns: from, to, source)}
@@ -14,16 +14,18 @@ construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_d
 \item{gr_network}{A data frame / tibble containing gene regulatory interactions (required columns: from, to, source)}
 
 \item{source_weights_df}{A data frame / tibble containing the weights associated to each individual data source. Sources with higher weights will contribute more to the final model performance (required columns: source, weight). Note that only interactions described by sources included here, will be retained during model construction.}
+
+\item{n_output_networks}{The number of output networks to return: 2 (ligand-signaling and gene regulatory; default) or 3 (ligand-receptor, signaling and gene regulatory).}
 }
 \value{
-A list containing 3 elements (lr, sig, gr): the integrated weighted ligand-receptor, signaling and gene regulatory networks in data frame / tibble format.
+A list containing 2 elements (lr_sig and gr) or 3 elements (lr, sig, gr): the integrated weighted ligand-signaling and gene regulatory networks or ligand-receptor, signaling and gene regulatory networks in data frame / tibble format with columns: from, to, weight.
 }
 \description{
 \code{construct_weighted_networks} construct layer-specific weighted integrated networks from input source networks via weighted aggregation.
 }
 \examples{
 ## Generate the weighted networks from input source networks
-#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 
 
 }

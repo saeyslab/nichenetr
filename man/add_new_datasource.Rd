@@ -23,7 +23,7 @@ A list containing 2 elements (network and source_weights_df): the updated networ
 }
 \examples{
 ## Update the lr_network with a new ligand-receptor data source
-library(tidyverse)
+library(dplyr)
 lr_toy = tibble(from = "A", to = "B", source = "toy")
 new_lr_network = add_new_datasource(lr_toy, lr_network,1,source_weights_df)
 

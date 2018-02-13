@@ -3,24 +3,25 @@
 #' @description \code{construct_weighted_networks} construct layer-specific weighted integrated networks from input source networks via weighted aggregation.
 #'
 #' @usage
-#' construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df, n_output_networks = 2)
 #'
 #' @param lr_network A data frame / tibble containing ligand-receptor interactions (required columns: from, to, source)
 #' @param sig_network A data frame / tibble containing signaling interactions (required columns: from, to, source)
 #' @param gr_network A data frame / tibble containing gene regulatory interactions (required columns: from, to, source)
 #' @param source_weights_df A data frame / tibble containing the weights associated to each individual data source. Sources with higher weights will contribute more to the final model performance (required columns: source, weight). Note that only interactions described by sources included here, will be retained during model construction.
+#' @param n_output_networks The number of output networks to return: 2 (ligand-signaling and gene regulatory; default) or 3 (ligand-receptor, signaling and gene regulatory).
 #'
-#' @return A list containing 3 elements (lr, sig, gr): the integrated weighted ligand-receptor, signaling and gene regulatory networks in data frame / tibble format.
+#' @return A list containing 2 elements (lr_sig and gr) or 3 elements (lr, sig, gr): the integrated weighted ligand-signaling and gene regulatory networks or ligand-receptor, signaling and gene regulatory networks in data frame / tibble format with columns: from, to, weight.
 #'
 #'
 #' @examples
 #' ## Generate the weighted networks from input source networks
-#' #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #'
 #'
 #' @export
 #'
-construct_weighted_networks = function(lr_network, sig_network, gr_network,source_weights_df) {
+construct_weighted_networks = function(lr_network, sig_network, gr_network,source_weights_df,n_output_networks = 2) {
   # input check
   if (!is.data.frame(lr_network))
     stop("lr_network must be a data frame or tibble object")
@@ -29,17 +30,26 @@ construct_weighted_networks = function(lr_network, sig_network, gr_network,sourc
   if (!is.data.frame(gr_network))
     stop("gr_network must be a data frame or tibble object")
   if (!is.data.frame(source_weights_df) || sum((source_weights_df$weight > 1)) != 0)
-    stop("source_weights_df must be a data frame or tibble object and no data source weight may be higher than 1 ")
+    stop("source_weights_df must be a data frame or tibble object and no data source weight may be higher than 1")
+  if (n_output_networks < 2 | n_output_networks > 3)
+    stop("The number of required output networks must be 2 (ligand-signaling and regulatory) or 3 (ligand-receptor, signaling and regulatory)")
 
-  requireNamespace("tidyverse")
+  requireNamespace("dplyr")
+
   # remove data sources for which weight equals 0
   source_weights_df = source_weights_df %>% filter(weight > 0)
   # perform weighted network aggregation
-  lr_network_w = lr_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight)) %>% ungroup()
-  sig_network_w = sig_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight)) %>% ungroup()
   gr_network_w = gr_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight)) %>% ungroup()
+  if (n_output_networks == 2) {
+    ligand_signaling_w = bind_rows(lr_network, sig_network) %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight)) %>% ungroup()
+    weighted_networks = list(lr_sig = ligand_signaling_w, gr = gr_network_w)
+  }
+  else if (n_output_networks == 3) {
+    lr_network_w = lr_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight)) %>% ungroup()
+    sig_network_w = sig_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight)) %>% ungroup()
+    weighted_networks = list(lr = lr_network_w, sig = sig_network_w, gr = gr_network_w)
 
-  weighted_networks = list(lr = lr_network_w, sig = sig_network_w, gr = gr_network_w)
+  }
 }
 #' @title Add a new data source to the model
 #'
@@ -58,7 +68,7 @@ construct_weighted_networks = function(lr_network, sig_network, gr_network,sourc
 #'
 #' @examples
 #' ## Update the lr_network with a new ligand-receptor data source
-#' library(tidyverse)
+#' library(dplyr)
 #' lr_toy = tibble(from = "A", to = "B", source = "toy")
 #' new_lr_network = add_new_datasource(lr_toy, lr_network,1,source_weights_df)
 #'
@@ -76,7 +86,8 @@ add_new_datasource = function(new_source, network, new_weight,source_weights_df)
     stop("source_weights_df must be a data frame or tibble object and no data source weight may be higher than 1")
 
 
-  requireNamespace("tidyverse")
+  requireNamespace("dplyr")
+
 
   if (is.null(network)){
     return(list(network = new_source, source_weights_df = tibble(source = new_source$source %>% unique(),weight = new_weight)))
@@ -86,38 +97,311 @@ add_new_datasource = function(new_source, network, new_weight,source_weights_df)
 
   list(network = network, source_weights_df = source_weights_df)
 }
-#' @title Construct ligand-target matrix
+#' @title Apply hub corrections to the weighted integrated ligand-signaling and gene regulatory network
 #'
-#' @description \code{construct_ligand_target_matrix} construct a ligand-target matrix from input (weighted) networks.
+#' @description \code{apply_hub_corrections} downweighs the importance of nodes with a lot of incoming links in the ligand-signaling and/or gene regulatory network. Hub correction method according to following equation: \eqn{Wcor =W * D^-h} with \eqn{D} the indegree matrix of the respective network and \eqn{h} the correction factor.
 #'
 #' @usage
-#' construct_ligand_target_matrix(lr_network, sig_network, gr_network)
+#' apply_hub_corrections(weighted_networks, lr_sig_hub, gr_hub)
 #'
-#' @param lr_network A list.
-#' @param sig_network A list.
-#' @param gr_network A list.
+#' @param weighted_networks A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)
+#' @param lr_sig_hub a number between 0 and 1. 0: no correction for hubiness; 1: maximal correction for hubiness.
+#' @param gr_hub a number between 0 and 1. 0: no correction for hubiness;  1: maximal correction for hubiness.
 #'
-#' @return A matrix containing the probability scores of ligand-target links.
+#' @return A list containing 2 elements (lr_sig and gr): the hubiness-corrected integrated weighted ligand-signaling and gene regulatory networks in data frame / tibble format with columns: from, to, weight.
 #'
-#' @importFrom igraph page_rank
+#' @examples
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' apply_hub_corrections(weighted_networks, lr_sig_hub= 0.5, gr_hub= 0.5)
+#' @export
+#'
+apply_hub_corrections = function(weighted_networks,lr_sig_hub, gr_hub) {
+  # input check
+  if (!is.list(weighted_networks))
+    stop("weighted_networks must be a list object")
+  if (!is.data.frame(weighted_networks$lr_sig))
+    stop("lr_sig must be a data frame or tibble object")
+  if (!is.data.frame(weighted_networks$gr))
+    stop("gr must be a data frame or tibble object")
+  if (lr_sig_hub < 0 | lr_sig_hub > 1)
+    stop("lr_sig_hub must be a number between 0 and 1 (0 and 1 included)")
+  if (gr_hub < 0 | gr_hub > 1)
+    stop("gr_hub must be a number between 0 and 1 (0 and 1 included)")
+
+  requireNamespace("dplyr")
+
+
+  # load in weighted networks
+  ligand_signaling_network = weighted_networks$lr_sig
+  regulatory_network = weighted_networks$gr
+
+  # apply hub correction ligand-signaling network
+  if (lr_sig_hub > 0){
+    ligand_signaling_network = ligand_signaling_network %>% group_by(to) %>% count(to) %>% ungroup() %>% inner_join(ligand_signaling_network, ., by = "to") %>% group_by(from) %>% mutate(weight = weight/(n**lr_sig_hub)) %>% dplyr::select(-n)
+  }
+  # apply hub correction gene regulatory network
+  if (gr_hub > 0){
+    regulatory_network = regulatory_network %>% group_by(to) %>% count(to) %>% ungroup() %>% inner_join(regulatory_network, ., by = "to") %>% group_by(from) %>% mutate(weight = weight/(n**gr_hub)) %>% dplyr::select(-n)
+  }
+  return(list(lr_sig = ligand_signaling_network, gr = regulatory_network))
+}
+#' @title Construct a ligand-tf signaling probability matrix for ligands of interest.
+#'
+#' @description \code{construct_ligand_tf_matrix} Convert integrated weighted networks into a matrix containg ligand-tf probability scores. The higher this score, the more likely a particular ligand can signal to a downstream gene.
+#'
+#' @usage
+#' construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, ligands_as_cols = FALSE)
+#'
+#' @param weighted_networks A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)
+#' @param ligands A list of all ligands and ligand-combinations of which target gene probability scores should be calculated. Example format: list("TNF","BMP2",c("IL4","IL13")).
+#' @param ltf_cutoff Ligand-tf scores beneath the "ltf_cutoff" quantile will be set to 0. Default: 0.99 such that only the 1 percent closest tfs will be considered as possible tfs downstream of the ligand of choice.
+#' @param algorithm Selection of the algorithm to calculate ligand-tf signaling probability scores. Different options: "PPR" (personalized pagerank), "SPL" (shortest path length) and "direct"(just take weights of ligand-signaling network as ligand-tf weights). Default and recommended: PPR.
+#' @param damping_factor Only relevant when algorithm is PPR. In the PPR algorithm, the damping factor is the probability that the random walker will continue its walk on the graph; 1-damping factor is the probability that the walker will return to the seed node. Default: 0.5.
+#' @param ligands_as_cols Indicate whether ligands should be in columns of the matrix and target genes in rows or vice versa. Default: FALSE
+#'
+#' @return A matrix containing ligand-target probability scores.
+#' @importFrom igraph page_rank V graph_from_adjacency_matrix
+#' @importFrom Matrix sparseMatrix
 #'
 #' @examples
 #' ## Generate the ligand-target matrix from loaded weighted_networks
-#' construct_ligand_target_matrix(lr_network, sig_network, gr_network)
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2",c("IL4","IL13"))
+#' construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
 #'
 #' @export
 #'
-construct_ligand_target_matrix = function(lr_network, sig_network, gr_network) {
-  # requireNamespace("igraph")
+construct_ligand_tf_matrix = function(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, ligands_as_cols = FALSE) {
+
   # input check
-  if (!is.data.frame(lr_network))
-    stop("lr_network must be a data frame or tibble object")
-  if (!is.data.frame(sig_network))
-    stop("sig_network must be a data frame or tibble object")
-  if (!is.data.frame(gr_network))
-    stop("gr_network must be a data frame or tibble object")
+  if (!is.list(weighted_networks))
+    stop("weighted_networks must be a list object")
+  if (!is.data.frame(weighted_networks$lr_sig))
+    stop("lr_sig must be a data frame or tibble object")
+  if (!is.data.frame(weighted_networks$gr))
+    stop("gr must be a data frame or tibble object")
+  if (!is.list(ligands))
+    stop("ligands must be a list object")
+  if ((unique(unlist(ligands)) %in% unique(c(lr_network$from,lr_network$to))) == FALSE)
+    warning("one or more ligands of interest not present in ligand-receptor network")
+  if (ltf_cutoff < 0 | ltf_cutoff > 1)
+    stop("ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  if (algorithm != "PPR" & algorithm != "SPL" & algorithm != "direct")
+    stop("algorithm must be 'PPR' or 'SPL' or 'direct'")
+  if (damping_factor < 0 | damping_factor >= 1)
+    stop("damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  if (!is.logical(ligands_as_cols) | length(ligands_as_cols) != 1)
+    stop("ligands_as_cols must be a logical vector of length 1")
 
-  requireNamespace("tidyverse")
+  requireNamespace("dplyr")
 
-  ligand_to_target = lr_network
+  # load in weighted networks
+  ligand_signaling_network = weighted_networks$lr_sig
+  regulatory_network = weighted_networks$gr
+
+  # convert ids to numeric for making Matrix::sparseMatrix later on
+  allgenes = c(ligand_signaling_network$from, ligand_signaling_network$to, regulatory_network$from, regulatory_network$to) %>% unique() %>% sort()
+  allgenes_integer = allgenes %>% factor() %>% as.numeric()
+  allgenes_id_tbl = data.frame(allgenes,allgenes_integer) %>% tbl_df()
+  id2allgenes = mapper(allgenes_id_tbl,"allgenes_integer","allgenes")
+
+  ligand_signaling_network = ligand_signaling_network %>% mutate(from_allgenes = id2allgenes[from], to_allgenes = id2allgenes[to]) %>% arrange(from_allgenes) %>% dplyr::select(from_allgenes,to_allgenes,weight)
+
+  if (algorithm == "PPR"){
+    # Make Matrix::sparse signaling weighted matrix and graph to apply personalized pagerank
+    ligand_signaling_network_matrix = Matrix::sparseMatrix(ligand_signaling_network$from_allgenes %>% as.integer, ligand_signaling_network$to_allgenes %>% as.integer, x=ligand_signaling_network$weight %>% as.numeric, dims = c(length(allgenes), length(allgenes)))
+    signaling_igraph = igraph::graph_from_adjacency_matrix(ligand_signaling_network_matrix, weighted=TRUE, mode="directed")
+  # personalized pagerank
+  # prepare preference vector E
+  E = rep(0,times = length(igraph::V(signaling_igraph)))
+  # ppr for every ligand individual
+  complete_matrix = lapply(ligands,PPR_wrapper,E,signaling_igraph,damping_factor,id2allgenes,ltf_cutoff)
+  } else if (algorithm == "SPL"){
+    # Make Matrix::sparse signaling weighted matrix and graph to apply shortest path length
+    ligand_signaling_network = ligand_signaling_network %>% mutate(weight = 1/weight) # reverse the weight because spl: find shortest path, with lowest weight, so original weights needed to be reversed
+    ligand_signaling_network_matrix = Matrix::sparseMatrix(ligand_signaling_network$from_allgenes %>% as.integer, ligand_signaling_network$to_allgenes %>% as.integer, x=ligand_signaling_network$weight %>% as.numeric, dims = c(length(allgenes), length(allgenes)))
+    signaling_igraph = igraph::graph_from_adjacency_matrix(ligand_signaling_network_matrix, weighted=TRUE, mode="directed")
+    # SPL
+    complete_matrix = lapply(ligands,SPL_wrapper,signaling_igraph,id2allgenes,ltf_cutoff)
+  } else if (algorithm == "direct"){
+    ligand_signaling_network_matrix = Matrix::sparseMatrix(ligand_signaling_network$from_allgenes %>% as.integer, ligand_signaling_network$to_allgenes %>% as.integer, x=ligand_signaling_network$weight %>% as.numeric, dims = c(length(allgenes), length(allgenes)))
+    signaling_igraph = igraph::graph_from_adjacency_matrix(ligand_signaling_network_matrix, weighted=TRUE, mode="directed")
+
+    complete_matrix = lapply(ligands,direct_wrapper,ligand_signaling_network_matrix,id2allgenes,ltf_cutoff)
+  }
+  ltf_matrix = matrix(unlist(complete_matrix), ncol = length(igraph::V(signaling_igraph)), byrow = TRUE)
+
+  rownames(ltf_matrix) = sapply(ligands,function(x){paste0(x,collapse = "-")})
+  colnames(ltf_matrix) = allgenes
+
+  if (ligands_as_cols == TRUE){
+    tf_matrix = ltf_matrix %>% as.matrix()
+    ltf_matrix = ltf_matrix %>% t()
+  }
+
+  return(ltf_matrix)
 }
+#' @title Construct a tf-target matrix.
+#'
+#' @description \code{construct_tf_target_matrix} Convert integrated gene regulatory weighted network into matrix format.
+#'
+#' @usage
+#' construct_tf_target_matrix(weighted_networks, tfs_as_cols = FALSE, standalone_output = FALSE)
+#'
+#' @param weighted_networks A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)
+#' @param tfs_as_cols Indicate whether ligands should be in columns of the matrix and target genes in rows or vice versa. Default: FALSE
+#' @param standalone_output Indicate whether the ligand-tf matrix should be formatted in a way convenient to use alone (with gene symbols as row/colnames). Default: FALSE
+#'
+#' @return A matrix containing tf-target regulatory weights.
+#' @importFrom igraph graph_from_adjacency_matrix
+#' @importFrom Matrix sparseMatrix
+#'
+#' @examples
+#' ## Generate the ligand-target matrix from loaded weighted_networks
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' construct_tf_target_matrix(weighted_networks, tfs_as_cols = TRUE, standalone_output = TRUE)
+#'
+#' @export
+#'
+construct_tf_target_matrix = function(weighted_networks, tfs_as_cols = FALSE, standalone_output = FALSE) {
+  # input check
+  if (!is.list(weighted_networks))
+    stop("weighted_networks must be a list object")
+  if (!is.data.frame(weighted_networks$lr_sig))
+    stop("lr_sig must be a data frame or tibble object")
+  if (!is.data.frame(weighted_networks$gr))
+    stop("gr must be a data frame or tibble object")
+  if (!is.logical(tfs_as_cols) | length(tfs_as_cols) != 1)
+    stop("ligands_as_cols must be a logical vector of length 1")
+  if (!is.logical(standalone_output) | length(standalone_output) != 1)
+    stop("standalone_output must be a logical vector of length 1")
+  requireNamespace("dplyr")
+
+  # load in weighted networks
+  ligand_signaling_network = weighted_networks$lr_sig
+  regulatory_network = weighted_networks$gr
+
+  # convert ids to numeric for making Matrix::sparseMatrix later on
+  allgenes = c(ligand_signaling_network$from, ligand_signaling_network$to, regulatory_network$from, regulatory_network$to) %>% unique() %>% sort()
+  allgenes_integer = allgenes %>% factor() %>% as.numeric()
+  allgenes_id_tbl = data.frame(allgenes,allgenes_integer) %>% tbl_df()
+  id2allgenes = mapper(allgenes_id_tbl,"allgenes_integer","allgenes")
+
+  regulatory_network = regulatory_network %>% mutate(from_allgenes = id2allgenes[from], to_allgenes = id2allgenes[to]) %>% arrange(from_allgenes) %>% dplyr::select(from_allgenes,to_allgenes,weight)
+  grn_matrix = Matrix::sparseMatrix(regulatory_network$from_allgenes %>% as.integer, regulatory_network$to_allgenes %>% as.integer, x=regulatory_network$weight %>% as.numeric, dims = c(length(allgenes), length(allgenes)))
+
+  rownames(grn_matrix) = allgenes
+  colnames(grn_matrix) = allgenes
+  if (standalone_output == TRUE){
+    # keep only regulators with gene regulatory interactions
+    regulators = weighted_networks$gr %>% .$from %>% unique()
+    grn_matrix = grn_matrix[regulators,]
+
+  }
+  if (tfs_as_cols == TRUE){
+    grn_matrix = grn_matrix %>% as.matrix()
+    grn_matrix = grn_matrix %>% t()
+  }
+
+  return(grn_matrix)
+}
+#' @title Construct a ligand-target probability matrix for ligands of interest.
+#'
+#' @description \code{construct_ligand_target_matrix} Convert integrated weighted networks into a matrix containg ligand-target probability scores. The higher this score, the more likely a particular ligand can induce the expression of a particular target gene.
+#'
+#' @usage
+#' construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE,ligands_as_cols = TRUE)
+#'
+#' @param weighted_networks A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)
+#' @param ligands A list of all ligands and ligand-combinations of which target gene probability scores should be calculated. Example format: list("TNF","BMP2",c("IL4","IL13")).
+#' @param ltf_cutoff Ligand-tf scores beneath the "ltf_cutoff" quantile will be set to 0. Default: 0.99 such that only the 1 percent closest tfs will be considered as possible tfs downstream of the ligand of choice.
+#' @param algorithm Selection of the algorithm to calculate ligand-tf signaling probability scores. Different options: "PPR" (personalized pagerank), "SPL" (shortest path length) and "direct"(just take weights of ligand-signaling network as ligand-tf weights). Default and recommended: PPR.
+#' @param damping_factor Only relevant when algorithm is PPR. In the PPR algorithm, the damping factor is the probability that the random walker will continue its walk on the graph; 1-damping factor is the probability that the walker will return to the seed node. Default: 0.5.
+#' @param secondary_targets Indicate whether a ligand-target matrix should be returned that explicitly includes putative secondary targets of a ligand (by means of an additional matrix multiplication step considering primary targets as possible regulators). Default: FALSE
+#' @param ligands_as_cols Indicate whether ligands should be in columns of the matrix and target genes in rows or vice versa. Default: TRUE
+#'
+#' @return A matrix containing ligand-target probability scores.
+#' @importFrom igraph page_rank V graph_from_adjacency_matrix
+#' @importFrom Matrix sparseMatrix
+#'
+#' @examples
+#' ## Generate the ligand-target matrix from loaded weighted_networks
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2",c("IL4","IL13"))
+#' construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#'
+#' @export
+#'
+construct_ligand_target_matrix = function(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE,ligands_as_cols = TRUE) {
+
+  # input check
+  if (!is.list(weighted_networks))
+    stop("weighted_networks must be a list object")
+  if (!is.data.frame(weighted_networks$lr_sig))
+    stop("lr_sig must be a data frame or tibble object")
+  if (!is.data.frame(weighted_networks$gr))
+    stop("gr must be a data frame or tibble object")
+  if (!is.list(ligands))
+    stop("ligands must be a list object")
+  if (sum((unique(c(unlist(ligands))) %in% unique(c(lr_network$from,lr_network$to))) == FALSE) > 0)
+    warning("one or more ligands of interest not present in ligand-receptor network")
+  if (ltf_cutoff < 0 | ltf_cutoff > 1)
+    stop("ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  if (algorithm != "PPR" & algorithm != "SPL" & algorithm != "direct")
+    stop("algorithm must be 'PPR' or 'SPL' or 'direct'")
+  if (damping_factor < 0 | damping_factor >= 1)
+    stop("damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  if (!is.logical(secondary_targets) | length(secondary_targets) != 1)
+    stop("secondary_targets must be a logical vector of length 1")
+  if (!is.logical(ligands_as_cols) | length(ligands_as_cols) != 1)
+    stop("ligands_as_cols must be a logical vector of length 1")
+
+  requireNamespace("dplyr")
+
+  ## workflow; first: give probability score to genes downstream in signaling path starting from ligand. second: multiply this matrix with gene regulatory matrix to get the probabilty scores of downstream target genes
+  # construct ligand-tf matrix
+  ltf_matrix = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff, algorithm, damping_factor)
+
+  # preparing the gene regulatory matrix
+  grn_matrix = construct_tf_target_matrix(weighted_networks)
+
+  # Multiply ligand-tf matrix with tf-target matrix
+  ligand_to_target = (ltf_matrix %*% grn_matrix)
+
+  # Secondary targets
+  if (secondary_targets == TRUE) {
+    ltf_matrix = ligand_to_target
+
+    if (ltf_cutoff > 0){
+      ltf_matrix_TRUE = apply(ltf_matrix,1,function(x){x <= quantile(x,ltf_cutoff)}) %>% t()
+      ltf_matrix[ltf_matrix_TRUE] = 0
+    }
+
+    ligand_to_target_primary = ligand_to_target
+    ligand_to_target_secondary = ltf_matrix %*% grn_matrix
+
+    # set 0's to number higher than 0 to avoid Inf when inverting in sum
+    ligand_to_target_primary[ligand_to_target_primary == 0] = Inf
+    ligand_to_target_primary[is.infinite(ligand_to_target_primary)] = min(ligand_to_target_primary)
+
+    ligand_to_target_secondary[ligand_to_target_secondary == 0] = Inf
+    ligand_to_target_secondary[is.infinite(ligand_to_target_secondary)] = min(ligand_to_target_secondary)
+
+    # inverting in sum to emphasize primary targets more (scores secondary targets matrix tend to be higher )
+    ligand_to_target = (ligand_to_target_primary **-1 + ligand_to_target_secondary **-1) ** -1
+  }
+
+  ligand_to_target = ligand_to_target %>% as.matrix()
+
+  if (ligands_as_cols == TRUE){
+    ligand_to_target = ligand_to_target %>% t()
+  }
+
+  return(ligand_to_target)
+}
+
+# get_pagerank_target
+# if (reducePR == TRUE){
+#   ppr_matrix_TRUE = apply(ppr_matrix,1,function(x){x < background_pr}) %>% t()
+#   ppr_matrix[ppr_matrix_TRUE] = 0
+# }

@@ -13,5 +13,6 @@
 #' @docType package
 #' @name nichenetr
 #'
-#' @import tidyverse
+#' @import dplyr
+#' @import tidyr
 NULL

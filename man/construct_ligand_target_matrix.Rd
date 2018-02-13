@@ -2,25 +2,35 @@
 % Please edit documentation in R/construct_ligand_to_target.R
 \name{construct_ligand_target_matrix}
 \alias{construct_ligand_target_matrix}
-\title{Construct ligand-target matrix}
+\title{Construct a ligand-target probability matrix for ligands of interest.}
 \usage{
-construct_ligand_target_matrix(lr_network, sig_network, gr_network)
+construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE,ligands_as_cols = TRUE)
 }
 \arguments{
-\item{lr_network}{A list.}
+\item{weighted_networks}{A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)}
 
-\item{sig_network}{A list.}
+\item{ligands}{A list of all ligands and ligand-combinations of which target gene probability scores should be calculated. Example format: list("TNF","BMP2",c("IL4","IL13")).}
 
-\item{gr_network}{A list.}
+\item{ltf_cutoff}{Ligand-tf scores beneath the "ltf_cutoff" quantile will be set to 0. Default: 0.99 such that only the 1 percent closest tfs will be considered as possible tfs downstream of the ligand of choice.}
+
+\item{algorithm}{Selection of the algorithm to calculate ligand-tf signaling probability scores. Different options: "PPR" (personalized pagerank), "SPL" (shortest path length) and "direct"(just take weights of ligand-signaling network as ligand-tf weights). Default and recommended: PPR.}
+
+\item{damping_factor}{Only relevant when algorithm is PPR. In the PPR algorithm, the damping factor is the probability that the random walker will continue its walk on the graph; 1-damping factor is the probability that the walker will return to the seed node. Default: 0.5.}
+
+\item{secondary_targets}{Indicate whether a ligand-target matrix should be returned that explicitly includes putative secondary targets of a ligand (by means of an additional matrix multiplication step considering primary targets as possible regulators). Default: FALSE}
+
+\item{ligands_as_cols}{Indicate whether ligands should be in columns of the matrix and target genes in rows or vice versa. Default: TRUE}
 }
 \value{
-A matrix containing the probability scores of ligand-target links.
+A matrix containing ligand-target probability scores.
 }
 \description{
-\code{construct_ligand_target_matrix} construct a ligand-target matrix from input (weighted) networks.
+\code{construct_ligand_target_matrix} Convert integrated weighted networks into a matrix containg ligand-target probability scores. The higher this score, the more likely a particular ligand can induce the expression of a particular target gene.
 }
 \examples{
 ## Generate the ligand-target matrix from loaded weighted_networks
-construct_ligand_target_matrix(lr_network, sig_network, gr_network)
+weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+ligands = list("TNF","BMP2",c("IL4","IL13"))
+construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 
 }
