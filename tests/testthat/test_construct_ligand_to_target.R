@@ -87,12 +87,19 @@ test_that("Construct ligand_to_target_matrix: no error", {
   expect_type(construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "SPL", damping_factor = 0.5, secondary_targets = FALSE),"double")
   expect_type(construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "direct", damping_factor = 0.5, secondary_targets = FALSE),"double")
   expect_type(construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = TRUE),"double")
+  expect_type(construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = TRUE, remove_direct_links = "ligand"),"double")
+  expect_type(construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = TRUE, remove_direct_links = "ligand-receptor"),"double")
 })
 test_that("Construct tf_to_target_matrix: no error", {
   weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
   expect_type(construct_tf_target_matrix(weighted_networks, standalone_output = TRUE),"S4")
   expect_type(construct_tf_target_matrix(weighted_networks, standalone_output = FALSE),"S4")
 })
-
+test_that("Correct PPR-ligand-target matrices for topolgy: no error", {
+  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+  ligands = list("BMP2",c("IL4","IL13"))
+  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+  expect_type(correct_topology_ppr(ligand_target_matrix,weighted_networks),"double")
+})
 
 

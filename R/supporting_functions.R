@@ -1,17 +1,3 @@
-PPR_wrapper_old = function(ligand,E,G,delta,allgenes,ccnet,id2allgenes,heats_receptors,background_pr,ppr_cutoff) {
-  partial_matrix = lapply(ligand,single_ligand_ppr_wrapper,E,G,delta, allgenes,ccnet,id2allgenes, heats_receptors)
-  ppr_matrix = matrix(unlist(partial_matrix), ncol = length(E), byrow = TRUE)
-  if (ppr_cutoff > 0){
-    ppr_matrix_diff = apply(ppr_matrix,1,function(x){x - background_pr}) %>% t() # old version
-    ppr_matrix_diff[ppr_matrix_diff < 0] = 0
-    ppr_matrix_TRUE = apply(ppr_matrix_diff,1,function(x){x <= quantile(x,ppr_cutoff)}) %>% t()
-    ppr_matrix_diff[ppr_matrix_TRUE] = 0
-    ppr_matrix = ppr_matrix_diff
-  }
-  ppr_matrix = apply(ppr_matrix,1,function(x){x = (x - min(x))/(max(x)-min(x))}) %>% t()
-  # if multiple ligands: total ligand-tf score = maximum score a particular ligand-tf interaction
-  return(apply(ppr_matrix, 2, max))
-}
 SPL_wrapper = function(ligand,G,id2allgenes,spl_cutoff) {
   # calculate spl distance between ligand and every other node in graph
   distances = igraph::distances(graph = G, v = id2allgenes[ligand], to = igraph::V(G),mode = "out")
@@ -30,7 +16,7 @@ SPL_wrapper = function(ligand,G,id2allgenes,spl_cutoff) {
     spl_matrix[spl_matrix_TRUE] = 0
   }
 
-  spl_vector = apply(spl_matrix, 2, max)
+  spl_vector = apply(spl_matrix, 2, mean)
   return(spl_vector)
 }
 
@@ -43,7 +29,7 @@ PPR_wrapper = function(ligand,E,G,delta,id2allgenes,ppr_cutoff) {
     ppr_matrix[ppr_matrix_TRUE] = 0
   }
   # if multiple ligands: total ligand-tf score = maximum score a particular ligand-tf interaction; if only one ligand: just the normal score
-  return(apply(ppr_matrix, 2, max))
+  return(apply(ppr_matrix, 2, mean))
 }
 single_ligand_ppr_wrapper = function(l,E,G,delta,id2allgenes){
   # set ligand as seed in preference vector E
@@ -60,7 +46,7 @@ direct_wrapper = function(ligand,G,id2allgenes,cutoff) {
     ltf_matrix[ltf_matrix_TRUE] = 0
   }
   # if multiple ligands: total ligand-tf score = maximum score a particular ligand-tf interaction; if only one ligand: just the normal score
-  return(apply(ltf_matrix, 2, max))
+  return(apply(ltf_matrix, 2, mean))
 }
 get_pagerank_target = function(weighted_networks, secondary_targets = FALSE) {
 
@@ -130,4 +116,7 @@ get_pagerank_target = function(weighted_networks, secondary_targets = FALSE) {
 }
 
 
-mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])#extract column of values and corresponding names out of a dataframe to make a named vector
+
+
+
+mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])

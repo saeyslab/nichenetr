@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 
 # nichenetr
 
-The goal of nichenetr is to ...
+The goal of nichenetr is to explore intercellular communication from a computational perspective. At the basis of this package, is a probabilistic model of ligand-target links that was inferred by data-integration.
 
 ## Installation
 
@@ -27,8 +27,18 @@ devtools::install_github("browaeysrobin/nichenetr")
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+This is a basic example which shows you how to construct the matrix of ligand-target probability scores for ligands of interest, starting from collecting ligand-receptor, signaling and gene regulatory interactions.
 
 ```{r example}
-## basic example code
+library(nichenetr)
+# first convert the individual ligand-receptor, signaling and gene regulatory data source networks into weighted integrated networks by weighted aggregation of the individual networks. 
+weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+# in a next step, we will downweigh the importance of hubs in the ligand-signaling and gene regualtory network.
+weighted_networks = apply_hub_corrections(weighted_networks, lr_sig_hub = 0.5, gr_hub = 0.5)
+# now we will use these hubiness-corrected weighted networks to calculate probability scores for ligands of interest, here: TNF and BMP2; and the ligand combination IL4 and IL13
+ligands = list("TNF","BMP2",c("IL4","IL13"))
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, algorithm = "PPR", damping_factor = 0.5)
+# show the names and probability scores of the top 20 target genes of BMP2
+head(sort(ligand_target_matrix[,"BMP2"], decreasing = T),20)
+
 ```

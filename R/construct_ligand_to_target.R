@@ -182,7 +182,7 @@ construct_ligand_tf_matrix = function(weighted_networks, ligands, ltf_cutoff = 0
     stop("gr must be a data frame or tibble object")
   if (!is.list(ligands))
     stop("ligands must be a list object")
-  if ((unique(unlist(ligands)) %in% unique(c(lr_network$from,lr_network$to))) == FALSE)
+  if ( sum((unique(unlist(ligands)) %in% unique(c(lr_network$from,lr_network$to))) == FALSE) > 0)
     warning("one or more ligands of interest not present in ligand-receptor network")
   if (ltf_cutoff < 0 | ltf_cutoff > 1)
     stop("ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
@@ -310,7 +310,7 @@ construct_tf_target_matrix = function(weighted_networks, tfs_as_cols = FALSE, st
 #' @description \code{construct_ligand_target_matrix} Convert integrated weighted networks into a matrix containg ligand-target probability scores. The higher this score, the more likely a particular ligand can induce the expression of a particular target gene.
 #'
 #' @usage
-#' construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE,ligands_as_cols = TRUE)
+#' construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE,ligands_as_cols = TRUE, remove_direct_links = "no")
 #'
 #' @param weighted_networks A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)
 #' @param ligands A list of all ligands and ligand-combinations of which target gene probability scores should be calculated. Example format: list("TNF","BMP2",c("IL4","IL13")).
@@ -319,6 +319,7 @@ construct_tf_target_matrix = function(weighted_networks, tfs_as_cols = FALSE, st
 #' @param damping_factor Only relevant when algorithm is PPR. In the PPR algorithm, the damping factor is the probability that the random walker will continue its walk on the graph; 1-damping factor is the probability that the walker will return to the seed node. Default: 0.5.
 #' @param secondary_targets Indicate whether a ligand-target matrix should be returned that explicitly includes putative secondary targets of a ligand (by means of an additional matrix multiplication step considering primary targets as possible regulators). Default: FALSE
 #' @param ligands_as_cols Indicate whether ligands should be in columns of the matrix and target genes in rows or vice versa. Default: TRUE
+#' @param remove_direct_links Indicate whether direct ligand-target and receptor-target links in the gene regulatory network should be kept or not. "no": keep links; "ligand": remove direct ligand-target links; "ligand-receptor": remove both direct ligand-target and receptor-target links. Default: "no"
 #'
 #' @return A matrix containing ligand-target probability scores.
 #' @importFrom igraph page_rank V graph_from_adjacency_matrix
@@ -328,11 +329,11 @@ construct_tf_target_matrix = function(weighted_networks, tfs_as_cols = FALSE, st
 #' ## Generate the ligand-target matrix from loaded weighted_networks
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
-#' construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE, remove_direct_links = "no")
 #'
 #' @export
 #'
-construct_ligand_target_matrix = function(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE,ligands_as_cols = TRUE) {
+construct_ligand_target_matrix = function(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE,ligands_as_cols = TRUE, remove_direct_links = "no") {
 
   # input check
   if (!is.list(weighted_networks))
@@ -343,8 +344,6 @@ construct_ligand_target_matrix = function(weighted_networks, ligands, ltf_cutoff
     stop("gr must be a data frame or tibble object")
   if (!is.list(ligands))
     stop("ligands must be a list object")
-  if (sum((unique(c(unlist(ligands))) %in% unique(c(lr_network$from,lr_network$to))) == FALSE) > 0)
-    warning("one or more ligands of interest not present in ligand-receptor network")
   if (ltf_cutoff < 0 | ltf_cutoff > 1)
     stop("ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
   if (algorithm != "PPR" & algorithm != "SPL" & algorithm != "direct")
@@ -355,11 +354,25 @@ construct_ligand_target_matrix = function(weighted_networks, ligands, ltf_cutoff
     stop("secondary_targets must be a logical vector of length 1")
   if (!is.logical(ligands_as_cols) | length(ligands_as_cols) != 1)
     stop("ligands_as_cols must be a logical vector of length 1")
+  if (remove_direct_links != "no" & remove_direct_links != "ligand" & remove_direct_links != "ligand-receptor")
+    stop("remove_direct_links must be 'no' or 'ligand' or 'ligand-receptor'")
 
   requireNamespace("dplyr")
 
   ## workflow; first: give probability score to genes downstream in signaling path starting from ligand. second: multiply this matrix with gene regulatory matrix to get the probabilty scores of downstream target genes
+
   # construct ligand-tf matrix
+  # remove direct links if required
+  if (remove_direct_links != "no"){
+    ligands_ = lr_network$from %>% unique()
+    receptors_ = lr_network$to %>% unique()
+    if (remove_direct_links == "ligand"){
+      weighted_networks$gr = weighted_networks$gr %>% filter((from %in% ligands_) == FALSE)
+    } else if (remove_direct_links == "ligand-receptor"){
+      weighted_networks$gr = weighted_networks$gr %>% filter((from %in% c(ligands_,receptors_)) == FALSE)
+    }
+  }
+
   ltf_matrix = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff, algorithm, damping_factor)
 
   # preparing the gene regulatory matrix
@@ -399,9 +412,54 @@ construct_ligand_target_matrix = function(weighted_networks, ligands, ltf_cutoff
 
   return(ligand_to_target)
 }
+#' @title Adapt a ligand-target probability matrix construced via PPR by correcting for network topolgoy.
+#'
+#' @description \code{correct_topology_ppr} The ligand-target probability scores of a matrix constructed via personalized pagerank will be subtracted by target probability scores calculated via global pagerank; these latter scores can be considered as scores solely attributed to network topology and not by proximity to the ligand of interest. Recommended to use this function in combination with a ligand-target matrix constructed without applying a cutoff on the ligand-tf matrix.
+#'
+#' @usage
+#' correct_topology_ppr(ligand_target_matrix,weighted_networks,ligands_position = "cols")
+#'
+#' @param ligand_target_matrix A matrix of ligand-target probabilty scores.
+#' @param weighted_networks A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)
+#' @param ligands_position Indicate whether the ligands in the ligand-target matrix are in the rows ("rows") or columns ("cols"). Default: "cols"
+#'
+#' @return A matrix containing ligand-target probability scores, after subtracting target scores solely due to network topology.
+#' @importFrom igraph page_rank V graph_from_adjacency_matrix
+#' @importFrom Matrix sparseMatrix
+#'
+#' @examples
+#' ## Generate the ligand-target matrix from loaded weighted_networks
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2",c("IL4","IL13"))
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' correct_topology_ppr(ligand_target_matrix,weighted_networks,ligands_position = "cols")
+#'
+#' @export
+#'
+correct_topology_ppr = function(ligand_target_matrix,weighted_networks,ligands_position = "cols"){
+  # input check
+  if (!is.list(weighted_networks))
+    stop("weighted_networks must be a list object")
+  if (!is.data.frame(weighted_networks$lr_sig))
+    stop("lr_sig must be a data frame or tibble object")
+  if (!is.data.frame(weighted_networks$gr))
+    stop("gr must be a data frame or tibble object")
+  if (!is.matrix(ligand_target_matrix))
+    stop("ligand_target_matrix must be a matrix object")
+  if (ligands_position != "cols" & ligands_position != "rows")
+    stop("ligands_position must be 'cols' or 'rows'")
 
-# get_pagerank_target
-# if (reducePR == TRUE){
-#   ppr_matrix_TRUE = apply(ppr_matrix,1,function(x){x < background_pr}) %>% t()
-#   ppr_matrix[ppr_matrix_TRUE] = 0
-# }
+  requireNamespace("dplyr")
+
+  background_pr = get_pagerank_target(weighted_networks)
+
+  if (ligands_position == "rows"){
+    ligand_target_matrix_new = apply(ligand_target_matrix,1,function(x){x - background_pr}) %>% t()
+  } else {
+    ligand_target_matrix_new = apply(ligand_target_matrix,2,function(x){x - background_pr})
+  }
+
+  ligand_target_matrix_new[ligand_target_matrix_new < 0] = 0
+
+  return(ligand_target_matrix_new)
+}
