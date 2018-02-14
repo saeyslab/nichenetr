@@ -4,7 +4,7 @@
 \alias{construct_ligand_target_matrix}
 \title{Construct a ligand-target probability matrix for ligands of interest.}
 \usage{
-construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE,ligands_as_cols = TRUE)
+construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE,ligands_as_cols = TRUE, remove_direct_links = "no")
 }
 \arguments{
 \item{weighted_networks}{A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)}
@@ -20,6 +20,8 @@ construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, al
 \item{secondary_targets}{Indicate whether a ligand-target matrix should be returned that explicitly includes putative secondary targets of a ligand (by means of an additional matrix multiplication step considering primary targets as possible regulators). Default: FALSE}
 
 \item{ligands_as_cols}{Indicate whether ligands should be in columns of the matrix and target genes in rows or vice versa. Default: TRUE}
+
+\item{remove_direct_links}{Indicate whether direct ligand-target and receptor-target links in the gene regulatory network should be kept or not. "no": keep links; "ligand": remove direct ligand-target links; "ligand-receptor": remove both direct ligand-target and receptor-target links. Default: "no"}
 }
 \value{
 A matrix containing ligand-target probability scores.
@@ -31,6 +33,6 @@ A matrix containing ligand-target probability scores.
 ## Generate the ligand-target matrix from loaded weighted_networks
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 ligands = list("TNF","BMP2",c("IL4","IL13"))
-construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE, remove_direct_links = "no")
 
 }
