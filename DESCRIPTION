@@ -15,7 +15,8 @@ Depends: R (>= 3.0.0)
 Imports: dplyr,
     tidyr,
     igraph,
-    Matrix
+    Matrix,
+    fdrtool
 Suggests: knitr,
     rmarkdown,
     testthat

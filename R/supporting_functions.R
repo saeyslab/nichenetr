@@ -114,9 +114,10 @@ get_pagerank_target = function(weighted_networks, secondary_targets = FALSE) {
 
   return(ligand_to_target)
 }
-
-
-
-
-
 mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
+
+
+
+
+
+

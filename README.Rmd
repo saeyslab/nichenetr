@@ -36,22 +36,17 @@ library(nichenetr)
 
 First convert the individual ligand-receptor, signaling and gene regulatory data source networks into weighted integrated networks by weighted aggregation of the individual networks. 
 
-```{r example}
+```{r}
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 ```
 
 In a next step, we will downweigh the importance of hubs in the ligand-signaling and gene regualtory network.
 
-```{r example}
+```{r}
 weighted_networks = apply_hub_corrections(weighted_networks, lr_sig_hub = 0.5, gr_hub = 0.5)
-
-ligands = list("TNF","BMP2",c("IL4","IL13"))
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, algorithm = "PPR", damping_factor = 0.5)
-# show the names and probability scores of the top 20 target genes of BMP2
-head(sort(ligand_target_matrix[,"BMP2"], decreasing = T),20)
 ```
 Now we will use these hubiness-corrected weighted networks to calculate probability scores for ligands of interest, here: TNF and BMP2; and the ligand combination IL4 and IL13
-```{r example}
+```{r}
 ligands = list("TNF","BMP2",c("IL4","IL13"))
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, algorithm = "PPR", damping_factor = 0.5)
 # show the names and scores of the top 20 target genes of BMP2

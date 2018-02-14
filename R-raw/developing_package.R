@@ -25,6 +25,8 @@ devtools::use_package("dplyr")
 devtools::use_package("tidyr")
 devtools::use_package("igraph")
 devtools::use_package("Matrix")
+devtools::use_package("fdrtool")
+
 
 # test data
 # x = sample(1000)

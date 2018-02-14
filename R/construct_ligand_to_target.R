@@ -463,3 +463,68 @@ correct_topology_ppr = function(ligand_target_matrix,weighted_networks,ligands_p
 
   return(ligand_target_matrix_new)
 }
+#' @title Convert probabilistic ligand-target matrix to a discrete one.
+#'
+#' @description \code{make_discrete_ligand_target_matrix} Convert probabilistic ligand-target matrix to a discrete one. This means that for every ligand, genes will be labeled as target (TRUE) or non-target (FALSE).
+#'
+#' @usage
+#' make_discrete_ligand_target_matrix(ligand_target_matrix, error_rate = 0.1, cutoff_method = "distribution", fdr_method = "global",ligands_position = "cols")
+#'
+#' @param ligand_target_matrix A matrix of ligand-target probabilty scores.
+#' @param error_rate FDR for cutoff_method "fdrtool" and "distribution"; number between 0 and 1 indicating which top fraction of target genes should be returned for cutoff_method "quantile". Default: 0.1
+#' @param cutoff_method Method to determine which genes can be considered as a target of a ligand and which genes not, based on the ligand-target probability scores. Possible options: "distribution", "fdrtool" and "quantile". Default: "distribution".
+#' @param fdr_method Only relevant when cutoff_method is "fdrtool". Possible options: "global" and "local". Default: "global".
+#' @param ligands_position Indicate whether the ligands in the ligand-target matrix are in the rows ("rows") or columns ("cols"). Default: "cols"
+#'
+#' @return A matrix of ligand-target assignments. TRUE: gene is a target of the ligand of interest; FALSE: gene is not a target of the ligand of interest.
+#'
+#' @examples
+#' ## Generate the ligand-target matrix from loaded weighted_networks
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2",c("IL4","IL13"))
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' make_discrete_ligand_target_matrix(ligand_target_matrix, error_rate = 0.1, cutoff_method = "distribution", ligands_position = "cols")
+#'
+#' @export
+#'
+make_discrete_ligand_target_matrix = function(ligand_target_matrix, error_rate = 0.1, cutoff_method = "distribution", fdr_method = "global",ligands_position = "cols"){
+  # input check
+  if (!is.matrix(ligand_target_matrix))
+    stop("ligand_target_matrix must be a matrix object")
+  if (ligands_position != "cols" & ligands_position != "rows")
+    stop("ligands_position must be 'cols' or 'rows'")
+  if (cutoff_method != "distribution" &  cutoff_method != "fdrtool" & cutoff_method != "quantile")
+    stop("cutoff_method must be 'distribution' or 'fdrtool' or 'quantile'")
+  if (!is.numeric(error_rate) | length(error_rate) != 1 | error_rate > 1 | error_rate < 0)
+    stop("error_rate must be a numeric vector of length 1 of which the value is between 0 and 1")
+  if (fdr_method != "global" &  fdr_method != "local")
+    stop("fdr_method must be 'global' or 'local'")
+
+  if (ligands_position == "cols"){
+    ligands = colnames(ligand_target_matrix)
+    targets = rownames(ligand_target_matrix)
+  } else if (ligands_position == "rows"){
+    ligands = rownames(ligand_target_matrix)
+    targets = colnames(ligand_target_matrix)
+    ligand_target_matrix = ligand_target_matrix %>% t()
+  }
+
+  requireNamespace("dplyr")
+
+  list_targets = lapply(ligands,get_target_genes_ligand_oi,ligand_target_matrix,cutoff_method = cutoff_method, fdr_method = fdr_method,error_rate = error_rate)
+  names(list_targets) = ligands
+  ligand_target_matrix_discrete = list_targets %>% bind_rows() %>% as.matrix()
+
+  if (ligands_position == "cols"){
+    rownames(ligand_target_matrix_discrete) = targets
+  } else if (ligands_position == "rows"){
+    ligand_target_matrix_discrete = ligand_target_matrix_discrete %>% t()
+    colnames(ligand_target_matrix_discrete) = targets
+  }
+
+  return(ligand_target_matrix_discrete)
+}
+
+
+
+

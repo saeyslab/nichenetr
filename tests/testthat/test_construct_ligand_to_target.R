@@ -101,5 +101,11 @@ test_that("Correct PPR-ligand-target matrices for topolgy: no error", {
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
   expect_type(correct_topology_ppr(ligand_target_matrix,weighted_networks),"double")
 })
+test_that("Convert probabilistic ligand-target to discrete: no error", {
+  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+  ligands = list("BMP2",c("IL4","IL13"))
+  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+  expect_equal(dim(make_discrete_ligand_target_matrix(ligand_target_matrix, error_rate = 0.1, cutoff_method = "distribution", ligands_position = "cols")),dim(ligand_target_matrix))
+})
 
 
