@@ -50,3 +50,22 @@
 #'   }
 #'
 "source_weights_df"
+
+#' Expression datasets for validation
+#'
+#' A list
+#'
+#' @format A list
+#' \describe{
+#'   \item{diffexp}{}
+#'   \describe{
+#'     \item{lfc}{Log fold change (treated vs untreated)}
+#'     \item{qval}{Fdr corrected p-value}
+#'     \item{gene}{Gene symbol}
+#'   }
+#'   \item{from}{Gene symbol(s) of ligand(s) by which the cells were treated}
+#'   \item{name}{Name of the expression validation dataset}
+#'   \item{type}{Type of dataset based on response time: "primary", "secondary", "primary + secondary"}
+#'   }
+#'
+"expression_settings_validation"

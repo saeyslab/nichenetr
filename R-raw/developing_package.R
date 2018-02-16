@@ -49,10 +49,8 @@ devtools::use_data(gr_network,overwrite = T,compress = "xz")
 source_weights_df = tibble(source = c(lr_network$source %>% unique,sig_network$source %>% unique(), gr_network$source %>% unique()) %>% unique(), weight = 1)
 devtools::use_data(source_weights_df,overwrite = T,compress = "bzip2")
 
-
-
-library(tidyverse)
-library(nichenetr)
+expression_settings_validation = readRDS("../staticNicheNet/results/expression_settings_validation")
+devtools::use_data(expression_settings_validation,overwrite = T, compress = "bzip2")
 
 
 

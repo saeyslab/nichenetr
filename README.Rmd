@@ -49,6 +49,9 @@ Now we will use these hubiness-corrected weighted networks to calculate probabil
 ```{r}
 ligands = list("TNF","BMP2",c("IL4","IL13"))
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, algorithm = "PPR", damping_factor = 0.5)
-# show the names and scores of the top 20 target genes of BMP2
-head(sort(ligand_target_matrix[,"BMP2"], decreasing = T),20)
+```
+
+Show the names and scores of the top 50 target genes of BMP2
+```{r}
+extract_top_n_targets("BMP2",50,ligand_target_matrix)
 ```
