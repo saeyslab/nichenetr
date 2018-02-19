@@ -10,11 +10,11 @@ This package allows you the investigate intercellular communication from a compu
 }
 \section{Construction of the probabilistic model}{
 
-\code{\link{construct_ligand_target_matrix}}
+\code{\link{construct_weighted_networks}}, \code{\link{construct_ligand_target_matrix}}
 }
 
 \section{Evaluation functions}{
 
-\code{\link{evaluate_target_prediction}}, \code{\link{evaluate_ligand_prediction}}
+\code{\link{evaluate_target_prediction}}
 }
 

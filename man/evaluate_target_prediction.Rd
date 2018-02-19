@@ -2,25 +2,29 @@
 % Please edit documentation in R/evaluate_model.R
 \name{evaluate_target_prediction}
 \alias{evaluate_target_prediction}
-\title{Construct ligand-target matrix}
+\title{Evaluation of target gene prediction.}
 \usage{
-evaluate_target_prediction(lr_network, sig_network, gr_network)
+evaluate_target_prediction(setting,ligand_target_matrix, ligands_position = "cols")
 }
 \arguments{
-\item{lr_network}{A list.}
+\item{setting}{A list containing the following elements: .$name: name of the setting; .$from: name(s) of the ligand(s) active in the setting of interest; .$response: named logical vector indicating whether a target is a TRUE target of the possibly active ligand(s) or a FALSE.}
 
-\item{sig_network}{A list.}
+\item{ligand_target_matrix}{A matrix of ligand-target probabilty scores.}
 
-\item{gr_network}{A list.}
+\item{ligands_position}{Indicate whether the ligands in the ligand-target matrix are in the rows ("rows") or columns ("cols"). Default: "cols"}
 }
 \value{
-A matrix containing the probability scores of ligand-target links.
+A data.frame with following variables: setting, ligand and for probabilistic predictions: auroc, aupr, aupr_corrected (aupr - aupr for random prediction), sensitivity_roc (proxy measure, inferred from ROC), specificity_roc (proxy measure, inferred from ROC), mean_rank_GST_log_pval (-log10 of p-value of mean-rank gene set test), pearson (correlation coefficient), spearman (correlation coefficient); whereas for categorical predictions: accuracy, recall, specificity, precision, F1, F0.5, F2, mcc, informedness, markedness, fisher_pval_log (which is -log10 of p-value fisher exact test), fisher odds.
 }
 \description{
-\code{evaluate_target_prediction} construct a ligand-target matrix from input (weighted) networks.
+\code{evaluate_target_prediction} Evaluate how well the model (i.e. the inferred ligand-target probability scores) is able to predict the observed response to a ligand (e.g. the set of DE genes after treatment of cells by a ligand). It shows several classification evaluation metrics for the prediction. Different classification metrics are calculated depending on whether the input ligand-target matrix contains probability scores for targets or discrete target assignments.
 }
 \examples{
-## Generate the ligand-target matrix from loaded weighted_networks
-evaluate_target_prediction(lr_network, sig_network, gr_network)
+weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+setting = lapply(expression_settings_validation[1],convert_expression_settings_evaluation)
+ligands = extract_ligands_from_settings(setting)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+perf1 =lapply(setting,evaluate_target_prediction,ligand_target_matrix)
+perf2 = lapply(setting,evaluate_target_prediction,ligand_target_matrix \%>\% make_discrete_ligand_target_matrix(cutoff_method = "distribution"))
 
 }

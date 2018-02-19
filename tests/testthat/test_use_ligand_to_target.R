@@ -1,3 +1,5 @@
+context("Model usage functions")
+
 test_that("Get top n or percentage targets or ligands: no error", {
   weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
   ligands = list("TNF","BMP2",c("IL4","IL13"))
@@ -28,3 +30,4 @@ test_that("Get targets genes of a ligand: no error", {
 
   expect_error(get_target_genes_ligand_oi("BMP2", ligand_target_matrix, cutoff_method = "decoy", fdr_method = "local", output = "logical",ligands_position = "cols"))
 })
+

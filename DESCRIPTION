@@ -16,7 +16,11 @@ Imports: dplyr,
     tidyr,
     igraph,
     Matrix,
-    fdrtool
+    fdrtool,
+    ROCR,
+    caTools,
+    data.table,
+    limma
 Suggests: knitr,
     rmarkdown,
     testthat

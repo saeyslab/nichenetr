@@ -45,9 +45,9 @@ In a next step, we will downweigh the importance of hubs in the ligand-signaling
 ```{r}
 weighted_networks = apply_hub_corrections(weighted_networks, lr_sig_hub = 0.5, gr_hub = 0.5)
 ```
-Now we will use these hubiness-corrected weighted networks to calculate probability scores for ligands of interest, here: TNF and BMP2; and the ligand combination IL4 and IL13
+Now we will use these hubiness-corrected weighted networks to calculate probability scores for ligands of interest, here: the ligands of which we will evaluate the target gene prediction later on.
 ```{r}
-ligands = list("TNF","BMP2",c("IL4","IL13"))
+ligands = extract_ligands_from_settings(expression_settings_validation)
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, algorithm = "PPR", damping_factor = 0.5)
 ```
 
@@ -55,3 +55,12 @@ Show the names and scores of the top 50 target genes of BMP2
 ```{r}
 extract_top_n_targets("BMP2",50,ligand_target_matrix)
 ```
+
+Evaluate the target gene prediction performance for 53 ligand-treatment expression datasets
+```{r}
+settings = lapply(expression_settings_validation, convert_expression_settings_evaluation)
+performances = bind_rows(lapply(settings, evaluate_target_prediction, ligand_target_matrix))
+performances_discrete = bind_rows(lapply(settings, evaluate_target_prediction, ligand_target_matrix %>% make_discrete_ligand_target_matrix))
+
+```
+

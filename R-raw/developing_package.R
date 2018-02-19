@@ -26,6 +26,10 @@ devtools::use_package("tidyr")
 devtools::use_package("igraph")
 devtools::use_package("Matrix")
 devtools::use_package("fdrtool")
+devtools::use_package("ROCR")
+devtools::use_package("caTools")
+devtools::use_package("data.table")
+devtools::use_package("limma")
 
 
 # test data
