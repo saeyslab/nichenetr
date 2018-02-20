@@ -9,7 +9,7 @@ evaluate_target_prediction(setting,ligand_target_matrix, ligands_position = "col
 \arguments{
 \item{setting}{A list containing the following elements: .$name: name of the setting; .$from: name(s) of the ligand(s) active in the setting of interest; .$response: named logical vector indicating whether a target is a TRUE target of the possibly active ligand(s) or a FALSE.}
 
-\item{ligand_target_matrix}{A matrix of ligand-target probabilty scores.}
+\item{ligand_target_matrix}{A matrix of ligand-target probabilty scores (or discrete target assignments).}
 
 \item{ligands_position}{Indicate whether the ligands in the ligand-target matrix are in the rows ("rows") or columns ("cols"). Default: "cols"}
 }
@@ -24,7 +24,7 @@ weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_netw
 setting = lapply(expression_settings_validation[1],convert_expression_settings_evaluation)
 ligands = extract_ligands_from_settings(setting)
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-perf1 =lapply(setting,evaluate_target_prediction,ligand_target_matrix)
-perf2 = lapply(setting,evaluate_target_prediction,ligand_target_matrix \%>\% make_discrete_ligand_target_matrix(cutoff_method = "distribution"))
+perf1 = lapply(setting,evaluate_target_prediction,ligand_target_matrix)
+perf2 = lapply(setting,evaluate_target_prediction,make_discrete_ligand_target_matrix(ligand_target_matrix))
 
 }

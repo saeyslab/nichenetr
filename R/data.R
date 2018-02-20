@@ -69,3 +69,16 @@
 #'   }
 #'
 "expression_settings_validation"
+#' Gene annotation information
+#'
+#' A data.frame/tibble describing weight associated to each data source. These weights will be used for weighted aggregagion of source networks
+#'
+#' @format A data frame/tibble
+#' \describe{
+#'   \item{symbol}{human gene symbol}
+#'   \item{entrez}{human gene entrez}
+#'   \item{entrez_mouse}{mouse homolog gene entrez}
+#'   \item{symbol_mouse}{mouse homolog gene symbol}
+#'   }
+#'
+"geneinfo_human"

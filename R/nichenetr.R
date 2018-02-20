@@ -15,4 +15,5 @@
 #'
 #' @import dplyr
 #' @import tidyr
+#' @import tibble
 NULL

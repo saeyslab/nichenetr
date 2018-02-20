@@ -83,7 +83,7 @@ convert_expression_settings_evaluation = function(setting) {
 #' evaluate_target_prediction(setting,ligand_target_matrix, ligands_position = "cols")
 #'
 #' @param setting A list containing the following elements: .$name: name of the setting; .$from: name(s) of the ligand(s) active in the setting of interest; .$response: named logical vector indicating whether a target is a TRUE target of the possibly active ligand(s) or a FALSE.
-#' @param ligand_target_matrix A matrix of ligand-target probabilty scores.
+#' @param ligand_target_matrix A matrix of ligand-target probabilty scores (or discrete target assignments).
 #' @param ligands_position Indicate whether the ligands in the ligand-target matrix are in the rows ("rows") or columns ("cols"). Default: "cols"
 
 #' @return A data.frame with following variables: setting, ligand and for probabilistic predictions: auroc, aupr, aupr_corrected (aupr - aupr for random prediction), sensitivity_roc (proxy measure, inferred from ROC), specificity_roc (proxy measure, inferred from ROC), mean_rank_GST_log_pval (-log10 of p-value of mean-rank gene set test), pearson (correlation coefficient), spearman (correlation coefficient); whereas for categorical predictions: accuracy, recall, specificity, precision, F1, F0.5, F2, mcc, informedness, markedness, fisher_pval_log (which is -log10 of p-value fisher exact test), fisher odds.
@@ -98,7 +98,7 @@ convert_expression_settings_evaluation = function(setting) {
 #' setting = lapply(expression_settings_validation[1],convert_expression_settings_evaluation)
 #' ligands = extract_ligands_from_settings(setting)
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-#' perf1 =lapply(setting,evaluate_target_prediction,ligand_target_matrix)
+#' perf1 = lapply(setting,evaluate_target_prediction,ligand_target_matrix)
 #' perf2 = lapply(setting,evaluate_target_prediction,make_discrete_ligand_target_matrix(ligand_target_matrix))
 #'
 #' @export
@@ -140,7 +140,7 @@ evaluate_target_prediction = function(setting,ligand_target_matrix, ligands_posi
   response_vector = setting$response
 
   performance = evaluate_target_prediction_strict(response_vector,prediction_vector,is.double(prediction_vector))
-  performance = performance %>% mutate(setting = setting$name, ligand = ligand_oi) # ligand_oi should be the multi thing
+  performance = performance %>% mutate(setting = setting$name, ligand = ligand_oi)
 }
-# new_settings = lapply(expression_settings_validation,convert_expression_settings_evaluation)
-# performances = evaluate_target_prediction(new_settings$rat_Tnfa,ligand_target_matrix)
+
+

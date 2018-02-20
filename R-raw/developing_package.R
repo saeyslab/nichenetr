@@ -23,6 +23,7 @@ library(tidyverse)
 
 devtools::use_package("dplyr")
 devtools::use_package("tidyr")
+devtools::use_package("tibble")
 devtools::use_package("igraph")
 devtools::use_package("Matrix")
 devtools::use_package("fdrtool")
@@ -30,6 +31,8 @@ devtools::use_package("ROCR")
 devtools::use_package("caTools")
 devtools::use_package("data.table")
 devtools::use_package("limma")
+devtools::use_package("readr")
+devtools::use_package("Hmisc")
 
 
 # test data
@@ -57,4 +60,18 @@ expression_settings_validation = readRDS("../staticNicheNet/results/expression_s
 devtools::use_data(expression_settings_validation,overwrite = T, compress = "bzip2")
 
 
-
+library(org.Mm.eg.db)
+library(org.Hs.eg.db)
+library(dplyr)
+library(purrr)
+mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
+geneinfo = tibble(symbol=unlist(as.list(org.Mm.egSYMBOL)), entrez=names(unlist(as.list(org.Mm.egSYMBOL))))
+geneinfo_human = tibble(symbol=unlist(as.list(org.Hs.egSYMBOL)), entrez=names(unlist(as.list(org.Hs.egSYMBOL))))
+# load("../staticNichenet/data/homologs.RData")
+homologs = annotationTools::getHOMOLOG(geneinfo$entrez, 9606, read.delim("../staticNichenet/data/preproc/homologene/homologene.data", header=F))
+mouseentrez2humanentrez = map_chr(homologs, ~.[[1]]) %>% setNames(geneinfo$entrez) %>% keep(!is.na(.))
+humanentrez2mouseentrez = names(mouseentrez2humanentrez) %>% setNames(mouseentrez2humanentrez)
+entrez2symbol = mapper(geneinfo, "symbol", "entrez")
+symbol2entrez = mapper(geneinfo, "entrez", "symbol")
+geneinfo_human = geneinfo_human %>% mutate(entrez_mouse=humanentrez2mouseentrez[entrez]) %>% mutate(symbol_mouse = entrez2symbol[entrez_mouse])
+devtools::use_data(geneinfo_human, overwrite = T, compress = "bzip2")

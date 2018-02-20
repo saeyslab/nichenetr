@@ -1,3 +1,22 @@
+# geneinfo_human = load("data/geneinfo_human.rda")
+mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
+# entrez2symbol = mapper(geneinfo_human, "symbol_mouse", "entrez_mouse")
+# symbol2entrez = mapper(geneinfo_human, "entrez_mouse", "symbol_mouse")
+# humanentrez2humansymbol = mapper(geneinfo_human,"symbol","entrez")
+# humansymbol2humanentrez = mapper(geneinfo_human, "entrez", "symbol")
+# mouseentrez2humansymbol = mapper(geneinfo_human, "symbol","entrez_mouse")
+# humanentrez2mousesymbol = mapper(geneinfo_human, "symbol_mouse", "entrez")
+# humansymbol2mouseentrez = mapper(geneinfo_human, "entrez_mouse", "symbol")
+# mousesymbol2humanentrez = mapper(geneinfo_human,"entrez","symbol_mouse")
+# humansymbol2mousesymbol = mapper(geneinfo_human,"symbol_mouse","symbol")
+# mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
+
+
+
+
+
+
+
 SPL_wrapper = function(ligand,G,id2allgenes,spl_cutoff) {
   # calculate spl distance between ligand and every other node in graph
   distances = igraph::distances(graph = G, v = id2allgenes[ligand], to = igraph::V(G),mode = "out")
@@ -114,7 +133,6 @@ get_pagerank_target = function(weighted_networks, secondary_targets = FALSE) {
 
   return(ligand_to_target)
 }
-mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
 get_split_auroc = function(observed, known) {
   prediction = ROCR::prediction(observed, known)
   performance = ROCR::performance(prediction, measure="spec", x.measure="rec")
@@ -145,7 +163,7 @@ evaluate_target_prediction_strict = function(response,prediction,continuous = TR
   }
   return(performance)
 }
-classification_evaluation_continuous_pred = function(prediction,response, iregulon = FALSE){
+classification_evaluation_continuous_pred = function(prediction,response, iregulon = TRUE){
 
   prediction_ROCR = ROCR::prediction(prediction, response)
   performance1 = ROCR::performance(prediction_ROCR, measure="tpr", x.measure="fpr")
@@ -255,10 +273,12 @@ rank_desc = function(x){rank(desc(x), ties.method = "max")}
 }
 
 calculate_auc_iregulon = function(prior,response){
+
   genes_prior = names(prior)
   dim(prior) = c(1,length(prior))
   colnames(prior) = genes_prior
   rownames(prior) = "ligand"
+
   prior_rank = apply(prior,1,rank_desc)
   rankings = tibble(prior=prior_rank[,1], rn = rownames(prior_rank))
 
@@ -267,17 +287,21 @@ calculate_auc_iregulon = function(prior,response){
   fake_rankings = data.table::data.table(fake_rankings)
 
   aucMaxRank = 0.03*nrow(rankings)
+
   # calculate enrichment over the expression settings
 
   geneSet = response[response == TRUE] %>% names()
   geneSet = unique(geneSet)
   nGenes = length(geneSet)
   geneSet = geneSet[which(geneSet %in% rankings$rn)]
+
   missing = nGenes-length(geneSet)
 
   gSetRanks = subset(rankings, rn %in% geneSet)[,-"rn", with=FALSE] # gene names are no longer needed
+
   aucThreshold = round(aucMaxRank)
   maxAUC = aucThreshold * nrow(gSetRanks)
+
   auc_iregulon = sapply(gSetRanks, .calcAUC, aucThreshold, maxAUC)
 
   gSetRanks_fake = subset(fake_rankings, rn %in% geneSet)[,-"rn", with=FALSE] # gene names are no longer needed
@@ -287,128 +311,53 @@ calculate_auc_iregulon = function(prior,response){
   return(list(auc_iregulon = auc_iregulon, auc_iregulon_corrected = auc_iregulon_corrected))
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# # popularity table
-# gene2pubmed = read_tsv("ftp://ftp.ncbi.nih.gov/gene/DATA/gene2pubmed.gz", col_names = c("taxid", "entrez", "pubmedid"), skip = 1, col_types = cols(
-#   taxid = col_integer(),
-#   entrez = col_character(),
-#   pubmedid = col_integer()
-# ))
-# ncitations = gene2pubmed %>% filter(taxid==9606) %>% group_by(entrez) %>% summarize(ncitations=n())
-# ncitations_bins = ncitations %>% left_join(geneinfo_human, "entrez") %>% arrange(-ncitations) %>% filter(ncitations > 3) %>% mutate(bin = Hmisc::cut2(log(ncitations), m = 1000, g = 5) %>% as.numeric()) # 0,1 and 2 dont fall within
-
-cal_path_performance_cluster_multiple_binned_targets = function(setting, ligand_to_target, ncitations, bin_id){
-  if (length(setting$from) == 1){
-    performance = cal_path_performance(setting$diffexp %>% filter(gene %in% (ncitations %>% filter(bin == bin_id) %>% .$entrez)), ligand_to_target[humansymbol2humanentrez[[setting$from]],])
-    performance$setting = setting$name
-    performance$ligand = setting$from
-    performance$bin_id = bin_id
-    performance$expression_type = setting$type
-
-    performance = performance %>% tbl_df()
-    performance
-  } else {
-    multi_ligands = humansymbol2humanentrez[setting$from]
-
-    multi_ligands_name = paste0(multi_ligands,collapse = "-")
-
-    multi_ligands_symbol = paste0(setting$from,collapse = "-")
-
-    performance = cal_path_performance(setting$diffexp %>% filter(gene %in% (ncitations %>% filter(bin == bin_id) %>% .$entrez)), ligand_to_target[multi_ligands_name,])
-
-    performance$setting = setting$name
-    performance$ligand = multi_ligands_symbol
-    performance$bin_id = bin_id
-    performance$expression_type = setting$type
-
-    performance = performance %>% tbl_df()
-
-    performance
+evaluate_target_prediction_bins_direct = function(bin_id,settings,ligand_target_matrix,ligands_position,ncitations){
+  requireNamespace("dplyr")
+  targets_bin_id = ncitations %>% filter(bin == bin_id) %>% .$symbol
+  if (ligands_position == "cols"){
+    ligand_target_matrix = ligand_target_matrix[targets_bin_id,]
+  } else if (ligands_position == "rows") {
+    ligand_target_matrix = ligand_target_matrix[,targets_bin_id]
   }
+  performances = bind_rows(lapply(settings, evaluate_target_prediction, ligand_target_matrix,ligands_position)) %>% mutate(target_bin_id = bin_id)
 }
-add_popularity_measures_to_perfs = function(performances, settings,ligand_target_matrix, bin_function = cal_path_performance_cluster_multiple_binned_targets,ncitations_bins){
-  performances = performances %>% drop_na(-ligand)
-  if (nrow(performances) == 0) {
-    performances = performances %>% mutate(ligand_pop_auc = NA,
-                                           ligand_pop_aupr = NA,
-                                           target_auc = NA,
-                                           target_aupr = NA,
-                                           target_specificity = NA,
-                                           target_sensitivity = NA)
-    return(performances)
-  }
 
 
-
-  # print(performances)
-
-  performances_ligand_pop = performances %>% left_join(ncitations_bins %>% rename(ligand = symbol), by = "ligand")
-  ligand_pop_regression_auc_log = lm(auc ~ log(ncitations),performances_ligand_pop %>% select(ncitations,auc))
-  ligand_slope_auc_log =  summary(ligand_pop_regression_auc_log) %>% .$coefficients %>% .[2,1]
-  ligand_pop_regression_aupr_log = lm(aupr ~ log(ncitations),performances_ligand_pop %>% select(ncitations,aupr))
-  ligand_slope_aupr_log =  summary(ligand_pop_regression_aupr_log) %>% .$coefficients %>% .[2,1]
-
-  # print(performances_ligand_pop)
-
-
-  calculate_all_performances_lapply = function(i,settings,fun,ligand_to_target,ncitations_bins) {bind_rows(lapply(X = settings, FUN = fun, ligand_to_target, ncitations_bins,i))}
-  performances_bins = bind_rows(lapply(1:5,calculate_all_performances_lapply,settings,bin_function,ligand_target_matrix,ncitations_bins))
-  performances_bins = performances_bins %>% drop_na()
-
-  if (nrow(performances_bins %>% group_by(bin_id) %>% count()) != 5){
-    performances = performances %>% mutate(ligand_pop_auc = NA,
-                                           ligand_pop_aupr = NA,
-                                           target_auc = NA,
-                                           target_aupr = NA,
-                                           target_specificity = NA,
-                                           target_sensitivity = NA)
-    return(performances)
-  }
-
-  # print(performances_bins)
-  target_pop_regression_auc = lm(auc ~ bin_id, performances_bins %>% select(auc,bin_id))
-  target_slope_auc = summary(target_pop_regression_auc) %>% .$coefficients %>% .[2,1]
-  target_pop_regression_aupr = lm(aupr ~ bin_id, performances_bins %>% select(aupr,bin_id))
-  target_slope_aupr = summary(target_pop_regression_aupr) %>% .$coefficients %>% .[2,1]
-  target_pop_regression_sensitivity = lm(sensitivity ~ bin_id, performances_bins %>% select(sensitivity,bin_id))
-  target_slope_sensitivity = summary(target_pop_regression_sensitivity) %>% .$coefficients %>% .[2,1]
-  target_pop_regression_specificity = lm(specificity ~ bin_id, performances_bins %>% select(specificity,bin_id))
-  target_slope_specificity = summary(target_pop_regression_specificity) %>% .$coefficients %>% .[2,1]
-
-  performances = performances %>% mutate(ligand_pop_auc = ligand_slope_auc_log,
-                                         ligand_pop_aupr = ligand_slope_aupr_log,
-                                         target_auc = target_slope_auc,
-                                         target_aupr = target_slope_aupr,
-                                         target_specificity = target_slope_specificity,
-                                         target_sensitivity = target_slope_sensitivity)
-
-}
-add_ligand_popularity_measures_to_perfs = function(performances,ligand_target_matrix,ncitations_bins){
-  performances = performances %>% drop_na()
-  if (nrow(performances) == 0) {
-    performances = performances %>% mutate(ligand_pop_auc = NA,
-                                           ligand_pop_aupr = NA)
-    return(performances)
-  }
-  performances_ligand_pop = performances %>% left_join(ncitations_bins %>% rename(ligand = symbol), by = "ligand")
-  ligand_pop_regression_auc_log = lm(auc ~ log(ncitations),performances_ligand_pop %>% select(ncitations,auc))
-  ligand_slope_auc_log =  summary(ligand_pop_regression_auc_log) %>% .$coefficients %>% .[2,1]
-  ligand_pop_regression_aupr_log = lm(aupr ~ log(ncitations),performances_ligand_pop %>% select(ncitations,aupr))
-  ligand_slope_aupr_log =  summary(ligand_pop_regression_aupr_log) %>% .$coefficients %>% .[2,1]
-  performances = performances %>% mutate(ligand_pop_auc = ligand_slope_auc_log,
-                                         ligand_pop_aupr = ligand_slope_aupr_log)
-}
+# cal_path_performance_cellcell = function(diffexp, prior){
+#   # print(head(diffexp))
+#   # print(prior[1:15,1:8])
+#   LT_df = prior %>% as.matrix() %>% t() %>% data.frame() %>% rownames_to_column("gene") %>% tbl_df()
+#
+#   E_df_classification = diffexp %>% tbl_df() %>% mutate(diffexp = abs(lfc) > 1 & qval <= 0.1) %>% rename(lfc_cellcell = diffexp) %>% select(gene,lfc_cellcell)
+#   # E_df_classification = E_df_classification %>% mutate(gene = [gene]) %>% drop_na()
+#   all_data_classification = inner_join(E_df_classification, LT_df)
+#
+#   Y_classification = all_data_classification[,2:ncol(E_df_classification)] %>% as.matrix()
+#   X_classification = all_data_classification[,(ncol(E_df_classification)+1):ncol(all_data_classification)] %>% as.matrix()
+#
+#   # print(all_data_classification)
+#   # print(all_data_classification %>% filter(gene == "1"))
+#   #
+#   # print(X_classification[1:5,1:5])
+#   # print(Y_classification[1:5,])
+#   # print(Y_classification)
+#   # print(sum(Y_classification))
+#
+#   # doMC::registerDoMC(cores = 2)
+#   # algorithm = "glmnet"
+#   # control =  caret::trainControl(method="repeatedcv", number=5, repeats=1, classProbs = TRUE, summaryFunction = twoClassSummary)
+#   # model =  caret::train(y = Y_classification %>% make.names() %>% as.factor(),x = X_classification, method=algorithm, trControl=control, metric = 'ROC')
+#   # # imps =  caret::varImp(model, scale = FALSE)
+#   # auroc_glmnet =  model$results$ROC %>% max()
+#
+#   # algorithm = "rf"
+#   Grid <-  expand.grid(mtry = round(length(colnames(X_classification)) ** 0.33))
+#   control =  caret::trainControl(method="repeatedcv", number=5, repeats=1, classProbs = TRUE, summaryFunction = twoClassSummary)
+#   model =  caret::train(y = Y_classification %>% make.names() %>% as.factor(),x = X_classification, method=algorithm, trControl=control, metric = 'ROC',tuneGrid = Grid)
+#   auroc_rf =  model$results$ROC %>% max()
+#   # return(list(auroc_glmnet = auroc_glmnet, auroc_rf = auroc_rf))
+#   # return(list(auroc_glmnet = auroc_glmnet))
+#   return(list(auroc_glmnet = auroc_rf, auroc_rf = auroc_rf))
+#
+# }
 

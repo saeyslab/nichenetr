@@ -20,7 +20,10 @@ Imports: dplyr,
     ROCR,
     caTools,
     data.table,
-    limma
+    limma,
+    readr,
+    Hmisc,
+    tibble
 Suggests: knitr,
     rmarkdown,
     testthat

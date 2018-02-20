@@ -32,6 +32,7 @@ This is a basic example which shows you how to construct the matrix of ligand-ta
 To start using nichenetr: 
 ```{r example}
 library(nichenetr)
+library(tidyverse)
 ```
 
 First convert the individual ligand-receptor, signaling and gene regulatory data source networks into weighted integrated networks by weighted aggregation of the individual networks. 
@@ -61,6 +62,5 @@ Evaluate the target gene prediction performance for 53 ligand-treatment expressi
 settings = lapply(expression_settings_validation, convert_expression_settings_evaluation)
 performances = bind_rows(lapply(settings, evaluate_target_prediction, ligand_target_matrix))
 performances_discrete = bind_rows(lapply(settings, evaluate_target_prediction, ligand_target_matrix %>% make_discrete_ligand_target_matrix))
-
 ```
 
