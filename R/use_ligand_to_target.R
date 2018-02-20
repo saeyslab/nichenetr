@@ -17,7 +17,7 @@
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-#' extract_top_fraction_targets("BMP2",0.01,ligand_target_matrix)
+#' targets = extract_top_fraction_targets("BMP2",0.01,ligand_target_matrix)
 #'
 #' @export
 #'
@@ -67,7 +67,7 @@ extract_top_fraction_targets = function(ligand_oi,top_fraction,ligand_target_mat
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-#' extract_top_n_targets("BMP2",50,ligand_target_matrix)
+#' targets = extract_top_n_targets("BMP2",50,ligand_target_matrix)
 #'
 #' @export
 #'
@@ -119,7 +119,7 @@ extract_top_n_targets = function(ligand_oi,top_n,ligand_target_matrix,ligands_po
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-#' extract_top_fraction_ligands("ID3",0.01,ligand_target_matrix)
+#' targets = extract_top_fraction_ligands("ID3",0.01,ligand_target_matrix)
 #'
 #' @export
 #'
@@ -169,7 +169,7 @@ extract_top_fraction_ligands = function(target_oi,top_fraction,ligand_target_mat
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-#' extract_top_n_ligands("BMP2",2,ligand_target_matrix)
+#' targets = extract_top_n_ligands("BMP2",2,ligand_target_matrix)
 #'
 #' @export
 extract_top_n_ligands = function(target_oi,top_n,ligand_target_matrix,ligands_position = "cols"){
@@ -224,7 +224,7 @@ extract_top_n_ligands = function(target_oi,top_n,ligand_target_matrix,ligands_po
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-#' get_target_genes_ligand_oi("BMP2", ligand_target_matrix, error_rate = 0.1, cutoff_method = "distribution", fdr_method = "global", output = "logical",ligands_position = "cols")
+#' targets = get_target_genes_ligand_oi("BMP2", ligand_target_matrix, error_rate = 0.1, cutoff_method = "distribution", fdr_method = "global", output = "logical",ligands_position = "cols")
 #'
 #' @importFrom fdrtool fdrtool
 #'

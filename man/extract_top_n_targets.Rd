@@ -26,6 +26,6 @@ A named numeric vector of ligand-target gene probability scores of the top targe
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 ligands = list("TNF","BMP2",c("IL4","IL13"))
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-extract_top_n_targets("BMP2",50,ligand_target_matrix)
+targets = extract_top_n_targets("BMP2",50,ligand_target_matrix)
 
 }

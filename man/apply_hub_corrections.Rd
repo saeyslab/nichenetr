@@ -21,5 +21,5 @@ A list containing 2 elements (lr_sig and gr): the hubiness-corrected integrated 
 }
 \examples{
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
-apply_hub_corrections(weighted_networks, lr_sig_hub= 0.5, gr_hub= 0.5)
+wn = apply_hub_corrections(weighted_networks, lr_sig_hub= 0.5, gr_hub= 0.5)
 }

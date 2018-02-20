@@ -25,7 +25,7 @@ A list containing 2 elements (lr_sig and gr) or 3 elements (lr, sig, gr): the in
 }
 \examples{
 ## Generate the weighted networks from input source networks
-construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+wn = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 
 
 }

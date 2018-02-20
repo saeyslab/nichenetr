@@ -10,7 +10,7 @@
 #' @return A list containing the ligands and ligands combinations for which a ligand-target matrix should be constructed. When for a particular dataset multiple ligands are possibly active (i.e. more than ligand in .$from slot of sublist of settings), then both the combination of these multiple ligands and each of these multiple ligands individually will be select for model construction.
 #'
 #' @examples
-#' extract_ligands_from_settings(expression_settings_validation)
+#' ligands = extract_ligands_from_settings(expression_settings_validation)
 #'
 #' @export
 #'

@@ -16,7 +16,7 @@
 #'
 #' @examples
 #' ## Generate the weighted networks from input source networks
-#' construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' wn = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #'
 #'
 #' @export
@@ -112,7 +112,7 @@ add_new_datasource = function(new_source, network, new_weight,source_weights_df)
 #'
 #' @examples
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
-#' apply_hub_corrections(weighted_networks, lr_sig_hub= 0.5, gr_hub= 0.5)
+#' wn = apply_hub_corrections(weighted_networks, lr_sig_hub= 0.5, gr_hub= 0.5)
 #' @export
 #'
 apply_hub_corrections = function(weighted_networks,lr_sig_hub, gr_hub) {
@@ -167,7 +167,7 @@ apply_hub_corrections = function(weighted_networks,lr_sig_hub, gr_hub) {
 #' ## Generate the ligand-target matrix from loaded weighted_networks
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
-#' construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
+#' ligand_tf = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
 #'
 #' @export
 #'
@@ -259,7 +259,7 @@ construct_ligand_tf_matrix = function(weighted_networks, ligands, ltf_cutoff = 0
 #' @examples
 #' ## Generate the ligand-target matrix from loaded weighted_networks
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
-#' construct_tf_target_matrix(weighted_networks, tfs_as_cols = TRUE, standalone_output = TRUE)
+#' tf_target = construct_tf_target_matrix(weighted_networks, tfs_as_cols = TRUE, standalone_output = TRUE)
 #'
 #' @export
 #'
@@ -329,7 +329,7 @@ construct_tf_target_matrix = function(weighted_networks, tfs_as_cols = FALSE, st
 #' ## Generate the ligand-target matrix from loaded weighted_networks
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
-#' construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE, remove_direct_links = "no")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE, remove_direct_links = "no")
 #'
 #' @export
 #'
@@ -432,7 +432,7 @@ construct_ligand_target_matrix = function(weighted_networks, ligands, ltf_cutoff
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
-#' correct_topology_ppr(ligand_target_matrix,weighted_networks,ligands_position = "cols")
+#' ligand_target_matrix = correct_topology_ppr(ligand_target_matrix,weighted_networks,ligands_position = "cols")
 #'
 #' @export
 #'
@@ -483,7 +483,7 @@ correct_topology_ppr = function(ligand_target_matrix,weighted_networks,ligands_p
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-#' make_discrete_ligand_target_matrix(ligand_target_matrix, error_rate = 0.1, cutoff_method = "distribution", ligands_position = "cols")
+#' ligand_target_matrix = make_discrete_ligand_target_matrix(ligand_target_matrix, error_rate = 0.1, cutoff_method = "distribution", ligands_position = "cols")
 #'
 #' @export
 #'

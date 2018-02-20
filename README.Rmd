@@ -1,18 +1,17 @@
 ---
-output: github_document
+output: 
+  md_document:
+    variant: markdown_github
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-```{r, echo = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "README-"
-)
-```
-
+<!-- github markdown built using
+rmarkdown::render("README.Rmd",output_format = "md_document")
+-->
 # nichenetr
+
+[![Build Status](https://travis-ci.com/browaeysrobin/nichenetr.svg?token=VGtLRzaypARgyC5XCHLK&branch=master)](https://travis-ci.com/browaeysrobin/nichenetr)
 
 The goal of nichenetr is to explore intercellular communication from a computational perspective. At the basis of this package, is a probabilistic model of ligand-target links that was inferred by data-integration.
 
