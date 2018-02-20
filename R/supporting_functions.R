@@ -372,3 +372,30 @@ evaluate_target_prediction_bins_direct = function(bin_id,settings,ligand_target_
 # allowParallel in trainControl
 # user-specific performance metrics in trainControl: elements of function: "data" with columns: obs and pred; "lev": outcome factor levels; "model"; output = named vector of numeric summary metrics
 ##
+# caret::twoClassSummary
+# function (data, lev = NULL, model = NULL)
+# {
+#   lvls <- levels(data$obs)
+#   if (length(lvls) > 2)
+#     stop(paste("Your outcome has", length(lvls), "levels. The twoClassSummary() function isn't appropriate."))
+#   requireNamespaceQuietStop("ModelMetrics")
+#   if (!all(levels(data[, "pred"]) == lvls))
+#     stop("levels of observed and predicted data do not match")
+#   rocAUC <- ModelMetrics::auc(ifelse(data$obs == lev[2], 0,
+#                                      1), data[, lvls[1]])
+#   out <- c(rocAUC, sensitivity(data[, "pred"], data[, "obs"],
+#                                lev[1]), specificity(data[, "pred"], data[, "obs"], lev[2]))
+#   names(out) <- c("ROC", "Sens", "Spec")
+#   out
+# }
+
+## extracting predictions from train object in finalModel slot!
+# predict(object, type = "prob") # or type = "class"
+# if windows = FALSE: library(doMC) registerDoMC
+
+#########
+# variable importances: varImp.train: set to FALSE
+# linear models - RF - PLS -  gbm - pam?
+# classification without varimp: nbayes - lda - nnet - PenalizedLDA
+# glmnet?
+# varImp(fit, scale = FALSE)

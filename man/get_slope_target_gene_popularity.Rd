@@ -11,7 +11,7 @@ get_slope_target_gene_popularity(metric,performances,method = "individual")
 
 \item{performances}{A data.frame in which the performance measures for target gene predictions of ligands are denoted together with the popularity bin of the target genes for which predictions were evaluated (should contain at least following variables: target_bin_id and the metric of interest)}
 
-\item{method.}{'All': calculate slope by considering all datasets in settings. 'Individual': calculate slope for every dataset in settings separately to investigate dataset-specific popularity bias. Default: 'individual'.}
+\item{method}{'All': calculate slope by considering all datasets in settings. 'Individual': calculate slope for every dataset in settings separately to investigate dataset-specific popularity bias. Default: 'individual'.}
 }
 \value{
 A data.frame in which the regression coefficient estimate, p-value and corresponding R-squared value are shown for the regression analysis to investigate the trend between a particular classficiation evaluation metric and the popularity of the target genes.
