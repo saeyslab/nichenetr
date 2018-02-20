@@ -174,7 +174,7 @@ evaluate_target_prediction_per_bin = function(nbins,settings,ligand_target_matri
 #'
 #' @param metric The name of the performance metric of which the trend with the popularity of the target genes should be calculated.
 #' @param performances A data.frame in which the performance measures for target gene predictions of ligands are denoted together with the popularity bin of the target genes for which predictions were evaluated (should contain at least following variables: target_bin_id and the metric of interest)
-#' @param method. 'All': calculate slope by considering all datasets in settings. 'Individual': calculate slope for every dataset in settings separately to investigate dataset-specific popularity bias. Default: 'individual'.
+#' @param method 'All': calculate slope by considering all datasets in settings. 'Individual': calculate slope for every dataset in settings separately to investigate dataset-specific popularity bias. Default: 'individual'.
 #'
 #' @return A data.frame in which the regression coefficient estimate, p-value and corresponding R-squared value are shown for the regression analysis to investigate the trend between a particular classficiation evaluation metric and the popularity of the target genes.
 #'

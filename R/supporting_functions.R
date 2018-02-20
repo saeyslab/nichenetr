@@ -361,3 +361,14 @@ evaluate_target_prediction_bins_direct = function(bin_id,settings,ligand_target_
 #
 # }
 
+
+
+# trainIndex = caret::createDataPartition(y, p = 0.8) # y should be factor; p=0.8: 0.8-0.2 split
+# caret::train: estimate model performance on training set: bootstrap instead repeatedcv?
+# want specific splits --> index argument of trainControl
+# index and indexOut: list with elements for each resampling iteration: sample rowss used for traning
+# preProcess in caret function train
+# traincontrol: none? no cv; but better doing so ... (altought takes longer --> so single-cell: no CV)
+# allowParallel in trainControl
+# user-specific performance metrics in trainControl: elements of function: "data" with columns: obs and pred; "lev": outcome factor levels; "model"; output = named vector of numeric summary metrics
+##
