@@ -33,6 +33,10 @@ devtools::use_package("data.table")
 devtools::use_package("limma")
 devtools::use_package("readr")
 devtools::use_package("Hmisc")
+devtools::use_package("caret")
+devtools::use_package("purrr")
+
+devtools::use_package("doMC","Suggests")
 
 
 # test data

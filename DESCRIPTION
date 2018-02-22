@@ -23,8 +23,11 @@ Imports: dplyr,
     limma,
     readr,
     Hmisc,
-    tibble
+    tibble,
+    caret,
+    purrr
 Suggests: knitr,
     rmarkdown,
-    testthat
+    testthat,
+    doMC
 VignetteBuilder: knitr

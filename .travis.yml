@@ -7,4 +7,4 @@ addons:
     packages:
       - libusb-1.0-0-dev
 bioc_required: true
-warnings_are_errors: true
+warnings_are_errors: false

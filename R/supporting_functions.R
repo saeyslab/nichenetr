@@ -145,7 +145,7 @@ get_split_auroc = function(observed, known) {
   auroc_sensitivity = auroc - auroc_specificity
   tibble(auroc=auroc, auroc_sensitivity=auroc_sensitivity, auroc_specificity=auroc_specificity)
 }
-evaluate_target_prediction_strict = function(response,prediction,continuous = TRUE){
+evaluate_target_prediction_strict = function(response,prediction,continuous = TRUE, prediction_response_df = FALSE){
   response_df = tibble(gene = names(response), response = response)
   prediction_df = tibble(gene = names(prediction), prediction = prediction)
   combined = inner_join(response_df,prediction_df, by = "gene")
@@ -161,7 +161,13 @@ evaluate_target_prediction_strict = function(response,prediction,continuous = TR
   } else{
     performance = classification_evaluation_categorical_pred(prediction_vector,response_vector)
   }
-  return(performance)
+  if (prediction_response_df == TRUE){
+    output = list(performance = performance, prediction_response_df = combined)
+    return(output)
+  } else {
+    return(performance)
+  }
+
 }
 classification_evaluation_continuous_pred = function(prediction,response, iregulon = TRUE){
 
@@ -207,20 +213,24 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
   return(tbl_perf)
 }
 classification_evaluation_categorical_pred = function(predictions, response) {
-  if (sum(predictions) == 0){
-    return(accuracy = 0,
-           recall = 0,
-           specificity = 0,
-           precision = 0,
-           F1 =  0,
-           F05 = 0,
-           F2 = 0,
-           mcc = 0,
-           informedness = 0,
-           markedness = 0,
-           fisher_pval_log = 0,
-           fisher_odds = 1)
+  # print(predictions)
+  # print(length(predictions))
+
+  if (sum(response) == 0){
+    return(dplyr::tibble(accuracy = NA,
+           recall = NA,
+           specificity = NA,
+           precision = NA,
+           F1 =  NA,
+           F05 = NA,
+           F2 = NA,
+           mcc = NA,
+           informedness = NA,
+           markedness = NA,
+           fisher_pval_log = NA,
+           fisher_odds = NA))
   }
+
   num_positives = sum(response)
   num_total = length(response)
 
@@ -238,7 +248,11 @@ classification_evaluation_categorical_pred = function(predictions, response) {
   tn = num_negatives - fp
   npv = tn / (tn + fn)
 
-  fisher = fisher.test(as.factor(response), predictions)
+  if (sum(predictions) == 0){
+    fisher = list(p.value = NA, estimate = NA)
+  } else {
+    fisher = fisher.test(as.factor(response), predictions)
+  }
 
   mcc_S = (tp + fn)/num_total
   mcc_P = (tp + fp)/num_total
@@ -257,7 +271,20 @@ classification_evaluation_categorical_pred = function(predictions, response) {
     fisher_pval_log = -log(fisher$p.value),
     fisher_odds = fisher$estimate
   )
-
+  if (sum(predictions) == 0){
+    return(dplyr::tibble(accuracy = metrics$accuracy,
+                         recall = metrics$recall,
+                         specificity = metrics$specificity,
+                         precision = 0,
+                         F1 =  0,
+                         F05 = 0,
+                         F2 = 0,
+                         mcc = 0,
+                         informedness = 0,
+                         markedness = 0,
+                         fisher_pval_log = NA,
+                         fisher_odds = NA))
+  }
   return(metrics)
 }
 rank_desc = function(x){rank(desc(x), ties.method = "max")}
@@ -321,81 +348,151 @@ evaluate_target_prediction_bins_direct = function(bin_id,settings,ligand_target_
   }
   performances = bind_rows(lapply(settings, evaluate_target_prediction, ligand_target_matrix,ligands_position)) %>% mutate(target_bin_id = bin_id)
 }
-
-
-# cal_path_performance_cellcell = function(diffexp, prior){
-#   # print(head(diffexp))
-#   # print(prior[1:15,1:8])
-#   LT_df = prior %>% as.matrix() %>% t() %>% data.frame() %>% rownames_to_column("gene") %>% tbl_df()
-#
-#   E_df_classification = diffexp %>% tbl_df() %>% mutate(diffexp = abs(lfc) > 1 & qval <= 0.1) %>% rename(lfc_cellcell = diffexp) %>% select(gene,lfc_cellcell)
-#   # E_df_classification = E_df_classification %>% mutate(gene = [gene]) %>% drop_na()
-#   all_data_classification = inner_join(E_df_classification, LT_df)
-#
-#   Y_classification = all_data_classification[,2:ncol(E_df_classification)] %>% as.matrix()
-#   X_classification = all_data_classification[,(ncol(E_df_classification)+1):ncol(all_data_classification)] %>% as.matrix()
-#
-#   # print(all_data_classification)
-#   # print(all_data_classification %>% filter(gene == "1"))
-#   #
-#   # print(X_classification[1:5,1:5])
-#   # print(Y_classification[1:5,])
-#   # print(Y_classification)
-#   # print(sum(Y_classification))
-#
-#   # doMC::registerDoMC(cores = 2)
-#   # algorithm = "glmnet"
-#   # control =  caret::trainControl(method="repeatedcv", number=5, repeats=1, classProbs = TRUE, summaryFunction = twoClassSummary)
-#   # model =  caret::train(y = Y_classification %>% make.names() %>% as.factor(),x = X_classification, method=algorithm, trControl=control, metric = 'ROC')
-#   # # imps =  caret::varImp(model, scale = FALSE)
-#   # auroc_glmnet =  model$results$ROC %>% max()
-#
-#   # algorithm = "rf"
-#   Grid <-  expand.grid(mtry = round(length(colnames(X_classification)) ** 0.33))
-#   control =  caret::trainControl(method="repeatedcv", number=5, repeats=1, classProbs = TRUE, summaryFunction = twoClassSummary)
-#   model =  caret::train(y = Y_classification %>% make.names() %>% as.factor(),x = X_classification, method=algorithm, trControl=control, metric = 'ROC',tuneGrid = Grid)
-#   auroc_rf =  model$results$ROC %>% max()
-#   # return(list(auroc_glmnet = auroc_glmnet, auroc_rf = auroc_rf))
-#   # return(list(auroc_glmnet = auroc_glmnet))
-#   return(list(auroc_glmnet = auroc_rf, auroc_rf = auroc_rf))
-#
-# }
+caret_classification_evaluation_continuous = function(data, lev = NULL, model = NULL){
+  # print(data)
+  # print(dim(data))
+  if (length(unique(data$obs)) != 2)
+    stop(paste("Your outcome has no 2 different classes as required here"))
+  prediction = data[,4]
+  response = data$obs %>% as.character() %>% gsub("\\.","",.) %>% as.logical()
+  out_tibble = classification_evaluation_continuous_pred(prediction, response, iregulon = FALSE)
+  # print(out_tibble)
+  out = out_tibble[1,] %>% as.numeric()
+  names(out) = colnames(out_tibble)
+  out
+}
+caret_classification_evaluation_categorical = function(data, lev = NULL, model = NULL){
+  # print(data)
+  # print(dim(data))
+  if (length(unique(data$obs)) != 2)
+    stop(paste("Your outcome has no 2 different classes as required here"))
+  prediction = data$pred %>% as.character() %>% gsub("\\.","",.) %>% as.logical()
+  response = data$obs %>% as.character() %>% gsub("\\.","",.) %>% as.logical()
+  # print(sum(prediction))
+  # print(length(response))
+  out_tibble = classification_evaluation_categorical_pred(prediction, response)
+  # print(out_tibble)
+  out = out_tibble[1,] %>% as.numeric()
+  names(out) = colnames(out_tibble)
+  out
+}
+wrapper_caret_classification = function(train_data, algorithm, continuous = TRUE, var_imps = TRUE, cv = TRUE, cv_number = 5, cv_repeats = 2, parallel = FALSE, n_cores = 4,prediction_response_df = NULL,ignore_errors = FALSE){
 
 
 
-# trainIndex = caret::createDataPartition(y, p = 0.8) # y should be factor; p=0.8: 0.8-0.2 split
-# caret::train: estimate model performance on training set: bootstrap instead repeatedcv?
-# want specific splits --> index argument of trainControl
-# index and indexOut: list with elements for each resampling iteration: sample rowss used for traning
-# preProcess in caret function train
-# traincontrol: none? no cv; but better doing so ... (altought takes longer --> so single-cell: no CV)
-# allowParallel in trainControl
-# user-specific performance metrics in trainControl: elements of function: "data" with columns: obs and pred; "lev": outcome factor levels; "model"; output = named vector of numeric summary metrics
-##
-# caret::twoClassSummary
-# function (data, lev = NULL, model = NULL)
-# {
-#   lvls <- levels(data$obs)
-#   if (length(lvls) > 2)
-#     stop(paste("Your outcome has", length(lvls), "levels. The twoClassSummary() function isn't appropriate."))
-#   requireNamespaceQuietStop("ModelMetrics")
-#   if (!all(levels(data[, "pred"]) == lvls))
-#     stop("levels of observed and predicted data do not match")
-#   rocAUC <- ModelMetrics::auc(ifelse(data$obs == lev[2], 0,
-#                                      1), data[, lvls[1]])
-#   out <- c(rocAUC, sensitivity(data[, "pred"], data[, "obs"],
-#                                lev[1]), specificity(data[, "pred"], data[, "obs"], lev[2]))
-#   names(out) <- c("ROC", "Sens", "Spec")
-#   out
-# }
+  if (sum( table(train_data$obs) >= cv_number) != 2 )
+    stop("Make sure that there are more instances of each class than the folds in the cross-validation scheme")
+  if (parallel == TRUE){
+    requireNamespace("doMC", quietly = TRUE)
+    doMC::registerDoMC(cores = n_cores)
+  }
 
-## extracting predictions from train object in finalModel slot!
-# predict(object, type = "prob") # or type = "class"
-# if windows = FALSE: library(doMC) registerDoMC
+  if (continuous == TRUE){
+    if (cv == TRUE){
+      control =  caret::trainControl(method="repeatedcv",
+                                     number=cv_number,
+                                     repeats=cv_repeats,
+                                     preProcOptions = NULL,
+                                     classProbs = TRUE,
+                                     summaryFunction = caret_classification_evaluation_continuous)
+    } else if (cv == FALSE) {
+      control =  caret::trainControl(method="none",
+                                     preProcOptions = NULL,
+                                     classProbs = TRUE,
+                                     summaryFunction = caret_classification_evaluation_continuous)
+    }
+    if (ignore_errors == TRUE){
+      # avoid errors due to bad splits during cross-validation that make that not both classes are present
+      caret_train = purrr::safely(caret::train)
+      result = NULL
+      while(is.null(result)){
+        model = caret_train(y = train_data$obs,
+                            x = train_data[,-(which(colnames(train_data) == "obs"))],
+                            method=algorithm,
+                            trControl=control,
+                            metric = 'auroc')
+        result = model$result
+        # if(!is.null(model$error)){print(model$error)}
 
-#########
-# variable importances: varImp.train: set to FALSE
-# linear models - RF - PLS -  gbm - pam?
-# classification without varimp: nbayes - lda - nnet - PenalizedLDA
-# glmnet?
-# varImp(fit, scale = FALSE)
+      }
+      model = model$result
+    } else {
+      model = caret::train(y = train_data$obs,
+                           x = train_data[,-(which(colnames(train_data) == "obs"))],
+                           method=algorithm,
+                           trControl=control,
+                           metric = 'auroc')
+    }
+
+  } else if (continuous == FALSE) {
+    # print("here")
+
+    if( cv == TRUE){
+      control =  caret::trainControl(method="repeatedcv",
+                                     number=cv_number,
+                                     repeats=cv_repeats,
+                                     preProcOptions = NULL,
+                                     classProbs = FALSE,
+                                     summaryFunction = caret_classification_evaluation_categorical)
+    } else if (cv == FALSE) {
+      control =  caret::trainControl(method="none",
+                                     preProcOptions = NULL,
+                                     classProbs = FALSE,
+                                     summaryFunction = caret_classification_evaluation_categorical)
+    }
+    if (ignore_errors == TRUE){
+      # avoid errors due to bad splits during cross-validation that make that not both classes are present
+      caret_train = purrr::safely(caret::train)
+      result = NULL
+      while(is.null(result)){
+        model = caret_train(y = train_data$obs,
+                            x = train_data[,-(which(colnames(train_data) == "obs"))],
+                            method=algorithm,
+                            trControl=control,
+                            metric = 'mcc') #mcc
+        result = model$result
+      }
+      model = model$result
+    } else {
+      model = caret::train(y = train_data$obs,
+                           x = train_data[,-(which(colnames(train_data) == "obs"))],
+                           method=algorithm,
+                           trControl=control,
+                           metric = 'mcc') #mcc
+    }
+    # if(!is.null(model$error)){print(model$error)}
+
+
+  }
+
+  performances =  model$resample
+  if(continuous == TRUE){
+    final_model_predictions = predict(model,newdata = train_data, type = "prob") %>% .[,2]
+    response_class = train_data$obs %>% as.character() %>% gsub("\\.","",.) %>% as.logical()
+    performances_training_continuous = classification_evaluation_continuous_pred(prediction = final_model_predictions, response = response_class,iregulon = FALSE)
+    performances_training = classification_evaluation_categorical_pred(prediction = final_model_predictions >= 0.5, response = response_class)
+  } else {
+    final_model_predictions = predict(model,newdata = train_data)  %>% gsub("\\.","",.) %>% as.logical()
+    response_class = train_data$obs %>% as.character() %>% gsub("\\.","",.) %>% as.logical()
+    performances_training = classification_evaluation_categorical_pred(prediction = final_model_predictions, response = response_class)
+    performances_training_continuous = NULL
+  }
+
+  if (var_imps == TRUE) {
+    imps =  caret::varImp(model, scale = FALSE)
+    var_imps_df = imps$importance  %>% tibble::rownames_to_column("feature") %>% tbl_df() %>% .[,1:2]
+    colnames(var_imps_df) = c("feature","importance")
+    if(!is.null(prediction_response_df)){
+      return(list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous ,var_imps = var_imps_df, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions)))
+    }
+    return(list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous, var_imps = var_imps_df))
+
+  } else {
+    if(!is.null(prediction_response_df)){
+      return(list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous, var_imps = NULL, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions)))
+    }
+    return(list(performances = performances %>% tbl_df(), performances_training = performances_training,performances_training_continuous = performances_training_continuous, var_imps = NULL))
+  }
+}
+
+
