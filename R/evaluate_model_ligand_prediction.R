@@ -3,7 +3,7 @@
 #' @description \code{convert_settings_ligand_prediction} Converts settings to correct settings format for ligand activity prediction. In this prediction problem, ligands (out of a set of possibly active ligands) will be ranked based on feature importance scores. The format can be made suited for: 1) validation of ligand activity state prediction by calculating individual feature importane scores or 2) feature importance based on models with embedded feature importance determination; applications in which ligands need to be scores based on their possible upstream activity: 3) by calculating individual feature importane scores or 4) feature importance based on models with embedded feature importance determination.
 #'
 #' @usage
-#' convert_settings_ligand_prediction(setting, all_ligands, validation = TRUE, single = TRUE)
+#' convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = TRUE)
 #'
 #' @param settings A list of lists. Eeach sublist contains the following elements: .$name: name of the setting; .$from: name(s) of the ligand(s) active in the setting of interest; .$response: the observed target response: indicate for a gene whether it was a target or not in the setting of interest.
 #' @param all_ligands A character vector of possible ligands that will be considered for the ligand activity state prediction.
@@ -14,8 +14,8 @@
 #'
 #' @examples
 #' settings = lapply(expression_settings_validation,convert_expression_settings_evaluation)
-#' ligands = extract_ligands_from_settings(settings,combination = FALSE) %>% unlist()
-#' settings_ligand_pred =  = convert_settings_ligand_prediction(settings, ligands, validation = TRUE, single = TRUE)
+#' ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE))
+#' settings_ligand_pred = convert_settings_ligand_prediction(settings, ligands, validation = TRUE, single = TRUE)
 #'
 #' @export
 #'
@@ -39,7 +39,7 @@ convert_settings_ligand_prediction = function(settings,all_ligands,validation = 
     for (i in 1:length(settings)){
       setting = settings[[i]]
       for (k in 1:length(all_ligands)){
-        test_ligand = ligands[[k]]
+        test_ligand = all_ligands[[k]]
         new_settings[[length(new_settings) + 1]] = list(make_new_setting_ligand_prediction_single_validation(setting,test_ligand))
       }
     }
@@ -52,7 +52,7 @@ convert_settings_ligand_prediction = function(settings,all_ligands,validation = 
     for (i in 1:length(settings)){
       setting = settings[[i]]
       for (k in 1:length(all_ligands)){
-        test_ligand = ligands[[k]]
+        test_ligand = all_ligands[[k]]
         new_settings[[length(new_settings) + 1]] = list(make_new_setting_ligand_prediction_single_application(setting,test_ligand))
       }
     }

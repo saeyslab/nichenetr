@@ -6,7 +6,7 @@
 #' extract_ligands_from_settings(settings,combination = TRUE)
 #'
 #' @param settings A list of lists for which each sub-list contains the information about (expression) datasets; with minimally the following elements: name of the setting ($name), ligands (possibly) active in the setting of interest ($from).
-#' @param combination. Indicate whether in case multiple ligands are possibly active ligand combinations should be extracted or only individual ligands. Default: TRUE.
+#' @param combination Indicate whether in case multiple ligands are possibly active ligand combinations should be extracted or only individual ligands. Default: TRUE.
 #'
 #' @return A list containing the ligands and ligands combinations for which a ligand-target matrix should be constructed. When for a particular dataset multiple ligands are possibly active (i.e. more than ligand in .$from slot of sublist of settings), then both the combination of these multiple ligands and each of these multiple ligands individually will be select for model construction.
 #'
@@ -15,7 +15,7 @@
 #'
 #' @export
 #'
-extract_ligands_from_settings = function(settings,combination = TRUE){
+extract_ligands_from_settings = function(settings, combination = TRUE){
 
   # input check
   if (!is.list(settings))

@@ -4,7 +4,7 @@
 \alias{convert_settings_ligand_prediction}
 \title{Convert settings to correct settings format for ligand prediction.}
 \usage{
-convert_settings_ligand_prediction(setting, all_ligands, validation = TRUE, single = TRUE)
+convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = TRUE)
 }
 \arguments{
 \item{settings}{A list of lists. Eeach sublist contains the following elements: .$name: name of the setting; .$from: name(s) of the ligand(s) active in the setting of interest; .$response: the observed target response: indicate for a gene whether it was a target or not in the setting of interest.}
@@ -23,7 +23,7 @@ A list with following elements: $name, $ligand: name of active ligand(s) (only i
 }
 \examples{
 settings = lapply(expression_settings_validation,convert_expression_settings_evaluation)
-ligands = extract_ligands_from_settings(settings,combination = FALSE) \%>\% unlist()
-settings_ligand_pred =  = convert_settings_ligand_prediction(settings, ligands, validation = TRUE, single = TRUE)
+ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE))
+settings_ligand_pred = convert_settings_ligand_prediction(settings, ligands, validation = TRUE, single = TRUE)
 
 }
