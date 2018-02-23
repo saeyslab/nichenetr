@@ -1,4 +1,4 @@
-context("Model evaluation functions")
+context("Model evaluation functions: target gene predictions")
 
 test_that("Extract ligands from settings", {
   settings = list(

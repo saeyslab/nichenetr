@@ -3,9 +3,10 @@
 #' @description \code{extract_ligands_from_settings} Extract ligands of interest from (expression) settings in correct to construct the ligand-target matrix.
 #'
 #' @usage
-#' extract_ligands_from_settings(settings)
+#' extract_ligands_from_settings(settings,combination = TRUE)
 #'
 #' @param settings A list of lists for which each sub-list contains the information about (expression) datasets; with minimally the following elements: name of the setting ($name), ligands (possibly) active in the setting of interest ($from).
+#' @param combination. Indicate whether in case multiple ligands are possibly active ligand combinations should be extracted or only individual ligands. Default: TRUE.
 #'
 #' @return A list containing the ligands and ligands combinations for which a ligand-target matrix should be constructed. When for a particular dataset multiple ligands are possibly active (i.e. more than ligand in .$from slot of sublist of settings), then both the combination of these multiple ligands and each of these multiple ligands individually will be select for model construction.
 #'
@@ -14,7 +15,7 @@
 #'
 #' @export
 #'
-extract_ligands_from_settings = function(settings){
+extract_ligands_from_settings = function(settings,combination = TRUE){
 
   # input check
   if (!is.list(settings))
@@ -23,18 +24,33 @@ extract_ligands_from_settings = function(settings){
     stop("settings$.$from must be a character vector containing ligands")
 
   ligands_oi = list()
-  for (i in 1:length(settings)){
-    setting = settings[[i]]
-    ligand = setting$from
-    if (length(ligand) == 1) {
-      ligands_oi[length(ligands_oi) + 1] = ligand
-    } else {# if multiple ligands added
-      ligands_oi[[length(ligands_oi) + 1]] = ligand # ligands together
-      for (l in ligand) {
-        ligands_oi[length(ligands_oi) + 1] = l # ligands separate
+  if (combination == TRUE){
+    for (i in 1:length(settings)){
+      setting = settings[[i]]
+      ligand = setting$from
+      if (length(ligand) == 1) {
+        ligands_oi[length(ligands_oi) + 1] = ligand
+      } else {# if multiple ligands added
+        ligands_oi[[length(ligands_oi) + 1]] = ligand # ligands together
+        for (l in ligand) {
+          ligands_oi[length(ligands_oi) + 1] = l # ligands separate
+        }
+      }
+    }
+  } else {
+    for (i in 1:length(settings)){
+      setting = settings[[i]]
+      ligand = setting$from
+      if (length(ligand) == 1) {
+        ligands_oi[length(ligands_oi) + 1] = ligand
+      } else {# if multiple ligands added
+          for (l in ligand) {
+          ligands_oi[length(ligands_oi) + 1] = l # ligands separate
+        }
       }
     }
   }
+
   ligands_oi = unique(ligands_oi)
   return(ligands_oi)
 }

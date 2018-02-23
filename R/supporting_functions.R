@@ -494,5 +494,52 @@ wrapper_caret_classification = function(train_data, algorithm, continuous = TRUE
     return(list(performances = performances %>% tbl_df(), performances_training = performances_training,performances_training_continuous = performances_training_continuous, var_imps = NULL))
   }
 }
+# validation
+make_new_setting_ligand_prediction_multi_validation = function(setting,all_ligands){
+
+  if (length(setting$from) > 1) {
+    setting$from = paste0(setting$from,collapse = "-")
+  }
+
+  new_setting = list()
+  new_setting$name = setting$name
+  new_setting$ligand = setting$from
+  new_setting$from = all_ligands
+  new_setting$response = setting$response
+  return(new_setting)
+}
+make_new_setting_ligand_prediction_single_validation = function(setting,test_ligand){
+
+  if (length(setting$from) > 1) {
+    setting$from = paste0(setting$from,collapse = "-")
+  }
+
+  new_setting = list()
+  new_setting$name = setting$name
+  new_setting$ligand = setting$from
+  new_setting$from = test_ligand
+  new_setting$response = setting$response
+  return(new_setting)
+}
+
+
+# application
+make_new_setting_ligand_prediction_multi_application = function(setting,all_ligands){
+  new_setting = list()
+  new_setting$name = setting$name
+  new_setting$from = all_ligands
+  new_setting$response = setting$response
+  return(new_setting)
+}
+make_new_setting_ligand_prediction_single_application = function(setting,test_ligand){
+  new_setting = list()
+  new_setting$name = setting$name
+  new_setting$from = test_ligand
+  new_setting$response = setting$response
+  return(new_setting)
+}
+
+
+
 
 
