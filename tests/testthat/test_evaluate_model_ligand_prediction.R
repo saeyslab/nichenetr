@@ -45,4 +45,38 @@ test_that("Convert expression settings to settings", {
   expect_type(settings_ligand_pred[[1]]$response,"logical")
 
 })
+test_that("Get ligand importances: single", {
+  settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
+  settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
+
+  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+  ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
+  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+  ligand_importances = get_single_ligand_importances(settings_ligand_pred,ligand_target_matrix)
+  expect_type(ligand_importances,"list")
+  ligand_importances2 = get_single_ligand_importances(settings_ligand_pred,ligand_target_matrix %>% make_discrete_ligand_target_matrix())
+  expect_type(ligand_importances2,"list")
+})
+test_that("Get ligand importances: multi", {
+  settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
+  settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = FALSE)
+
+  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+  ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
+  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+  ligand_importances_glm = get_multi_ligand_importances(settings_ligand_pred,ligand_target_matrix, algorithm = "glm")
+  expect_type(ligand_importances_glm,"list")
+  ligand_importances_glm2 = get_multi_ligand_importances(settings_ligand_pred,ligand_target_matrix, algorithm = "glm",filter_genes = TRUE)
+  expect_type(ligand_importances_glm2,"list")
+})
+
+
+
+
+
+
+
+
+
+
 

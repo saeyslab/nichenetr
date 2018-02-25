@@ -539,7 +539,46 @@ make_new_setting_ligand_prediction_single_application = function(setting,test_li
   return(new_setting)
 }
 
+wrapper_evaluate_target_prediction_ligand_prediction = function(setting, ligand_target_matrix, ligands_position,known){
 
+  requireNamespace("dplyr")
 
+  test_ligand = setting$from
+  metrics = evaluate_target_prediction(setting, ligand_target_matrix, ligands_position)
+  metrics = metrics %>% mutate(test_ligand = test_ligand)
+  if (known == TRUE){
+    true_ligand = setting$ligand
+    metrics = metrics %>% mutate(ligand = true_ligand)
+  }
+}
+wrapper_evaluate_target_prediction_multi_ligand_prediction = function(setting,ligand_target_matrix, ligands_position = "cols", algorithm, cv = TRUE, cv_number = 4, cv_repeats = 2, parallel = FALSE, n_cores = 4, ignore_errors = FALSE, continuous = TRUE, known = TRUE){
 
+  requireNamespace("dplyr")
+
+  setting_name = setting$name
+  output = evaluate_multi_ligand_target_prediction(setting, ligand_target_matrix, ligands_position,algorithm,TRUE,cv,cv_number,cv_repeats,parallel,n_cores,ignore_errors,continuous)
+  metrics = output$var_imps
+  metrics = metrics %>% mutate(setting = setting_name) %>% rename(test_ligand = feature)
+
+  if (known == TRUE){
+    true_ligand = setting$ligand
+    metrics = metrics %>% mutate(ligand = true_ligand)
+    metrics = metrics %>% select(setting, ligand, test_ligand, importance)
+    return(metrics)
+  }
+  metrics = select(setting, test_ligand, importance)
+}
+
+filter_genes_ligand_target_matrix = function(ligand_target_matrix, ligands_position = cols){
+  if (ligands_position == "cols"){
+    target_genes = rownames(ligand_target_matrix)
+    sd_genes = apply(ligand_target_matrix,1,sd)
+    ligand_target_matrix_ = ligand_target_matrix[sd_genes > quantile(sd_genes,0.5),]
+  } else if (ligands_position == "rows") {
+    target_genes = colnames(ligand_target_matrix)
+    sd_genes = apply(ligand_target_matrix,2,sd)
+    ligand_target_matrix_ = ligand_target_matrix[,sd_genes > quantile(sd_genes,0.5)]
+  }
+  return(ligand_target_matrix_)
+}
 

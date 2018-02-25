@@ -24,7 +24,7 @@ You can install nichenetr from github with:
 devtools::install_github("browaeysrobin/nichenetr", build_vignettes = TRUE)
 ```
 
-## Example
+## Example: model construction
 
 This is a basic example which shows you how to construct the matrix of ligand-target probability scores for ligands of interest, starting from collecting ligand-receptor, signaling and gene regulatory interactions.
 
@@ -56,10 +56,31 @@ Show the names and scores of the top 50 target genes of BMP2
 extract_top_n_targets("BMP2",50,ligand_target_matrix)
 ```
 
+## Example: transcriptional response prediction evaluation
+
 Evaluate the target gene prediction performance for 53 ligand-treatment expression datasets
 ```{r}
 settings = lapply(expression_settings_validation, convert_expression_settings_evaluation)
 performances = bind_rows(lapply(settings, evaluate_target_prediction, ligand_target_matrix))
-performances_discrete = bind_rows(lapply(settings, evaluate_target_prediction, ligand_target_matrix %>% make_discrete_ligand_target_matrix))
+performances_discrete = bind_rows(lapply(settings, evaluate_target_prediction, ligand_target_matrix %>% make_discrete_ligand_target_matrix()))
 ```
 
+## Example: ligand activity state prediction evaluation
+
+Get ligand importance scores for 53 ligand-treatment expression datasets of which the true acive ligand is known: single-ligand scores
+```{r}
+all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE))
+settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = all_ligands, validation = TRUE, single = TRUE)
+
+ligand_importances = get_single_ligand_importances(settings_ligand_pred,ligand_target_matrix[,all_ligands])
+ligand_importances_discrete = get_single_ligand_importances(settings_ligand_pred,ligand_target_matrix[,all_ligands] %>% make_discrete_ligand_target_matrix())
+
+```
+
+Get ligand importance scores for 53 ligand-treatment expression datasets of which the true acive ligand is known: logistic regression ligand importance scores
+```{r}
+settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = all_ligands, validation = TRUE, single = FALSE)
+
+ligand_importances_glm = get_multi_ligand_importances(settings_ligand_pred,ligand_target_matrix[,all_ligands]) %>% rename(glm_imp = importance)
+
+```
