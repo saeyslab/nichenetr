@@ -149,9 +149,192 @@ get_multi_ligand_importances = function(settings,ligand_target_matrix, ligands_p
   return(importances)
 
 }
+#' @title Evaluation of ligand activity prediction based on ligand importance scores.
+#'
+#' @description \code{evaluate_importances_ligand_prediction} Evaluate how well a trained model of ligand importance scores is able to predict the true activity state of a ligand. For this it is assumed, that ligand importance measures for truely active ligands will be higher than for non-active ligands. A classificiation algorithm chosen by the user is trained to construct one model based on the ligand importance scores of all ligands of interest (ligands importance scores are considered as features). Several classification evaluation metrics for the prediction are calculated and variable importance scores can be extracted to rank the different importance measures in order of importance for ligand activity state prediction.
+#'
+#' @usage
+#' evaluate_importances_ligand_prediction(importances, normalization, algorithm, var_imps = TRUE, cv = TRUE, cv_number = 4, cv_repeats = 2, parallel = FALSE, n_cores = 4,ignore_errors = FALSE)
+#'
+#' @param importances A data frame containing at least folowing variables: $setting, $test_ligand, $ligand and one or more feature importance scores. $test_ligand denotes the name of a possibly active ligand, $ligand the name of the truely active ligand.
+#' @param normalization Way of normalization of the importance measures: "mean" (classifcal z-score) or "median" (modified z-score)
+#' @param algorithm The name of the classification algorithm to be applied. Should be supported by the caret package. Examples of algorithms we recommend: with embedded feature selection: "rf","glm","fda","glmnet","sdwd","gam","glmboost"; without: "lda","naive_bayes","pls"(because bug in current version of pls package), "pcaNNet". Please notice that not all these algorithms work when the features (i.e. ligand vectors) are categorical (i.e. discrete class assignments).
+#' @param var_imps Indicate whether in addition to classification evaluation performances, variable importances should be calculated. Default: TRUE.
+#' @param cv Indicate whether model training and hyperparameter optimization should be done via cross-validation. Default: TRUE. FALSE might be useful for applications only requiring variable importance, or when final model is not expected to be extremely overfit.
+#' @param cv_number The number of folds for the cross-validation scheme: Default: 4; only relevant when cv == TRUE.
+#' @param cv_repeats The number of repeats during cross-validation. Default: 2; only relevant when cv == TRUE.
+#' @param parallel Indiciate whether the model training will occur parallelized. Default: FALSE. TRUE only possible for non-windows OS.
+#' @param n_cores The number of cores used for parallelized model training via cross-validation. Default: 4. Only relevant on non-windows OS.
+#' @param ignore_errors Indiciate whether errors during model training by caret should be ignored such that another model training try will be initiated until model is trained without raising errors. Default: FALSE.
+#'
+#' @return A list with the following elements. $performances: data frame containing classification evaluation measure for classification on the test folds during training via cross-validation; $performances_training: data frame containing classification evaluation measures for classification of the final model (discrete class assignments) on the complete data set (performance can be severly optimistic due to overfitting!); $performance_training_continuous: data frame containing classification evaluation measures for classification of the final model (class probability scores) on the complete data set (performance can be severly optimistic due to overfitting!) $var_imps: data frame containing the variable importances of the different ligands (embbed importance score for some classification algorithms, otherwise just the auroc); $prediction_response_df: data frame containing for each ligand-setting combination the ligand importance scores for the individual importance scores, the complete model of importance scores and the ligand activity as well (TRUE or FALSE); $model: the caret model object that can be used on new importance scores to predict the ligand activity state.
+#'
+#' @importFrom ROCR prediction performance
+#' @importFrom caTools trapz
+#' @importFrom limma wilcoxGST
+#' @import caret
+#' @importFrom purrr safely
+#'
+#' @examples
+#' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
+#' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
+#'
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+#' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_importances = get_single_ligand_importances(settings_ligand_pred,ligand_target_matrix)
+#' evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
+#' @export
+#'
+evaluate_importances_ligand_prediction = function(importances, normalization, algorithm, var_imps = TRUE, cv = TRUE, cv_number = 4, cv_repeats = 2, parallel = FALSE, n_cores = 4, ignore_errors = FALSE){
+  if (!is.data.frame(importances))
+    stop("importances must be a data frame")
+  if(!is.character(importances$setting) | !is.character(importances$test_ligand) | !is.character(importances$ligand))
+    stop("importances$setting, importances$test_ligand and importances$ligand should be character vectors")
+  if(normalization != "mean" & normalization != "median")
+    stop("normalization should be 'mean' or 'median'")
+   if(!is.character(algorithm))
+    stop("algorithm should be a character vector")
+  if(!is.logical(var_imps) | length(var_imps) > 1)
+    stop("var_imps should be a logical vector: TRUE or FALSE")
+  if(!is.logical(cv) | length(cv) > 1)
+    stop("cv should be a logical vector: TRUE or FALSE")
+  if(!is.numeric(cv_number) | length(cv_number) > 1)
+    stop("cv_number should be a numeric vector of length 1")
+  if(!is.numeric(cv_repeats) | length(cv_repeats) > 1)
+    stop("cv_repeats should be a numeric vector of length 1")
+  if(!is.logical(parallel) | length(parallel) > 1)
+    stop("parallel should be a logical vector: TRUE or FALSE")
+  if(!is.numeric(n_cores) | length(n_cores) > 1)
+    stop("n_cores should be a numeric vector of length 1")
+  if(!is.logical(ignore_errors) | length(ignore_errors) > 1)
+    stop("ignore_errors should be a logical vector: TRUE or FALSE")
+
+  requireNamespace("dplyr")
+
+  importances = importances %>% tidyr::drop_na()
+  added = is_ligand_active(importances)
+  importances = importances %>% mutate(class = added)
+
+  if (normalization == "mean"){
+    normalized_importances = importances %>% group_by(setting) %>% dplyr::select(-ligand,-test_ligand,-class) %>% mutate_all(funs(scaling_zscore)) %>% ungroup() %>% select(-setting)
+  } else if (normalization == "median"){
+    normalized_importances = importances %>% group_by(setting) %>% dplyr::select(-ligand,-test_ligand,-class) %>% mutate_all(funs(scaling_modified_zscore)) %>% ungroup() %>% select(-setting)
+  }
+
+  response_vector = importances$class %>% make.names() %>% as.factor()
+  train_data = normalized_importances %>% mutate(obs = response_vector) %>% data.frame()
+
+  output = wrapper_caret_classification(train_data,algorithm,TRUE,var_imps,cv,cv_number,cv_repeats,parallel,n_cores,prediction_response_df = bind_cols(importances %>% select(setting,ligand,test_ligand,class), normalized_importances),ignore_errors,return_model = TRUE)
+  return(output)
+}
+#' @title Evaluation of ligand activity prediction performance of single ligand importance scores.
+#'
+#' @description \code{evaluate_single_importances_ligand_prediction} Evaluate how well a single ligand importance score is able to predict the true activity state of a ligand. For this it is assumed, that ligand importance measures for truely active ligands will be higher than for non-active ligands. Several classification evaluation metrics for the prediction are calculated and variable importance scores can be extracted to rank the different importance measures in order of importance for ligand activity state prediction.
+#'
+#' @usage
+#' evaluate_single_importances_ligand_prediction(importances,normalization)
+#'
+#' @param importances A data frame containing at least folowing variables: $setting, $test_ligand, $ligand and one or more feature importance scores. $test_ligand denotes the name of a possibly active ligand, $ligand the name of the truely active ligand.
+#' @param normalization Way of normalization of the importance measures: "mean" (classifcal z-score) or "median" (modified z-score)
+#'
+#' @return A data frame containing classification evaluation measures for the ligand activity state prediction single, individual feature importance measures.
+#'
+#' @importFrom ROCR prediction performance
+#' @importFrom caTools trapz
+#' @importFrom limma wilcoxGST
+#'
+#' @examples
+#' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
+#' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
+#'
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+#' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_importances = get_single_ligand_importances(settings_ligand_pred,ligand_target_matrix)
+#' evaluation = evaluate_single_importances_ligand_prediction(ligand_importances,normalization = "median")
+#' @export
+#'
+evaluate_single_importances_ligand_prediction = function(importances,normalization){
+  if (!is.data.frame(importances))
+    stop("importances must be a data frame")
+  if(!is.character(importances$setting) | !is.character(importances$test_ligand) | !is.character(importances$ligand))
+    stop("importances$setting, importances$test_ligand and importances$ligand should be character vectors")
+  if(normalization != "mean" & normalization != "median")
+    stop("normalization should be 'mean' or 'median'")
+
+  requireNamespace("dplyr")
+
+  importances = importances %>% tidyr::drop_na()
+  added = is_ligand_active(importances)
 
 
+  if (normalization == "mean"){
+    normalized_importances = importances %>% group_by(setting) %>% dplyr::select(-ligand,-test_ligand) %>% mutate_all(funs(scaling_zscore)) %>% ungroup() %>% select(-setting)
+  } else if (normalization == "median"){
+    normalized_importances = importances %>% group_by(setting) %>% dplyr::select(-ligand,-test_ligand) %>% mutate_all(funs(scaling_modified_zscore)) %>% ungroup() %>% select(-setting)
+  }
 
+  performances = lapply(normalized_importances, classification_evaluation_continuous_pred, added, iregulon = FALSE)
+  output = tibble(importance_measure = names(performances))
+  performances = bind_rows(performances)
+  return(bind_cols(output,performances))
+}
+#' @title Prediction of ligand activity prediction by a model trained on ligand importance scores.
+#'
+#' @description \code{model_based_ligand_activity_prediction} Predict the activity state of a ligand based on a classification model that was trained to predict ligand activity state based on ligand importance scores.
+#'
+#' @usage
+#' model_based_ligand_activity_prediction(model, importances, normalization)
+#'
+#' @param model A model object of a classification object as e.g. generated via caret.
+#' @param importances A data frame containing at least folowing variables: $setting, $test_ligand, $ligand and one or more feature importance scores. $test_ligand denotes the name of a possibly active ligand, $ligand the name of the truely active ligand.
+#' @param normalization Way of normalization of the importance measures: "mean" (classifcal z-score) or "median" (modified z-score)
+#'
+#' @return A data frame containing the ligand importance scores and the probabilities that according to the trained model, the ligands are active based on their importance scores.
+#'
+#' @examples
+#' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
+#' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
+#'
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+#' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_importances = get_single_ligand_importances(settings_ligand_pred,ligand_target_matrix)
+#' evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
+#'
+#' settings = lapply(expression_settings_validation[5:10],convert_expression_settings_evaluation)
+#' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = FALSE, single = TRUE)
+#' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_importances = get_single_ligand_importances(settings_ligand_pred,ligand_target_matrix,known = FALSE)
+#' activity_predictions = model_based_ligand_activity_prediction(evaluation$model,ligand_importances,"median")
+#'
+#'
+#' @export
+#'
+model_based_ligand_activity_prediction = function(model, importances, normalization){
+  if (!is.list(model))
+    stop("model must be a list, derived as model object from model training (e.g. via the caret package)")
+  if (!is.data.frame(importances))
+    stop("importances must be a data frame")
+  if(!is.character(importances$setting) | !is.character(importances$test_ligand))
+    stop("importances$setting and importances$test_ligand should be character vectors")
+  if(normalization != "mean" & normalization != "median")
+    stop("normalization should be 'mean' or 'median'")
 
+  requireNamespace("dplyr")
 
+  importances = importances %>% tidyr::drop_na()
 
+  if (normalization == "mean"){
+    normalized_importances = importances %>% group_by(setting) %>% dplyr::select(-test_ligand) %>% mutate_all(funs(scaling_zscore)) %>% ungroup() %>% select(-setting)
+  } else if (normalization == "median"){
+    normalized_importances = importances %>% group_by(setting) %>% dplyr::select(-test_ligand) %>% mutate_all(funs(scaling_modified_zscore)) %>% ungroup() %>% select(-setting)
+  }
+
+  final_model_predictions = predict(model,newdata = normalized_importances, type = "prob")
+  final_model_predictions = final_model_predictions %>% tbl_df() %>% mutate(active = TRUE. > FALSE.)
+  return(bind_cols(importances,final_model_predictions) %>% tbl_df())
+
+}

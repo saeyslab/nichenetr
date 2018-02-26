@@ -205,10 +205,16 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
                     spearman = cor_s)
   if (iregulon == TRUE){
     output_iregulon = calculate_auc_iregulon(prediction,response)
-    tbl_perf = tbl_perf %>% bind_cols(tibble(
-      auc_iregulon = output_iregulon$auc_iregulon,
-      auc_iregulon_corrected = output_iregulon$auc_iregulon_corrected
-    ))
+    tbl_perf = tibble(auroc = auroc,
+                      aupr = aupr,
+                      aupr_corrected = aupr - aupr_random,
+                      sensitivity_roc = sensitivity,
+                      specificity_roc = specificity,
+                      mean_rank_GST_log_pval = -log(mean_rank_GST),
+                      auc_iregulon = output_iregulon$auc_iregulon,
+                      auc_iregulon_corrected = output_iregulon$auc_iregulon_corrected,
+                      pearson = cor_p,
+                      spearman = cor_s)
   }
   return(tbl_perf)
 }
@@ -218,17 +224,17 @@ classification_evaluation_categorical_pred = function(predictions, response) {
 
   if (sum(response) == 0){
     return(dplyr::tibble(accuracy = NA,
-           recall = NA,
-           specificity = NA,
-           precision = NA,
-           F1 =  NA,
-           F05 = NA,
-           F2 = NA,
-           mcc = NA,
-           informedness = NA,
-           markedness = NA,
-           fisher_pval_log = NA,
-           fisher_odds = NA))
+                         recall = NA,
+                         specificity = NA,
+                         precision = NA,
+                         F1 =  NA,
+                         F05 = NA,
+                         F2 = NA,
+                         mcc = NA,
+                         informedness = NA,
+                         markedness = NA,
+                         fisher_pval_log = NA,
+                         fisher_odds = NA))
   }
 
   num_positives = sum(response)
@@ -376,7 +382,7 @@ caret_classification_evaluation_categorical = function(data, lev = NULL, model =
   names(out) = colnames(out_tibble)
   out
 }
-wrapper_caret_classification = function(train_data, algorithm, continuous = TRUE, var_imps = TRUE, cv = TRUE, cv_number = 5, cv_repeats = 2, parallel = FALSE, n_cores = 4,prediction_response_df = NULL,ignore_errors = FALSE){
+wrapper_caret_classification = function(train_data, algorithm, continuous = TRUE, var_imps = TRUE, cv = TRUE, cv_number = 5, cv_repeats = 2, parallel = FALSE, n_cores = 4,prediction_response_df = NULL,ignore_errors = FALSE, return_model = FALSE){
 
 
 
@@ -483,16 +489,22 @@ wrapper_caret_classification = function(train_data, algorithm, continuous = TRUE
     var_imps_df = imps$importance  %>% tibble::rownames_to_column("feature") %>% tbl_df() %>% .[,1:2]
     colnames(var_imps_df) = c("feature","importance")
     if(!is.null(prediction_response_df)){
-      return(list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous ,var_imps = var_imps_df, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions)))
+      output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous ,var_imps = var_imps_df, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions))
     }
-    return(list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous, var_imps = var_imps_df))
+    output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous, var_imps = var_imps_df)
 
   } else {
     if(!is.null(prediction_response_df)){
-      return(list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous, var_imps = NULL, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions)))
+      output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous, var_imps = NULL, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions))
     }
-    return(list(performances = performances %>% tbl_df(), performances_training = performances_training,performances_training_continuous = performances_training_continuous, var_imps = NULL))
+    output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training,performances_training_continuous = performances_training_continuous, var_imps = NULL)
   }
+
+  if (return_model == TRUE){
+    output_list$model = model
+  }
+  return(output_list)
+
 }
 # validation
 make_new_setting_ligand_prediction_multi_validation = function(setting,all_ligands){
@@ -542,14 +554,13 @@ make_new_setting_ligand_prediction_single_application = function(setting,test_li
 wrapper_evaluate_target_prediction_ligand_prediction = function(setting, ligand_target_matrix, ligands_position,known){
 
   requireNamespace("dplyr")
-
-  test_ligand = setting$from
   metrics = evaluate_target_prediction(setting, ligand_target_matrix, ligands_position)
-  metrics = metrics %>% mutate(test_ligand = test_ligand)
+  metrics = metrics %>% rename(test_ligand = ligand)
   if (known == TRUE){
     true_ligand = setting$ligand
     metrics = metrics %>% mutate(ligand = true_ligand)
   }
+  return(metrics)
 }
 wrapper_evaluate_target_prediction_multi_ligand_prediction = function(setting,ligand_target_matrix, ligands_position = "cols", algorithm, cv = TRUE, cv_number = 4, cv_repeats = 2, parallel = FALSE, n_cores = 4, ignore_errors = FALSE, continuous = TRUE, known = TRUE){
 
@@ -566,7 +577,8 @@ wrapper_evaluate_target_prediction_multi_ligand_prediction = function(setting,li
     metrics = metrics %>% select(setting, ligand, test_ligand, importance)
     return(metrics)
   }
-  metrics = select(setting, test_ligand, importance)
+  metrics = metrics %>% select(setting, test_ligand, importance)
+  return(metrics)
 }
 
 filter_genes_ligand_target_matrix = function(ligand_target_matrix, ligands_position = cols){
@@ -581,4 +593,40 @@ filter_genes_ligand_target_matrix = function(ligand_target_matrix, ligands_posit
   }
   return(ligand_target_matrix_)
 }
+
+is_ligand_active = function(importances){
+  test_ligand = importances$test_ligand
+  real_ligand = strsplit(importances$ligand,"[-]")
+  true_ligand = rep(NULL, times = length(test_ligand))
+  for (i in seq(length(test_ligand))){
+    test = test_ligand[i]
+    real = real_ligand[[i]]
+    true_ligand[i] = test %in% real
+  }
+  return(true_ligand)
+}
+
+scaling_zscore = function(x){
+  if (typeof(x) == "double"){
+    if(sd(x) > 0){
+      return((x - mean(x))/sd(x))
+    } else{
+      return((x - mean(x)))
+    }
+  } else {return(x)}
+}
+scaling_modified_zscore = function(x){
+  if (typeof(x) == "double"){
+    if(mad(x) > 0){
+      return(0.6745*(x - median(x))/mad(x))
+    } else{
+      return(0.6745*(x - median(x)))
+    }
+  } else {return(x)}
+}
+
+
+
+
+
 

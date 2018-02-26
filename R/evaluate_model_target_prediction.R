@@ -157,7 +157,7 @@ evaluate_target_prediction = function(setting,ligand_target_matrix, ligands_posi
   response_vector = setting$response
 
   performance = evaluate_target_prediction_strict(response_vector,prediction_vector,is.double(prediction_vector))
-  output = performance %>% mutate(setting = setting$name, ligand = ligand_oi)
+  output = bind_cols(tibble(setting = setting$name, ligand = ligand_oi), performance)
 
   return(output)
 }
@@ -377,7 +377,7 @@ convert_gene_list_settings_evaluation = function(gene_list, name, ligands_oi, ba
 
   excluded_genes = gene_list[(gene_list %in% background) == FALSE]
   if(length(excluded_genes) > 0)
-    warning(paste("some genes are excluded because not present in the background:",excluded_genes))
+    warning(paste("some genes are excluded because not present in the background: ",excluded_genes))
   gene_list_vector = (background %in% gene_list)
   names(gene_list_vector) = background
 

@@ -42,12 +42,12 @@ construct_weighted_networks = function(lr_network, sig_network, gr_network,sourc
   gr_network_w = gr_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight)) %>% ungroup()
   if (n_output_networks == 2) {
     ligand_signaling_w = bind_rows(lr_network, sig_network) %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight)) %>% ungroup()
-    weighted_networks = list(lr_sig = ligand_signaling_w, gr = gr_network_w)
+    weighted_networks = list(lr_sig = ligand_signaling_w %>% ungroup(), gr = gr_network_w %>% ungroup())
   }
   else if (n_output_networks == 3) {
     lr_network_w = lr_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight)) %>% ungroup()
     sig_network_w = sig_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight)) %>% ungroup()
-    weighted_networks = list(lr = lr_network_w, sig = sig_network_w, gr = gr_network_w)
+    weighted_networks = list(lr = lr_network_w %>% ungroup(), sig = sig_network_w %>% ungroup(), gr = gr_network_w %>% ungroup())
 
   }
 }
@@ -143,7 +143,7 @@ apply_hub_corrections = function(weighted_networks,lr_sig_hub, gr_hub) {
   if (gr_hub > 0){
     regulatory_network = regulatory_network %>% group_by(to) %>% count(to) %>% ungroup() %>% inner_join(regulatory_network, ., by = "to") %>% group_by(from) %>% mutate(weight = weight/(n**gr_hub)) %>% dplyr::select(-n)
   }
-  return(list(lr_sig = ligand_signaling_network, gr = regulatory_network))
+  return(list(lr_sig = ligand_signaling_network %>% ungroup(), gr = regulatory_network %>% ungroup()))
 }
 #' @title Construct a ligand-tf signaling probability matrix for ligands of interest.
 #'

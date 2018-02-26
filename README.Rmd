@@ -76,11 +76,17 @@ ligand_importances = get_single_ligand_importances(settings_ligand_pred,ligand_t
 ligand_importances_discrete = get_single_ligand_importances(settings_ligand_pred,ligand_target_matrix[,all_ligands] %>% make_discrete_ligand_target_matrix())
 
 ```
-
 Get ligand importance scores for 53 ligand-treatment expression datasets of which the true acive ligand is known: logistic regression ligand importance scores
 ```{r}
 settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = all_ligands, validation = TRUE, single = FALSE)
+ligand_importances_glm = get_multi_ligand_importances(settings_ligand_pred,ligand_target_matrix[,all_ligands],algorithm = "glm",filter_genes = TRUE) %>% rename(glm_imp = importance)
 
-ligand_importances_glm = get_multi_ligand_importances(settings_ligand_pred,ligand_target_matrix[,all_ligands]) %>% rename(glm_imp = importance)
-
+```
+Process the ligand importance scores and see how well these scores can predict ligand activity
+```{r}
+all_importances = list(ligand_importances,ligand_importances_discrete,ligand_importances_glm) %>% reduce(inner_join, by = c("setting","ligand","test_ligand"))
+evaluation = evaluate_importances_ligand_prediction(all_importances,"median","lda",cv_number = 3, cv_repeats = 20)
+evaluation$performances
+evaluation$var_imps
+evaluation_single = evaluate_single_importances_ligand_prediction(all_importances,normalization = "median")
 ```
