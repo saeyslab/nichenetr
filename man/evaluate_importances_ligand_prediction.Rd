@@ -40,6 +40,6 @@ settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands 
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-ligand_importances = get_single_ligand_importances(settings_ligand_pred,ligand_target_matrix)
+ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
 evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
 }
