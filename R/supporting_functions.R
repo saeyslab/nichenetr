@@ -179,7 +179,7 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
 
   performance = performance %>% replace_na(list(recall=0, precision=1))
 
-  aupr = caTools::trapz(performance$recall, performance$precision) # i hope this is correct, but still gotta check
+  aupr = caTools::trapz(performance$recall, performance$precision)
   pos_class = sum(response)
   total = length(response)
   aupr_random = pos_class/total
@@ -551,36 +551,6 @@ make_new_setting_ligand_prediction_single_application = function(setting,test_li
   return(new_setting)
 }
 
-wrapper_evaluate_target_prediction_ligand_prediction = function(setting, ligand_target_matrix, ligands_position,known){
-
-  requireNamespace("dplyr")
-  metrics = evaluate_target_prediction(setting, ligand_target_matrix, ligands_position)
-  metrics = metrics %>% rename(test_ligand = ligand)
-  if (known == TRUE){
-    true_ligand = setting$ligand
-    metrics = metrics %>% mutate(ligand = true_ligand)
-  }
-  return(metrics)
-}
-wrapper_evaluate_target_prediction_multi_ligand_prediction = function(setting,ligand_target_matrix, ligands_position = "cols", algorithm, cv = TRUE, cv_number = 4, cv_repeats = 2, parallel = FALSE, n_cores = 4, ignore_errors = FALSE, continuous = TRUE, known = TRUE){
-
-  requireNamespace("dplyr")
-
-  setting_name = setting$name
-  output = evaluate_multi_ligand_target_prediction(setting, ligand_target_matrix, ligands_position,algorithm,TRUE,cv,cv_number,cv_repeats,parallel,n_cores,ignore_errors,continuous)
-  metrics = output$var_imps
-  metrics = metrics %>% mutate(setting = setting_name) %>% rename(test_ligand = feature)
-
-  if (known == TRUE){
-    true_ligand = setting$ligand
-    metrics = metrics %>% mutate(ligand = true_ligand)
-    metrics = metrics %>% select(setting, ligand, test_ligand, importance)
-    return(metrics)
-  }
-  metrics = metrics %>% select(setting, test_ligand, importance)
-  return(metrics)
-}
-
 filter_genes_ligand_target_matrix = function(ligand_target_matrix, ligands_position = cols){
   if (ligands_position == "cols"){
     target_genes = rownames(ligand_target_matrix)
@@ -625,8 +595,134 @@ scaling_modified_zscore = function(x){
   } else {return(x)}
 }
 
+evaluate_target_prediction_regression_strict = function(response,prediction, prediction_response_df = FALSE){
+  response_df = tibble(gene = names(response), response = response)
+  prediction_df = tibble(gene = names(prediction), prediction = prediction)
+  combined = inner_join(response_df,prediction_df, by = "gene")
+
+  prediction_vector = combined$prediction
+  names(prediction_vector) = combined$gene
+  response_vector = combined$response
+  names(response_vector) = combined$gene
+
+  performance = regression_evaluation(prediction_vector,response_vector)
+
+  if (prediction_response_df == TRUE){
+    output = list(performance = performance, prediction_response_df = combined)
+    return(output)
+  } else {
+    return(performance)
+  }
+}
+regression_evaluation = function(prediction,response){
+  model = lm(response~prediction)
+  model_summary = summary(model)
+
+  cor_p = cor(prediction, response)
+  cor_s = cor(prediction, response, method = "s")
+
+  tbl_perf = tibble(r_squared = model_summary$r.squared,
+                    adj_r_squared = model_summary$adj.r.squared,
+                    f_statistic = model_summary$fstatistic[1],
+                    lm_coefficient_abs_t = model_summary$coefficients %>% .[2,3] %>% abs(),
+                    inverse_rmse = 1/(model_summary$sigma),
+                    reverse_aic = AIC(model) * -1,
+                    reverse_bic = BIC(model) * -1,
+                    inverse_mae = 1/(mae(model$residuals)),
+                    pearson_regression = cor_p,
+                    spearman_regression = cor_s)
+
+  return(tbl_perf)
+}
+# rmse = function(error){
+#   sqrt(mean(error^2))
+# }
+mae = function(error){
+  mean(abs(error))
+}
+wrapper_caret_regression = function(train_data, algorithm, var_imps = TRUE, cv = TRUE, cv_number = 5, cv_repeats = 2, parallel = FALSE, n_cores = 4,prediction_response_df = NULL,ignore_errors = FALSE, return_model = FALSE){
+
+  if (parallel == TRUE){
+    requireNamespace("doMC", quietly = TRUE)
+    doMC::registerDoMC(cores = n_cores)
+  }
+
+    if (cv == TRUE){
+      control =  caret::trainControl(method="repeatedcv",
+                                     number=cv_number,
+                                     repeats=cv_repeats,
+                                     preProcOptions = NULL,
+                                     summaryFunction = caret_regression_evaluation_continuous)
+    } else if (cv == FALSE) {
+      control =  caret::trainControl(method="none",
+                                     preProcOptions = NULL,
+                                     summaryFunction = caret_regression_evaluation_continuous)
+    }
+    if (ignore_errors == TRUE){
+      # avoid errors due to bad splits during cross-validation that make that not both classes are present
+      caret_train = purrr::safely(caret::train)
+      result = NULL
+      while(is.null(result)){
+        model = caret_train(y = train_data$obs,
+                            x = train_data[,-(which(colnames(train_data) == "obs"))],
+                            method=algorithm,
+                            trControl=control,
+                            metric = 'inverse_rmse',
+                            maximize = TRUE) # RMSE should be minimized - so maximize its inverse
+        result = model$result
+        # if(!is.null(model$error)){print(model$error)}
+
+      }
+      model = model$result
+    } else {
+      model = caret::train(y = train_data$obs,
+                           x = train_data[,-(which(colnames(train_data) == "obs"))],
+                           method=algorithm,
+                           trControl=control,
+                           metric = 'inverse_rmse',
+                           maximize = TRUE) # RMSE should be minimized - so maximize its inverse
+      }
 
 
+  performances =  model$resample
+
+  final_model_predictions = predict(model,newdata = train_data)
+  response = train_data$obs
+  performances_training = regression_evaluation(prediction = final_model_predictions, response = response)
+
+  if (var_imps == TRUE) {
+    imps =  caret::varImp(model, scale = FALSE)
+    var_imps_df = imps$importance  %>% tibble::rownames_to_column("feature") %>% tbl_df() %>% .[,1:2]
+    colnames(var_imps_df) = c("feature","importance")
+    if(!is.null(prediction_response_df)){
+      output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, var_imps = var_imps_df, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions))
+    }
+    output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, var_imps = var_imps_df)
+
+  } else {
+    if(!is.null(prediction_response_df)){
+      output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, var_imps = NULL, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions))
+    }
+    output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, var_imps = NULL)
+  }
+
+  if (return_model == TRUE){
+    output_list$model = model
+  }
+  return(output_list)
+
+}
+caret_regression_evaluation_continuous = function(data, lev = NULL, model = NULL){
+  # print(data)
+  # print(dim(data))
+  prediction = data$pred
+  response = data$obs
+  out_tibble = regression_evaluation(prediction, response)
+  # print(out_tibble)
+  out = out_tibble[1,] %>% as.numeric()
+  names(out) = colnames(out_tibble)
+  out
+}
 
 
 

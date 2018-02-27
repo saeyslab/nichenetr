@@ -10,7 +10,7 @@ convert_expression_settings_evaluation(setting)
 \item{setting}{A list containing the following elements: .$name: name of the setting; .$from: name(s) of the ligand(s) active in the setting of interest; .$diffexp: data frame or tibble containing at least 3 variables= $gene, $lfc (log fold change treated vs untreated) and $qval (fdr-corrected p-value)}
 }
 \value{
-A list with following elements: $name, $from, $response
+A list with following elements: $name, $from, $response. $response will be a gene-named logical vector indicating whether the gene's transcription was influenced by the active ligand(s) in the setting of interest.
 }
 \description{
 \code{convert_expression_settings_evaluation} Converts expression settings to correct settings format for evaluation of target gene prediction.

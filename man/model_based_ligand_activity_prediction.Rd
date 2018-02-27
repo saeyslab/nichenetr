@@ -14,10 +14,10 @@ model_based_ligand_activity_prediction(model, importances, normalization)
 \item{normalization}{Way of normalization of the importance measures: "mean" (classifcal z-score) or "median" (modified z-score)}
 }
 \value{
-A data frame containing classification evaluation measures for the ligand activity state prediction single, individual feature importance measures.
+A data frame containing the ligand importance scores and the probabilities that according to the trained model, the ligands are active based on their importance scores.
 }
 \description{
-\code{model_based_ligand_activity_prediction} Predict the activity state of a ligand based on a classification model that was trained to predict ligand activity state based on ligand importance scores..
+\code{model_based_ligand_activity_prediction} Predict the activity state of a ligand based on a classification model that was trained to predict ligand activity state based on ligand importance scores.
 }
 \examples{
 settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)

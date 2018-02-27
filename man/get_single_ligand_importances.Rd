@@ -4,10 +4,10 @@
 \alias{get_single_ligand_importances}
 \title{Get ligand importances based on target gene prediction performance of single ligands.}
 \usage{
-get_single_ligand_importances(settings,ligand_target_matrix, ligands_position = "cols", known = TRUE)
+get_single_ligand_importances(setting,ligand_target_matrix, ligands_position = "cols", known = TRUE)
 }
 \arguments{
-\item{settings}{A list of lists. Eeach sublist contains the following elements: .$name: name of the setting; .$from: name(s) of the ligand(s) of which the predictve performance need to be assessed; .$response: the observed target response: indicate for a gene whether it was a target or not in the setting of interest. $ligand: NULL or the name of the ligand(s) that are known to be active in the setting of interest.}
+\item{setting}{A list containing the following elements: .$name: name of the setting; .$from: name(s) of the ligand(s) of which the predictve performance need to be assessed; .$response: the observed target response: indicate for a gene whether it was a target or not in the setting of interest. $ligand: NULL or the name of the ligand(s) that are known to be active in the setting of interest.}
 
 \item{ligand_target_matrix}{A matrix of ligand-target probabilty scores (or discrete target assignments).}
 
@@ -28,6 +28,6 @@ settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands 
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-ligand_importances = get_single_ligand_importances(settings_ligand_pred,ligand_target_matrix)
+ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
 
 }

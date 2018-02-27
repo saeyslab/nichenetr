@@ -14,10 +14,10 @@ evaluate_target_prediction_interprete(setting,ligand_target_matrix, ligands_posi
 \item{ligands_position}{Indicate whether the ligands in the ligand-target matrix are in the rows ("rows") or columns ("cols"). Default: "cols"}
 }
 \value{
-A list with the elements $performances and $prediction_response_df. $performance is a data.frame with following variables: setting, ligand and for probabilistic predictions: auroc, aupr, aupr_corrected (aupr - aupr for random prediction), sensitivity_roc (proxy measure, inferred from ROC), specificity_roc (proxy measure, inferred from ROC), mean_rank_GST_log_pval (-log10 of p-value of mean-rank gene set test), pearson (correlation coefficient), spearman (correlation coefficient); whereas for categorical predictions: accuracy, recall, specificity, precision, F1, F0.5, F2, mcc, informedness, markedness, fisher_pval_log (which is -log10 of p-value fisher exact test), fisher odds. $prediction_response_df shows for each gene, the model prediction (ligand-target probability score or discrete target assignment TRUE/FALSE) and whether the gene the gene is a target or not according to the observed response.
+A list with the elements $performances and $prediction_response_df. $performance is a data.frame with classification evaluation metrics if response is categorical, or regression model fit metrics if response is continuous. $prediction_response_df shows for each gene, the model prediction and the response value of the gene (e.g. whether the gene the gene is a target or not according to the observed response, or the absolute value of the log fold change of a gene).
 }
 \description{
-\code{evaluate_target_prediction_interprete} Evaluate how well the model (i.e. the inferred ligand-target probability scores) is able to predict the observed response to a ligand (e.g. the set of DE genes after treatment of cells by a ligand). It shows several classification evaluation metrics for the prediction. Different classification metrics are calculated depending on whether the input ligand-target matrix contains probability scores for targets or discrete target assignments.
+\code{evaluate_target_prediction_interprete} Evaluate how well the model (i.e. the inferred ligand-target probability scores) is able to predict the observed response to a ligand (e.g. the set of DE genes after treatment of cells by a ligand; or the log fold change values). It shows several classification evaluation metrics for the prediction when response is categorical, or several regression model fit metrics when the response is continuous.
 }
 \examples{
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
@@ -25,5 +25,7 @@ setting = lapply(expression_settings_validation[1],convert_expression_settings_e
 ligands = extract_ligands_from_settings(setting)
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 perf1 = lapply(setting,evaluate_target_prediction_interprete,ligand_target_matrix)
+setting = lapply(expression_settings_validation[1],convert_expression_settings_evaluation_regression)
+perf2 = lapply(setting,evaluate_target_prediction_interprete,ligand_target_matrix)
 
 }

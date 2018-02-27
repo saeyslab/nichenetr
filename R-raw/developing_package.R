@@ -35,6 +35,7 @@ devtools::use_package("readr")
 devtools::use_package("Hmisc")
 devtools::use_package("caret")
 devtools::use_package("purrr")
+devtools::use_package("randomForest")
 
 devtools::use_package("doMC","Suggests")
 

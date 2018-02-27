@@ -25,7 +25,8 @@ Imports: dplyr,
     Hmisc,
     tibble,
     caret,
-    purrr
+    purrr,
+    randomForest
 Suggests: knitr,
     rmarkdown,
     testthat,
