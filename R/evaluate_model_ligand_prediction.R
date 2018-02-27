@@ -379,6 +379,7 @@ model_based_ligand_activity_prediction = function(model, importances, normalizat
 #' @importFrom randomForest randomForest importance
 #'
 #' @examples
+#' \dontrun{
 #' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
 #' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = FALSE)
 #'
@@ -387,6 +388,7 @@ model_based_ligand_activity_prediction = function(model, importances, normalizat
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' ligand_importances_rf = dplyr::bind_rows(lapply(settings_ligand_pred, get_multi_ligand_rf_importances,ligand_target_matrix, ntrees = 100, mtry = 2))
 #' print(head(ligand_importances_rf))
+#' }
 #'
 #' @export
 #'
@@ -581,6 +583,7 @@ get_multi_ligand_importances_regression = function(setting,ligand_target_matrix,
 #' @importFrom randomForest randomForest importance
 #'
 #' @examples
+#' \dontrun{
 #' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation_regression)
 #' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = FALSE)
 #'
@@ -589,6 +592,7 @@ get_multi_ligand_importances_regression = function(setting,ligand_target_matrix,
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' ligand_importances_rf = dplyr::bind_rows(lapply(settings_ligand_pred, get_multi_ligand_rf_importances_regression,ligand_target_matrix, ntrees = 100, mtry = 2))
 #' print(head(ligand_importances_rf))
+#' }
 #'
 #' @export
 #'

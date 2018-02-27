@@ -20,6 +20,7 @@ A data.frame in which the regression coefficient estimate, p-value and correspon
 \code{get_slope_target_gene_popularity}: Performs regression analysis to investigate the trend between a particular classficiation evaluation metric and the popularity of target genes.
 }
 \examples{
+\dontrun{
 library(dplyr)
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 settings = lapply(expression_settings_validation[1:10],convert_expression_settings_evaluation)
@@ -29,5 +30,6 @@ ncitations = get_ncitations_genes()
 performances_target_bins_popularity = evaluate_target_prediction_per_bin(5,settings,ligand_target_matrix,ncitations)
 slopes_df = performances_target_bins_popularity \%>\% select(-setting,-ligand,-target_bin_id) \%>\% colnames() \%>\% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity,method = "individual") \%>\% bind_rows()
 slopes_df2 = performances_target_bins_popularity \%>\% select(-setting,-ligand,-target_bin_id) \%>\% colnames() \%>\% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity,method = "all") \%>\% bind_rows()
+}
 
 }

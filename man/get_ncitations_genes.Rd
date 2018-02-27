@@ -16,6 +16,8 @@ A data.frame with following variables: entrez, ncitations, symbol,entrez_mouse, 
 \code{get_ncitations_genes}: Get the number of times of gene is mentioned in the pubmed literature
 }
 \examples{
+\dontrun{
 ncitations = get_ncitations_genes(file = "ftp://ftp.ncbi.nih.gov/gene/DATA/gene2pubmed.gz")
+}
 
 }

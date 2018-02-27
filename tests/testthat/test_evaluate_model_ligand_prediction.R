@@ -45,7 +45,7 @@ test_that("Convert expression settings to settings", {
   expect_type(settings_ligand_pred[[1]]$response,"logical")
 
 })
-test_that("Get ligand importances: single", {
+test_that("Get ligand importances: single + evaluation", {
   settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 
@@ -59,6 +59,18 @@ test_that("Get ligand importances: single", {
   ligand_importances2 = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix %>% make_discrete_ligand_target_matrix()))
   expect_type(ligand_importances2,"list")
   expect_gte(nrow(ligand_importances2),1)
+
+  evaluation_single = evaluate_single_importances_ligand_prediction(ligand_importances,"median")
+  expect_type(evaluation_single,"list")
+  expect_gte(nrow(evaluation_single),1)
+  evaluation_single2= evaluate_single_importances_ligand_prediction(ligand_importances,"mean")
+  expect_type(evaluation_single2,"list")
+  expect_gte(nrow(evaluation_single2),1)
+
+  evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
+  expect_type(evaluation,"list")
+  expect_gte(nrow(evaluation$performances),1)
+
 
 })
 test_that("Get ligand importances: multi", {
@@ -92,38 +104,6 @@ test_that("Get ligand importances: random forest", {
 
 })
 
-
-test_that("Evaluation ligand prediction: multi", {
-  settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
-  settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
-
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
-  ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-  ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix))
-  evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
-
-  expect_type(evaluation,"list")
-  expect_gte(nrow(evaluation$performances),1)
-
-})
-
-test_that("Evaluation ligand prediction: single", {
-  settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
-  settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
-
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
-  ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-  ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances,ligand_target_matrix))
-  evaluation_single = evaluate_single_importances_ligand_prediction(ligand_importances,"median")
-  expect_type(evaluation_single,"list")
-  expect_gte(nrow(evaluation_single),1)
-  evaluation_single2= evaluate_single_importances_ligand_prediction(ligand_importances,"mean")
-  expect_type(evaluation_single2,"list")
-  expect_gte(nrow(evaluation_single2),1)
-
-})
 test_that("Model-based ligand activity prediction", {
   settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
@@ -144,7 +124,7 @@ test_that("Model-based ligand activity prediction", {
   expect_gte(nrow(activity_predictions),1)
 })
 
-test_that("Get ligand importances regression: single", {
+test_that("Get ligand importances regression: single + evaluation", {
   settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation_regression)
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 
@@ -156,6 +136,16 @@ test_that("Get ligand importances regression: single", {
   expect_type(ligand_importances,"list")
   expect_gte(nrow(ligand_importances),1)
 
+  evaluation_single = evaluate_single_importances_ligand_prediction(ligand_importances,"median")
+  expect_type(evaluation_single,"list")
+  expect_gte(nrow(evaluation_single),1)
+  evaluation_single2= evaluate_single_importances_ligand_prediction(ligand_importances,"mean")
+  expect_type(evaluation_single2,"list")
+  expect_gte(nrow(evaluation_single2),1)
+
+  evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
+  expect_type(evaluation,"list")
+  expect_gte(nrow(evaluation$performances),1)
 
 })
 test_that("Get ligand importances regression: multi", {
@@ -190,37 +180,8 @@ test_that("Get ligand importances regression: random forest", {
 })
 
 
-test_that("Evaluation ligand prediction regression: multi", {
-  settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation_regression)
-  settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
-  ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-  ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances_regression, ligand_target_matrix))
-  evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
 
-  expect_type(evaluation,"list")
-  expect_gte(nrow(evaluation$performances),1)
-
-})
-
-test_that("Evaluation ligand prediction regression: single", {
-  settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation_regression)
-  settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
-
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
-  ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-  ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances_regression,ligand_target_matrix))
-  evaluation_single = evaluate_single_importances_ligand_prediction(ligand_importances,"median")
-  expect_type(evaluation_single,"list")
-  expect_gte(nrow(evaluation_single),1)
-  evaluation_single2= evaluate_single_importances_ligand_prediction(ligand_importances,"mean")
-  expect_type(evaluation_single2,"list")
-  expect_gte(nrow(evaluation_single2),1)
-
-})
 
 
 

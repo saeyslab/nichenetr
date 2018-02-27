@@ -18,6 +18,7 @@ A data.frame in which the regression coefficient estimate, p-value and correspon
 \code{get_slope_ligand_popularity}: Performs regression analysis to investigate the trend between a particular classficiation evaluation metric and the popularity of the ligand.
 }
 \examples{
+\dontrun{
 library(dplyr)
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 settings = lapply(expression_settings_validation[1:10],convert_expression_settings_evaluation)
@@ -27,5 +28,6 @@ performances = bind_rows(lapply(settings,evaluate_target_prediction,ligand_targe
 ncitations = get_ncitations_genes()
 performances_ligand_popularity = add_ligand_popularity_measures_to_perfs(performances,ncitations)
 slopes_df = performances_ligand_popularity \%>\% select(-setting,-ligand,-ncitations) \%>\% colnames() \%>\% lapply(.,get_slope_ligand_popularity,performances_ligand_popularity) \%>\% bind_rows()
+}
 
 }

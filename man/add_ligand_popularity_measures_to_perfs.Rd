@@ -18,6 +18,7 @@ A data.frame in which the performance measures for target gene prediction of a l
 \code{add_ligand_popularity_measures_to_perfs}: Get a data.frame in which the performance measures for target gene prediction of a ligand are merged with the number of times the ligand is mentioned in the Pubmed literature. Serves to investigate popularity bias (i.e. it can be expected that frequenly cited ligands will have better predictive performance because they are better studied).
 }
 \examples{
+\dontrun{
 library(dplyr)
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 settings = lapply(expression_settings_validation[1:10],convert_expression_settings_evaluation)
@@ -26,5 +27,6 @@ ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands
 performances = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix))
 ncitations = get_ncitations_genes()
 performances_ligand_popularity = add_ligand_popularity_measures_to_perfs(performances,ncitations)
+}
 
 }

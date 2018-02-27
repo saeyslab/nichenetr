@@ -12,7 +12,9 @@
 #' @import readr
 #'
 #' @examples
+#' \dontrun{
 #' ncitations = get_ncitations_genes(file = "ftp://ftp.ncbi.nih.gov/gene/DATA/gene2pubmed.gz")
+#' }
 #'
 #' @export
 #'
@@ -41,6 +43,7 @@ get_ncitations_genes = function(file = "ftp://ftp.ncbi.nih.gov/gene/DATA/gene2pu
 #' @return A data.frame in which the performance measures for target gene prediction of a ligand are merged with the number of times the ligand is mentioned in the Pubmed literature.
 #'
 #' @examples
+#' \dontrun{
 #' library(dplyr)
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' settings = lapply(expression_settings_validation[1:10],convert_expression_settings_evaluation)
@@ -49,6 +52,7 @@ get_ncitations_genes = function(file = "ftp://ftp.ncbi.nih.gov/gene/DATA/gene2pu
 #' performances = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix))
 #' ncitations = get_ncitations_genes()
 #' performances_ligand_popularity = add_ligand_popularity_measures_to_perfs(performances,ncitations)
+#' }
 #'
 #' @export
 #'
@@ -79,6 +83,7 @@ add_ligand_popularity_measures_to_perfs = function(performances,ncitations){
 #' @return A data.frame in which the regression coefficient estimate, p-value and corresponding R-squared value are shown for the regression analysis to investigate the trend between a particular classficiation evaluation metric and the popularity of the ligand.
 #'
 #' @examples
+#' \dontrun{
 #' library(dplyr)
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' settings = lapply(expression_settings_validation[1:10],convert_expression_settings_evaluation)
@@ -88,6 +93,7 @@ add_ligand_popularity_measures_to_perfs = function(performances,ncitations){
 #' ncitations = get_ncitations_genes()
 #' performances_ligand_popularity = add_ligand_popularity_measures_to_perfs(performances,ncitations)
 #' slopes_df = performances_ligand_popularity %>% select(-setting,-ligand,-ncitations) %>% colnames() %>% lapply(.,get_slope_ligand_popularity,performances_ligand_popularity) %>% bind_rows()
+#' }
 #'
 #' @export
 #'
@@ -132,12 +138,14 @@ get_slope_ligand_popularity = function(metric,performances){
 #' @return A data.frame containing several classification evaluation metrics for target gene prediction. Predictions were evaluated for n different bins of target genes. The specific bin is indicated in the variable target_bin_id. target_bin_id = 1: target genes that are least mentioned in the Pubmed literature.
 #'
 #' @examples
+#' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' settings = lapply(expression_settings_validation[1:10],convert_expression_settings_evaluation)
 #' ligands = extract_ligands_from_settings(settings)
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' ncitations = get_ncitations_genes()
 #' performances_target_bins_popularity = evaluate_target_prediction_per_bin(5,settings,ligand_target_matrix,ncitations)
+#' }
 #'
 #' @export
 #'
@@ -179,6 +187,7 @@ evaluate_target_prediction_per_bin = function(nbins,settings,ligand_target_matri
 #' @return A data.frame in which the regression coefficient estimate, p-value and corresponding R-squared value are shown for the regression analysis to investigate the trend between a particular classficiation evaluation metric and the popularity of the target genes.
 #'
 #' @examples
+#' \dontrun{
 #' library(dplyr)
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' settings = lapply(expression_settings_validation[1:10],convert_expression_settings_evaluation)
@@ -188,6 +197,7 @@ evaluate_target_prediction_per_bin = function(nbins,settings,ligand_target_matri
 #' performances_target_bins_popularity = evaluate_target_prediction_per_bin(5,settings,ligand_target_matrix,ncitations)
 #' slopes_df = performances_target_bins_popularity %>% select(-setting,-ligand,-target_bin_id) %>% colnames() %>% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity,method = "individual") %>% bind_rows()
 #' slopes_df2 = performances_target_bins_popularity %>% select(-setting,-ligand,-target_bin_id) %>% colnames() %>% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity,method = "all") %>% bind_rows()
+#' }
 #'
 #' @export
 #'
