@@ -29,6 +29,6 @@ weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_netw
 ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances_regression,ligand_target_matrix))
-head(ligand_importances)
+print(head(ligand_importances))
 
 }
