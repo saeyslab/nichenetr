@@ -36,6 +36,7 @@ devtools::use_package("Hmisc")
 devtools::use_package("caret")
 devtools::use_package("purrr")
 devtools::use_package("randomForest")
+devtools::use_package("limma")
 
 devtools::use_package("doMC","Suggests")
 
@@ -65,6 +66,15 @@ expression_settings_validation = readRDS("../staticNicheNet/results/expression_s
 devtools::use_data(expression_settings_validation,overwrite = T, compress = "bzip2")
 
 
+Exprs_lsec = readRDS("../staticNicheNet/data/expression/niche/lsec_E.rds")
+voom_lsec = readRDS("../staticNicheNet/data/expression/niche/lsec_v.rds")
+devtools::use_data(Exprs_lsec,overwrite = T, compress = "bzip2")
+devtools::use_data(voom_lsec,overwrite = T, compress = "bzip2")
+
+E_mono_kc = readRDS("../staticNicheNet/data/expression/immune/E_mono_kc.rds")
+devtools::use_data(E_mono_kc,overwrite = T, compress = "bzip2")
+
+
 library(org.Mm.eg.db)
 library(org.Hs.eg.db)
 library(dplyr)
@@ -80,3 +90,7 @@ entrez2symbol = mapper(geneinfo, "symbol", "entrez")
 symbol2entrez = mapper(geneinfo, "entrez", "symbol")
 geneinfo_human = geneinfo_human %>% mutate(entrez_mouse=humanentrez2mouseentrez[entrez]) %>% mutate(symbol_mouse = entrez2symbol[entrez_mouse])
 devtools::use_data(geneinfo_human, overwrite = T, compress = "bzip2")
+
+
+
+
