@@ -26,4 +26,5 @@ ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
 evaluation = evaluate_single_importances_ligand_prediction(ligand_importances,normalization = "median")
+head(evaluation)
 }

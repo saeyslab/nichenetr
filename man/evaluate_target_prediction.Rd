@@ -25,6 +25,7 @@ setting = lapply(expression_settings_validation[1],convert_expression_settings_e
 ligands = extract_ligands_from_settings(setting)
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 perf1 = lapply(setting,evaluate_target_prediction,ligand_target_matrix)
+head(perf1)
 perf2 = lapply(setting,evaluate_target_prediction,make_discrete_ligand_target_matrix(ligand_target_matrix))
 
 }
