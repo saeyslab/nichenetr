@@ -184,7 +184,7 @@ get_multi_ligand_importances = function(setting,ligand_target_matrix, ligands_po
 #' @param n_cores The number of cores used for parallelized model training via cross-validation. Default: 4. Only relevant on non-windows OS.
 #' @param ignore_errors Indiciate whether errors during model training by caret should be ignored such that another model training try will be initiated until model is trained without raising errors. Default: FALSE.
 #'
-#' @return A list with the following elements. $performances: data frame containing classification evaluation measure for classification on the test folds during training via cross-validation; $performances_training: data frame containing classification evaluation measures for classification of the final model (discrete class assignments) on the complete data set (performance can be severly optimistic due to overfitting!); $performance_training_continuous: data frame containing classification evaluation measures for classification of the final model (class probability scores) on the complete data set (performance can be severly optimistic due to overfitting!) $var_imps: data frame containing the variable importances of the different ligands (embbed importance score for some classification algorithms, otherwise just the auroc); $prediction_response_df: data frame containing for each ligand-setting combination the ligand importance scores for the individual importance scores, the complete model of importance scores and the ligand activity as well (TRUE or FALSE); $model: the caret model object that can be used on new importance scores to predict the ligand activity state.
+#' @return A list with the following elements. $performances: data frame containing classification evaluation measure for classification on the test folds during training via cross-validation; $performances_training: data frame containing classification evaluation measures for classification of the final model (discrete class assignments) on the complete data set (performance can be severly optimistic due to overfitting!); $performance_training_continuous: data frame containing classification evaluation measures for classification of the final model (class probability scores) on the complete data set (performance can be severly optimistic due to overfitting!) $var_imps: data frame containing the variable importances of the different ligands (embbed importance score for some classification algorithms, otherwise just the auroc); $prediction_response_df: data frame containing for each ligand-setting combination the ligand importanctf_target = construct_tf_target_matrix(weighted_networks, tfs_as_cols = TRUE, standalone_output = TRUE)e scores for the individual importance scores, the complete model of importance scores and the ligand activity as well (TRUE or FALSE); $model: the caret model object that can be used on new importance scores to predict the ligand activity state.
 #'
 #' @importFrom ROCR prediction performance
 #' @importFrom caTools trapz
@@ -654,6 +654,62 @@ get_multi_ligand_rf_importances_regression = function(setting,ligand_target_matr
   }
   metrics = metrics %>% select(setting, test_ligand, X.IncMSE, IncNodePurity) %>% rename(IncMSE = X.IncMSE)
   return(metrics)
-
-
 }
+#' @title Convert settings to correct settings format for TF prediction.
+#'
+#' @description \code{convert_settings_tf_prediction} Converts settings to correct settings format for TF activity prediction. In this prediction problem, TFs (out of a set of possibly active TFs) will be ranked based on feature importance scores. The format can be made suited for applications in which TFs need to be scored based on their possible upstream activity: 3) by calculating individual feature importane scores or 4) feature importance based on models with embedded feature importance determination. Remark that upstream regulator analysis for TFs here is experimental and was not thoroughly validated in the study accompanying this package.
+#'
+#' @usage
+#' convert_settings_tf_prediction(settings, all_tfs, single = TRUE)
+#'
+#' @param settings A list of lists. Eeach sublist contains the following elements: .$name: name of the setting; .$from: name(s) of the tf(s) active in the setting of interest; .$response: the observed target response: indicate for a gene whether it was a target or not in the setting of interest.
+#' @param all_tfs A character vector of possible tfs that will be considered for the tf activity state prediction.
+#' @param single TRUE if feature importance scores for tfs will be calculated by looking at ligans individually. FALSE if the goal is to calculate the feature importance scores via sophisticated classification algorithms like random forest.
+
+#' @return A list with following elements: $name, $tf: name of active tf(s) (only if validation is TRUE), $from (tf(s) that will be tested for activity prediction), $response
+#'
+#' @examples
+#' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
+#' settings_tf_pred = convert_settings_tf_prediction(settings, all_tfs = c("SMAD1","STAT1","RELA"), single = TRUE)
+#' # show how this function can be used to predict activities of TFs
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+#' tf_target = construct_tf_target_matrix(weighted_networks, tfs_as_cols = TRUE, standalone_output = TRUE)
+#' tf_importances = dplyr::bind_rows(lapply(settings_tf_pred,get_single_ligand_importances,tf_target,known = FALSE))
+#' print(head(tf_importances))
+#'
+#' @export
+#'
+#'
+convert_settings_tf_prediction = function(settings,all_tfs, single = TRUE){
+
+  # input check
+  if(!is.list(settings))
+    stop("settings should be a list")
+  if(!is.character(all_tfs))
+    stop("all_tfs should be a character vector")
+  if(!is.logical(single) | length(single) != 1)
+    stop("single should be TRUE or FALSE")
+
+  requireNamespace("dplyr")
+
+  new_settings = list()
+  if (single == TRUE){
+    for (i in 1:length(settings)){
+      setting = settings[[i]]
+      for (k in 1:length(all_tfs)){
+        test_tf = all_tfs[[k]]
+        new_settings[[length(new_settings) + 1]] = list(make_new_setting_ligand_prediction_single_application(setting,test_tf))
+      }
+    }
+  } else if (single == FALSE){
+    for (i in 1:length(settings)){
+      setting = settings[[i]]
+      new_settings[[length(new_settings) + 1]] = list(make_new_setting_ligand_prediction_multi_application(setting,all_tfs))
+    }
+  }
+  return(new_settings %>% unlist(recursive = FALSE))
+}
+
+
+
+
