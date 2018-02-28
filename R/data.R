@@ -96,4 +96,4 @@
 #'
 #' Formal class 'ExpressionSet'
 #'
-"E_mono_kc"
+"Exprs_mono_kc"

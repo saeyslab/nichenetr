@@ -26,7 +26,10 @@ Imports: dplyr,
     tibble,
     caret,
     purrr,
-    randomForest
+    randomForest,
+    Biobase,
+    BiocGenerics,
+    parallel
 Suggests: knitr,
     rmarkdown,
     testthat,

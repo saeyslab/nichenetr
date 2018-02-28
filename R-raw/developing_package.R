@@ -37,6 +37,9 @@ devtools::use_package("caret")
 devtools::use_package("purrr")
 devtools::use_package("randomForest")
 devtools::use_package("limma")
+devtools::use_package("Biobase")
+devtools::use_package("BiocGenerics")
+devtools::use_package("parallel")
 
 devtools::use_package("doMC","Suggests")
 
@@ -71,8 +74,8 @@ voom_lsec = readRDS("../staticNicheNet/data/expression/niche/lsec_v.rds")
 devtools::use_data(Exprs_lsec,overwrite = T, compress = "bzip2")
 devtools::use_data(voom_lsec,overwrite = T, compress = "bzip2")
 
-E_mono_kc = readRDS("../staticNicheNet/data/expression/immune/E_mono_kc.rds")
-devtools::use_data(E_mono_kc,overwrite = T, compress = "bzip2")
+Exprs_mono_kc = readRDS("../staticNicheNet/data/expression/immune/E_mono_kc.rds")
+devtools::use_data(Exprs_mono_kc,overwrite = T, compress = "bzip2")
 
 
 library(org.Mm.eg.db)
