@@ -384,8 +384,6 @@ caret_classification_evaluation_categorical = function(data, lev = NULL, model =
 }
 wrapper_caret_classification = function(train_data, algorithm, continuous = TRUE, var_imps = TRUE, cv = TRUE, cv_number = 5, cv_repeats = 2, parallel = FALSE, n_cores = 4,prediction_response_df = NULL,ignore_errors = FALSE, return_model = FALSE){
 
-
-
   if (sum( table(train_data$obs) >= cv_number) != 2 )
     stop("Make sure that there are more instances of each class than the folds in the cross-validation scheme")
   if (parallel == TRUE){
@@ -490,14 +488,14 @@ wrapper_caret_classification = function(train_data, algorithm, continuous = TRUE
     colnames(var_imps_df) = c("feature","importance")
     if(!is.null(prediction_response_df)){
       output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous ,var_imps = var_imps_df, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions))
-    }
-    output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous, var_imps = var_imps_df)
+    } else {
+    output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous, var_imps = var_imps_df)}
 
   } else {
     if(!is.null(prediction_response_df)){
       output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous, var_imps = NULL, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions))
-    }
-    output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training,performances_training_continuous = performances_training_continuous, var_imps = NULL)
+    } else {
+    output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training,performances_training_continuous = performances_training_continuous, var_imps = NULL)}
   }
 
   if (return_model == TRUE){

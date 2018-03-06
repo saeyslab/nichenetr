@@ -265,9 +265,10 @@ evaluate_multi_ligand_target_prediction = function(setting,ligand_target_matrix,
   combined = inner_join(response_df,prediction_df, by = "gene")
   train_data = combined %>% select(-gene) %>% rename(obs = response) %>% data.frame()
 
-  output = wrapper_caret_classification(train_data,algorithm,continuous = continuous,var_imps,cv,cv_number,cv_repeats,parallel,n_cores,prediction_response_df = combined,ignore_errors)
+  output = wrapper_caret_classification(train_data,algorithm,continuous = continuous,var_imps,cv,cv_number,cv_repeats,parallel,n_cores,ignore_errors, prediction_response_df = combined)
   output$setting = setting$name
   output$ligands = ligands_oi
+  # output$prediction_response_df = combined
   return(output)
 }
 #' @title Evaluation of target gene prediction.

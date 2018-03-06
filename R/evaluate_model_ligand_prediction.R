@@ -184,7 +184,7 @@ get_multi_ligand_importances = function(setting,ligand_target_matrix, ligands_po
 #' @param n_cores The number of cores used for parallelized model training via cross-validation. Default: 4. Only relevant on non-windows OS.
 #' @param ignore_errors Indiciate whether errors during model training by caret should be ignored such that another model training try will be initiated until model is trained without raising errors. Default: FALSE.
 #'
-#' @return A list with the following elements. $performances: data frame containing classification evaluation measure for classification on the test folds during training via cross-validation; $performances_training: data frame containing classification evaluation measures for classification of the final model (discrete class assignments) on the complete data set (performance can be severly optimistic due to overfitting!); $performance_training_continuous: data frame containing classification evaluation measures for classification of the final model (class probability scores) on the complete data set (performance can be severly optimistic due to overfitting!) $var_imps: data frame containing the variable importances of the different ligands (embbed importance score for some classification algorithms, otherwise just the auroc); $prediction_response_df: data frame containing for each ligand-setting combination the ligand importanctf_target = construct_tf_target_matrix(weighted_networks, tfs_as_cols = TRUE, standalone_output = TRUE)e scores for the individual importance scores, the complete model of importance scores and the ligand activity as well (TRUE or FALSE); $model: the caret model object that can be used on new importance scores to predict the ligand activity state.
+#' @return A list with the following elements. $performances: data frame containing classification evaluation measure for classification on the test folds during training via cross-validation; $performances_training: data frame containing classification evaluation measures for classification of the final model (discrete class assignments) on the complete data set (performance can be severly optimistic due to overfitting!); $performance_training_continuous: data frame containing classification evaluation measures for classification of the final model (class probability scores) on the complete data set (performance can be severly optimistic due to overfitting!) $var_imps: data frame containing the variable importances of the different ligands (embbed importance score for some classification algorithms, otherwise just the auroc); $prediction_response_df: data frame containing for each ligand-setting combination the ligand importance scores for the individual importance scores, the complete model of importance scores and the ligand activity as well (TRUE or FALSE); $model: the caret model object that can be used on new importance scores to predict the ligand activity state.
 #'
 #' @importFrom ROCR prediction performance
 #' @importFrom caTools trapz
@@ -305,7 +305,7 @@ evaluate_single_importances_ligand_prediction = function(importances,normalizati
 #' @description \code{model_based_ligand_activity_prediction} Predict the activity state of a ligand based on a classification model that was trained to predict ligand activity state based on ligand importance scores.
 #'
 #' @usage
-#' model_based_ligand_activity_prediction(model, importances, normalization)
+#' model_based_ligand_activity_prediction(importances, model, normalization)
 #'
 #' @param model A model object of a classification object as e.g. generated via caret.
 #' @param importances A data frame containing at least folowing variables: $setting, $test_ligand, $ligand and one or more feature importance scores. $test_ligand denotes the name of a possibly active ligand, $ligand the name of the truely active ligand.
@@ -328,14 +328,16 @@ evaluate_single_importances_ligand_prediction = function(importances,normalizati
 #' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix, known = FALSE))
-#' activity_predictions = model_based_ligand_activity_prediction(evaluation$model,ligand_importances,"median")
+#' activity_predictions = model_based_ligand_activity_prediction(ligand_importances, evaluation$model,"median")
 #' print(head(activity_predictions))
 #'
 #' @export
 #'
-model_based_ligand_activity_prediction = function(model, importances, normalization){
+model_based_ligand_activity_prediction = function(importances, model, normalization){
   if (!is.list(model))
     stop("model must be a list, derived as model object from model training (e.g. via the caret package)")
+  if(model$finalModel$problemType != "Classification" & model$finalModel$problemType != "Regression")
+    stop("model should be model object (derived from model training)")
   if (!is.data.frame(importances))
     stop("importances must be a data frame")
   if(!is.character(importances$setting) | !is.character(importances$test_ligand))
@@ -354,7 +356,7 @@ model_based_ligand_activity_prediction = function(model, importances, normalizat
   }
 
   final_model_predictions = predict(model,newdata = normalized_importances, type = "prob")
-  final_model_predictions = final_model_predictions %>% tbl_df() %>% mutate(active = TRUE. > FALSE.)
+  final_model_predictions = final_model_predictions %>% tbl_df() %>% mutate(active = TRUE. > FALSE.) %>% select(-FALSE.) %>% rename(model = TRUE.)
   return(bind_cols(importances,final_model_predictions) %>% tbl_df())
 
 }
@@ -709,7 +711,59 @@ convert_settings_tf_prediction = function(settings,all_tfs, single = TRUE){
   }
   return(new_settings %>% unlist(recursive = FALSE))
 }
+#' @title Converts expression settings to format in which the total number of potential ligands is reduced up to n top-predicted active ligands.
+#'
+#' @description \code{convert_expression_settings_evaluation} Converts expression settings to format in which the total number of potential ligands is reduced up to n top-predicted active ligands.(useful for applications when a lot of ligands are potentially active, a lot of settings need to be predicted and a multi-ligand model is trained).
+#'
+#' @usage
+#' convert_settings_topn_ligand_prediction(setting, importances, model, n, normalization)
+#'
+#' @param setting A list containing the following elements: .$name: name of the setting; .$from: name(s) of the ligand(s) active in the setting of interest; .$diffexp: data frame or tibble containing at least 3 variables= $gene, $lfc (log fold change treated vs untreated) and $qval (fdr-corrected p-value)
+#' @param n The top n number of ligands according to the ligand activity state prediction model will be considered as potential ligand for the generation of a new setting.
+#' @inheritParams model_based_ligand_activity_prediction
 
+#' @return A list with following elements: $name, $from, $response. $response will be a gene-named logical vector indicating whether the gene's transcription was influenced by the active ligand(s) in the setting of interest.
+#'
+#' @examples
+#' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
+#' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
+#'
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+#' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
+#' evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
+#'
+#' settings = lapply(expression_settings_validation[5:10],convert_expression_settings_evaluation)
+#' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = FALSE, single = TRUE)
+#' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix, known = FALSE))
+#' settings = lapply(settings,convert_settings_topn_ligand_prediction, importances = ligand_importances, model = evaluation$model, n = 3, normalization = "median" )
+#'
+#' @export
+#'
+convert_settings_topn_ligand_prediction = function(setting, importances, model, n, normalization){
+  # input check
+  if(!is.list(setting))
+    stop("setting should be a list")
+  if(!is.character(setting$from) | !is.character(setting$name))
+    stop("setting$from and setting$name should be character vectors")
+  if(!is.logical(setting$response))
+    stop("setting$response should be a logical vector")
 
+  requireNamespace("dplyr")
+  setting_name = setting$name
+  importances_oi = importances %>% filter(setting == setting_name)
+  output = model_based_ligand_activity_prediction(importances_oi, model,normalization)
+  top_ligands = output %>% top_n(n,model) %>% .$test_ligand
+
+  new_setting = list()
+  new_setting$name = setting$name
+  new_setting$from = top_ligands
+  new_setting$response = setting$response
+
+  return(new_setting)
+}
 
 
