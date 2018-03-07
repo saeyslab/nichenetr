@@ -119,7 +119,7 @@ test_that("Model-based ligand activity prediction", {
   ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
   ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix,known = FALSE))
-  activity_predictions = model_based_ligand_activity_prediction(evaluation$model,ligand_importances,"median")
+  activity_predictions = model_based_ligand_activity_prediction(ligand_importances, evaluation$model, "median")
   expect_type(activity_predictions,"list")
   expect_gte(nrow(activity_predictions),1)
 })
