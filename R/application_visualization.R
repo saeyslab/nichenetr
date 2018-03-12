@@ -22,7 +22,7 @@
 #' all_ligands = c("BMP2")
 #' all_targets = c("HEY1")
 #' top_n_regulators = 2
-#' ligand_target_signaling_list = get_ligand_signaling_path(ligand_tf_matrix,all_ligands,all_targets,k,weighted_networks)
+#' ligand_target_signaling_list = get_ligand_signaling_path(ligand_tf_matrix,all_ligands,all_targets,top_n_regulators,weighted_networks)
 #' @export
 #'
 get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all, top_n_regulators = 4, weighted_networks, ligands_position = "cols"){
@@ -50,7 +50,7 @@ get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all,
     stop("ligands_position must be 'cols' or 'rows'")
   requireNamespace("dplyr")
 
-  final_combined_df  = construct_ligand_signaling_df(ligands_all,targets_all,k,weighted_networks,ligand_tf_matrix)
+  final_combined_df  = construct_ligand_signaling_df(ligands_all,targets_all,top_n_regulators,weighted_networks,ligand_tf_matrix)
 
   signaling_network_all = weighted_networks$lr_sig %>% mutate(weight = 1/weight) # inverse weight to prepare for SPL
   signaling_igraph = igraph::graph_from_data_frame(signaling_network_all, directed = TRUE)
@@ -87,7 +87,7 @@ get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all,
 #' all_ligands = c("BMP2")
 #' all_targets = c("HEY1")
 #' top_n_regulators = 2
-#' ligand_target_signaling_list = get_ligand_signaling_path(ligand_tf_matrix,all_ligands,all_targets,k,weighted_networks)
+#' ligand_target_signaling_list = get_ligand_signaling_path(ligand_tf_matrix,all_ligands,all_targets,top_n_regulators,weighted_networks)
 #' graph = diagrammer_format_signaling_graph(ligand_target_signaling_list, all_ligands,all_targets)
 #' # DiagrammeR::render_graph(graph, layout = "tree")
 #' @export
@@ -168,7 +168,7 @@ diagrammer_format_signaling_graph = function(signaling_graph_list, ligands_all,t
 #' all_ligands = c("BMP2")
 #' all_targets = c("HEY1")
 #' top_n_regulators = 2
-#' ligand_target_signaling_list = get_ligand_signaling_path(ligand_tf_matrix,all_ligands,all_targets,k,weighted_networks)
+#' ligand_target_signaling_list = get_ligand_signaling_path(ligand_tf_matrix,all_ligands,all_targets,top_n_regulators,weighted_networks)
 #' data_source_info_network = infer_supporting_datasources(ligand_target_signaling_list, lr_network, sig_network, gr_network)
 #'
 #' @export
