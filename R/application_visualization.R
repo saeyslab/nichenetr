@@ -44,13 +44,13 @@ get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all,
   }
   if(sum((targets_all %in% unique(c(weighted_networks$gr$to))) == FALSE) > 0)
     stop("target genes should be in gene regulatory network")
-  if(!is.numeric(k) | length(k) != 1 | top_n_regulators <= 0)
-    stop("k should be a number higher than 0")
+  if(!is.numeric(top_n_regulators) | length(top_n_regulators) != 1 | top_n_regulators <= 0)
+    stop("top_n_regulators should be a number higher than 0")
   if (ligands_position != "cols" & ligands_position != "rows")
     stop("ligands_position must be 'cols' or 'rows'")
   requireNamespace("dplyr")
 
-  final_combined_df  = construct_ligand_signaling_df(ligands_all,targets_all,top_n_regulators,weighted_networks,ligand_tf_matrix)
+  final_combined_df  = construct_ligand_signaling_df(ligands_all,targets_all, top_n_regulators, weighted_networks,ligand_tf_matrix)
 
   signaling_network_all = weighted_networks$lr_sig %>% mutate(weight = 1/weight) # inverse weight to prepare for SPL
   signaling_igraph = igraph::graph_from_data_frame(signaling_network_all, directed = TRUE)
