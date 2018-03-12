@@ -27,7 +27,7 @@ ligands = list("TNF","BMP2",c("IL4","IL13"))
 ligand_tf_matrix = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
 all_ligands = c("BMP2")
 all_targets = c("HEY1")
-k = 2
+top_n_regulators = 2
 ligand_target_signaling_list = get_ligand_signaling_path(ligand_tf_matrix,all_ligands,all_targets,k,weighted_networks)
 data_source_info_network = infer_supporting_datasources(ligand_target_signaling_list, lr_network, sig_network, gr_network)
 

@@ -4,7 +4,7 @@
 \alias{get_ligand_signaling_path}
 \title{Get ligand-target signaling paths between ligand(s) and target gene(s) of interest}
 \usage{
-get_ligand_signaling_path(ligand_tf_matrix, ligands_all, targets_all, k = 4, weighted_networks, ligands_position = "cols")
+get_ligand_signaling_path(ligand_tf_matrix, ligands_all, targets_all, top_n_regulators = 4, weighted_networks, ligands_position = "cols")
 }
 \arguments{
 \item{ligand_tf_matrix}{A matrix of ligand-regulator probability scores}
@@ -13,7 +13,7 @@ get_ligand_signaling_path(ligand_tf_matrix, ligands_all, targets_all, k = 4, wei
 
 \item{targets_all}{A character vector of one or more target genes of interest}
 
-\item{k}{The number of top regulators that should be included in the ligand-target signaling network. Top regulators are regulators that score both high for being upstream of the target gene(s) and high for being downstream of the ligand. Default: 4.}
+\item{top_n_regulators}{The number of top regulators that should be included in the ligand-target signaling network. Top regulators are regulators that score both high for being upstream of the target gene(s) and high for being downstream of the ligand. Default: 4.}
 
 \item{weighted_networks}{A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)}
 
@@ -31,6 +31,6 @@ ligands = list("TNF","BMP2",c("IL4","IL13"))
 ligand_tf_matrix = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
 all_ligands = c("BMP2")
 all_targets = c("HEY1")
-k = 2
+top_n_regulators = 2
 ligand_target_signaling_list = get_ligand_signaling_path(ligand_tf_matrix,all_ligands,all_targets,k,weighted_networks)
 }
