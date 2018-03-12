@@ -721,6 +721,45 @@ caret_regression_evaluation_continuous = function(data, lev = NULL, model = NULL
   names(out) = colnames(out_tibble)
   out
 }
+get_shortest_path_signaling = function(ligand_oi, signaling_df, signaling_igraph){
+  ligand_signaling = signaling_df %>% filter(ligand == ligand_oi)
+  tfs = ligand_signaling$TF %>% unique()
+  sp = igraph::shortest_paths(signaling_igraph, from = ligand_oi, to = tfs, mode ="out")
+  tf_nodes = unlist(sp$vpath) %>% names() %>% unique() %>% .[. != ligand_oi] # ligand should not belong to tf nodes
+}
+
+construct_ligand_signaling_df = function(ligands_all,targets_all,k,weighted_networks,ligand_tf_matrix){
+  final_combined_df = bind_rows(expand.grid(ligands_all,targets_all) %>% apply(.,1,wrappper_visualization,k,weighted_networks,ligand_tf_matrix))
+}
+wrappper_visualization = function(grid,k,weighted_networks,ligand_tf_matrix){
+  ligand = grid[1]
+  target = grid[2]
+  network = get_network_df(ligand,target,k,weighted_networks,ligand_tf_matrix)
+}
+
+get_network_df = function(ligand_to_vis,target_to_vis,k,weighted_networks,ligand_tf_matrix){
+
+  ## prepare TFs downstream of ligands
+
+  ## ligands should be in columns
+
+  ligand_tf_matrix_visualization = ligand_tf_matrix[,ligand_to_vis] %>% as.matrix()
+
+
+
+  ligand_tf_matrix_visualization_df = tbl_df(ligand_tf_matrix_visualization) %>% rename(weight = V1) %>% mutate(TF = rownames(ligand_tf_matrix)) %>% select(TF,weight)
+  ligand_tf_matrix_visualization_df_filtered = ligand_tf_matrix_visualization_df %>% filter(weight > 0) %>% mutate(ligand = ligand_to_vis)
+
+  ## prepare TFs upstream of target
+  regulatory_network_filtered = weighted_networks$gr %>% filter(to == target_to_vis) %>% rename(TF = from, weight_grn = weight)
+
+  ## combine both
+  combined_df = inner_join(ligand_tf_matrix_visualization_df_filtered,regulatory_network_filtered, by = "TF")
+  combined_df = combined_df %>% mutate(total_weight = weight*weight_grn)
+  final_combined_df = combined_df %>% arrange(-total_weight) %>% .[1:min(k,nrow(combined_df)),]
+
+  return(final_combined_df)
+}
 
 
 

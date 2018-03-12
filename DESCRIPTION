@@ -29,7 +29,8 @@ Imports: dplyr,
     randomForest,
     Biobase,
     BiocGenerics,
-    parallel
+    parallel,
+    DiagrammeR
 Suggests: knitr,
     rmarkdown,
     testthat,
