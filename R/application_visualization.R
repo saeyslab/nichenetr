@@ -3,12 +3,12 @@
 #' @description \code{get_ligand_signaling_path} Extract possible signaling paths between a ligand and target gene of interest. The most highly weighted path(s) will be extracted.
 #'
 #' @usage
-#' get_ligand_signaling_path(ligand_tf_matrix, ligands_all, targets_all, k = 4, weighted_networks, ligands_position = "cols")
+#' get_ligand_signaling_path(ligand_tf_matrix, ligands_all, targets_all, top_n_regulators = 4, weighted_networks, ligands_position = "cols")
 #'
 #' @param ligand_tf_matrix A matrix of ligand-regulator probability scores
 #' @param ligands_all A character vector of one or more ligands of interest
 #' @param targets_all A character vector of one or more target genes of interest
-#' @param k The number of top regulators that should be included in the ligand-target signaling network. Top regulators are regulators that score both high for being upstream of the target gene(s) and high for being downstream of the ligand. Default: 4.
+#' @param top_n_regulators The number of top regulators that should be included in the ligand-target signaling network. Top regulators are regulators that score both high for being upstream of the target gene(s) and high for being downstream of the ligand. Default: 4.
 #' @param weighted_networks A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)
 #' @param ligands_position Indicate whether the ligands in the ligand-target matrix are in the rows ("rows") or columns ("cols"). Default: "cols".
 #'
@@ -21,11 +21,11 @@
 #' ligand_tf_matrix = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
 #' all_ligands = c("BMP2")
 #' all_targets = c("HEY1")
-#' k = 2
+#' top_n_regulators = 2
 #' ligand_target_signaling_list = get_ligand_signaling_path(ligand_tf_matrix,all_ligands,all_targets,k,weighted_networks)
 #' @export
 #'
-get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all, k = 4, weighted_networks, ligands_position = "cols"){
+get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all, top_n_regulators = 4, weighted_networks, ligands_position = "cols"){
 
   if (!is.list(weighted_networks))
     stop("weighted_networks must be a list object")
@@ -44,9 +44,10 @@ get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all,
   }
   if(sum((targets_all %in% unique(c(weighted_networks$gr$to))) == FALSE) > 0)
     stop("target genes should be in gene regulatory network")
-  if(!is.numeric(k) | length(k) != 1 | k <= 0)
+  if(!is.numeric(k) | length(k) != 1 | top_n_regulators <= 0)
     stop("k should be a number higher than 0")
-
+  if (ligands_position != "cols" & ligands_position != "rows")
+    stop("ligands_position must be 'cols' or 'rows'")
   requireNamespace("dplyr")
 
   final_combined_df  = construct_ligand_signaling_df(ligands_all,targets_all,k,weighted_networks,ligand_tf_matrix)
@@ -85,7 +86,7 @@ get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all,
 #' ligand_tf_matrix = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
 #' all_ligands = c("BMP2")
 #' all_targets = c("HEY1")
-#' k = 2
+#' top_n_regulators = 2
 #' ligand_target_signaling_list = get_ligand_signaling_path(ligand_tf_matrix,all_ligands,all_targets,k,weighted_networks)
 #' graph = diagrammer_format_signaling_graph(ligand_target_signaling_list, all_ligands,all_targets)
 #' # DiagrammeR::render_graph(graph, layout = "tree")
@@ -166,7 +167,7 @@ diagrammer_format_signaling_graph = function(signaling_graph_list, ligands_all,t
 #' ligand_tf_matrix = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
 #' all_ligands = c("BMP2")
 #' all_targets = c("HEY1")
-#' k = 2
+#' top_n_regulators = 2
 #' ligand_target_signaling_list = get_ligand_signaling_path(ligand_tf_matrix,all_ligands,all_targets,k,weighted_networks)
 #' data_source_info_network = infer_supporting_datasources(ligand_target_signaling_list, lr_network, sig_network, gr_network)
 #'
