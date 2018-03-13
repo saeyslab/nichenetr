@@ -25,7 +25,7 @@ A data frame containing at least the variables from, to, sender_expression, rece
 }
 \examples{
 library(Biobase)
-library(tidyverse)
+library(dplyr)
 mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
 expression_vector_sender = Exprs_lsec[,Exprs_lsec$celltype == "LSEC_12h"] \%>\% apply(1,mean)
 expression_vector_receiver = Exprs_mono_kc[,Exprs_mono_kc$celltype == "BM_mono"] \%>\% apply(1,mean)
