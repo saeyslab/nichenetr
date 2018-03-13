@@ -97,3 +97,17 @@
 #' Formal class 'ExpressionSet'
 #'
 "Exprs_mono_kc"
+#' Number of citations for genes
+#'
+#' A data.frame/tibble describing the number of times a particular gene is cited in the pubmed literature (date: 13-03-2018)
+#'
+#' @format A data frame/tibble
+#' \describe{
+#'   \item{entrez}{entrez}
+#'   \item{ncitations}{ncitations}
+#'   \item{symbol}{symbol}
+#'   \item{entrez_mouse}{entrez_mouse}
+#'   \item{symbol_mouse}{symbol_mouse}
+#'   }
+#'
+"ncitations"

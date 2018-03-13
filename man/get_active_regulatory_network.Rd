@@ -4,7 +4,7 @@
 \alias{get_active_regulatory_network}
 \title{Get active gene regulatory network in a receiver cell.}
 \usage{
-get_active_regulatory_network(expression_receiver, sig_network, expression_cutoff_receiver = 0)
+get_active_regulatory_network(expression_receiver, gr_network, expression_cutoff_receiver = 0)
 }
 \arguments{
 \item{expression_receiver}{A named numeric vector of gene expression levels (absolute or logfc) for the receiver cell that receives extracellular signals from the sender cell}

@@ -10,8 +10,40 @@ mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_co
 # mousesymbol2humanentrez = mapper(geneinfo_human,"entrez","symbol_mouse")
 # humansymbol2mousesymbol = mapper(geneinfo_human,"symbol_mouse","symbol")
 # mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
+get_design = function(E) { # make design matrix for differential expression between celltypes
+  TS <- phenoData(E)$celltype
+  TS <- factor(TS, levels=unique(TS))
+  design <- model.matrix(~0+TS)
+  colnames(design) <- levels(TS)
+  design
+}
+cal_diffexp = function(E, c1, c2, design=NULL, v=NULL) {
+  celltypemapper = setNames(phenoData(E)$celltype %>% unique %>% make.names, phenoData(E)$celltype %>% unique)
+  c1 = celltypemapper[c1]
+  c2 = celltypemapper[c2]
 
+  phenoData(E)$celltype = celltypemapper[phenoData(E)$celltype]
 
+  if (is.null(design)) design = get_design(E)
+  if (is.null(v)) v = E
+
+  fit = lmFit(v,design)#fit linear model for each gene - cf Limma
+
+  contrast = paste0(c1, "-", c2)
+  cont.matrix =eval(parse(text=paste("makeContrasts(", contrast, ",levels=design)",sep="")))
+  fit2 = contrasts.fit(fit, cont.matrix)
+  #fit2 = contrasts.fit(fit, cont.matrix)
+  #?why twice?-> error
+
+  fit.eb = eBayes(fit2)#based on linear model fit and contrast, compute test statistics, DE values, etc...
+  options(digits=3)
+  toptable=topTable(fit.eb, adjust="BH", sort.by="none",number=Inf)# get a table of DEvalues
+  toptable %>% tibble::rownames_to_column("gene") %>% rename(lfc=logFC, qval=adj.P.Val) %>% dplyr::select(lfc, qval, gene)
+}
+make_diffexp_timeseries = function(toptable) {
+  # get a table of DEvalues
+  toptable %>% rename(lfc=logFC, qval=adj.P.Val) %>% dplyr::select(lfc, qval, gene)
+}
 
 
 
@@ -149,7 +181,8 @@ evaluate_target_prediction_strict = function(response,prediction,continuous = TR
   response_df = tibble(gene = names(response), response = response)
   prediction_df = tibble(gene = names(prediction), prediction = prediction)
   combined = inner_join(response_df,prediction_df, by = "gene")
-
+  if (nrow(combined) == 0)
+    stop("Gene names in response don't accord to gene names in ligand-target matrix (did you consider differences human-mouse namings?)")
   prediction_vector = combined$prediction
   names(prediction_vector) = combined$gene
   response_vector = combined$response
@@ -597,7 +630,8 @@ evaluate_target_prediction_regression_strict = function(response,prediction, pre
   response_df = tibble(gene = names(response), response = response)
   prediction_df = tibble(gene = names(prediction), prediction = prediction)
   combined = inner_join(response_df,prediction_df, by = "gene")
-
+  if (nrow(combined) == 0)
+    stop("Gene names in response don't accord to gene names in ligand-target matrix (did you consider differences human-mouse namings?)")
   prediction_vector = combined$prediction
   names(prediction_vector) = combined$gene
   response_vector = combined$response

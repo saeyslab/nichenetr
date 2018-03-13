@@ -25,7 +25,7 @@ settings = lapply(expression_settings_validation[1:10],convert_expression_settin
 ligands = extract_ligands_from_settings(settings)
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 performances = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix))
-ncitations = get_ncitations_genes()
+# ncitations = get_ncitations_genes()
 performances_ligand_popularity = add_ligand_popularity_measures_to_perfs(performances,ncitations)
 }
 

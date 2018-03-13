@@ -50,7 +50,7 @@ get_ncitations_genes = function(file = "ftp://ftp.ncbi.nih.gov/gene/DATA/gene2pu
 #' ligands = extract_ligands_from_settings(settings)
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' performances = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix))
-#' ncitations = get_ncitations_genes()
+#' # ncitations = get_ncitations_genes()
 #' performances_ligand_popularity = add_ligand_popularity_measures_to_perfs(performances,ncitations)
 #' }
 #'
@@ -90,7 +90,7 @@ add_ligand_popularity_measures_to_perfs = function(performances,ncitations){
 #' ligands = extract_ligands_from_settings(settings)
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' performances = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix))
-#' ncitations = get_ncitations_genes()
+#' # ncitations = get_ncitations_genes()
 #' performances_ligand_popularity = add_ligand_popularity_measures_to_perfs(performances,ncitations)
 #' slopes_df = performances_ligand_popularity %>% select(-setting,-ligand,-ncitations) %>% colnames() %>% lapply(.,get_slope_ligand_popularity,performances_ligand_popularity) %>% bind_rows()
 #' }
@@ -143,7 +143,7 @@ get_slope_ligand_popularity = function(metric,performances){
 #' settings = lapply(expression_settings_validation[1:10],convert_expression_settings_evaluation)
 #' ligands = extract_ligands_from_settings(settings)
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-#' ncitations = get_ncitations_genes()
+#' # ncitations = get_ncitations_genes()
 #' performances_target_bins_popularity = evaluate_target_prediction_per_bin(5,settings,ligand_target_matrix,ncitations)
 #' }
 #'
@@ -193,7 +193,7 @@ evaluate_target_prediction_per_bin = function(nbins,settings,ligand_target_matri
 #' settings = lapply(expression_settings_validation[1:10],convert_expression_settings_evaluation)
 #' ligands = extract_ligands_from_settings(settings)
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-#' ncitations = get_ncitations_genes()
+#' # ncitations = get_ncitations_genes()
 #' performances_target_bins_popularity = evaluate_target_prediction_per_bin(5,settings,ligand_target_matrix,ncitations)
 #' slopes_df = performances_target_bins_popularity %>% select(-setting,-ligand,-target_bin_id) %>% colnames() %>% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity,method = "individual") %>% bind_rows()
 #' slopes_df2 = performances_target_bins_popularity %>% select(-setting,-ligand,-target_bin_id) %>% colnames() %>% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity,method = "all") %>% bind_rows()

@@ -7,7 +7,7 @@ test_that("Ligand popularity bias functions are ok", {
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
   performances = dplyr::bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix))
 
-  ncitations = get_ncitations_genes()
+##  ncitations = get_ncitations_genes()
   expect_equal(is.data.frame(ncitations),TRUE)
 
   performances_ligand_popularity = add_ligand_popularity_measures_to_perfs(performances,ncitations)
@@ -21,7 +21,7 @@ test_that("Target gene popularity bias functions are ok", {
   settings = lapply(expression_settings_validation[1:10],convert_expression_settings_evaluation)
   ligands = extract_ligands_from_settings(settings)
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-  ncitations = get_ncitations_genes()
+#  ncitations = get_ncitations_genes()
 
   performances_target_bins_popularity = evaluate_target_prediction_per_bin(5,settings,ligand_target_matrix,ncitations)
   expect_equal(is.data.frame(performances_target_bins_popularity),TRUE)
