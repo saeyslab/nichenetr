@@ -1,6 +1,7 @@
 context("Network extraction functions for application")
 test_that("active ligand-receptor network can be constructed", {
   library(Biobase)
+  mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
   mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
   expression_vector_sender = Exprs_lsec[,Exprs_lsec$celltype == "LSEC_12h"] %>% apply(1,mean)
   expression_vector_receiver = Exprs_mono_kc[,Exprs_mono_kc$celltype == "BM_mono"] %>% apply(1,mean)

@@ -22,6 +22,7 @@ A data frame containing at least the variables from, to, receiver_expression. In
 \examples{
 library(Biobase)
 library(dplyr)
+mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
 mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
 expression_vector_receiver = Exprs_mono_kc[,Exprs_mono_kc$celltype == "BM_mono"] \%>\% apply(1,mean)
 names(expression_vector_receiver) = names(expression_vector_receiver) \%>\% mousesymbol2humansymbol[.]

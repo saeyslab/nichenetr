@@ -79,6 +79,9 @@ Exprs_mono_kc = readRDS("../staticNicheNet/data/expression/immune/E_mono_kc.rds"
 devtools::use_data(Exprs_mono_kc,overwrite = T, compress = "bzip2")
 
 
+# get_ncitations_genes = function(file = "ftp://ftp.ncbi.nih.gov/gene/DATA/gene2pubmed.gz")
+# read_tsv(file)
+
 library(org.Mm.eg.db)
 library(org.Hs.eg.db)
 library(dplyr)

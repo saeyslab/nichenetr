@@ -16,6 +16,7 @@
 #' @examples
 #' library(Biobase)
 #' library(dplyr)
+#' mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
 #' mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
 #' expression_vector_sender = Exprs_lsec[,Exprs_lsec$celltype == "LSEC_12h"] %>% apply(1,mean)
 #' expression_vector_receiver = Exprs_mono_kc[,Exprs_mono_kc$celltype == "BM_mono"] %>% apply(1,mean)
@@ -64,6 +65,7 @@ get_active_ligand_receptor_network = function(expression_sender, expression_rece
 #' @examples
 #' library(Biobase)
 #' library(dplyr)
+#' mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
 #' mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
 #' expression_vector_receiver = Exprs_mono_kc[,Exprs_mono_kc$celltype == "BM_mono"] %>% apply(1,mean)
 #' names(expression_vector_receiver) = names(expression_vector_receiver) %>% mousesymbol2humansymbol[.]
@@ -104,6 +106,7 @@ get_active_signaling_network = function(expression_receiver, sig_network, expres
 #' @examples
 #' library(Biobase)
 #' library(dplyr)
+#' mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
 #' mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
 #' expression_vector_receiver = Exprs_mono_kc[,Exprs_mono_kc$celltype == "BM_mono"] %>% apply(1,mean)
 #' names(expression_vector_receiver) = names(expression_vector_receiver) %>% mousesymbol2humansymbol[.]
