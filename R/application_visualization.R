@@ -199,5 +199,255 @@ infer_supporting_datasources = function(signaling_graph_list,lr_network, sig_net
 
   bind_rows(inner_join(regulatory_filtered, gr_network, by = c("from","to")) %>% mutate(layer = "regulatory"), inner_join(signaling_filtered,bind_rows(lr_network, sig_network), by = c("from","to")) %>% mutate(layer = "ligand_signaling"))
 }
+#' @title Make a ggplot heatmap object from an input matrix (2-color).
+#'
+#' @description \code{make_heatmap_ggplot} Make a ggplot heatmap object from an input matrix containing continuous values. Two-color scale from white to color of choice.
+#'
+#' @usage
+#' make_heatmap_ggplot(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", color = "blue", ...)
+#'
+#' @param matrix Matrix with continuous values to plot in heatmap
+#' @param y_name Title of the y-axis
+#' @param x_name Title of the x-axis
+#' @param y_axis Should y-axis label names and titles be displayed? TRUE or FALSE. Default: TRUE.
+#' @param x_axis Should x-axis label names and titles be displayed? TRUE or FALSE. Default: TRUE.
+#' @param x_axis_position X-axis position: "top" or "bottomm"; only relevant if x_axis == TRUE. Default:"top".
+#' @param legend_position Legend position: "top", "bottom", "left", "right" or "none". Default: "top".
+#' @param color Color for highest continuous value in heatmap. Color gradient will go from "whitesmoke" to this color. Default: "blue".
+#' @param ... Optional arguments passed to element_text(); used to set font type and size of axis labels and titles.
+#'
+#' @return A ggplot object displaying a heatmap
+#'
+#' @import ggplot2
+#'
+#' @examples
+#' library(dplyr)
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2",c("IL4","IL13"))
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
+#' p = make_heatmap_ggplot(ligand_target_matrix[1:50,] %>% t(), y_name = "ligand", x_name = "target")
+#'
+#' @export
+#'
+make_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", color = "blue", ...){
+
+  # input checks
+  if(!is.matrix(matrix))
+    stop("matrix should be a matrix")
+  if(!is.character(y_name) | length(y_name) != 1)
+    stop("y_name should be a character vector of length 1")
+  if(!is.character(x_name) | length(x_name) != 1)
+    stop("x_name should be a character vector of length 1")
+  if(!is.logical(y_axis) | length(y_axis) != 1)
+    stop("y_axis should be a TRUE or FALSE")
+  if(!is.logical(x_axis) | length(x_axis) != 1)
+    stop("x_axis should be a TRUE or FALSE")
+  if((x_axis_position %in% c("top","bottom")) == FALSE)
+    stop("x_axis_position should be top or bottom")
+  if((legend_position %in% c("top","bottom","left","right","none")) == FALSE)
+    stop("legend_position should be top, bottom, left, right or none")
+  if(!is.character(color) |  length(color) != 1)
+    stop("color should be character vector of length 1")
+
+
+  requireNamespace("dplyr")
+  requireNamespace("ggplot2")
+
+  matrix_df_vis = matrix %>% data.frame() %>% rownames_to_column("y") %>% tbl_df() %>% gather(x,"score", -y) %>% mutate(y = factor(y, levels = rownames(matrix), ordered = TRUE), x = factor(x, levels = colnames(matrix), ordered = TRUE))
+
+  plot_object = matrix_df_vis %>% ggplot(aes(x,y,fill = score)) + geom_tile(color = "white", size = 0.5) + scale_fill_gradient(low = "whitesmoke", high = color) + theme_minimal()
+
+  if (x_axis == FALSE){
+    if(y_axis == TRUE){
+      plot_object = plot_object + theme(panel.grid.minor = element_line(color = "transparent"), panel.grid.major = element_line(color = "transparent"), legend.position = legend_position, axis.ticks = element_blank(), axis.text.x = element_blank(), axis.title.x =  element_blank(),  axis.title = element_text(...), axis.text.y = element_text(...))
+      plot_object = plot_object  + ylab(paste0(y_name))
+    } else if (y_axis == FALSE){
+      plot_object = plot_object + theme(panel.grid.minor = element_line(color = "transparent"), panel.grid.major = element_line(color = "transparent"), legend.position = legend_position, axis.ticks = element_blank(), axis.text.x = element_blank(), axis.title.x =  element_blank(),  axis.title.y = element_blank(), axis.text.y = element_blank())
+      plot_object = plot_object
+    }
+
+  } else if (x_axis == TRUE) {
+    if (y_axis == TRUE){
+      plot_object = plot_object + theme(panel.grid.minor = element_line(color = "transparent"), panel.grid.major = element_line(color = "transparent"), legend.position = legend_position, axis.ticks = element_line(size = 0), axis.text.x.top = element_text(angle = 90, hjust = 0,...), axis.text.x = element_text(angle = 90, hjust =1,...),  axis.title = element_text(...), axis.text.y = element_text(...))
+      plot_object = plot_object + scale_x_discrete(position = x_axis_position) + xlab(paste0(x_name)) + ylab(paste0(y_name))
+    } else if (y_axis == FALSE) {
+
+      plot_object = plot_object + theme(panel.grid.minor = element_line(color = "transparent"), panel.grid.major = element_line(color = "transparent"), legend.position = legend_position, axis.ticks = element_line(size = 0), axis.text.x.top = element_text(angle = 90, hjust = 0,...), axis.text.x = element_text(angle = 90, hjust =1,...),  axis.title.y = element_blank(), axis.text.y = element_blank())
+      plot_object = plot_object + scale_x_discrete(position = x_axis_position) + xlab(paste0(x_name))
+    }
+  }
+}
+#' @title Make a ggplot heatmap object from an input matrix (3-color).
+#'
+#' @description \code{make_threecolor_heatmap_ggplot} Make a ggplot heatmap object from an input matrix containing continuous values. Three-color scale with colors of choice. Ideal for plotting log fold change expression.
+#'
+#' @usage
+#' make_threecolor_heatmap_ggplot(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", low_color = "blue",mid_color = "whitesmoke", high_color = "red",mid = 0,...)
+#'
+#' @param low_color Color for lowest continuous value in heatmap. Color gradient will go from "whitesmoke" to this color. Default: "blue".
+#' @param mid_color Color for the "mid" value as defined by that parameter. Default: "whitesmoke".
+#' @param high_color Color for highest continuous value in heatmap. Color gradient will go from "whitesmoke" to this color. Default: "red".
+#' @param mid Continuous value that will receive the "mid_color" color. Default: 0
+#' @inheritParams make_heatmap_ggplot
+#'
+#' @return A ggplot object displaying a heatmap
+#'
+#' @import ggplot2
+#'
+#' @examples
+#' library(dplyr)
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2",c("IL4","IL13"))
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
+#' p = make_threecolor_heatmap_ggplot(ligand_target_matrix[1:50,] %>% t(), y_name = "ligand", x_name = "target")
+#'
+#' @export
+#'
+make_threecolor_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", low_color = "blue",mid_color = "whitesmoke", high_color = "red",mid = 0,...){
+
+  # input checks
+  if(!is.matrix(matrix))
+    stop("matrix should be a matrix")
+  if(!is.character(y_name) | length(y_name) != 1)
+    stop("y_name should be a character vector of length 1")
+  if(!is.character(x_name) | length(x_name) != 1)
+    stop("x_name should be a character vector of length 1")
+  if(!is.logical(y_axis) | length(y_axis) != 1)
+    stop("y_axis should be a TRUE or FALSE")
+  if(!is.logical(x_axis) | length(x_axis) != 1)
+    stop("x_axis should be a TRUE or FALSE")
+  if((x_axis_position %in% c("top","bottom")) == FALSE)
+    stop("x_axis_position should be top or bottom")
+  if((legend_position %in% c("top","bottom","left","right","none")) == FALSE)
+    stop("legend_position should be top, bottom, left, right or none")
+  if(!is.character(low_color) | !is.character(mid_color) | !is.character(high_color) | length(low_color) != 1 | length(mid_color) != 1 | length(high_color) != 1)
+    stop("low_color, mid_color and high_color should be character vectors of length 1")
+  if(!is.numeric(mid) | length(mid) != 1)
+    stop("mid should be a numeric vector of length 1")
+
+
+
+
+  requireNamespace("dplyr")
+  requireNamespace("ggplot2")
+
+  matrix_df_vis = matrix %>% data.frame() %>% rownames_to_column("y") %>% tbl_df() %>% gather(x,"score", -y) %>% mutate(y = factor(y, levels = rownames(matrix), ordered = TRUE), x = factor(x, levels = colnames(matrix), ordered = TRUE))
+
+  plot_object = matrix_df_vis %>% ggplot(aes(x,y,fill = score)) + geom_tile(color = "white", size = 0.5) + scale_fill_gradient2(low = low_color, mid = mid_color,high = high_color, midpoint = mid) + theme_minimal()
+
+  if (x_axis == FALSE){
+    if(y_axis == TRUE){
+      plot_object = plot_object + theme(panel.grid.minor = element_line(color = "transparent"), panel.grid.major = element_line(color = "transparent"), legend.position = legend_position, axis.ticks = element_blank(), axis.text.x = element_blank(), axis.title.x =  element_blank(),  axis.title = element_text(...), axis.text.y = element_text(...))
+      plot_object = plot_object  + ylab(paste0(y_name))
+    } else if (y_axis == FALSE){
+      plot_object = plot_object + theme(panel.grid.minor = element_line(color = "transparent"), panel.grid.major = element_line(color = "transparent"), legend.position = legend_position, axis.ticks = element_blank(), axis.text.x = element_blank(), axis.title.x =  element_blank(),  axis.title.y = element_blank(), axis.text.y = element_blank())
+      plot_object = plot_object
+    }
+
+  } else if (x_axis == TRUE) {
+    if (y_axis == TRUE){
+      plot_object = plot_object + theme(panel.grid.minor = element_line(color = "transparent"), panel.grid.major = element_line(color = "transparent"), legend.position = legend_position, axis.ticks = element_line(size = 0), axis.text.x.top = element_text(angle = 90, hjust = 0,...), axis.text.x = element_text(angle = 90, hjust =1,...),  axis.title = element_text(...), axis.text.y = element_text(...))
+      plot_object = plot_object + scale_x_discrete(position = x_axis_position) + xlab(paste0(x_name)) + ylab(paste0(y_name))
+    } else if (y_axis == FALSE) {
+
+      plot_object = plot_object + theme(panel.grid.minor = element_line(color = "transparent"), panel.grid.major = element_line(color = "transparent"), legend.position = legend_position, axis.ticks = element_line(size = 0), axis.text.x.top = element_text(angle = 90, hjust = 0,...), axis.text.x = element_text(angle = 90, hjust =1,...),  axis.title.y = element_blank(), axis.text.y = element_blank())
+      plot_object = plot_object + scale_x_discrete(position = x_axis_position) + xlab(paste0(x_name))
+    }
+  }
+}
+#' @title Make a ggplot heatmap object from an input ligand-target matrix.
+#'
+#' @description \code{make_heatmap_bidir_lt_ggplot} Make a ggplot heatmap object from an input ligand-target matrix in which it is indicated whether a gene is a top target of a ligand ("top-target"), the ligand is a top ligand of the gene ("top-ligand") or both ("top") or none ("none").
+#'
+#' @usage
+#' make_heatmap_bidir_lt_ggplot(matrix, y_name, x_name, y_axis = TRUE, x_axis = TRUE, x_axis_position = "top", legend_position = "top", ...)
+#' #'
+#' @param matrix Matrix with continuous values to plot in heatmap
+#' @param y_name Title of the y-axis
+#' @param x_name Title of the x-axis
+#' @param color Color for highest continuous value in heatmap. Color gradient will go from "whitesmoke" to this color. Default: "blue".
+#' @param y_axis Should y-axis label names and titles be displayed? TRUE or FALSE. Default: TRUE.
+#' @param x_axis Should x-axis label names and titles be displayed? TRUE or FALSE. Default: TRUE.
+#' @param x_axis_position X-axis position: "top" or "bottomm"; only relevant if x_axis == TRUE. Default:"top".
+#' @param legend_position Legend position: "top", "bottom", "left", "right" or "none". Default: "top"
+#' @param ... Optional arguments passed to element_text(); used to set font type and size of axis labels and titles.
+#' @inheritParams make_heatmap_ggplot
+#'
+#' @return A ggplot object displaying a heatmap
+#'
+#' @import ggplot2
+#'
+#' @examples
+#' library(dplyr)
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2",c("IL4","IL13"))
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
+#'
+#' ligand_target_matrix_vis_genedirection = ligand_target_matrix %>% apply(1,scaling_modified_zscore) %>% .[,1:50]
+#' ligand_target_matrix_vis_genedirection[ligand_target_matrix_vis_genedirection < 2] = 0
+#' ligand_target_matrix_vis_genedirection[ligand_target_matrix_vis_genedirection != 0] = 1
+#'
+#' ligand_target_matrix_vis_liganddirection = ligand_target_matrix %>% apply(2,scaling_modified_zscore) %>% .[1:50, ] %>% t()
+#' ligand_target_matrix_vis_liganddirection[ligand_target_matrix_vis_liganddirection < 2] = 0
+#' ligand_target_matrix_vis_liganddirection[ligand_target_matrix_vis_liganddirection != 0] = 2
+#'
+#' bidirectional_ligand_target_matrix_vis = ligand_target_matrix_vis_genedirection + ligand_target_matrix_vis_liganddirection
+#' bidirectional_ligand_target_matrix_vis[bidirectional_ligand_target_matrix_vis == 0] = "none"
+#' bidirectional_ligand_target_matrix_vis[bidirectional_ligand_target_matrix_vis == 1] = "top-ligand"
+#' bidirectional_ligand_target_matrix_vis[bidirectional_ligand_target_matrix_vis == 2] = "top-target"
+#' bidirectional_ligand_target_matrix_vis[bidirectional_ligand_target_matrix_vis == 3] = "top"
+
+#' p = make_heatmap_bidir_lt_ggplot(bidirectional_ligand_target_matrix_vis, y_name = "ligand", x_name = "target")
+#'
+#' @export
+#'
+make_heatmap_bidir_lt_ggplot = function(matrix, y_name, x_name, y_axis = TRUE, x_axis = TRUE, x_axis_position = "top", legend_position = "top", ...){
+
+  # input checks
+  if(!is.matrix(matrix))
+    stop("matrix should be a matrix")
+  if(!is.character(y_name) | length(y_name) != 1)
+    stop("y_name should be a character vector of length 1")
+  if(!is.character(x_name) | length(x_name) != 1)
+    stop("x_name should be a character vector of length 1")
+  if(!is.logical(y_axis) | length(y_axis) != 1)
+    stop("y_axis should be a TRUE or FALSE")
+  if(!is.logical(x_axis) | length(x_axis) != 1)
+    stop("x_axis should be a TRUE or FALSE")
+  if((x_axis_position %in% c("top","bottom")) == FALSE)
+    stop("x_axis_position should be top or bottom")
+  if((legend_position %in% c("top","bottom","left","right","none")) == FALSE)
+    stop("legend_position should be top, bottom, left, right or none")
+
+
+  requireNamespace("dplyr")
+  requireNamespace("ggplot2")
+
+  matrix_df_vis = matrix %>% data.frame(stringsAsFactors = FALSE) %>% rownames_to_column("y") %>% tbl_df() %>% gather(x,"score", -y) %>% mutate(y = factor(y, levels = rownames(matrix), ordered = TRUE), x = factor(x, levels = colnames(matrix), ordered = TRUE))
+
+  plot_object = matrix_df_vis %>% ggplot(aes(x,y,fill = score)) + geom_tile(color = "white", size = 0.5) +
+    scale_fill_manual(values = c("top-ligand" = "indianred1", "top-target" = "lightskyblue1", "top" = "mediumpurple2", "none" = "whitesmoke")) + theme_minimal()
+
+  if (x_axis == FALSE){
+    if(y_axis == TRUE){
+      plot_object = plot_object + theme(panel.grid.minor = element_line(color = "transparent"), panel.grid.major = element_line(color = "transparent"), legend.position = legend_position, axis.ticks = element_blank(), axis.text.x = element_blank(), axis.title.x =  element_blank(),  axis.title = element_text(...), axis.text.y = element_text(...))
+      plot_object = plot_object  + ylab(paste0(y_name))
+    } else if (y_axis == FALSE){
+      plot_object = plot_object + theme(panel.grid.minor = element_line(color = "transparent"), panel.grid.major = element_line(color = "transparent"), legend.position = legend_position, axis.ticks = element_blank(), axis.text.x = element_blank(), axis.title.x =  element_blank(),  axis.title.y = element_blank(), axis.text.y = element_blank())
+      plot_object = plot_object
+    }
+
+  } else if (x_axis == TRUE) {
+    if (y_axis == TRUE){
+      plot_object = plot_object + theme(panel.grid.minor = element_line(color = "transparent"), panel.grid.major = element_line(color = "transparent"), legend.position = legend_position, axis.ticks = element_line(size = 0), axis.text.x.top = element_text(angle = 90, hjust = 0,...), axis.text.x = element_text(angle = 90, hjust =1,...),  axis.title = element_text(...), axis.text.y = element_text(...))
+      plot_object = plot_object + scale_x_discrete(position = x_axis_position) + xlab(paste0(x_name)) + ylab(paste0(y_name))
+    } else if (y_axis == FALSE) {
+
+      plot_object = plot_object + theme(panel.grid.minor = element_line(color = "transparent"), panel.grid.major = element_line(color = "transparent"), legend.position = legend_position, axis.ticks = element_line(size = 0), axis.text.x.top = element_text(angle = 90, hjust = 0,...), axis.text.x = element_text(angle = 90, hjust =1,...),  axis.title.y = element_blank(), axis.text.y = element_blank())
+      plot_object = plot_object + scale_x_discrete(position = x_axis_position) + xlab(paste0(x_name))
+    }
+  }
+}
+
 
 

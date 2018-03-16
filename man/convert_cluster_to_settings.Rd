@@ -4,8 +4,7 @@
 \alias{convert_cluster_to_settings}
 \title{Convert cluster assignment to settings format suitable for target gene prediction.}
 \usage{
-convert_cluster_to_settings(i, cluster_vector, setting_name, setting_from,
-  background = NULL)
+convert_cluster_to_settings = function(i, cluster_vector, setting_name, setting_from, background = NULL)
 }
 \arguments{
 \item{i}{The cluster number of the cluster of interest to which genes should belong}

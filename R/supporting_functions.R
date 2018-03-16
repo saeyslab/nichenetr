@@ -794,6 +794,16 @@ get_network_df = function(ligand_to_vis,target_to_vis,k,weighted_networks,ligand
 
   return(final_combined_df)
 }
+cal_celltype_average_wrapper = function(E){
+  avexprs = lapply(levels(E$celltype), cal_celltype_average, E)
+  names(avexprs) = levels(E$celltype)
+  avexprs = avexprs %>% bind_cols() %>% as.matrix()
+  rownames(avexprs) = rownames(exprs(E))
+  return(avexprs)
+}
+cal_celltype_average = function(cell,E){
+  E = E[, E$celltype == cell]
+  expression = exprs(E)
+  average_expression = apply(expression, 1, mean)
 
-
-
+}

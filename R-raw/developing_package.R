@@ -41,6 +41,7 @@ devtools::use_package("Biobase")
 devtools::use_package("BiocGenerics")
 devtools::use_package("parallel")
 devtools::use_package("DiagrammeR")
+devtools::use_package("ggplot2")
 
 devtools::use_package("doMC","Suggests")
 

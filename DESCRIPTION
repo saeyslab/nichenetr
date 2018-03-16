@@ -30,7 +30,8 @@ Imports: dplyr,
     Biobase,
     BiocGenerics,
     parallel,
-    DiagrammeR
+    DiagrammeR,
+    ggplot2
 Suggests: knitr,
     rmarkdown,
     testthat,

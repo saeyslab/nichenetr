@@ -3,7 +3,7 @@
 #' @description \code{convert_cluster_to_settings} Convert cluster assignment to settings format suitable for target gene prediction.
 #'
 #' @usage
-#' convert_cluster_to_settings = function(i, cluster_vector, setting_name, setting_from, background = NULL){
+#' convert_cluster_to_settings = function(i, cluster_vector, setting_name, setting_from, background = NULL)
 #'
 #' @param i The cluster number of the cluster of interest to which genes should belong
 #' @param cluster_vector Named vector containing the cluster number to which every gene belongs
