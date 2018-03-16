@@ -16,6 +16,7 @@
 #'
 #'
 #' @examples
+#' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_tf_matrix = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
@@ -23,6 +24,7 @@
 #' all_targets = c("HEY1")
 #' top_n_regulators = 2
 #' ligand_target_signaling_list = get_ligand_signaling_path(ligand_tf_matrix,all_ligands,all_targets,top_n_regulators,weighted_networks)
+#' }
 #' @export
 #'
 get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all, top_n_regulators = 4, weighted_networks, ligands_position = "cols"){
@@ -81,6 +83,7 @@ get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all,
 #' @importFrom DiagrammeR create_node_df create_edge_df create_graph
 #'
 #' @examples
+#' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_tf_matrix = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
@@ -90,6 +93,7 @@ get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all,
 #' ligand_target_signaling_list = get_ligand_signaling_path(ligand_tf_matrix,all_ligands,all_targets,top_n_regulators,weighted_networks)
 #' graph = diagrammer_format_signaling_graph(ligand_target_signaling_list, all_ligands,all_targets)
 #' # DiagrammeR::render_graph(graph, layout = "tree")
+#' }
 #' @export
 #'
 diagrammer_format_signaling_graph = function(signaling_graph_list, ligands_all,targets_all, sig_color = "steelblue", gr_color = "orange"){
@@ -162,6 +166,7 @@ diagrammer_format_signaling_graph = function(signaling_graph_list, ligands_all,t
 #' @return A tibble with columns from, to, source and layer
 #'
 #' @examples
+#' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_tf_matrix = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
@@ -170,7 +175,7 @@ diagrammer_format_signaling_graph = function(signaling_graph_list, ligands_all,t
 #' top_n_regulators = 2
 #' ligand_target_signaling_list = get_ligand_signaling_path(ligand_tf_matrix,all_ligands,all_targets,top_n_regulators,weighted_networks)
 #' data_source_info_network = infer_supporting_datasources(ligand_target_signaling_list, lr_network, sig_network, gr_network)
-#'
+#' }
 #' @export
 #'
 infer_supporting_datasources = function(signaling_graph_list,lr_network, sig_network , gr_network){
@@ -221,12 +226,13 @@ infer_supporting_datasources = function(signaling_graph_list,lr_network, sig_net
 #' @import ggplot2
 #'
 #' @examples
+#' \dontrun{
 #' library(dplyr)
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
 #' p = make_heatmap_ggplot(ligand_target_matrix[1:50,] %>% t(), y_name = "ligand", x_name = "target")
-#'
+#' }
 #' @export
 #'
 make_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", color = "blue", ...){
@@ -295,12 +301,13 @@ make_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,x_axis = TR
 #' @import ggplot2
 #'
 #' @examples
+#' \dontrun{
 #' library(dplyr)
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
 #' p = make_threecolor_heatmap_ggplot(ligand_target_matrix[1:50,] %>% t(), y_name = "ligand", x_name = "target")
-#'
+#' }
 #' @export
 #'
 make_threecolor_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", low_color = "blue",mid_color = "whitesmoke", high_color = "red",mid = 0,...){
@@ -378,6 +385,7 @@ make_threecolor_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,
 #' @import ggplot2
 #'
 #' @examples
+#' \dontrun{
 #' library(dplyr)
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
@@ -398,7 +406,7 @@ make_threecolor_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,
 #' bidirectional_ligand_target_matrix_vis[bidirectional_ligand_target_matrix_vis == 3] = "top"
 
 #' p = make_heatmap_bidir_lt_ggplot(bidirectional_ligand_target_matrix_vis, y_name = "ligand", x_name = "target")
-#'
+#' }
 #' @export
 #'
 make_heatmap_bidir_lt_ggplot = function(matrix, y_name, x_name, y_axis = TRUE, x_axis = TRUE, x_axis_position = "top", legend_position = "top", ...){

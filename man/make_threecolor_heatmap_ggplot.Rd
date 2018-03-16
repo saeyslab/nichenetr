@@ -38,10 +38,11 @@ A ggplot object displaying a heatmap
 \code{make_threecolor_heatmap_ggplot} Make a ggplot heatmap object from an input matrix containing continuous values. Three-color scale with colors of choice. Ideal for plotting log fold change expression.
 }
 \examples{
+\dontrun{
 library(dplyr)
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 ligands = list("TNF","BMP2",c("IL4","IL13"))
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
 p = make_threecolor_heatmap_ggplot(ligand_target_matrix[1:50,] \%>\% t(), y_name = "ligand", x_name = "target")
-
+}
 }

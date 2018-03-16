@@ -24,6 +24,7 @@ A DiagrammeR Graph object ready for visualization via DiagrammeR::render_graph.
 \code{diagrammer_format_signaling_graph} Prepare extracted ligand-target signaling network for visualization with DiagrammeR.
 }
 \examples{
+\dontrun{
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 ligands = list("TNF","BMP2",c("IL4","IL13"))
 ligand_tf_matrix = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
@@ -33,4 +34,5 @@ top_n_regulators = 2
 ligand_target_signaling_list = get_ligand_signaling_path(ligand_tf_matrix,all_ligands,all_targets,top_n_regulators,weighted_networks)
 graph = diagrammer_format_signaling_graph(ligand_target_signaling_list, all_ligands,all_targets)
 # DiagrammeR::render_graph(graph, layout = "tree")
+}
 }
