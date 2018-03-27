@@ -35,6 +35,12 @@ get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all,
     stop("lr_sig must be a data frame or tibble object")
   if (!is.data.frame(weighted_networks$gr))
     stop("gr must be a data frame or tibble object")
+
+  if (!is.numeric(weighted_networks$lr_sig$weight))
+    stop("lr_sig must contain a column named data source weights")
+  if (!is.numeric(weighted_networks$gr$weight))
+    stop("gr must contain a column named data source weights")
+
   if(!is.matrix(ligand_tf_matrix))
     stop("ligand_tf_matrix should be a matrix")
   if (ligands_position == "cols"){

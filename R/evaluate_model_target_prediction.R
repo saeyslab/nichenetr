@@ -172,7 +172,7 @@ evaluate_target_prediction = function(setting,ligand_target_matrix, ligands_posi
 #' @param setting A list containing the following elements: .$name: name of the setting; .$from: name(s) of the ligand(s) active in the setting of interest; .$response: named logical vector indicating whether a target is a TRUE target of the possibly active ligand(s) or a FALSE.
 #' @param ligand_target_matrix A matrix of ligand-target probabilty scores (recommended) or discrete target assignments (not-recommended).
 #' @param ligands_position Indicate whether the ligands in the ligand-target matrix are in the rows ("rows") or columns ("cols"). Default: "cols"
-#' @param algorithm The name of the classification algorithm to be applied. Should be supported by the caret package. Examples of algorithms we recommend: with embedded feature selection: "rf","glm","fda","glmnet","sdwd","gam","glmboost"; without: "lda","naive_bayes","pls"(because bug in current version of pls package), "pcaNNet". Please notice that not all these algorithms work when the features (i.e. ligand vectors) are categorical (i.e. discrete class assignments).
+#' @param algorithm The name of the classification algorithm to be applied. Should be supported by the caret package. Examples of algorithms we recommend: with embedded feature selection: "rf","glm","fda","glmnet","sdwd","gam","glmboost", "pls" (load "pls" package before!); without: "lda","naive_bayes", "pcaNNet". Please notice that not all these algorithms work when the features (i.e. ligand vectors) are categorical (i.e. discrete class assignments).
 #' @param var_imps Indicate whether in addition to classification evaluation performances, variable importances should be calculated. Default: TRUE.
 #' @param cv Indicate whether model training and hyperparameter optimization should be done via cross-validation. Default: TRUE. FALSE might be useful for applications only requiring variable importance, or when final model is not expected to be extremely overfit.
 #' @param cv_number The number of folds for the cross-validation scheme: Default: 4; only relevant when cv == TRUE.
@@ -360,7 +360,7 @@ evaluate_target_prediction_interprete = function(setting,ligand_target_matrix, l
 #' @param gene_list A character vector of target gene names
 #' @param name The name that will be given to the setting
 #' @param ligands_oi The possibly active ligands
-#' @param background A character vector of names of all genes (contains thus genes belonging to the gene_list of interest as well).
+#' @param background A character vector of names of genes that are not target genes. If genes present in the gene list are in this vector of background gene names, these genes will be removed from the background.
 
 #' @return A list with following elements: $name, $from, $response
 #'
@@ -386,13 +386,15 @@ convert_gene_list_settings_evaluation = function(gene_list, name, ligands_oi, ba
 
   requireNamespace("dplyr")
 
-  excluded_genes = gene_list[(gene_list %in% background) == FALSE]
-  if(length(excluded_genes) > 0)
-    warning(paste("some genes are excluded because not present in the background: ",excluded_genes))
-  gene_list_vector = (background %in% gene_list)
-  names(gene_list_vector) = background
+  background = background[(background %in% gene_list) == FALSE]
 
-  return(list(name = name, from = ligands_oi, response = gene_list_vector))
+  background_logical = rep(FALSE,times = length(background))
+  names(background_logical) = background
+  gene_list_logical = rep(TRUE,times = length(gene_list))
+  names(gene_list_logical) = gene_list_logical
+  response = c(background_logical,gene_list_logical)
+
+  return(list(name = name, from = ligands_oi, response = response))
 }
 #' @title Convert expression settings to correct settings format for evaluation of target gene log fold change prediction (regression).
 #'
@@ -443,15 +445,14 @@ convert_expression_settings_evaluation_regression = function(setting) {
 #'
 #' @examples
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
-#' setting = lapply(expression_settings_validation[1:2],convert_expression_settings_evaluation_regression)
-#' ligands = extract_ligands_from_settings(setting)
+#' settings = lapply(expression_settings_validation[1:2],convert_expression_settings_evaluation_regression)
+#' ligands = extract_ligands_from_settings(settings)
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
-#' perf1 = lapply(setting,evaluate_target_prediction_regression,ligand_target_matrix)
+#' perf1 = lapply(settings,evaluate_target_prediction_regression,ligand_target_matrix)
 #'
 #' @export
 #'
 evaluate_target_prediction_regression = function(setting,ligand_target_matrix, ligands_position = "cols"){
-  ## still make evaluation multiple ligands possible
   # input check
   if (!is.list(setting))
     stop("setting must be a list")

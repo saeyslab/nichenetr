@@ -13,7 +13,7 @@ convert_gene_list_settings_evaluation(gene_list, name, ligands_oi, background)
 
 \item{ligands_oi}{The possibly active ligands}
 
-\item{background}{A character vector of names of all genes (contains thus genes belonging to the gene_list of interest as well).}
+\item{background}{A character vector of names of genes that are not target genes. If genes present in the gene list are in this vector of background gene names, these genes will be removed from the background.}
 }
 \value{
 A list with following elements: $name, $from, $response

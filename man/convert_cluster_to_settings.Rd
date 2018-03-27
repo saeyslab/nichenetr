@@ -15,7 +15,7 @@ convert_cluster_to_settings = function(i, cluster_vector, setting_name, setting_
 
 \item{setting_from}{Active ligands for the specific setting}
 
-\item{background}{NULL or a character vector of genes belonging to the background. When NULL: the background will be formed by genes belonging to other clusters that the cluster of interest. Default NULL.}
+\item{background}{NULL or a character vector of genes belonging to the background. When NULL: the background will be formed by genes belonging to other clusters that the cluster of interest. Default NULL. If not NULL and genes present in the cluster of interest are in this vector of background gene names, these genes will be removed from the background.}
 }
 \value{
 A list with following elements: $name (indicating the cluster id), $from, $response. $response is a gene-named logical vector indicating whether the gene is part of the respective cluster.

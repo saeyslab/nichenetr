@@ -123,6 +123,12 @@ apply_hub_corrections = function(weighted_networks,lr_sig_hub, gr_hub) {
     stop("lr_sig must be a data frame or tibble object")
   if (!is.data.frame(weighted_networks$gr))
     stop("gr must be a data frame or tibble object")
+
+  if (!is.numeric(weighted_networks$lr_sig$weight))
+    stop("lr_sig must contain a column named data source weights")
+  if (!is.numeric(weighted_networks$gr$weight))
+    stop("gr must contain a column named data source weights")
+
   if (lr_sig_hub < 0 | lr_sig_hub > 1)
     stop("lr_sig_hub must be a number between 0 and 1 (0 and 1 included)")
   if (gr_hub < 0 | gr_hub > 1)
@@ -180,6 +186,12 @@ construct_ligand_tf_matrix = function(weighted_networks, ligands, ltf_cutoff = 0
     stop("lr_sig must be a data frame or tibble object")
   if (!is.data.frame(weighted_networks$gr))
     stop("gr must be a data frame or tibble object")
+
+  if (!is.numeric(weighted_networks$lr_sig$weight))
+    stop("lr_sig must contain a column named data source weights")
+  if (!is.numeric(weighted_networks$gr$weight))
+    stop("gr must contain a column named data source weights")
+
   if (!is.list(ligands))
     stop("ligands must be a list object")
   if ( sum((unique(unlist(ligands)) %in% unique(c(lr_network$from,lr_network$to))) == FALSE) > 0)
@@ -271,6 +283,12 @@ construct_tf_target_matrix = function(weighted_networks, tfs_as_cols = FALSE, st
     stop("lr_sig must be a data frame or tibble object")
   if (!is.data.frame(weighted_networks$gr))
     stop("gr must be a data frame or tibble object")
+
+  if (!is.numeric(weighted_networks$lr_sig$weight))
+    stop("lr_sig must contain a column named data source weights")
+  if (!is.numeric(weighted_networks$gr$weight))
+    stop("gr must contain a column named data source weights")
+
   if (!is.logical(tfs_as_cols) | length(tfs_as_cols) != 1)
     stop("ligands_as_cols must be a logical vector of length 1")
   if (!is.logical(standalone_output) | length(standalone_output) != 1)
@@ -342,6 +360,12 @@ construct_ligand_target_matrix = function(weighted_networks, ligands, ltf_cutoff
     stop("lr_sig must be a data frame or tibble object")
   if (!is.data.frame(weighted_networks$gr))
     stop("gr must be a data frame or tibble object")
+
+  if (!is.numeric(weighted_networks$lr_sig$weight))
+    stop("lr_sig must contain a column named data source weights")
+  if (!is.numeric(weighted_networks$gr$weight))
+    stop("gr must contain a column named data source weights")
+
   if (!is.list(ligands))
     stop("ligands must be a list object")
   if (ltf_cutoff < 0 | ltf_cutoff > 1)
@@ -444,6 +468,12 @@ correct_topology_ppr = function(ligand_target_matrix,weighted_networks,ligands_p
     stop("lr_sig must be a data frame or tibble object")
   if (!is.data.frame(weighted_networks$gr))
     stop("gr must be a data frame or tibble object")
+
+  if (!is.numeric(weighted_networks$lr_sig$weight))
+    stop("lr_sig must contain a column named data source weights")
+  if (!is.numeric(weighted_networks$gr$weight))
+    stop("gr must contain a column named data source weights")
+
   if (!is.matrix(ligand_target_matrix))
     stop("ligand_target_matrix must be a matrix object")
   if (ligands_position != "cols" & ligands_position != "rows")

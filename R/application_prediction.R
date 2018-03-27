@@ -9,7 +9,7 @@
 #' @param cluster_vector Named vector containing the cluster number to which every gene belongs
 #' @param setting_name Base name of the setting
 #' @param setting_from Active ligands for the specific setting
-#' @param background NULL or a character vector of genes belonging to the background. When NULL: the background will be formed by genes belonging to other clusters that the cluster of interest. Default NULL.
+#' @param background NULL or a character vector of genes belonging to the background. When NULL: the background will be formed by genes belonging to other clusters that the cluster of interest. Default NULL. If not NULL and genes present in the cluster of interest are in this vector of background gene names, these genes will be removed from the background.
 #'
 #' @return A list with following elements: $name (indicating the cluster id), $from, $response. $response is a gene-named logical vector indicating whether the gene is part of the respective cluster.
 #'
@@ -36,11 +36,14 @@ convert_cluster_to_settings = function(i, cluster_vector, setting_name, setting_
 
   requireNamespace("dplyr")
 
+
   genes_cluster_oi = cluster_vector[cluster_vector == i] %>% names()
+
   if (is.null(background)){
     response = names(cluster_vector) %in% genes_cluster_oi
     names(response) = names(cluster_vector)
   } else {
+    background = background[(background %in% genes_cluster_oi) == FALSE]
     background_logical = rep(FALSE,times = length(background))
     names(background_logical) = background
     cluster_logical = rep(TRUE,times = length(genes_cluster_oi))
