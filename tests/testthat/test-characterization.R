@@ -6,7 +6,7 @@ test_that("Settings leave-one-in can be constructed and hyperparameters added", 
   expect_type(weights_settings_loi, "list")
   expect_type(weights_settings_loi[[2]], "list")
   expect_type(weights_settings_loi[[2]]$source_weights, "double")
-  expect_type(weights_settings_loi[[2]]$source, "character")
+  expect_type(weights_settings_loi[[2]]$model_name, "character")
 
 
   weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
