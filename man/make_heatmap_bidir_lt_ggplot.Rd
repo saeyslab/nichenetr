@@ -23,8 +23,6 @@ make_heatmap_bidir_lt_ggplot(matrix, y_name, x_name, y_axis = TRUE, x_axis = TRU
 \item{legend_position}{Legend position: "top", "bottom", "left", "right" or "none". Default: "top"}
 
 \item{...}{Optional arguments passed to element_text(); used to set font type and size of axis labels and titles.}
-
-\item{color}{Color for highest continuous value in heatmap. Color gradient will go from "whitesmoke" to this color. Default: "blue".}
 }
 \value{
 A ggplot object displaying a heatmap

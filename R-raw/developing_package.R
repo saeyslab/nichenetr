@@ -39,11 +39,11 @@ devtools::use_package("randomForest")
 devtools::use_package("limma")
 devtools::use_package("Biobase")
 devtools::use_package("BiocGenerics")
-devtools::use_package("parallel")
 devtools::use_package("DiagrammeR")
 devtools::use_package("ggplot2")
 
 devtools::use_package("doMC","Suggests")
+devtools::use_package("parallel", "Suggests")
 
 
 # test data

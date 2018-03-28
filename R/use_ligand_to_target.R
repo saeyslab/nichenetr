@@ -282,10 +282,10 @@ get_target_genes_ligand_oi = function(ligand_oi, ligand_target_matrix, error_rat
   } else if (cutoff_method == "distribution"){
     lognormal_ligand_target = ligand_target_vector %>% log() %>%  .[is.finite(.)]
     background_dist = rnorm(n = length(lognormal_ligand_target),mean = mean(lognormal_ligand_target), sd = sd(lognormal_ligand_target))
-    target_gene_scores = lognormal_ligand_target[lognormal_ligand_target >= quantile(background_dist,1-error_rate)] %>% sort(decreasing = T)
+    target_gene_scores = lognormal_ligand_target[lognormal_ligand_target >= quantile(background_dist,1-error_rate, na.rm = TRUE)] %>% sort(decreasing = T)
     ## Quantile-based method: targets = genes in top 1-error rate percentage
   } else if (cutoff_method == "quantile"){
-    target_gene_scores = ligand_target_vector[ligand_target_vector >= quantile(ligand_target_vector,1-error_rate)] %>% sort(decreasing = T)}
+    target_gene_scores = ligand_target_vector[ligand_target_vector >= quantile(ligand_target_vector,1-error_rate, na.rm = TRUE)] %>% sort(decreasing = T)}
 
   ## Output
   if (output == "gene_symbols"){

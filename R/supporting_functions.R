@@ -507,11 +507,11 @@ wrapper_caret_classification = function(train_data, algorithm, continuous = TRUE
     final_model_predictions = predict(model,newdata = train_data, type = "prob") %>% .[,2]
     response_class = train_data$obs %>% as.character() %>% gsub("\\.","",.) %>% as.logical()
     performances_training_continuous = classification_evaluation_continuous_pred(prediction = final_model_predictions, response = response_class,iregulon = FALSE)
-    performances_training = classification_evaluation_categorical_pred(prediction = final_model_predictions >= 0.5, response = response_class)
+    performances_training = classification_evaluation_categorical_pred(predictions = final_model_predictions >= 0.5, response = response_class)
   } else {
     final_model_predictions = predict(model,newdata = train_data)  %>% gsub("\\.","",.) %>% as.logical()
     response_class = train_data$obs %>% as.character() %>% gsub("\\.","",.) %>% as.logical()
-    performances_training = classification_evaluation_categorical_pred(prediction = final_model_predictions, response = response_class)
+    performances_training = classification_evaluation_categorical_pred(predictions = final_model_predictions, response = response_class)
     performances_training_continuous = NULL
   }
 

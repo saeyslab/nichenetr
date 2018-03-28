@@ -378,7 +378,6 @@ make_threecolor_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,
 #' @param matrix Matrix with continuous values to plot in heatmap
 #' @param y_name Title of the y-axis
 #' @param x_name Title of the x-axis
-#' @param color Color for highest continuous value in heatmap. Color gradient will go from "whitesmoke" to this color. Default: "blue".
 #' @param y_axis Should y-axis label names and titles be displayed? TRUE or FALSE. Default: TRUE.
 #' @param x_axis Should x-axis label names and titles be displayed? TRUE or FALSE. Default: TRUE.
 #' @param x_axis_position X-axis position: "top" or "bottomm"; only relevant if x_axis == TRUE. Default:"top".

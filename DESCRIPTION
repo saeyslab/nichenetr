@@ -29,11 +29,11 @@ Imports: dplyr,
     randomForest,
     Biobase,
     BiocGenerics,
-    parallel,
     DiagrammeR,
     ggplot2
 Suggests: knitr,
     rmarkdown,
     testthat,
-    doMC
+    doMC,
+    parallel
 VignetteBuilder: knitr
