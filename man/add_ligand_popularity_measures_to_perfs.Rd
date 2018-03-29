@@ -9,7 +9,7 @@ add_ligand_popularity_measures_to_perfs(performances, ncitations)
 \arguments{
 \item{performances}{A data.frame in which the performance measures for target gene predictions of ligands are denoted}
 
-\item{ncitations}{A data frame denoting the number of times a gene is mentioned in the Pubmed literature. Should at least contain following variables: 'symbol' and 'ncitations'.}
+\item{ncitations}{A data frame denoting the number of times a gene is mentioned in the Pubmed literature. Should at least contain following variables: 'symbol' and 'ncitations'. Default: ncitations (variable contained in this package). See function \code{get_ncitations_genes} for a function that makes this data frame from current Pubmed information.}
 }
 \value{
 A data.frame in which the performance measures for target gene prediction of a ligand are merged with the number of times the ligand is mentioned in the Pubmed literature.

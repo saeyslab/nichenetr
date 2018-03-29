@@ -22,7 +22,7 @@ settings = lapply(expression_settings_validation, convert_expression_settings_ev
 weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
 doMC::registerDoMC(cores = 8)
-output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings, mc.cores = 3)
+output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, mc.cores = 3)
 ligand_prediction_performances = process_characterization_ligand_prediction_single_measures(output_characterization)
 }
 

@@ -167,11 +167,14 @@ add_hyperparameters_parameter_settings = function(parameter_setting,lr_sig_hub,g
 #' @description \code{evaluate_model} will take as input a setting of parameters (data source weights and hyperparameters) and layer-specific networks to construct a ligand-target matrix and evaluate its performance on input validation settings (both target gene prediction and ligand activity prediction).
 #'
 #' @usage
-#' evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings,...)
+#' evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings, calculate_popularity_bias_target_prediction,calculate_popularity_bias_ligand_prediction, ncitations = ncitations,...)
 #'
 #' @inheritParams construct_weighted_networks
 #' @param parameters_setting A list containing following elements: $model_name, $source_weights, $lr_sig_hub, $gr_hub, $ltf_cutoff, $algorithm, $damping_factor, $correct_topology. See \code{prepare_settings_leave_one_in_characterization} and \code{add_hyperparameters_parameter_settings}.
 #' @param settings A list of lists for which each sub-list contains the following elements: .$name: name of the setting; .$from: name(s) of the ligand(s) active in the setting of interest; .$response: named logical vector indicating whether a target is a TRUE target of the possibly active ligand(s) or a FALSE.
+#' @param calculate_popularity_bias_target_prediction Indicate whether popularity bias in target gene prediction performance should be calculated (TRUE or FALSE).
+#' @param calculate_popularity_bias_ligand_prediction Indicate whether popularity bias in ligand activity prediction performance should be calculated (TRUE or FALSE).
+#' @param ncitations A data frame denoting the number of times a gene is mentioned in the Pubmed literature. Should at least contain following variables: 'symbol' and 'ncitations'. Default: ncitations (variable contained in this package). See function \code{get_ncitations_genes} for a function that makes this data frame from current Pubmed information.
 #' @param ... Additional arguments to \code{construct_ligand_target_matrix} such as "secondary_targets" and "remove_direct_links".
 #'
 #' @return A list containing following elements: $model_name, $performances_target_prediction, $performances_ligand_prediction, $performances_ligand_prediction_single
@@ -184,12 +187,12 @@ add_hyperparameters_parameter_settings = function(parameter_setting,lr_sig_hub,g
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
 #' doMC::registerDoMC(cores = 8)
-#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings, mc.cores = 3)
+#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, mc.cores = 3)
 #' }
 #'
 #' @export
 #'
-evaluate_model = function(parameters_setting, lr_network, sig_network, gr_network, settings,...){
+evaluate_model = function(parameters_setting, lr_network, sig_network, gr_network, settings,calculate_popularity_bias_target_prediction,calculate_popularity_bias_ligand_prediction ,ncitations = ncitations, ...){
 
   requireNamespace("dplyr")
 
@@ -227,6 +230,17 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
   if(!is.logical(settings[[1]]$response) | is.null(names(settings[[1]]$response)))
     stop("setting$response should be named logical vector containing class labels of the response that needs to be predicted ")
 
+  if (parameters_setting$correct_topology != TRUE & parameters_setting$correct_topology != FALSE)
+    stop("parameters_setting$correct_topology must be TRUE or FALSE")
+  if (calculate_popularity_bias_target_prediction != TRUE & calculate_popularity_bias_target_prediction != FALSE)
+    stop("calculate_popularity_bias_target_prediction must be TRUE or FALSE")
+  if (calculate_popularity_bias_ligand_prediction != TRUE & calculate_popularity_bias_ligand_prediction != FALSE)
+    stop("calculate_popularity_bias_ligand_prediction must be TRUE or FALSE")
+  if (!is.data.frame(ncitations))
+    stop("ncitations must be a data frame")
+  if(!is.character(ncitations$symbol) | !is.numeric(ncitations$ncitations))
+    stop("ncitations$symbol should be a character vector and ncitations$ncitations a numeric vector")
+
   # read in parameters
   model_name = parameters_setting$model_name
 
@@ -259,8 +273,26 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
   performances_target_prediction = bind_rows(lapply(settings,evaluate_target_prediction, ligand_target_matrix))
   performances_target_prediction_discrete = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix_discrete))
   performances_target_prediction = performances_target_prediction %>% inner_join(performances_target_prediction_discrete, by = c("setting", "ligand"))
+  if (calculate_popularity_bias_target_prediction == TRUE){
+    # ligand-level
+    performances_ligand_popularity = add_ligand_popularity_measures_to_perfs(performances_target_prediction, ncitations)
+    ligand_slopes_df = performances_ligand_popularity %>% select(-setting,-ligand,-ncitations) %>% colnames() %>% lapply(.,get_slope_ligand_popularity,performances_ligand_popularity) %>% bind_rows()
 
-    # ligand activity state prediction
+    # target-level
+    performances_target_bins_popularity = evaluate_target_prediction_per_bin(5,settings,ligand_target_matrix, ncitations)
+    target_slopes_df = performances_target_bins_popularity %>% select(-setting,-ligand,-target_bin_id) %>% colnames() %>% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity,method = "all") %>% bind_rows()
+
+    performances_target_bins_popularity = evaluate_target_prediction_per_bin(5,settings,ligand_target_matrix_discrete, ncitations)
+    target_slopes_df_discrete = performances_target_bins_popularity %>% select(-setting,-ligand,-target_bin_id) %>% colnames() %>% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity,method = "all") %>% bind_rows()
+
+    target_slopes_df = bind_rows(target_slopes_df, target_slopes_df_discrete)
+
+    popularity_slopes_target_prediction = inner_join(ligand_slopes_df, target_slopes_df, by = "metric")
+  } else {
+    popularity_slopes_target_prediction = NULL
+  }
+
+  # ligand activity state prediction
   all_ligands = unlist(extract_ligands_from_settings(settings, combination = FALSE))
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = TRUE)
   ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix[, all_ligands]))
@@ -279,8 +311,12 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
   performances_ligand_prediction = evaluation$performances
 
   performances_ligand_prediction_single = evaluate_single_importances_ligand_prediction(all_importances, "median")
-
-    return(list(model_name = model_name, performances_target_prediction = performances_target_prediction,performances_ligand_prediction = performances_ligand_prediction, performances_ligand_prediction_single = performances_ligand_prediction_single ))
+  if (calculate_popularity_bias_ligand_prediction == TRUE){
+    popularity_slopes_ligand_prediction = NULL
+  } else {
+    popularity_slopes_ligand_prediction = NULL
+  }
+    return(list(model_name = model_name, performances_target_prediction = performances_target_prediction,performances_ligand_prediction = performances_ligand_prediction, performances_ligand_prediction_single = performances_ligand_prediction_single, popularity_slopes_target_prediction = popularity_slopes_target_prediction,popularity_slopes_ligand_prediction = popularity_slopes_ligand_prediction))
 
 }
 #' @title Process the output of model evaluation for data source characterization purposes on the target prediction performance
@@ -300,7 +336,7 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
 #' doMC::registerDoMC(cores = 8)
-#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings, mc.cores = 3)
+#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, mc.cores = 3)
 #' target_prediction_performances = process_characterization_target_prediction(output_characterization)
 #' }
 #'
@@ -341,7 +377,7 @@ process_characterization_target_prediction = function(output_characterization){
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
 #' doMC::registerDoMC(cores = 8)
-#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings, mc.cores = 3)
+#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, mc.cores = 3)
 #' target_prediction_performances = process_characterization_target_prediction_average(output_characterization)
 #' }
 #'
@@ -379,7 +415,7 @@ process_characterization_target_prediction_average = function(output_characteriz
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
 #' doMC::registerDoMC(cores = 8)
-#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings, mc.cores = 3)
+#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, mc.cores = 3)
 #' ligand_prediction_performances = process_characterization_ligand_prediction(output_characterization)
 #' }
 #'
@@ -420,7 +456,7 @@ process_characterization_ligand_prediction = function(output_characterization){
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
 #' doMC::registerDoMC(cores = 8)
-#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings, mc.cores = 3)
+#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, mc.cores = 3)
 #' ligand_prediction_performances = process_characterization_ligand_prediction_single_measures(output_characterization)
 #' }
 #'
@@ -442,6 +478,49 @@ process_characterization_ligand_prediction_single_measures = function(output_cha
   }) %>% bind_rows()
   return(performances_ligand_prediction_single)
 }
+#' @title Process the output of model evaluation for data source characterization purposes on the popularity bias assessment of target prediction performance
+#'
+#' @description \code{process_characterization_popularity_slopes_target_prediction} will process output formed by model evaluation to get a data frame containing popularity bias measures in performance of target gene prediction.
+#'
+#' @usage
+#' process_characterization_popularity_slopes_target_prediction(output_characterization)
+#'
+#' @param output_characterization a list of lists containing the results of evaluation of different models (e.g. after execution of \code{evaluate_model}. Every sublist should contain at least the following elements: $model_name and $performances_target_prediction.
+#' @return A data frame containing the popularity bias slopes in target gene prediction performances on every validation dataset for all the models that were evaluated.
+#'
+#' @examples
+#'
+#' \dontrun{
+#' settings = lapply(expression_settings_validation, convert_expression_settings_evaluation)
+#' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
+#' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+#' doMC::registerDoMC(cores = 8)
+#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, mc.cores = 3)
+
+#' popularity_slopes_target_prediction_performances = process_characterization_popularity_slopes_target_prediction(output_characterization)
+#' }
+#'
+#' @export
+#'
+#'
+process_characterization_popularity_slopes_target_prediction = function(output_characterization){
+  # input check
+  if (!is.list(output_characterization))
+    stop("output_characterization should be a list!")
+  if (!is.data.frame(output_characterization[[1]]$popularity_slopes_target_prediction))
+    stop("output_characterization[[1]]$popularity_slopes_target_prediction should be a data frame")
+  if (!is.character(output_characterization[[1]]$model_name))
+    stop("output_characterization[[1]]$model_name should be a character vector")
+
+  requireNamespace("dplyr")
+
+  popularity_slopes_target_prediction = output_characterization %>% lapply(function(x){
+    performances = x$popularity_slopes_target_prediction %>% mutate(model_name = x$model_name)
+    return(performances)
+  }) %>% bind_rows()
+  return(popularity_slopes_target_prediction)
+}
+
 
 
 

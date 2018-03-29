@@ -4,7 +4,7 @@
 \alias{evaluate_model}
 \title{Construct and evaluate a ligand-target model given input parameters.}
 \usage{
-evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings,...)
+evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings, calculate_popularity_bias_target_prediction,calculate_popularity_bias_ligand_prediction, ncitations = ncitations,...)
 }
 \arguments{
 \item{parameters_setting}{A list containing following elements: $model_name, $source_weights, $lr_sig_hub, $gr_hub, $ltf_cutoff, $algorithm, $damping_factor, $correct_topology. See \code{prepare_settings_leave_one_in_characterization} and \code{add_hyperparameters_parameter_settings}.}
@@ -16,6 +16,12 @@ evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings
 \item{gr_network}{A data frame / tibble containing gene regulatory interactions (required columns: from, to, source)}
 
 \item{settings}{A list of lists for which each sub-list contains the following elements: .$name: name of the setting; .$from: name(s) of the ligand(s) active in the setting of interest; .$response: named logical vector indicating whether a target is a TRUE target of the possibly active ligand(s) or a FALSE.}
+
+\item{calculate_popularity_bias_target_prediction}{Indicate whether popularity bias in target gene prediction performance should be calculated (TRUE or FALSE).}
+
+\item{calculate_popularity_bias_ligand_prediction}{Indicate whether popularity bias in ligand activity prediction performance should be calculated (TRUE or FALSE).}
+
+\item{ncitations}{A data frame denoting the number of times a gene is mentioned in the Pubmed literature. Should at least contain following variables: 'symbol' and 'ncitations'. Default: ncitations (variable contained in this package). See function \code{get_ncitations_genes} for a function that makes this data frame from current Pubmed information.}
 
 \item{...}{Additional arguments to \code{construct_ligand_target_matrix} such as "secondary_targets" and "remove_direct_links".}
 }
@@ -31,7 +37,7 @@ settings = lapply(expression_settings_validation[1:4], convert_expression_settin
 weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
 doMC::registerDoMC(cores = 8)
-output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings, mc.cores = 3)
+output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, mc.cores = 3)
 }
 
 }

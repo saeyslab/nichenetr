@@ -13,7 +13,7 @@ evaluate_target_prediction_per_bin(nbins,settings,ligand_target_matrix,ncitation
 
 \item{ligand_target_matrix}{A matrix of ligand-target probabilty scores (or discrete target assignments).}
 
-\item{ncitations}{A data frame denoting the number of times a gene is mentioned in the Pubmed literature. Should at least contain following variables: 'symbol' and 'ncitations'.}
+\item{ncitations}{A data frame denoting the number of times a gene is mentioned in the Pubmed literature. Should at least contain following variables: 'symbol' and 'ncitations'. Default: ncitations (variable contained in this package). See function \code{get_ncitations_genes} for a function that makes this data frame from current Pubmed information.}
 
 \item{ligands_position}{Indicate whether the ligands in the ligand-target matrix are in the rows ("rows") or columns ("cols"). Default: "cols"}
 }

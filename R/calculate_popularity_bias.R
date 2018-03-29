@@ -38,7 +38,7 @@ get_ncitations_genes = function(file = "ftp://ftp.ncbi.nih.gov/gene/DATA/gene2pu
 #' add_ligand_popularity_measures_to_perfs(performances, ncitations)
 #'
 #' @param performances A data.frame in which the performance measures for target gene predictions of ligands are denoted
-#' @param ncitations A data frame denoting the number of times a gene is mentioned in the Pubmed literature. Should at least contain following variables: 'symbol' and 'ncitations'.
+#' @param ncitations A data frame denoting the number of times a gene is mentioned in the Pubmed literature. Should at least contain following variables: 'symbol' and 'ncitations'. Default: ncitations (variable contained in this package). See function \code{get_ncitations_genes} for a function that makes this data frame from current Pubmed information.
 #'
 #' @return A data.frame in which the performance measures for target gene prediction of a ligand are merged with the number of times the ligand is mentioned in the Pubmed literature.
 #'
@@ -67,8 +67,8 @@ add_ligand_popularity_measures_to_perfs = function(performances,ncitations){
     stop("performances$ligand should be a character vector")
 
   requireNamespace("dplyr")
-  performances = performances %>% tidyr::drop_na()
   performances_ligand_pop = performances %>% inner_join(ncitations %>% rename(ligand = symbol) %>% select(ligand,ncitations), by = "ligand")
+  return(performances_ligand_pop)
 }
 #' @title Regression analysis between ligand popularity and target gene predictive performance
 #'
@@ -133,7 +133,7 @@ get_slope_ligand_popularity = function(metric,performances){
 #' @param nbins The number of bins the target genes should be divided in based on popularity.
 #' @param settings  list of lists for which each sub-list contains the information about (expression) datasets; with minimally the following elements: name of the setting ($name), ligands (possibly) active in the setting of interest ($from).
 #' @param ligand_target_matrix A matrix of ligand-target probabilty scores (or discrete target assignments).
-#' @param ncitations A data frame denoting the number of times a gene is mentioned in the Pubmed literature. Should at least contain following variables: 'symbol' and 'ncitations'.
+#' @param ncitations A data frame denoting the number of times a gene is mentioned in the Pubmed literature. Should at least contain following variables: 'symbol' and 'ncitations'. Default: ncitations (variable contained in this package). See function \code{get_ncitations_genes} for a function that makes this data frame from current Pubmed information.
 #' @param ligands_position Indicate whether the ligands in the ligand-target matrix are in the rows ("rows") or columns ("cols"). Default: "cols"
 #'
 #' @return A data.frame containing several classification evaluation metrics for target gene prediction. Predictions were evaluated for n different bins of target genes. The specific bin is indicated in the variable target_bin_id. target_bin_id = 1: target genes that are least mentioned in the Pubmed literature.
@@ -241,4 +241,5 @@ get_slope_target_gene_popularity = function(metric,performances,method = "indivi
     }))
   }
 }
+
 
