@@ -252,10 +252,10 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
   return(tbl_perf)
 }
 classification_evaluation_categorical_pred = function(predictions, response) {
-  # print(predictions)
+  # print(head(predictions))
   # print(length(predictions))
 
-  if (sum(response) == 0){
+  if (sd(response) == 0){ # if all response is the same
     return(dplyr::tibble(accuracy = NA,
                          recall = NA,
                          specificity = NA,
@@ -286,8 +286,7 @@ classification_evaluation_categorical_pred = function(predictions, response) {
   fn = num_positives - tp
   tn = num_negatives - fp
   npv = tn / (tn + fn)
-
-  if (sum(predictions) == 0){
+  if (sd(predictions) == 0){
     fisher = list(p.value = NA, estimate = NA)
   } else {
     fisher = fisher.test(as.factor(response), predictions)
@@ -310,7 +309,7 @@ classification_evaluation_categorical_pred = function(predictions, response) {
     fisher_pval_log = -log(fisher$p.value),
     fisher_odds = fisher$estimate
   )
-  if (sum(predictions) == 0){
+  if (sd(predictions) == 0){ # all predictions are the same!
     return(dplyr::tibble(accuracy = metrics$accuracy,
                          recall = metrics$recall,
                          specificity = metrics$specificity,

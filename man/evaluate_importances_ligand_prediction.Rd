@@ -34,6 +34,7 @@ A list with the following elements. $performances: data frame containing classif
 \code{evaluate_importances_ligand_prediction} Evaluate how well a trained model of ligand importance scores is able to predict the true activity state of a ligand. For this it is assumed, that ligand importance measures for truely active ligands will be higher than for non-active ligands. A classificiation algorithm chosen by the user is trained to construct one model based on the ligand importance scores of all ligands of interest (ligands importance scores are considered as features). Several classification evaluation metrics for the prediction are calculated and variable importance scores can be extracted to rank the different importance measures in order of importance for ligand activity state prediction.
 }
 \examples{
+\dontrun{
 settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
 settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 
@@ -43,5 +44,5 @@ ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands
 ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
 evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
 print(head(evaluation))
-
+}
 }

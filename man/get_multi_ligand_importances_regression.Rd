@@ -38,6 +38,7 @@ A data.frame with for each ligand - data set combination, feature importance sco
 \code{get_multi_ligand_importances_regression} A regression algorithm chosen by the user is trained to construct one model based on the target gene predictions of all ligands of interest (ligands are considered as features) in order to predict the observed response in a particular dataset (respone: e.g. absolute value of log fold change). Variable importance scores that indicate for each ligand the importance for response prediction, are extracted. It can be assumed that ligands with higher variable importance scores are more likely to be a true active ligand.
 }
 \examples{
+\dontrun{
 settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation_regression)
 settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = FALSE)
 
@@ -46,5 +47,5 @@ ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 ligand_importances_lm = dplyr::bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances_regression,ligand_target_matrix, algorithm = "lm"))
 print(head(ligand_importances_lm))
-
+}
 }

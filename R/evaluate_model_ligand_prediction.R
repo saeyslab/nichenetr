@@ -128,6 +128,7 @@ get_single_ligand_importances = function(setting,ligand_target_matrix, ligands_p
 #' @return A data.frame with for each ligand - data set combination, feature importance scores indicating how important the query ligand is for the prediction of the response in the particular dataset, when prediction is done via a trained classification model with all possible ligands as input. In addition to the importance score(s), the name of the particular setting ($setting), the name of the query ligand($test_ligand), the name of the true active ligand (if known: $ligand).
 #'
 #' @examples
+#' \dontrun{
 #' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
 #' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = FALSE)
 #'
@@ -136,6 +137,7 @@ get_single_ligand_importances = function(setting,ligand_target_matrix, ligands_p
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' ligand_importances_glm = dplyr::bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances,ligand_target_matrix, algorithm = "glm"))
 #' print(head(ligand_importances_glm))
+#' }
 #' @export
 #'
 get_multi_ligand_importances = function(setting,ligand_target_matrix, ligands_position = "cols", algorithm, cv = TRUE, cv_number = 4, cv_repeats = 2, parallel = FALSE, n_cores = 4, ignore_errors = FALSE, continuous = TRUE, known = TRUE, filter_genes = FALSE){
@@ -193,6 +195,7 @@ get_multi_ligand_importances = function(setting,ligand_target_matrix, ligands_po
 #' @importFrom purrr safely
 #'
 #' @examples
+#' \dontrun{
 #' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
 #' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 #'
@@ -202,7 +205,7 @@ get_multi_ligand_importances = function(setting,ligand_target_matrix, ligands_po
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
 #' evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
 #' print(head(evaluation))
-#'
+#' }
 #' @export
 #'
 evaluate_importances_ligand_prediction = function(importances, normalization, algorithm, var_imps = TRUE, cv = TRUE, cv_number = 4, cv_repeats = 2, parallel = FALSE, n_cores = 4, ignore_errors = FALSE){
@@ -314,6 +317,7 @@ evaluate_single_importances_ligand_prediction = function(importances,normalizati
 #' @return A data frame containing the ligand importance scores and the probabilities that according to the trained model, the ligands are active based on their importance scores.
 #'
 #' @examples
+#' \dontrun{
 #' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
 #' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 #'
@@ -330,6 +334,7 @@ evaluate_single_importances_ligand_prediction = function(importances,normalizati
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix, known = FALSE))
 #' activity_predictions = model_based_ligand_activity_prediction(ligand_importances, evaluation$model,"median")
 #' print(head(activity_predictions))
+#' }
 #'
 #' @export
 #'
@@ -526,6 +531,7 @@ get_single_ligand_importances_regression = function(setting,ligand_target_matrix
 #' @return A data.frame with for each ligand - data set combination, feature importance scores indicating how important the query ligand is for the prediction of the response in the particular dataset, when prediction is done via a trained regression model with all possible ligands as input. In addition to the importance score(s), the name of the particular setting ($setting), the name of the query ligand($test_ligand), the name of the true active ligand (if known: $ligand).
 #'
 #' @examples
+#' \dontrun{
 #' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation_regression)
 #' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = FALSE)
 #'
@@ -534,7 +540,7 @@ get_single_ligand_importances_regression = function(setting,ligand_target_matrix
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' ligand_importances_lm = dplyr::bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances_regression,ligand_target_matrix, algorithm = "lm"))
 #' print(head(ligand_importances_lm))
-#'
+#' }
 #' @export
 #'
 get_multi_ligand_importances_regression = function(setting,ligand_target_matrix, ligands_position = "cols", algorithm, cv = TRUE, cv_number = 4, cv_repeats = 2, parallel = FALSE, n_cores = 4, ignore_errors = FALSE, known = TRUE, filter_genes = FALSE){
@@ -725,6 +731,7 @@ convert_settings_tf_prediction = function(settings,all_tfs, single = TRUE){
 #' @return A list with following elements: $name, $from, $response. $response will be a gene-named logical vector indicating whether the gene's transcription was influenced by the active ligand(s) in the setting of interest.
 #'
 #' @examples
+#' \dontrun{
 #' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
 #' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 #'
@@ -740,6 +747,7 @@ convert_settings_tf_prediction = function(settings,all_tfs, single = TRUE){
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix, known = FALSE))
 #' settings = lapply(settings,convert_settings_topn_ligand_prediction, importances = ligand_importances, model = evaluation$model, n = 3, normalization = "median" )
+#' }
 #'
 #' @export
 #'

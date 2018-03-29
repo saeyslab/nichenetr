@@ -20,6 +20,7 @@ A data frame containing the ligand importance scores and the probabilities that 
 \code{model_based_ligand_activity_prediction} Predict the activity state of a ligand based on a classification model that was trained to predict ligand activity state based on ligand importance scores.
 }
 \examples{
+\dontrun{
 settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
 settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 
@@ -36,5 +37,6 @@ ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands
 ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix, known = FALSE))
 activity_predictions = model_based_ligand_activity_prediction(ligand_importances, evaluation$model,"median")
 print(head(activity_predictions))
+}
 
 }

@@ -157,6 +157,11 @@ evaluate_target_prediction = function(setting,ligand_target_matrix, ligands_posi
   }
   response_vector = setting$response
 
+  if(sd(prediction_vector) == 0)
+    warning("all target gene probability score predictions have same value")
+  if(sd(response_vector) == 0)
+    stop("all genes have same response")
+
   performance = evaluate_target_prediction_strict(response_vector,prediction_vector,is.double(prediction_vector))
   output = bind_cols(tibble(setting = setting$name, ligand = ligand_oi), performance)
 
@@ -250,6 +255,8 @@ evaluate_multi_ligand_target_prediction = function(setting,ligand_target_matrix,
   }
 
   response_vector = setting$response
+  if(sd(response_vector) == 0)
+    stop("all genes have same response")
   response_df = tibble(gene = names(response_vector), response = response_vector %>% make.names() %>% as.factor())
 
   prediction_df = prediction_matrix %>% data.frame() %>% tbl_df()
@@ -337,6 +344,11 @@ evaluate_target_prediction_interprete = function(setting,ligand_target_matrix, l
     names(prediction_vector) = colnames(ligand_target_matrix)
   }
   response_vector = setting$response
+
+  if(sd(prediction_vector) == 0)
+    warning("all target gene probability score predictions have same value")
+  if(sd(response_vector) == 0)
+    stop("all genes have same response")
 
   if (is.logical(response_vector)){
     output = evaluate_target_prediction_strict(response_vector,prediction_vector,is.double(prediction_vector), prediction_response_df = TRUE)
@@ -487,6 +499,11 @@ evaluate_target_prediction_regression = function(setting,ligand_target_matrix, l
   }
   response_vector = setting$response
 
+  if(sd(prediction_vector) == 0)
+    warning("all target gene probability score predictions have same value")
+  if(sd(response_vector) == 0)
+    stop("all genes have same response")
+
   performance = evaluate_target_prediction_regression_strict(response_vector,prediction_vector)
   output = bind_cols(tibble(setting = setting$name, ligand = ligand_oi), performance)
 
@@ -574,6 +591,9 @@ evaluate_multi_ligand_target_prediction_regression = function(setting, ligand_ta
   }
 
   response_vector = setting$response
+
+  if(sd(response_vector) == 0)
+    stop("all genes have same response")
   response_df = tibble(gene = names(response_vector), response = response_vector)
 
   prediction_df = prediction_matrix %>% data.frame() %>% tbl_df()

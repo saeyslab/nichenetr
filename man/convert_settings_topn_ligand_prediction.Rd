@@ -24,6 +24,7 @@ A list with following elements: $name, $from, $response. $response will be a gen
 \code{convert_expression_settings_evaluation} Converts expression settings to format in which the total number of potential ligands is reduced up to n top-predicted active ligands.(useful for applications when a lot of ligands are potentially active, a lot of settings need to be predicted and a multi-ligand model is trained).
 }
 \examples{
+\dontrun{
 settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
 settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 
@@ -39,5 +40,6 @@ ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix, known = FALSE))
 settings = lapply(settings,convert_settings_topn_ligand_prediction, importances = ligand_importances, model = evaluation$model, n = 3, normalization = "median" )
+}
 
 }

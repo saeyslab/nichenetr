@@ -68,7 +68,7 @@ add_ligand_popularity_measures_to_perfs = function(performances,ncitations){
 
   requireNamespace("dplyr")
   performances = performances %>% tidyr::drop_na()
-  performances_ligand_pop = performances %>% left_join(ncitations %>% rename(ligand = symbol) %>% select(ligand,ncitations), by = "ligand")
+  performances_ligand_pop = performances %>% inner_join(ncitations %>% rename(ligand = symbol) %>% select(ligand,ncitations), by = "ligand")
 }
 #' @title Regression analysis between ligand popularity and target gene predictive performance
 #'
@@ -94,6 +94,7 @@ add_ligand_popularity_measures_to_perfs = function(performances,ncitations){
 #' performances_ligand_popularity = add_ligand_popularity_measures_to_perfs(performances,ncitations)
 #' slopes_df = performances_ligand_popularity %>% select(-setting,-ligand,-ncitations) %>% colnames() %>% lapply(.,get_slope_ligand_popularity,performances_ligand_popularity) %>% bind_rows()
 #' }
+#'
 #'
 #' @export
 #'

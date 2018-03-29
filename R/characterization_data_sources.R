@@ -176,11 +176,11 @@ add_hyperparameters_parameter_settings = function(parameter_setting,lr_sig_hub,g
 #'
 #' @return A list containing following elements: $model_name, $performances_target_prediction, $performances_ligand_prediction, $performances_ligand_prediction_single
 #'
-#' @import tibble tibble
+#' @importFrom tibble tibble
 #'
 #' @examples
 #' \dontrun{
-#' settings = lapply(expression_settings_validation, convert_expression_settings_evaluation)
+#' settings = lapply(expression_settings_validation[1:4], convert_expression_settings_evaluation)
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
 #' doMC::registerDoMC(cores = 8)
@@ -190,6 +190,10 @@ add_hyperparameters_parameter_settings = function(parameter_setting,lr_sig_hub,g
 #' @export
 #'
 evaluate_model = function(parameters_setting, lr_network, sig_network, gr_network, settings,...){
+
+  requireNamespace("dplyr")
+
+
   # input check
   if (!is.list(parameters_setting))
     stop("parameters_setting should be a list!")
@@ -223,13 +227,11 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
   if(!is.logical(settings[[1]]$response) | is.null(names(settings[[1]]$response)))
     stop("setting$response should be named logical vector containing class labels of the response that needs to be predicted ")
 
-  requireNamespace("dplyr")
-
   # read in parameters
   model_name = parameters_setting$model_name
 
   source_weights = parameters_setting$source_weights
-  source_weights_df = tibble(source = names(source_weights), weight = source_weights)
+  source_weights_df = tibble::tibble(source = names(source_weights), weight = source_weights)
 
   lr_sig_hub = parameters_setting$lr_sig_hub
   gr_hub = parameters_setting$gr_hub
@@ -252,22 +254,26 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
   if (correct_topology == TRUE & algorithm == "PPR"){
     ligand_target_matrix = correct_topology_ppr(ligand_target_matrix, weighted_networks)
   }
-
+  ligand_target_matrix_discrete = ligand_target_matrix %>% make_discrete_ligand_target_matrix(cutoff_method = "quantile")
   # transcriptional response evaluation
   performances_target_prediction = bind_rows(lapply(settings,evaluate_target_prediction, ligand_target_matrix))
-  # performances_target_prediction_discrete = bind_rows(lapply(settings,evaluate_target_prediction, ligand_target_matrix %>% make_discrete_ligand_target_matrix(cutoff_method = "quantile")))
+  performances_target_prediction_discrete = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix_discrete))
+  performances_target_prediction = performances_target_prediction %>% inner_join(performances_target_prediction_discrete, by = c("setting", "ligand"))
 
-  # ligand activity state prediction
+    # ligand activity state prediction
   all_ligands = unlist(extract_ligands_from_settings(settings, combination = FALSE))
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = TRUE)
   ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix[, all_ligands]))
-  # ligand_importances_discrete = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix[, all_ligands] %>% make_discrete_ligand_target_matrix(cutoff_method = "quantile"))
+  ligand_importances_discrete = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix_discrete[, all_ligands]))
+  if(sum(is.na(ligand_importances_discrete$fisher_odds)) > 0){
+    ligand_importances_discrete = ligand_importances_discrete %>% select(-fisher_odds) %>% select(-fisher_pval_log) # because contains too much NA sometimes in leave one in models
+  }
 
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = FALSE)
   ligand_importances_glm = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances, ligand_target_matrix[,all_ligands], algorithm = "glm", cv = FALSE)) %>% rename(glm_imp = importance)
 
-  all_importances = inner_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand"))
-  # all_importances = inner_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand")) %>% inner_join(ligand_importances_discrete, by = c("setting","test_ligand", "ligand"))
+  all_importances = inner_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand")) %>% inner_join(ligand_importances_discrete, by = c("setting","test_ligand", "ligand"))
+  # all_importances = inner_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand"))
 
   evaluation = evaluate_importances_ligand_prediction(all_importances, "median","lda",cv_number = 3, cv_repeats = 20)
   performances_ligand_prediction = evaluation$performances
@@ -436,3 +442,20 @@ process_characterization_ligand_prediction_single_measures = function(output_cha
   }) %>% bind_rows()
   return(performances_ligand_prediction_single)
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
