@@ -27,6 +27,7 @@ ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands
 performances = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix))
 # ncitations = get_ncitations_genes()
 performances_ligand_popularity = add_ligand_popularity_measures_to_perfs(performances,ncitations)
+slopes_auroc = get_slope_ligand_popularity("auroc",performances_ligand_popularity)
 slopes_df = performances_ligand_popularity \%>\% select(-setting,-ligand,-ncitations) \%>\% colnames() \%>\% lapply(.,get_slope_ligand_popularity,performances_ligand_popularity) \%>\% bind_rows()
 }
 

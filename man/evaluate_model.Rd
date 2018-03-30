@@ -4,7 +4,7 @@
 \alias{evaluate_model}
 \title{Construct and evaluate a ligand-target model given input parameters.}
 \usage{
-evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings, calculate_popularity_bias_target_prediction,calculate_popularity_bias_ligand_prediction, ncitations = ncitations,...)
+evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings, calculate_popularity_bias_target_prediction,calculate_popularity_bias_ligand_prediction, ncitations = ncitations, secondary_targets = FALSE, remove_direct_links = FALSE, n_target_bins = 3,...)
 }
 \arguments{
 \item{parameters_setting}{A list containing following elements: $model_name, $source_weights, $lr_sig_hub, $gr_hub, $ltf_cutoff, $algorithm, $damping_factor, $correct_topology. See \code{prepare_settings_leave_one_in_characterization} and \code{add_hyperparameters_parameter_settings}.}
@@ -23,7 +23,13 @@ evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings
 
 \item{ncitations}{A data frame denoting the number of times a gene is mentioned in the Pubmed literature. Should at least contain following variables: 'symbol' and 'ncitations'. Default: ncitations (variable contained in this package). See function \code{get_ncitations_genes} for a function that makes this data frame from current Pubmed information.}
 
-\item{...}{Additional arguments to \code{construct_ligand_target_matrix} such as "secondary_targets" and "remove_direct_links".}
+\item{secondary_targets}{Indicate whether a ligand-target matrix should be returned that explicitly includes putative secondary targets of a ligand (by means of an additional matrix multiplication step considering primary targets as possible regulators). Default: FALSE}
+
+\item{remove_direct_links}{Indicate whether direct ligand-target and receptor-target links in the gene regulatory network should be kept or not. "no": keep links; "ligand": remove direct ligand-target links; "ligand-receptor": remove both direct ligand-target and receptor-target links. Default: "no"}
+
+\item{n_target_bins}{Indicate the number of bins the target genes will be divided in according to popularity. Only relevant when calculate_popularity_bias_target_prediction and/or calculate_popularity_bias_ligand_prediction is/are TRUE.  Default = 3.}
+
+\item{...}{Additional arguments to \code{make_discrete_ligand_target_matrix}.}
 }
 \value{
 A list containing following elements: $model_name, $performances_target_prediction, $performances_ligand_prediction, $performances_ligand_prediction_single

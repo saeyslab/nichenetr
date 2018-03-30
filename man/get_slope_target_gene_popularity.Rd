@@ -28,6 +28,7 @@ ligands = extract_ligands_from_settings(settings)
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 # ncitations = get_ncitations_genes()
 performances_target_bins_popularity = evaluate_target_prediction_per_bin(5,settings,ligand_target_matrix,ncitations)
+slopes_auroc = get_slope_target_gene_popularity("auroc",performances_target_bins_popularity)
 slopes_df = performances_target_bins_popularity \%>\% select(-setting,-ligand,-target_bin_id) \%>\% colnames() \%>\% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity,method = "individual") \%>\% bind_rows()
 slopes_df2 = performances_target_bins_popularity \%>\% select(-setting,-ligand,-target_bin_id) \%>\% colnames() \%>\% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity,method = "all") \%>\% bind_rows()
 }

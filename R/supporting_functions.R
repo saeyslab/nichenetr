@@ -378,7 +378,7 @@ calculate_auc_iregulon = function(prior,response){
 
 evaluate_target_prediction_bins_direct = function(bin_id,settings,ligand_target_matrix,ligands_position,ncitations){
   requireNamespace("dplyr")
-  targets_bin_id = ncitations %>% filter(bin == bin_id) %>% .$symbol
+  targets_bin_id = ncitations %>% filter(bin == bin_id) %>% .$symbol %>% unique()
   if (ligands_position == "cols"){
     ligand_target_matrix = ligand_target_matrix[targets_bin_id,]
   } else if (ligands_position == "rows") {
@@ -605,7 +605,17 @@ is_ligand_active = function(importances){
   }
   return(true_ligand)
 }
-
+are_ligands_oi_active = function(importances, ligands_oi){
+  test_ligand = importances$test_ligand
+  real_ligand = strsplit(importances$ligand,"[-]")
+  true_ligand = rep(NULL, times = length(test_ligand))
+  for (i in seq(length(test_ligand))){
+    test = test_ligand[i]
+    real = real_ligand[[i]]
+    true_ligand[i] = sum(ligands_oi %in% real) > 0
+  }
+  return(true_ligand)
+}
 scaling_zscore = function(x){
   if (typeof(x) == "double"){
     if(sd(x) > 0){
@@ -805,4 +815,84 @@ cal_celltype_average = function(cell,E){
   expression = exprs(E)
   average_expression = apply(expression, 1, mean)
 
+}
+evaluate_ligand_prediction_bins_direct = function(bin_id,settings,ligand_target_matrix,ligands_position,ncitations,...){
+  requireNamespace("dplyr")
+  targets_bin_id = ncitations %>% filter(bin == bin_id) %>% .$symbol %>% unique()
+
+  if (ligands_position == "cols"){
+    ligand_target_matrix = ligand_target_matrix[targets_bin_id,]
+  } else if (ligands_position == "rows") {
+    ligand_target_matrix = ligand_target_matrix[,targets_bin_id]
+    ligand_target_matrix = ligand_target_matrix %>% t()
+  }
+  ligand_target_matrix_discrete = ligand_target_matrix %>% make_discrete_ligand_target_matrix(...)
+
+
+  # performances = bind_rows(lapply(settings, evaluate_target_prediction, ligand_target_matrix,ligands_position)) ##### checking!!
+  all_ligands = unlist(extract_ligands_from_settings(settings, combination = FALSE))
+  settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = TRUE)
+
+  ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix[, all_ligands]))
+  ligand_importances_discrete = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix_discrete[, all_ligands]))
+  if(sum(is.na(ligand_importances_discrete$fisher_odds)) > 0){
+    ligand_importances_discrete = ligand_importances_discrete %>% select(-fisher_odds) %>% select(-fisher_pval_log) # because contains too much NA sometimes in leave one in models
+  }
+
+  settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = FALSE)
+  ligand_importances_glm = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances, ligand_target_matrix[,all_ligands], algorithm = "glm", cv = FALSE)) %>% rename(glm_imp = importance)
+
+  all_importances = inner_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand")) %>% inner_join(ligand_importances_discrete, by = c("setting","test_ligand", "ligand"))
+
+  # all_importances = inner_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand"))
+
+  # evaluation = suppressWarnings(evaluate_importances_ligand_prediction(all_importances, "median","lda",cv_number = 3, cv_repeats = 20))
+  # # warning lda here: variables are collinear --> not problematic but logical here
+  # performances_ligand_prediction = evaluation$performances %>% select(-Resample) %>% mutate_all(mean) %>% distinct()
+  performances_ligand_prediction_single = evaluate_single_importances_ligand_prediction(all_importances, "median")
+
+  performances = performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% mutate(target_bin_id = bin_id)
+  return(performances)
+}
+
+#' @title Process the output of model evaluation for data source characterization purposes on the ligand prediction performance
+#'
+#' @description \code{process_characterization_ligand_prediction} will process output formed by model evaluation to get a data frame containing performance measures in ligand prediction.
+#'
+#' @usage
+#' process_characterization_ligand_prediction(output_characterization)
+#'
+#' @inheritParams  process_characterization_target_prediction
+#' @return A data frame containing the ligand activity prediction performance for all the models that were evaluated.
+#'
+#' @examples
+#'
+#' \dontrun{
+#' settings = lapply(expression_settings_validation, convert_expression_settings_evaluation)
+#' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
+#' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+#' doMC::registerDoMC(cores = 8)
+#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, mc.cores = 3)
+#' ligand_prediction_performances = process_characterization_ligand_prediction(output_characterization)
+#' }
+#'
+#' @export
+#'
+process_characterization_ligand_prediction = function(output_characterization){
+  # input check
+  if (!is.list(output_characterization))
+    stop("output_characterization should be a list!")
+  if (!is.data.frame(output_characterization[[1]]$performances_ligand_prediction))
+    stop("output_characterization[[1]]$performances_ligand_prediction should be a data frame")
+  if (!is.character(output_characterization[[1]]$model_name))
+    stop("output_characterization[[1]]$model_name should be a character vector")
+
+  requireNamespace("dplyr")
+
+  performances_ligand_prediction = output_characterization %>% lapply(function(x){
+    performances = x$performances_ligand_prediction %>% mutate(model_name = x$model_name)
+    return(performances)
+  }) %>% bind_rows()
+  performances_ligand_prediction = performances_ligand_prediction %>% select(-Resample) %>% group_by(model_name) %>% mutate_all(mean) %>% distinct()
+  return(performances_ligand_prediction)
 }
