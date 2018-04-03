@@ -82,7 +82,10 @@ test_that("Leave-one-in models can be evaluated and results of this further proc
   weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
   output_characterization = lapply(weights_settings_loi[1:2],evaluate_model,lr_network,sig_network, gr_network,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, cutoff_method = "quantile") # make discrete ligand-target matrix via the quantile-method!
 
+  output_characterization_application = lapply(weights_settings_loi[1:2],evaluate_model_application,lr_network,sig_network, gr_network,settings[1:3], cutoff_method = "quantile") # make discrete ligand-target matrix via the quantile-method!
+
   target_prediction_performances = process_characterization_target_prediction(output_characterization)
+  target_prediction_performances_output_characterization_application = process_characterization_target_prediction(output_characterization_application)
   target_prediction_performances_average = process_characterization_target_prediction_average(output_characterization)
   ligand_prediction_performances_single = process_characterization_ligand_prediction_single_measures(output_characterization)
   popularity_slopes_target_prediction_performances = process_characterization_popularity_slopes_target_prediction(output_characterization)
@@ -101,3 +104,33 @@ test_that("Leave-one-in models can be evaluated and results of this further proc
   expect_gte(nrow(popularity_slopes_ligand_prediction_performances),1)
 
 })
+
+test_that("Influence individual data source on ligand-target scores can be assessed", {
+
+  ligands =  extract_ligands_from_settings(expression_settings_validation[1:4])
+  output = assess_influence_source("ontogenet", lr_network,sig_network, gr_network, source_weights_df, ligands,lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+  expect_type(output, "list")
+  expect_type(output[[2]]$targets_higher, "double")
+  first = log(output[[2]]$targets_higher[1])
+  second = log(output[[2]]$targets_higher[2])
+  expect_gt(first - second,0 )
+
+  output = assess_influence_source("ontogenet", lr_network,sig_network, gr_network, source_weights_df, ligands, rankings = TRUE, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+  expect_type(output, "list")
+  expect_type(output[[2]]$targets_higher, "integer")
+  first = output[[2]]$targets_higher[1]
+  second = output[[2]]$targets_higher[2]
+  expect_lt(first - second,0 )
+
+  output = assess_influence_source("ontogenet", lr_network,sig_network, gr_network, source_weights_df, ligands, rankings = TRUE, matrix_output = TRUE, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+  expect_type(output, "list")
+  expect_equal(output[[1]]$model %>% is.matrix(), TRUE)
+
+  output = assess_influence_source("ontogenet", lr_network,sig_network, gr_network, source_weights_df, ligands, rankings = FALSE,matrix_output = TRUE, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+  expect_type(output, "list")
+  expect_equal(output[[1]]$model %>% is.matrix(), TRUE)
+
+})
+
+
+
