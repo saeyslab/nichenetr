@@ -19,7 +19,62 @@ test_that("Settings leave-one-in can be constructed and hyperparameters added", 
   expect_type(weights_settings_loi[[2]]$correct_topology, "logical")
 
 })
+test_that("Settings leave-one-out can be constructed and hyperparameters added", {
+  weights_settings_loo = prepare_settings_leave_one_out_characterization(lr_network,sig_network, gr_network, source_weights_df)
 
+  expect_type(weights_settings_loo, "list")
+  expect_type(weights_settings_loo[[2]], "list")
+  expect_type(weights_settings_loo[[2]]$source_weights, "double")
+  expect_type(weights_settings_loo[[2]]$model_name, "character")
+
+  weights_settings_loo = lapply(weights_settings_loo,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+  expect_type(weights_settings_loo[[2]]$lr_sig_hub, "double")
+  expect_type(weights_settings_loo[[2]]$gr_hub, "double")
+  expect_type(weights_settings_loo[[2]]$damping_factor, "double")
+  expect_type(weights_settings_loo[[2]]$ltf_cutoff, "double")
+
+  expect_type(weights_settings_loo[[2]]$algorithm, "character")
+  expect_type(weights_settings_loo[[2]]$correct_topology, "logical")
+
+})
+test_that("Settings one-vs-one can be constructed and hyperparameters added", {
+  weights_settings_ovo = prepare_settings_one_vs_one_characterization(lr_network,sig_network, gr_network)
+
+  expect_type(weights_settings_ovo, "list")
+  expect_type(weights_settings_ovo[[2]], "list")
+  expect_type(weights_settings_ovo[[2]]$source_weights, "double")
+  expect_type(weights_settings_ovo[[2]]$model_name, "character")
+  expect_type(weights_settings_ovo[[2]]$lr_sig_source, "character")
+  expect_type(weights_settings_ovo[[2]]$gr_source, "character")
+
+  weights_settings_ovo = lapply(weights_settings_ovo,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+  expect_type(weights_settings_ovo[[2]]$lr_sig_hub, "double")
+  expect_type(weights_settings_ovo[[2]]$gr_hub, "double")
+  expect_type(weights_settings_ovo[[2]]$damping_factor, "double")
+  expect_type(weights_settings_ovo[[2]]$ltf_cutoff, "double")
+
+  expect_type(weights_settings_ovo[[2]]$algorithm, "character")
+  expect_type(weights_settings_ovo[[2]]$correct_topology, "logical")
+
+  weights_settings_ovo = prepare_settings_one_vs_one_characterization(lr_network,sig_network, gr_network, lr_network_separate = TRUE)
+  expect_type(weights_settings_ovo, "list")
+  expect_type(weights_settings_ovo[[2]], "list")
+  expect_type(weights_settings_ovo[[2]]$source_weights, "double")
+  expect_type(weights_settings_ovo[[2]]$model_name, "character")
+  expect_type(weights_settings_ovo[[2]]$lr_source, "character")
+  expect_type(weights_settings_ovo[[2]]$sig_source, "character")
+  expect_type(weights_settings_ovo[[2]]$gr_source, "character")
+
+  weights_settings_ovo = lapply(weights_settings_ovo,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+  expect_type(weights_settings_ovo[[2]]$lr_sig_hub, "double")
+  expect_type(weights_settings_ovo[[2]]$gr_hub, "double")
+  expect_type(weights_settings_ovo[[2]]$damping_factor, "double")
+  expect_type(weights_settings_ovo[[2]]$ltf_cutoff, "double")
+
+  expect_type(weights_settings_ovo[[2]]$algorithm, "character")
+  expect_type(weights_settings_ovo[[2]]$correct_topology, "logical")
+
+})
 test_that("Leave-one-in models can be evaluated and results of this further processed", {
 
   settings = lapply(expression_settings_validation[1:20], convert_expression_settings_evaluation)

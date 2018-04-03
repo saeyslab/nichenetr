@@ -16,7 +16,7 @@ prepare_settings_leave_one_out_characterization(lr_network, sig_network, gr_netw
 \item{source_weights_df}{A data frame / tibble containing the weights associated to each individual data source. Sources with higher weights will contribute more to the final model performance (required columns: source, weight). Note that only interactions described by sources included here, will be retained during model construction.}
 }
 \value{
-A list of lists. Every sub-list contains 2 elements: $source: the name of the left-in data source; $source_weights: named numeric vector containing the data source weights that will be used for the construction of leave-one-in models.
+A list of lists. Every sub-list contains 2 elements: $model_name: the name of the left-out data source; $source_weights: named numeric vector containing the data source weights that will be used for the construction of leave-one-out models.
 }
 \description{
 \code{prepare_settings_leave_one_out_characterization} will generate a list of lists containing the data source weights that need to be used for model construction. Every sub-list will contain the data source weights needed to make so called leave-one-out models in one ligand-signaling data source is or gene regulatory data source is left out.

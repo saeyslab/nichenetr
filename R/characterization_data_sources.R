@@ -6,10 +6,11 @@
 #' prepare_settings_leave_one_in_characterization(lr_network, sig_network, gr_network, source_weights_df)
 #'
 #' @inheritParams construct_weighted_networks
-#' @return A list of lists. Every sub-list contains 2 elements: $source: the name of the left-in data source; $source_weights: named numeric vector containing the data source weights that will be used for the construction of leave-one-in models.
+#' @return A list of lists. Every sub-list contains 2 elements: $model_name: the name of the left-in data source; $source_weights: named numeric vector containing the data source weights that will be used for the construction of leave-one-in models.
 #'
 #' @examples
 #'
+#' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #'
 #' @export
 #'
@@ -70,7 +71,7 @@ prepare_settings_leave_one_in_characterization = function(lr_network, sig_networ
 #' prepare_settings_leave_one_out_characterization(lr_network, sig_network, gr_network, source_weights_df)
 #'
 #' @inheritParams construct_weighted_networks
-#' @return A list of lists. Every sub-list contains 2 elements: $source: the name of the left-in data source; $source_weights: named numeric vector containing the data source weights that will be used for the construction of leave-one-in models.
+#' @return A list of lists. Every sub-list contains 2 elements: $model_name: the name of the left-out data source; $source_weights: named numeric vector containing the data source weights that will be used for the construction of leave-one-out models.
 #'
 #' @examples
 #'
@@ -122,8 +123,8 @@ prepare_settings_leave_one_out_characterization = function(lr_network, sig_netwo
     names(weights_settings_gr[[i]]) = c("model_name","source_weights")
 
   }
-  weights_settings_loi = c(weights_settings,weights_settings_lr_sig, weights_settings_gr)
-  return(weights_settings_loi)
+  weights_settings_loo = c(weights_settings,weights_settings_lr_sig, weights_settings_gr)
+  return(weights_settings_loo)
 }
 #' @title Add hyperparameters to existing parameter settings
 #'
@@ -541,6 +542,78 @@ process_characterization_popularity_slopes_ligand_prediction = function(output_c
     return(performances)
   }) %>% bind_rows()
   return(popularity_slopes_ligand_prediction)
+}
+#' @title Prepare settings for one-vs-one characterization
+#'
+#' @description \code{prepare_settings_one_vs_one_characterization} will generate a list of lists containing the data source weights that need to be used for model construction. Every sub-list will contain the data source weights needed to make so called one-vs-one models in which only one ligand-signaling data source and only one gene regulatory data source is used. It is also possible to construct one-vs-one-vs-one models by keeping 1 ligand-receptor, 1 signaling and 1 gene regulatory data source.
+#'
+#' @usage
+#' prepare_settings_one_vs_one_characterization(lr_network, sig_network, gr_network, lr_network_separate = FALSE)
+#'
+#' @inheritParams construct_weighted_networks
+#' @param lr_network_separate Indicate whether the one-vs-one models should contain 1 ligand-receptor, 1 signaling and 1 gene regulatory network source (TRUE) or just 1 ligand-signaling combined and 1 gene regulatory source (FALSE). Default: FALSE.
+#' @return A list of lists. Every sub-list contains following elements: $model_name; $source_lr_sig: the name of the left-in ligand-signaling data source (or $source_lr and $source_sig if lr_network_separate is TRUE); $source_gr: the name of the left-in gene regulatory data source and $source_weights: named numeric vector containing the data source weights that will be used for the construction of one-vs-one models.
+#'
+#' @examples
+#'
+#' weights_settings_ovo = prepare_settings_one_vs_one_characterization(lr_network,sig_network, gr_network)
+#' weights_settings_ovo_lr_separate = prepare_settings_one_vs_one_characterization(lr_network,sig_network, gr_network, lr_network_separate = TRUE)
+#' @export
+#'
+#'
+prepare_settings_one_vs_one_characterization = function(lr_network, sig_network, gr_network, lr_network_separate = FALSE){
+  # input check
+  if (!is.data.frame(lr_network))
+    stop("lr_network must be a data frame or tibble object")
+  if (!is.data.frame(sig_network))
+    stop("sig_network must be a data frame or tibble object")
+  if (!is.data.frame(gr_network))
+    stop("gr_network must be a data frame or tibble object")
+  if (!is.data.frame(source_weights_df) || sum((source_weights_df$weight > 1)) != 0)
+    stop("source_weights_df must be a data frame or tibble object and no data source weight may be higher than 1")
+  if(lr_network_separate != TRUE & lr_network_separate != FALSE)
+    stop("lr_network_separate should be TRUE or FALSE")
+
+  requireNamespace("dplyr")
+  if (lr_network_separate == FALSE){
+    lr_sig_sources = source_weights_df %>% filter(source %in% c(lr_network$source %>% unique(), sig_network$source %>% unique())) %>% .$source
+    gr_sources = source_weights_df %>% filter(source %in% unique(gr_network$source)) %>% .$source
+
+    source_possibilities_df = expand.grid(lr_sig_sources, gr_sources) %>% tbl_df() %>% rename(lr_sig_source = Var1, gr_source = Var2) %>% mutate(lr_sig_source = as.character(lr_sig_source), gr_source = as.character(gr_source))
+
+    source_weight_settings_list = lapply(seq(nrow(source_possibilities_df)), function(i, source_possibilities_df){
+      row_oi = source_possibilities_df[i,]
+      novel_weights = rep(0,times=length(c(lr_sig_sources,gr_sources)))
+      names(novel_weights) = c(lr_sig_sources,gr_sources)
+      novel_weights[row_oi$lr_sig_source]=1
+      novel_weights[row_oi$gr_source]=1
+      lr_sig_source = row_oi$lr_sig_source
+      gr_source = row_oi$gr_source
+      model_name = paste(lr_sig_source, gr_source,sep = "-")
+      return(list(model_name = model_name, lr_sig_source = lr_sig_source, gr_source = gr_source, source_weights = novel_weights))
+    }, source_possibilities_df)
+  } else {
+    lr_sources = source_weights_df %>% filter(source %in% c(lr_network$source %>% unique())) %>% .$source
+    sig_sources = source_weights_df %>% filter(source %in% c(sig_network$source %>% unique())) %>% .$source
+    gr_sources = source_weights_df %>% filter(source %in% unique(gr_network$source)) %>% .$source
+
+    source_possibilities_df = expand.grid(lr_sources,sig_sources, gr_sources) %>% tbl_df() %>% rename(lr_source = Var1, sig_source = Var2, gr_source = Var3) %>% mutate(lr_source = as.character(lr_source), sig_source = as.character(sig_source), gr_source = as.character(gr_source))
+
+    source_weight_settings_list = lapply(seq(nrow(source_possibilities_df)), function(i, source_possibilities_df){
+      row_oi = source_possibilities_df[i,]
+      novel_weights = rep(0,times=length(c(lr_sources, sig_sources, gr_sources)))
+      names(novel_weights) = c(lr_sources, sig_sources, gr_sources)
+      novel_weights[row_oi$lr_source]=1
+      novel_weights[row_oi$sig_source]=1
+      novel_weights[row_oi$gr_source]=1
+      lr_source = row_oi$lr_source
+      sig_source = row_oi$sig_source
+      gr_source = row_oi$gr_source
+      model_name = paste(lr_source, sig_source, gr_source,sep = "-")
+      return(list(model_name = model_name, lr_source = lr_source, sig_source = sig_source, gr_source = gr_source, source_weights = novel_weights))
+    }, source_possibilities_df)
+  }
+   return(source_weight_settings_list)
 }
 
 
