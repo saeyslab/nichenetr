@@ -896,3 +896,17 @@ process_characterization_ligand_prediction = function(output_characterization){
   performances_ligand_prediction = performances_ligand_prediction %>% select(-Resample) %>% group_by(model_name) %>% mutate_all(mean) %>% distinct()
   return(performances_ligand_prediction)
 }
+get_affected_targets_output = function(diff_matrix, rankings){
+  return(lapply(colnames(diff_matrix),function(ligand_oi,diff_matrix, rankings){
+    vector_oi = diff_matrix[,ligand_oi]
+    if(rankings == TRUE){
+      sorted_vector_oi_high2low = sort(vector_oi)
+      sorted_vector_oi_low2high = sort(vector_oi, decreasing = TRUE)
+    } else {
+      sorted_vector_oi_high2low = sort(vector_oi, decreasing = TRUE)
+      sorted_vector_oi_low2high = sort(vector_oi)
+    }
+
+    return(list(ligand = ligand_oi, targets_higher = sorted_vector_oi_high2low %>% head(100), targets_lower = sorted_vector_oi_low2high %>% head(100)))
+  },diff_matrix,rankings ))
+}

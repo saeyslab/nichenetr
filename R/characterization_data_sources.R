@@ -152,7 +152,18 @@ add_hyperparameters_parameter_settings = function(parameter_setting,lr_sig_hub,g
   # input check
   if (!is.list(parameter_setting))
     stop("parameter_setting must be a list")
-
+  if (lr_sig_hub < 0 | lr_sig_hub > 1)
+    stop("lr_sig_hub must be a number between 0 and 1 (0 and 1 included)")
+  if (gr_hub < 0 | gr_hub > 1)
+    stop("gr_hub must be a number between 0 and 1 (0 and 1 included)")
+  if (ltf_cutoff < 0 | ltf_cutoff > 1)
+    stop("ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  if (algorithm != "PPR" & algorithm != "SPL" & algorithm != "direct")
+    stop("algorithm must be 'PPR' or 'SPL' or 'direct'")
+  if (damping_factor < 0 | damping_factor >= 1)
+    stop("damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  if (correct_topology != TRUE & correct_topology != FALSE)
+    stop("correct_topology must be TRUE or FALSE")
   requireNamespace("dplyr")
 
   parameter_setting$lr_sig_hub = lr_sig_hub
@@ -233,8 +244,6 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
   if(!is.logical(settings[[1]]$response) | is.null(names(settings[[1]]$response)))
     stop("setting$response should be named logical vector containing class labels of the response that needs to be predicted ")
 
-  if (parameters_setting$correct_topology != TRUE & parameters_setting$correct_topology != FALSE)
-    stop("parameters_setting$correct_topology must be TRUE or FALSE")
   if (calculate_popularity_bias_target_prediction != TRUE & calculate_popularity_bias_target_prediction != FALSE)
     stop("calculate_popularity_bias_target_prediction must be TRUE or FALSE")
   if (calculate_popularity_bias_ligand_prediction != TRUE & calculate_popularity_bias_ligand_prediction != FALSE)
@@ -250,35 +259,13 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
     stop("remove_direct_links must be  'no' or 'ligand' or 'ligand-receptor'")
   if(n_target_bins < 0 | n_target_bins > 10)
     stop("n_target_bins should be a number higher than 0. In addition we recommend to keep this number not higher than 10 in order to have a meaningful analysis")
-  # read in parameters
-  model_name = parameters_setting$model_name
-
-  source_weights = parameters_setting$source_weights
-  source_weights_df = tibble::tibble(source = names(source_weights), weight = source_weights)
-
-  lr_sig_hub = parameters_setting$lr_sig_hub
-  gr_hub = parameters_setting$gr_hub
-  ltf_cutoff = parameters_setting$ltf_cutoff
-  algorithm = parameters_setting$algorithm
-  damping_factor = parameters_setting$damping_factor
-  correct_topology = parameters_setting$correct_topology
-
-  # construct weighted networks
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df) %>% apply_hub_corrections(lr_sig_hub, gr_hub)
-
-  # extract ligands and construct ligand-target matrix
-  ligands = extract_ligands_from_settings(settings)
-  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks,
-                                                        ligands = ligands,
-                                                        ltf_cutoff = ltf_cutoff,
-                                                        algorithm = algorithm,
-                                                        damping_factor =  damping_factor,
-                                                        secondary_targets = secondary_targets,
-                                                        remove_direct_links = remove_direct_links)
-  if (correct_topology == TRUE & algorithm == "PPR"){
-    ligand_target_matrix = correct_topology_ppr(ligand_target_matrix, weighted_networks)
-  }
+  # construct model
+  ligands =  extract_ligands_from_settings(settings)
+  output_model_construction = construct_model(parameters_setting, lr_network, sig_network, gr_network, ligands, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links)
+  model_name = output_model_construction$model_name
+  ligand_target_matrix = output_model_construction$model
   ligand_target_matrix_discrete = ligand_target_matrix %>% make_discrete_ligand_target_matrix(...)
+
   # transcriptional response evaluation
   performances_target_prediction = bind_rows(lapply(settings,evaluate_target_prediction, ligand_target_matrix))
   performances_target_prediction_discrete = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix_discrete))
@@ -615,7 +602,267 @@ prepare_settings_one_vs_one_characterization = function(lr_network, sig_network,
   }
    return(source_weight_settings_list)
 }
+#' @title Construct and evaluate a ligand-target model given input parameters (for application purposes).
+#'
+#' @description \code{evaluate_model_application} will take as input a setting of parameters (data source weights and hyperparameters) and layer-specific networks to construct a ligand-target matrix and evaluate its performance on input application settings (only target gene prediction).
+#'
+#' @usage
+#' evaluate_model_application(parameters_setting, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no", ...)
+#'
+#' @inheritParams evaluate_model
+#'
+#' @return A list containing following elements: $model_name, $performances_target_prediction.
+#'
+#' @importFrom tibble tibble
+#'
+#' @examples
+#' \dontrun{
+#' settings = lapply(expression_settings_validation[1:4], convert_expression_settings_evaluation)
+#' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
+#' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+#' doMC::registerDoMC(cores = 8)
+#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model_application,lr_network,sig_network, gr_network,settings, mc.cores = 3)
+#' }
+#'
+#' @export
+#'
+evaluate_model_application = function(parameters_setting, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no", ...){
 
+  requireNamespace("dplyr")
+
+
+  # input check
+  if (!is.list(parameters_setting))
+    stop("parameters_setting should be a list!")
+  if (!is.character(parameters_setting$model_name))
+    stop("parameters_setting$model_name should be a character vector")
+  if (!is.numeric(parameters_setting$source_weights) | is.null(names(parameters_setting$source_weights)))
+    stop("parameters_setting$source_weights should be a named numeric vector")
+  if (parameters_setting$lr_sig_hub < 0 | parameters_setting$lr_sig_hub > 1)
+    stop("parameters_setting$lr_sig_hub must be a number between 0 and 1 (0 and 1 included)")
+  if (parameters_setting$gr_hub < 0 | parameters_setting$gr_hub > 1)
+    stop("parameters_setting$gr_hub must be a number between 0 and 1 (0 and 1 included)")
+  if (parameters_setting$ltf_cutoff < 0 | parameters_setting$ltf_cutoff > 1)
+    stop("parameters_setting$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  if (parameters_setting$algorithm != "PPR" & parameters_setting$algorithm != "SPL" & parameters_setting$algorithm != "direct")
+    stop("parameters_setting$algorithm must be 'PPR' or 'SPL' or 'direct'")
+  if (parameters_setting$damping_factor < 0 | parameters_setting$damping_factor >= 1)
+    stop("parameters_setting$damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  if (parameters_setting$correct_topology != TRUE & parameters_setting$correct_topology != FALSE)
+    stop("parameters_setting$correct_topology must be TRUE or FALSE")
+
+  if (!is.data.frame(lr_network))
+    stop("lr_network must be a data frame or tibble object")
+  if (!is.data.frame(sig_network))
+    stop("sig_network must be a data frame or tibble object")
+  if (!is.data.frame(gr_network))
+    stop("gr_network must be a data frame or tibble object")
+  if (!is.list(settings))
+    stop("settings should be a list!")
+  if(!is.character(settings[[1]]$from) | !is.character(settings[[1]]$name))
+    stop("setting$from and setting$name should be character vectors")
+  if(!is.logical(settings[[1]]$response) | is.null(names(settings[[1]]$response)))
+    stop("setting$response should be named logical vector containing class labels of the response that needs to be predicted ")
+
+  if (secondary_targets != TRUE & secondary_targets != FALSE)
+    stop("secondary_targets must be TRUE or FALSE")
+  if (remove_direct_links != "no" & remove_direct_links != "ligand" & remove_direct_links != "ligand-receptor")
+    stop("remove_direct_links must be  'no' or 'ligand' or 'ligand-receptor'")
+
+  # construct model
+  ligands =  extract_ligands_from_settings(settings)
+  output_model_construction = construct_model(parameters_setting, lr_network, sig_network, gr_network, ligands, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links)
+  model_name = output_model_construction$model_name
+  ligand_target_matrix = output_model_construction$model
+  ligand_target_matrix_discrete = ligand_target_matrix %>% make_discrete_ligand_target_matrix(...)
+
+  # transcriptional response evaluation
+  performances_target_prediction = bind_rows(lapply(settings,evaluate_target_prediction, ligand_target_matrix))
+  performances_target_prediction_discrete = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix_discrete))
+  performances_target_prediction = performances_target_prediction %>% inner_join(performances_target_prediction_discrete, by = c("setting", "ligand"))
+
+    return(list(model_name = model_name, performances_target_prediction = performances_target_prediction))
+
+}
+
+#' @title Construct a ligand-target model given input parameters.
+#'
+#' @description \code{construct_model} will take as input a setting of parameters (data source weights and hyperparameters) and layer-specific networks to construct a ligand-target matrix.
+#'
+#' @usage
+#' construct_model(parameters_setting, lr_network, sig_network, gr_network, ligands, secondary_targets = FALSE, remove_direct_links = "no")
+#'
+#' @inheritParams evaluate_model
+#' @param ligands List of ligands for which the model should be constructed
+#'
+#' @return A list containing following elements: $model_name and $model.
+#'
+#' @importFrom tibble tibble
+#'
+#' @examples
+#' \dontrun{
+#' settings = lapply(expression_settings_validation[1:4], convert_expression_settings_evaluation)
+#' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
+#' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+#' doMC::registerDoMC(cores = 8)
+#' ligands =  extract_ligands_from_settings(settings)
+#' models_characterization = parallel::mclapply(weights_settings_loi[1:3],construct_model,lr_network,sig_network, gr_network,ligands, mc.cores = 3)
+#' }
+#'
+#' @export
+#'
+construct_model = function(parameters_setting, lr_network, sig_network, gr_network, ligands, secondary_targets = FALSE, remove_direct_links = "no"){
+
+  requireNamespace("dplyr")
+
+
+  # input check
+  if (!is.list(parameters_setting))
+    stop("parameters_setting should be a list!")
+  if (!is.character(parameters_setting$model_name))
+    stop("parameters_setting$model_name should be a character vector")
+  if (!is.numeric(parameters_setting$source_weights) | is.null(names(parameters_setting$source_weights)))
+    stop("parameters_setting$source_weights should be a named numeric vector")
+  if (parameters_setting$lr_sig_hub < 0 | parameters_setting$lr_sig_hub > 1)
+    stop("parameters_setting$lr_sig_hub must be a number between 0 and 1 (0 and 1 included)")
+  if (parameters_setting$gr_hub < 0 | parameters_setting$gr_hub > 1)
+    stop("parameters_setting$gr_hub must be a number between 0 and 1 (0 and 1 included)")
+  if (parameters_setting$ltf_cutoff < 0 | parameters_setting$ltf_cutoff > 1)
+    stop("parameters_setting$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  if (parameters_setting$algorithm != "PPR" & parameters_setting$algorithm != "SPL" & parameters_setting$algorithm != "direct")
+    stop("parameters_setting$algorithm must be 'PPR' or 'SPL' or 'direct'")
+  if (parameters_setting$damping_factor < 0 | parameters_setting$damping_factor >= 1)
+    stop("parameters_setting$damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  if (parameters_setting$correct_topology != TRUE & parameters_setting$correct_topology != FALSE)
+    stop("parameters_setting$correct_topology must be TRUE or FALSE")
+
+  if (!is.data.frame(lr_network))
+    stop("lr_network must be a data frame or tibble object")
+  if (!is.data.frame(sig_network))
+    stop("sig_network must be a data frame or tibble object")
+  if (!is.data.frame(gr_network))
+    stop("gr_network must be a data frame or tibble object")
+  if (!is.list(ligands))
+    stop("ligands should be a list!")
+
+  if (secondary_targets != TRUE & secondary_targets != FALSE)
+    stop("secondary_targets must be TRUE or FALSE")
+  if (remove_direct_links != "no" & remove_direct_links != "ligand" & remove_direct_links != "ligand-receptor")
+    stop("remove_direct_links must be  'no' or 'ligand' or 'ligand-receptor'")
+
+  # read in parameters
+  model_name = parameters_setting$model_name
+
+  source_weights = parameters_setting$source_weights
+  source_weights_df = tibble::tibble(source = names(source_weights), weight = source_weights)
+
+  lr_sig_hub = parameters_setting$lr_sig_hub
+  gr_hub = parameters_setting$gr_hub
+  ltf_cutoff = parameters_setting$ltf_cutoff
+  algorithm = parameters_setting$algorithm
+  damping_factor = parameters_setting$damping_factor
+  correct_topology = parameters_setting$correct_topology
+
+  # construct weighted networks
+  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df) %>% apply_hub_corrections(lr_sig_hub, gr_hub)
+
+  # extract ligands and construct ligand-target matrix
+  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks,
+                                                        ligands = ligands,
+                                                        ltf_cutoff = ltf_cutoff,
+                                                        algorithm = algorithm,
+                                                        damping_factor =  damping_factor,
+                                                        secondary_targets = secondary_targets,
+                                                        remove_direct_links = remove_direct_links)
+  if (correct_topology == TRUE & algorithm == "PPR"){
+    ligand_target_matrix = correct_topology_ppr(ligand_target_matrix, weighted_networks)
+  }
+  return(list(model_name = model_name, model = ligand_target_matrix))
+}
+#' @title Assess the influence of an individual data source on ligand-target probability scores
+#'
+#' @description \code{assess_influence_source} will assess the influence of an individual data source on ligand-target probability scores (or rankings of these). Possible output: the ligand-target matrices of the complete model vs the leave-one-out model in which the data source of interest was left out; or a list indicating which target genes for every ligand of interest are affected the most by leaving out the data source of interest.
+#'
+#' @usage
+#' assess_influence_source(source, lr_network, sig_network, gr_network, source_weights_df, ligands, rankings = FALSE, matrix_output = FALSE,  secondary_targets = FALSE, remove_direct_links = "no", ...)
+#'
+#' @inheritParams construct_model
+#' @param source Name of the data source that will be left out to assess its influence.
+#' @param ... Argumentes for the function \code{add_hyperparameters_parameter_settings}
+#' @param  rankings Indicate whether the output of the models should be the ranking of target gene probability scores (TRUE; top target gene rank = 1) or the scores themselves (FALSE). Default: FALSE.
+#' @param matrix_output Indicate whether the output should be the 2 ligand-target matrices (complete model and leave-one-out model) (TRUE) or a listing of genes of which the ligand-target scores/rankings were influenced the most (FALSE). Default: FALSE.
+#' @return If matrix_output == TRUE: A list of sublists; every sublist contains the elements $model_name and $model: the constructed ligand-target matrix. If matrix_output == FALSE: A list of sublist: every sublist contains; $ligand: name of the ligand tested; $targets_higher: sorted vector of ligand-target scores or rankings of target that score higher in the complete model compared to the leave-one-out model; targets_lower: sorted vector of ligand-target scores or rankings of target that score lower in the complete model compared to the leave-one-out model.
+#'
+#' @examples
+#' ligands =  extract_ligands_from_settings(expression_settings_validation[1:4])
+#' output = assess_influence_source("ontogenet", lr_network,sig_network, gr_network, source_weights_df, ligands,lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+
+#' @export
+#'
+#'
+assess_influence_source = function(source, lr_network, sig_network, gr_network, source_weights_df, ligands, rankings = FALSE, matrix_output = FALSE,  secondary_targets = FALSE, remove_direct_links = "no", ...){
+  # input check
+  if (!is.character(source))
+    stop("source must be a character vector")
+  if (!is.data.frame(lr_network))
+    stop("lr_network must be a data frame or tibble object")
+  if (!is.data.frame(sig_network))
+    stop("sig_network must be a data frame or tibble object")
+  if (!is.data.frame(gr_network))
+    stop("gr_network must be a data frame or tibble object")
+  if (!is.data.frame(source_weights_df) || sum((source_weights_df$weight > 1)) != 0)
+    stop("source_weights_df must be a data frame or tibble object and no data source weight may be higher than 1")
+  if (rankings != TRUE & rankings != FALSE)
+    stop("rankings must be TRUE or FALSE")
+  if (matrix_output != TRUE & matrix_output != FALSE)
+    stop("matrix_output must be TRUE or FALSE")
+
+  if(!is.list(ligands))
+    stop("ligands should be a list")
+  if (secondary_targets != TRUE & secondary_targets != FALSE)
+    stop("secondary_targets must be TRUE or FALSE")
+  if (remove_direct_links != "no" & remove_direct_links != "ligand" & remove_direct_links != "ligand-receptor")
+    stop("remove_direct_links must be  'no' or 'ligand' or 'ligand-receptor'")
+
+  requireNamespace("dplyr")
+
+  ## make weight settings for the complete and leave-one-out model
+
+  all_sources = source_weights_df$source %>% unique()
+  all_weights = source_weights_df %>% filter(source %in% all_sources) %>% .$weight
+  names(all_weights) = all_sources
+
+  weights_settings = list()
+
+  # complete
+  weights_settings[[1]] = list("complete_model",all_weights)
+  names(weights_settings[[1]]) = c("model_name","source_weights")
+
+  # leave one out
+  all_novel_weights = all_weights
+  all_novel_weights[source] = 0
+
+  weights_settings[[2]] = list(source,all_novel_weights)
+  names(weights_settings[[2]]) = c("model_name","source_weights")
+
+  ## Add other model construction (hyper)parameters to the model settings
+
+  weights_settings = lapply(weights_settings,add_hyperparameters_parameter_settings, ...)
+
+  ## Construct models
+  models_output = lapply(weights_settings,construct_model,lr_network,sig_network, gr_network,ligands, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links)
+  if(rankings == TRUE){
+    models_output[[1]]$model = models_output[[1]]$model %>% apply(2,rank_desc)
+    models_output[[2]]$model = models_output[[2]]$model %>% apply(2,rank_desc)
+  }
+  if (matrix_output == TRUE){
+    return(models_output)
+  } else {
+      lt_diff_source_complete = models_output[[1]]$model - models_output[[2]]$model
+      affected_targets_output = get_affected_targets_output(lt_diff_source_complete, rankings)
+    }
+    return(affected_targets_output)
+}
 
 
 
