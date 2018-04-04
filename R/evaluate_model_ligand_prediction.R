@@ -287,10 +287,16 @@ evaluate_single_importances_ligand_prediction = function(importances,normalizati
     stop("normalization should be 'mean' or 'median'")
 
   requireNamespace("dplyr")
-
+  importances0 = importances %>% select(-setting,-ligand,-test_ligand)
   importances = importances %>% tidyr::drop_na()
   added = is_ligand_active(importances)
 
+  if (nrow(importances) == 0){
+    performances = lapply(importances, classification_evaluation_continuous_pred, added, iregulon = FALSE)
+    output = tibble(importance_measure = names(performances))
+    performances = bind_rows(performances)
+    return(bind_cols(output,performances))
+  }
 
   if (normalization == "mean"){
     normalized_importances = importances %>% group_by(setting) %>% dplyr::select(-ligand,-test_ligand) %>% mutate_all(funs(scaling_zscore)) %>% ungroup() %>% select(-setting)

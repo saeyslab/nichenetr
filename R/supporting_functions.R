@@ -203,7 +203,18 @@ evaluate_target_prediction_strict = function(response,prediction,continuous = TR
 
 }
 classification_evaluation_continuous_pred = function(prediction,response, iregulon = TRUE){
-
+  if ((sd(response) == 0 & sd(prediction) == 0) | is.null(prediction) | is.null(response)){ # problems can occur otherwise in these leave-one-in models
+    return(dplyr::tibble(auroc = NA,
+                         aupr = NA,
+                         aupr_corrected = NA,
+                         sensitivity_roc = NA,
+                         specificity_roc = NA,
+                         mean_rank_GST_log_pval = NA,
+                         auc_iregulon = NA,
+                         auc_iregulon_corrected = NA,
+                         pearson = NA,
+                         spearman = NA))
+  }
   prediction_ROCR = ROCR::prediction(prediction, response)
   performance1 = ROCR::performance(prediction_ROCR, measure="tpr", x.measure="fpr")
 
@@ -595,10 +606,14 @@ filter_genes_ligand_target_matrix = function(ligand_target_matrix, ligands_posit
 }
 
 is_ligand_active = function(importances){
+  if(nrow(importances) == 0){
+    return(NULL)
+  }
+
   test_ligand = importances$test_ligand
   real_ligand = strsplit(importances$ligand,"[-]")
   true_ligand = rep(NULL, times = length(test_ligand))
-  for (i in seq(length(test_ligand))){
+  for (i in seq(length(test_ligand))){ #length ligand instead test_ligand??
     test = test_ligand[i]
     real = real_ligand[[i]]
     true_ligand[i] = test %in% real
