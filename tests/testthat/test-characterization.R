@@ -80,7 +80,7 @@ test_that("Leave-one-in models can be evaluated and results of this further proc
   settings = lapply(expression_settings_validation[1:20], convert_expression_settings_evaluation)
   weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
   weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
-  output_characterization = lapply(weights_settings_loi[1:2],evaluate_model,lr_network,sig_network, gr_network,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, cutoff_method = "quantile") # make discrete ligand-target matrix via the quantile-method!
+  output_characterization = lapply(weights_settings_loi[2:3],evaluate_model,lr_network,sig_network, gr_network,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, cutoff_method = "quantile") # make discrete ligand-target matrix via the quantile-method!
 
   output_characterization_application = lapply(weights_settings_loi[1:2],evaluate_model_application,lr_network,sig_network, gr_network,settings[1:3], cutoff_method = "quantile") # make discrete ligand-target matrix via the quantile-method!
 

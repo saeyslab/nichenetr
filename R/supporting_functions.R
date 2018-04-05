@@ -187,7 +187,6 @@ evaluate_target_prediction_strict = function(response,prediction,continuous = TR
   names(prediction_vector) = combined$gene
   response_vector = combined$response
   names(response_vector) = combined$gene
-
   if (continuous == TRUE){
     performance = classification_evaluation_continuous_pred(prediction_vector,response_vector)
 

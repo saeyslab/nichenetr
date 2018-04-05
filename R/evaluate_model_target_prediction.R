@@ -161,7 +161,6 @@ evaluate_target_prediction = function(setting,ligand_target_matrix, ligands_posi
     warning("all target gene probability score predictions have same value")
   if(sd(response_vector) == 0)
     stop("all genes have same response")
-
   performance = evaluate_target_prediction_strict(response_vector,prediction_vector,is.double(prediction_vector))
   output = bind_cols(tibble(setting = setting$name, ligand = ligand_oi), performance)
 
@@ -403,7 +402,7 @@ convert_gene_list_settings_evaluation = function(gene_list, name, ligands_oi, ba
   background_logical = rep(FALSE,times = length(background))
   names(background_logical) = background
   gene_list_logical = rep(TRUE,times = length(gene_list))
-  names(gene_list_logical) = gene_list_logical
+  names(gene_list_logical) = gene_list
   response = c(background_logical,gene_list_logical)
 
   return(list(name = name, from = ligands_oi, response = response))

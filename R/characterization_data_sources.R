@@ -271,15 +271,17 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
   performances_target_prediction_discrete = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix_discrete))
   performances_target_prediction = performances_target_prediction %>% inner_join(performances_target_prediction_discrete, by = c("setting", "ligand"))
   if (calculate_popularity_bias_target_prediction == TRUE){
+    performances_target_prediction = performances_target_prediction %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
     # ligand-level
     performances_ligand_popularity = add_ligand_popularity_measures_to_perfs(performances_target_prediction, ncitations)
     ligand_slopes_df = performances_ligand_popularity %>% select(-setting,-ligand,-ncitations) %>% colnames() %>% lapply(.,get_slope_ligand_popularity,performances_ligand_popularity) %>% bind_rows()
-
-    # target-level
+     # target-level
     performances_target_bins_popularity = evaluate_target_prediction_per_bin(n_target_bins,settings,ligand_target_matrix, ncitations)
     target_slopes_df = performances_target_bins_popularity %>% select(-setting,-ligand,-target_bin_id) %>% colnames() %>% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity,method = "all") %>% bind_rows()
 
     performances_target_bins_popularity = evaluate_target_prediction_per_bin(n_target_bins,settings,ligand_target_matrix_discrete, ncitations)
+    performances_target_bins_popularity = performances_target_bins_popularity %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
+
     target_slopes_df_discrete = performances_target_bins_popularity %>% select(-setting,-ligand,-target_bin_id) %>% colnames() %>% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity,method = "all") %>% bind_rows()
 
     target_slopes_df = bind_rows(target_slopes_df, target_slopes_df_discrete)
