@@ -234,7 +234,7 @@ evaluate_importances_ligand_prediction = function(importances, normalization, al
 
   requireNamespace("dplyr")
 
-  importances = importances %>% tidyr::drop_na()
+#  importances = importances %>% tidyr::drop_na()
   added = is_ligand_active(importances)
   importances = importances %>% mutate(class = added)
 
@@ -288,7 +288,7 @@ evaluate_single_importances_ligand_prediction = function(importances,normalizati
 
   requireNamespace("dplyr")
   importances0 = importances %>% select(-setting,-ligand,-test_ligand)
-  importances = importances %>% tidyr::drop_na()
+#  importances = importances %>% tidyr::drop_na()
   added = is_ligand_active(importances)
 
   if (nrow(importances) == 0){
@@ -358,7 +358,7 @@ model_based_ligand_activity_prediction = function(importances, model, normalizat
 
   requireNamespace("dplyr")
 
-  importances = importances %>% tidyr::drop_na()
+#  importances = importances %>% tidyr::drop_na()
 
   if (normalization == "mean"){
     normalized_importances = importances %>% group_by(setting) %>% dplyr::select(-test_ligand) %>% mutate_all(funs(scaling_zscore)) %>% ungroup() %>% select(-setting)

@@ -269,20 +269,41 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
   # transcriptional response evaluation
   performances_target_prediction = bind_rows(lapply(settings,evaluate_target_prediction, ligand_target_matrix))
   performances_target_prediction_discrete = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix_discrete))
-  performances_target_prediction = performances_target_prediction %>% inner_join(performances_target_prediction_discrete, by = c("setting", "ligand"))
+  performances_target_prediction = performances_target_prediction %>% full_join(performances_target_prediction_discrete, by = c("setting", "ligand"))
   if (calculate_popularity_bias_target_prediction == TRUE){
     performances_target_prediction = performances_target_prediction %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
+
+    # print(performances_target_prediction) ########################## print
+
     # ligand-level
     performances_ligand_popularity = add_ligand_popularity_measures_to_perfs(performances_target_prediction, ncitations)
+
+    # print(performances_ligand_popularity) ########################## print
+
+
     ligand_slopes_df = performances_ligand_popularity %>% select(-setting,-ligand,-ncitations) %>% colnames() %>% lapply(.,get_slope_ligand_popularity,performances_ligand_popularity) %>% bind_rows()
+
+    # print(ligand_slopes_df) ########################## print
+
      # target-level
     performances_target_bins_popularity = evaluate_target_prediction_per_bin(n_target_bins,settings,ligand_target_matrix, ncitations)
-    target_slopes_df = performances_target_bins_popularity %>% select(-setting,-ligand,-target_bin_id) %>% colnames() %>% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity,method = "all") %>% bind_rows()
+
+    # print(performances_target_bins_popularity) ########################## print
+
+
+    target_slopes_df = performances_target_bins_popularity %>% select_if(.predicate = function(x){sum(is.na(x)) == 0}) %>% select(-setting,-ligand,-target_bin_id) %>% colnames() %>% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity %>% select_if(.predicate = function(x){sum(is.na(x)) == 0}) ,method = "all") %>% bind_rows()
+
+    # print(target_slopes_df) ########################## print
+
 
     performances_target_bins_popularity = evaluate_target_prediction_per_bin(n_target_bins,settings,ligand_target_matrix_discrete, ncitations)
-    performances_target_bins_popularity = performances_target_bins_popularity %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
 
-    target_slopes_df_discrete = performances_target_bins_popularity %>% select(-setting,-ligand,-target_bin_id) %>% colnames() %>% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity,method = "all") %>% bind_rows()
+    # print(performances_target_bins_popularity) ########################## print
+
+    target_slopes_df_discrete = performances_target_bins_popularity %>% select_if(.predicate = function(x){sum(is.na(x)) == 0}) %>% select(-setting,-ligand,-target_bin_id) %>% colnames() %>% lapply(.,get_slope_target_gene_popularity,performances_target_bins_popularity %>% select_if(.predicate = function(x){sum(is.na(x)) == 0}), method = "all") %>% bind_rows()
+
+    # print(target_slopes_df_discrete) ########################## print
+
 
     target_slopes_df = bind_rows(target_slopes_df, target_slopes_df_discrete)
 
@@ -293,35 +314,55 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
 
   # ligand activity state prediction
   all_ligands = unlist(extract_ligands_from_settings(settings, combination = FALSE))
+
+  # print(all_ligands) ########################## print
+
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = TRUE)
   ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix[, all_ligands]))
+
+  # print(ligand_importances) ########################## print
+
   ligand_importances_discrete = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix_discrete[, all_ligands]))
-  if(sum(is.na(ligand_importances_discrete$fisher_odds)) > 0){
-    ligand_importances_discrete = ligand_importances_discrete %>% select(-fisher_odds) %>% select(-fisher_pval_log) # because contains too much NA sometimes in leave one in models
-  }
+
+  # print(ligand_importances_discrete) ########################## print
+
+
+  # ligand_importances_discrete = ligand_importances_discrete %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
+  # if(sum(is.na(ligand_importances_discrete$fisher_odds)) > 0){
+  #   ligand_importances_discrete = ligand_importances_discrete %>% select(-fisher_odds) %>% select(-fisher_pval_log) # because contains too much NA sometimes in leave one in models
+  # }
+
+  # print(ligand_importances_discrete) ########################## print
+
 
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = FALSE)
   ligand_importances_glm = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances, ligand_target_matrix[,all_ligands], algorithm = "glm", cv = FALSE)) %>% rename(glm_imp = importance)
 
-  all_importances = inner_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand")) %>% inner_join(ligand_importances_discrete, by = c("setting","test_ligand", "ligand"))
+  # print(ligand_importances_glm) ########################## print
+
+  all_importances = full_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand")) %>% full_join(ligand_importances_discrete, by = c("setting","test_ligand", "ligand"))
   # all_importances = inner_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand"))
 
   # evaluation = suppressWarnings(evaluate_importances_ligand_prediction(all_importances, "median","lda",cv_number = 3, cv_repeats = 20))
   # warning lda here: variables are collinear --> not problematic but logical here
   # performances_ligand_prediction = evaluation$performances
+  all_importances = all_importances %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
 
   performances_ligand_prediction_single = evaluate_single_importances_ligand_prediction(all_importances, "median")
 
   if (calculate_popularity_bias_ligand_prediction == TRUE){
+    # print(all_importances) ########################## print
+    # print(all_importances$test_ligand %>% unique()) ########################## print
     # ligand level
     i_max = round(0.75*length(all_ligands))
     ligand_activity_popularity_bias = lapply(0:i_max,ligand_activity_performance_top_i_removed, all_importances, ncitations) %>% bind_rows()
     slopes_df_ligand = ligand_activity_popularity_bias %>% select(-importance_measure, -popularity_index) %>% colnames() %>% lapply(.,get_ligand_slope_ligand_prediction_popularity,ligand_activity_popularity_bias) %>% bind_rows()
+
     # # target level
     performances_target_bins_popularity = evaluate_ligand_prediction_per_bin(3,settings,ligand_target_matrix,ncitations)
-    slopes_df_target = performances_target_bins_popularity %>% select(-importance_measure,-target_bin_id) %>% colnames() %>% lapply(.,get_slope_target_gene_popularity_ligand_prediction,performances_target_bins_popularity) %>% bind_rows()
-
+    slopes_df_target = performances_target_bins_popularity  %>% select_if(.predicate = function(x){sum(is.na(x)) == 0}) %>% select(-importance_measure,-target_bin_id) %>% colnames() %>% lapply(.,get_slope_target_gene_popularity_ligand_prediction,performances_target_bins_popularity  %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})) %>% bind_rows()
     popularity_slopes_ligand_prediction = inner_join(slopes_df_ligand, slopes_df_target, by = "metric")
+
     }
   else {
     popularity_slopes_ligand_prediction = NULL
@@ -681,7 +722,7 @@ evaluate_model_application = function(parameters_setting, lr_network, sig_networ
   # transcriptional response evaluation
   performances_target_prediction = bind_rows(lapply(settings,evaluate_target_prediction, ligand_target_matrix))
   performances_target_prediction_discrete = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix_discrete))
-  performances_target_prediction = performances_target_prediction %>% inner_join(performances_target_prediction_discrete, by = c("setting", "ligand"))
+  performances_target_prediction = performances_target_prediction %>% full_join(performances_target_prediction_discrete, by = c("setting", "ligand"))
 
     return(list(model_name = model_name, performances_target_prediction = performances_target_prediction))
 

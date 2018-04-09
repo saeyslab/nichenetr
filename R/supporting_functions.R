@@ -849,20 +849,23 @@ evaluate_ligand_prediction_bins_direct = function(bin_id,settings,ligand_target_
 
   ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix[, all_ligands]))
   ligand_importances_discrete = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix_discrete[, all_ligands]))
-  if(sum(is.na(ligand_importances_discrete$fisher_odds)) > 0){
-    ligand_importances_discrete = ligand_importances_discrete %>% select(-fisher_odds) %>% select(-fisher_pval_log) # because contains too much NA sometimes in leave one in models
-  }
+  # ligand_importances_discrete = ligand_importances_discrete %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
+  # if(sum(is.na(ligand_importances_discrete$fisher_odds)) > 0){
+  #   ligand_importances_discrete = ligand_importances_discrete %>% select(-fisher_odds) %>% select(-fisher_pval_log) # because contains too much NA sometimes in leave one in models
+  # }
 
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = FALSE)
   ligand_importances_glm = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances, ligand_target_matrix[,all_ligands], algorithm = "glm", cv = FALSE)) %>% rename(glm_imp = importance)
 
-  all_importances = inner_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand")) %>% inner_join(ligand_importances_discrete, by = c("setting","test_ligand", "ligand"))
-
+  all_importances = full_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand")) %>% full_join(ligand_importances_discrete, by = c("setting","test_ligand", "ligand"))
   # all_importances = inner_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand"))
 
+  all_importances = all_importances %>% select_if(.predicate = function(x){sum(is.na(x)) == 0}) # importance measures full of NAs possible dependent on input networks - remove these columns for further analysis
+
   # evaluation = suppressWarnings(evaluate_importances_ligand_prediction(all_importances, "median","lda",cv_number = 3, cv_repeats = 20))
-  # # warning lda here: variables are collinear --> not problematic but logical here
   # performances_ligand_prediction = evaluation$performances %>% select(-Resample) %>% mutate_all(mean) %>% distinct()
+  # # warning lda here: variables are collinear --> not problematic but logical here
+
   performances_ligand_prediction_single = evaluate_single_importances_ligand_prediction(all_importances, "median")
 
   performances = performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% mutate(target_bin_id = bin_id)

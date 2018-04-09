@@ -112,6 +112,10 @@ get_slope_ligand_popularity = function(metric,performances){
   requireNamespace("dplyr")
   performances = performances %>% select(paste(metric),ncitations)
   colnames(performances) = c("metric","ncitations")
+
+  # print(metric)
+  # print(performances)
+
   if (nrow(performances) == 0) {
     output = tibble(metric = metric, ligand_slope = NA, ligand_slope_pval =  NA, ligand_slope_rsquared = NA)
     colnames(output) = variable
@@ -223,6 +227,9 @@ get_slope_target_gene_popularity = function(metric,performances,method = "indivi
   performances = performances %>% select(setting,target_bin_id, paste(metric))
   colnames(performances) = c("setting","bin_id", "metric")
 
+  # print(metric)
+  # print(performances)
+
   if (method == "all"){
     target_pop_regression = lm(metric ~ bin_id,performances)
     target_slope =  summary(target_pop_regression) %>% .$coefficients %>% .[2,1]
@@ -278,7 +285,6 @@ get_slope_target_gene_popularity = function(metric,performances,method = "indivi
 #' @export
 #'
 ligand_activity_performance_top_i_removed = function(i, importances, ncitations){
-
   if(i < 0)
     stop("i should be 0 or higher")
   if (!is.data.frame(importances))
@@ -311,6 +317,7 @@ ligand_activity_performance_top_i_removed = function(i, importances, ncitations)
 
   # evaluation = suppressWarnings(evaluate_importances_ligand_prediction(importances_filtered,"median","lda",cv_number = 3, cv_repeats = 20))
   # performances = evaluation$performances %>% select(-Resample) %>% mutate_all(mean) %>% distinct() %>% mutate(popularity_index = (i)/(total_ligands))
+  # print(importances_filtered)
 
   performances_ligand_prediction_single = evaluate_single_importances_ligand_prediction(importances_filtered, "median")
   performances = performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% mutate(popularity_index = (i)/(total_ligands))
@@ -361,6 +368,9 @@ get_ligand_slope_ligand_prediction_popularity = function(metric,performances){
 
   performances = performances %>% select(popularity_index, paste(metric))
   colnames(performances) = c("popularity_index", "metric")
+#
+#   print(metric)
+#   print(performances)
 
   ligand_prediction_pop_regression = lm(metric ~ popularity_index,performances)
   ligand_prediction_slope =  summary(ligand_prediction_pop_regression) %>% .$coefficients %>% .[2,1]
@@ -461,6 +471,9 @@ get_slope_target_gene_popularity_ligand_prediction = function(metric,performance
   # performance per bin!
   performances = performances %>% select(target_bin_id, paste(metric))
   colnames(performances) = c("bin_id", "metric")
+
+  # print(metric)
+  # print(performances)
 
   target_pop_regression = lm(metric ~ bin_id,performances)
   target_slope =  summary(target_pop_regression) %>% .$coefficients %>% .[2,1]
