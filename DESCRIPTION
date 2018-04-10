@@ -32,7 +32,8 @@ Imports: dplyr,
     DiagrammeR,
     ggplot2,
     mlrMBO,
-    parallelMap
+    parallelMap,
+    emoa
 Suggests: knitr,
     rmarkdown,
     testthat,
