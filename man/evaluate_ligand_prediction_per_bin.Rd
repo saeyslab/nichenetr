@@ -27,6 +27,7 @@ A data.frame containing several classification evaluation metrics for ligand act
 }
 \examples{
 \dontrun{
+library(dplyr)
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 settings = lapply(expression_settings_validation[1:10],convert_expression_settings_evaluation)
 ligands = extract_ligands_from_settings(settings)

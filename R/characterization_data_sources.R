@@ -160,8 +160,10 @@ add_hyperparameters_parameter_settings = function(parameter_setting,lr_sig_hub,g
     stop("ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
   if (algorithm != "PPR" & algorithm != "SPL" & algorithm != "direct")
     stop("algorithm must be 'PPR' or 'SPL' or 'direct'")
-  if (damping_factor < 0 | damping_factor >= 1)
-    stop("damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  if(algorithm == "PPR"){
+    if (damping_factor < 0 | damping_factor >= 1)
+      stop("damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  }
   if (correct_topology != TRUE & correct_topology != FALSE)
     stop("correct_topology must be TRUE or FALSE")
   requireNamespace("dplyr")
@@ -197,6 +199,7 @@ add_hyperparameters_parameter_settings = function(parameter_setting,lr_sig_hub,g
 #'
 #' @examples
 #' \dontrun{
+#' library(dplyr)
 #' settings = lapply(expression_settings_validation[1:4], convert_expression_settings_evaluation)
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
@@ -209,7 +212,6 @@ add_hyperparameters_parameter_settings = function(parameter_setting,lr_sig_hub,g
 evaluate_model = function(parameters_setting, lr_network, sig_network, gr_network, settings,calculate_popularity_bias_target_prediction,calculate_popularity_bias_ligand_prediction ,ncitations = ncitations, secondary_targets = FALSE, remove_direct_links = "no", n_target_bins = 3, ...){
 
   requireNamespace("dplyr")
-
 
   # input check
   if (!is.list(parameters_setting))
@@ -226,8 +228,11 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
     stop("parameters_setting$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
   if (parameters_setting$algorithm != "PPR" & parameters_setting$algorithm != "SPL" & parameters_setting$algorithm != "direct")
     stop("parameters_setting$algorithm must be 'PPR' or 'SPL' or 'direct'")
-  if (parameters_setting$damping_factor < 0 | parameters_setting$damping_factor >= 1)
-    stop("parameters_setting$damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  if(parameters_setting$algorithm == "PPR"){
+    if (parameters_setting$damping_factor < 0 | parameters_setting$damping_factor >= 1)
+      stop("parameters_setting$damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  }
+
   if (parameters_setting$correct_topology != TRUE & parameters_setting$correct_topology != FALSE)
     stop("parameters_setting$correct_topology must be TRUE or FALSE")
 
@@ -356,7 +361,7 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
     # ligand level
     i_max = round(0.75*length(all_ligands))
     ligand_activity_popularity_bias = lapply(0:i_max,ligand_activity_performance_top_i_removed, all_importances, ncitations) %>% bind_rows()
-    slopes_df_ligand = ligand_activity_popularity_bias %>% select(-importance_measure, -popularity_index) %>% colnames() %>% lapply(.,get_ligand_slope_ligand_prediction_popularity,ligand_activity_popularity_bias) %>% bind_rows()
+    slopes_df_ligand = ligand_activity_popularity_bias %>% select_if(.predicate = function(x){sum(is.na(x)) == 0}) %>% select(-importance_measure, -popularity_index) %>% colnames() %>% lapply(.,get_ligand_slope_ligand_prediction_popularity ,ligand_activity_popularity_bias %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})) %>% bind_rows()
 
     # # target level
     performances_target_bins_popularity = evaluate_ligand_prediction_per_bin(3,settings,ligand_target_matrix,ncitations)
@@ -384,6 +389,7 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
 #' @examples
 #'
 #' \dontrun{
+#' library(dplyr)
 #' settings = lapply(expression_settings_validation, convert_expression_settings_evaluation)
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
@@ -425,6 +431,7 @@ process_characterization_target_prediction = function(output_characterization){
 #' @examples
 #'
 #' \dontrun{
+#' library(dplyr)
 #' settings = lapply(expression_settings_validation, convert_expression_settings_evaluation)
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
@@ -463,6 +470,7 @@ process_characterization_target_prediction_average = function(output_characteriz
 #' @examples
 #'
 #' \dontrun{
+#' library(dplyr)
 #' settings = lapply(expression_settings_validation, convert_expression_settings_evaluation)
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
@@ -502,6 +510,7 @@ process_characterization_ligand_prediction_single_measures = function(output_cha
 #' @examples
 #'
 #' \dontrun{
+#' library(dplyr)
 #' settings = lapply(expression_settings_validation, convert_expression_settings_evaluation)
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
@@ -544,6 +553,7 @@ process_characterization_popularity_slopes_target_prediction = function(output_c
 #' @examples
 #'
 #' \dontrun{
+#' library(dplyr)
 #' settings = lapply(expression_settings_validation, convert_expression_settings_evaluation)
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
@@ -660,6 +670,7 @@ prepare_settings_one_vs_one_characterization = function(lr_network, sig_network,
 #'
 #' @examples
 #' \dontrun{
+#' library(dplyr)
 #' settings = lapply(expression_settings_validation[1:4], convert_expression_settings_evaluation)
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
@@ -689,8 +700,10 @@ evaluate_model_application = function(parameters_setting, lr_network, sig_networ
     stop("parameters_setting$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
   if (parameters_setting$algorithm != "PPR" & parameters_setting$algorithm != "SPL" & parameters_setting$algorithm != "direct")
     stop("parameters_setting$algorithm must be 'PPR' or 'SPL' or 'direct'")
-  if (parameters_setting$damping_factor < 0 | parameters_setting$damping_factor >= 1)
-    stop("parameters_setting$damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  if(parameters_setting$algorithm == "PPR"){
+    if (parameters_setting$damping_factor < 0 | parameters_setting$damping_factor >= 1)
+      stop("parameters_setting$damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  }
   if (parameters_setting$correct_topology != TRUE & parameters_setting$correct_topology != FALSE)
     stop("parameters_setting$correct_topology must be TRUE or FALSE")
 
@@ -744,6 +757,7 @@ evaluate_model_application = function(parameters_setting, lr_network, sig_networ
 #'
 #' @examples
 #' \dontrun{
+#' library(dplyr)
 #' settings = lapply(expression_settings_validation[1:4], convert_expression_settings_evaluation)
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
@@ -774,10 +788,16 @@ construct_model = function(parameters_setting, lr_network, sig_network, gr_netwo
     stop("parameters_setting$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
   if (parameters_setting$algorithm != "PPR" & parameters_setting$algorithm != "SPL" & parameters_setting$algorithm != "direct")
     stop("parameters_setting$algorithm must be 'PPR' or 'SPL' or 'direct'")
-  if (parameters_setting$damping_factor < 0 | parameters_setting$damping_factor >= 1)
-    stop("parameters_setting$damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+
+  if (parameters_setting$algorithm == "PPR"){
+    if (parameters_setting$damping_factor < 0 | parameters_setting$damping_factor >= 1)
+      stop("parameters_setting$damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  }
   if (parameters_setting$correct_topology != TRUE & parameters_setting$correct_topology != FALSE)
     stop("parameters_setting$correct_topology must be TRUE or FALSE")
+  if(parameters_setting$correct_topology == TRUE && parameters_setting$algorithm != "PPR")
+    warning("Topology correction is PPR-specific and makes no sense when the algorithm is not PPR")
+
 
   if (!is.data.frame(lr_network))
     stop("lr_network must be a data frame or tibble object")

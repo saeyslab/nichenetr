@@ -1,0 +1,173 @@
+#' @title Construct and evaluate a ligand-target model given input parameters with the purpose of parameter optimization.
+#'
+#' @description \code{model_evaluation_optimization} will take as input a setting of parameters (data source weights and hyperparameters) and layer-specific networks to construct a ligand-target matrix and evaluate its performance on input validation settings (average performance for both target gene prediction and ligand activity prediction, as measured via the auroc and aupr).
+#'
+#' @usage
+#' model_evaluation_optimization(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",...)
+#'
+#' @inheritParams evaluate_model
+#' @inheritParams construct_ligand_target_matrix
+#' @param x A list containing the following elements. $source_weights: numeric vector representing the weight for each data source; $lr_sig_hub: hub correction factor for the ligand-signaling network; $gr_hub: hub correction factor for the gene regulatory network; $damping_factor: damping factor in the PPR algorithm if using PPR and optionally $ltf_cutoff: the cutoff on the ligand-tf matrix. For more information about these parameters: see \code{construct_ligand_target_matrix} and \code{apply_hub_correction}.
+#' @param source_names Character vector containing the names of the data sources. The order of data source names accords to the order of weights in x$source_weights.
+#' @param ... Additional arguments to \code{make_discrete_ligand_target_matrix}.
+#'
+#' @return A numeric vector of length 4 containing the average auroc for target gene prediction, average aupr (corrected for TP fraction) for target gene prediction, average auroc for ligand activity prediction and average aupr for ligand activity prediction.
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#' nr_datasources = source_weights_df$source %>% unique() %>% length()
+#' test_input = list("source_weights" = rep(0.5, times = nr_datasources), "lr_sig_hub" = 0.5, "gr_hub" = 0.5, "damping_factor" = 0.5)
+# test_evaluation_optimization = model_evaluation_optimization(test_input, source_weights_df$source %>% unique(), "PPR", TRUE, lr_network, sig_network, gr_network, lapply(expression_settings_validation,convert_expression_settings_evaluation), secondary_targets = FALSE, remove_direct_links = "no")
+#' }
+#'
+#' @export
+#'
+model_evaluation_optimization = function(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",...){
+
+  requireNamespace("dplyr")
+
+  #input check
+  if (!is.list(x))
+    stop("x should be a list!")
+  if (!is.numeric(x$source_weights))
+    stop("x$source_weights should be a numeric vector")
+  if (x$lr_sig_hub < 0 | x$lr_sig_hub > 1)
+    stop("x$lr_sig_hub must be a number between 0 and 1 (0 and 1 included)")
+  if (x$gr_hub < 0 | x$gr_hub > 1)
+    stop("x$gr_hub must be a number between 0 and 1 (0 and 1 included)")
+  if(is.null(x$ltf_cutoff)){
+    if(correct_topology == FALSE)
+      warning("Did you not forget to give a value to x$ltf_cutoff?")
+  } else {
+    if (x$ltf_cutoff < 0 | x$ltf_cutoff > 1)
+      stop("x$ltf_cutoff must be a number between 0 and 1 (0 and 1 included) or NULL")
+  }
+  if(algorithm == "PPR"){
+    if (x$damping_factor < 0 | x$damping_factor >= 1)
+      stop("x$damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  }
+
+  if (algorithm != "PPR" & algorithm != "SPL" & algorithm != "direct")
+    stop("algorithm must be 'PPR' or 'SPL' or 'direct'")
+  if (correct_topology != TRUE & correct_topology != FALSE)
+    stop("correct_topology must be TRUE or FALSE")
+  if (!is.data.frame(lr_network))
+    stop("lr_network must be a data frame or tibble object")
+  if (!is.data.frame(sig_network))
+    stop("sig_network must be a data frame or tibble object")
+  if (!is.data.frame(gr_network))
+    stop("gr_network must be a data frame or tibble object")
+  if (!is.list(settings))
+    stop("settings should be a list!")
+  if(!is.character(settings[[1]]$from) | !is.character(settings[[1]]$name))
+    stop("setting$from and setting$name should be character vectors")
+  if(!is.logical(settings[[1]]$response) | is.null(names(settings[[1]]$response)))
+    stop("setting$response should be named logical vector containing class labels of the response that needs to be predicted ")
+  if (secondary_targets != TRUE & secondary_targets != FALSE)
+    stop("secondary_targets must be TRUE or FALSE")
+  if (remove_direct_links != "no" & remove_direct_links != "ligand" & remove_direct_links != "ligand-receptor")
+    stop("remove_direct_links must be  'no' or 'ligand' or 'ligand-receptor'")
+  if(!is.character(source_names))
+    stop("source_names should be a character vector")
+  if(length(source_names) != length(x$source_weights))
+    stop("Length of source_names should be the same as length of x$source_weights")
+  if(correct_topology == TRUE && !is.null(x$ltf_cutoff))
+    warning("Because PPR-ligand-target matrix will be corrected for topology, the proposed cutoff on the ligand-tf matrix will be ignored (x$ltf_cutoff")
+  if(correct_topology == TRUE && algorithm != "PPR")
+    warning("Topology correction is PPR-specific and makes no sense when the algorithm is not PPR")
+
+  names(x$source_weights) = source_names
+  parameters_setting = list(model_name = "query_design", source_weights = x$source_weights)
+
+  if (correct_topology == TRUE){
+    parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = 0, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = TRUE)
+  } else {
+    parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = x$ltf_cutoff, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = FALSE)
+  }
+
+  output_evaluation = evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings,calculate_popularity_bias_target_prediction = FALSE,calculate_popularity_bias_ligand_prediction=FALSE,ncitations = ncitations, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links, n_target_bins = 3, ...)
+
+  mean_auroc_target_prediction = output_evaluation$performances_target_prediction$auroc %>% mean()
+  mean_aupr_target_prediction = output_evaluation$performances_target_prediction$aupr_corrected %>% mean()
+
+  mean_auroc_ligand_prediction = output_evaluation$performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% .$auroc %>% unique() # unique necessary because possible that two different ligand importance measures result in same maximal performance
+  mean_aupr_ligand_prediction = output_evaluation$performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% .$aupr_corrected %>% unique()
+
+  return(c(mean_auroc_target_prediction, mean_aupr_target_prediction, mean_auroc_ligand_prediction, mean_aupr_ligand_prediction))
+}
+#' @title Optimization of objective functions via model-based optimization.
+#'
+#' @description \code{mlrmbo_optimization} will execute multi-objective model-based optimization of an objective function. The defined surrogate learner here is "kriging".
+#'
+#' @usage
+#' mlrmbo_optimization(run_id,obj_fun,niter,ncores,nstart,additional_arguments)
+#'
+#' @param run_id Indicate the id of the optimization run.
+#' @param obj_fun An objective function as created by the function \code{mlrMBO::makeMultiObjectiveFunction}.
+#' @param niter The number of iterations during the optimization process.
+#' @param ncores The number of cores on which several parameter settings will be evaluated in parallel.
+#' @param nstart The number of different parameter settings used in the begin design.
+#' @param additional_arguments A list of named additional arguments that will be passed on the objective function.
+#'
+#' @return A result object from the function \code{mlrMBO::mbo}. Among other things, this contains the optimal parameter settings, the output corresponding to every input etc.
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#' library(mlrMBO)
+#' additional_arguments_topology_correction = list(source_names = source_weights_df$source %>% unique(), algorithm = "PPR", correct_topology = TRUE,lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, settings = lapply(expression_settings_validation,convert_expression_settings_evaluation), secondary_targets = FALSE, remove_direct_links = "no", cutoff_method = "quantile")
+#' nr_datasources = additional_arguments_topology_correction$source_names %>% length()
+#'
+#' obj_fun_multi_topology_correction = makeMultiObjectiveFunction(name = "nichenet_optimization",description = "data source weight and hyperparameter optimization: expensive black-box function", fn = model_evaluation_optimization, par.set = makeParamSet( makeNumericVectorParam("source_weights", len = nr_datasources, lower = 0, upper = 1), makeNumericVectorParam("lr_sig_hub", len = 1, lower = 0, upper = 1),  makeNumericVectorParam("gr_hub", len = 1, lower = 0, upper = 1),  makeNumericVectorParam("damping_factor", len = 1, lower = 0, upper = 0.99)), has.simple.signature = FALSE,n.objectives = 4, noisy = FALSE,minimize = c(FALSE,FALSE,FALSE,FALSE))
+#'
+#' mlrmbo_optimization = lapply(1,mlrmbo_optimization, obj_fun = obj_fun_multi_topology_correction, niter = 3, ncores = 8, nstart = 100, additional_arguments = additional_arguments_topology_correction)
+#'
+#' }
+#'
+#' @export
+#'
+mlrmbo_optimization = function(run_id,obj_fun,niter,ncores,nstart,additional_arguments){
+
+  requireNamespace("mlrMBO")
+  requireNamespace("parallelMap")
+  requireNamespace("dplyr")
+
+  # input check
+
+  if (length(run_id) != 1)
+    stop("run_id should be a vector of length 1")
+  if(!is.function(obj_fun) | !is.list(attributes(obj_fun)$par.set$pars))
+    stop("obj_fun should be a function (and generated by mlrMBO::makeMultiObjectiveFunction)")
+   if(niter <= 0)
+    stop("niter should be a number higher than 0")
+  if(ncores <= 0)
+    stop("ncores should be a number higher than 0")
+  nparams = attributes(obj_fun)$par.set$pars %>% lapply(function(x){x$len}) %>% unlist() %>% sum()
+  if(nstart < nparams)
+    stop("nstart should be equal or larger than the number of parameters")
+  if (!is.list(additional_arguments))
+    stop("additional_arguments should be a list!")
+
+
+  ctrl = makeMBOControl(n.objectives = attributes(obj_fun) %>% .$n.objectives, propose.points = ncores)
+  ctrl = setMBOControlMultiObj(ctrl, method = "dib",dib.indicator = "sms")
+  ctrl = setMBOControlInfill(ctrl, crit = makeMBOInfillCritDIB(cb.lambda = 2L))
+  ctrl = setMBOControlMultiPoint(ctrl, method = "cb")
+  ctrl = setMBOControlTermination(ctrl, iters = niter)
+
+  design = generateDesign(n = nstart, par.set = getParamSet(obj_fun))
+
+  configureMlr(on.learner.warning = "quiet", show.learner.output = FALSE)
+  parallelStartMulticore(cpus = ncores, show.info = TRUE)
+
+  surr.rf = makeLearner("regr.km", predict.type = "se")
+
+  print(design)
+  print(ctrl)
+
+  res = mbo(obj_fun, design = design, learner = surr.rf ,control = ctrl, show.info = TRUE, more.args = additional_arguments)
+
+  parallelStop()
+  return(res)
+}

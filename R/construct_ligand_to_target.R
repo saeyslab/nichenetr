@@ -200,8 +200,10 @@ construct_ligand_tf_matrix = function(weighted_networks, ligands, ltf_cutoff = 0
     stop("ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
   if (algorithm != "PPR" & algorithm != "SPL" & algorithm != "direct")
     stop("algorithm must be 'PPR' or 'SPL' or 'direct'")
-  if (damping_factor < 0 | damping_factor >= 1)
-    stop("damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  if(algorithm == "PPR"){
+    if (damping_factor < 0 | damping_factor >= 1)
+      stop("damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+    }
   if (!is.logical(ligands_as_cols) | length(ligands_as_cols) != 1)
     stop("ligands_as_cols must be a logical vector of length 1")
 
@@ -372,8 +374,10 @@ construct_ligand_target_matrix = function(weighted_networks, ligands, ltf_cutoff
     stop("ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
   if (algorithm != "PPR" & algorithm != "SPL" & algorithm != "direct")
     stop("algorithm must be 'PPR' or 'SPL' or 'direct'")
-  if (damping_factor < 0 | damping_factor >= 1)
-    stop("damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  if(algorithm == "PPR"){
+    if (damping_factor < 0 | damping_factor >= 1)
+      stop("damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  }
   if (!is.logical(secondary_targets) | length(secondary_targets) != 1)
     stop("secondary_targets must be a logical vector of length 1")
   if (!is.logical(ligands_as_cols) | length(ligands_as_cols) != 1)

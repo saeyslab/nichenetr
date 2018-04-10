@@ -30,7 +30,9 @@ Imports: dplyr,
     Biobase,
     BiocGenerics,
     DiagrammeR,
-    ggplot2
+    ggplot2,
+    mlrMBO,
+    parallelMap
 Suggests: knitr,
     rmarkdown,
     testthat,

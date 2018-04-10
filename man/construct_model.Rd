@@ -29,6 +29,7 @@ A list containing following elements: $model_name and $model.
 }
 \examples{
 \dontrun{
+library(dplyr)
 settings = lapply(expression_settings_validation[1:4], convert_expression_settings_evaluation)
 weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
