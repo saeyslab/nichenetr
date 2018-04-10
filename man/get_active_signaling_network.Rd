@@ -20,6 +20,7 @@ A data frame containing at least the variables from, to, receiver_expression. In
 \code{get_active_signaling_network} Get active signaling network by looking for which signaling-related genes are expressed in the receiver cell. Instead of looking at absolute expression, it is possible as well to extract a signaling network of differentially expressed signaling mediators if a vector of log2 fold change values is used as input.
 }
 \examples{
+\dontrun{
 library(Biobase)
 library(dplyr)
 mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
@@ -28,4 +29,5 @@ expression_vector_receiver = Exprs_mono_kc[,Exprs_mono_kc$celltype == "BM_mono"]
 names(expression_vector_receiver) = names(expression_vector_receiver) \%>\% mousesymbol2humansymbol[.]
 expression_vector_receiver = expression_vector_receiver \%>\% .[!is.na(names(.))]
 mono_sig_network = get_active_signaling_network(expression_vector_receiver,sig_network,expression_cutoff_receiver = 4)
+}
 }

@@ -22,6 +22,7 @@ A data frame representing the active ligand-target network; with variables $liga
 \code{get_active_ligand_target_df} Get active ligand-target network, meaning that only target genes that are part of the response of interest will be kept as target genes. In addition, target genes with probability scores beneath a predefined cutoff will be removed from the nework.
 }
 \examples{
+\dontrun{
 library(dplyr)
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 setting = lapply(expression_settings_validation[1:2],convert_expression_settings_evaluation)
@@ -29,4 +30,5 @@ ligands = extract_ligands_from_settings(setting)
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 ligand_target_matrix_discrete = make_discrete_ligand_target_matrix(ligand_target_matrix)
 active_lt_df = get_active_ligand_target_df(setting[[1]] \%>\% .$response, ligand_target_matrix_discrete)
+}
 }

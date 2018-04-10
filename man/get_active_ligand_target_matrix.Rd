@@ -20,10 +20,12 @@ A matrix with ligand-target probability scores (or discrete ligand-target assign
 \code{get_active_ligand_target_matrix} Get active ligand-target matrix, meaning that only target genes part of the response of interest will be kept as target genes in the input ligand-target matrix.
 }
 \examples{
+\dontrun{
 library(dplyr)
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 setting = lapply(expression_settings_validation[1:2],convert_expression_settings_evaluation)
 ligands = extract_ligands_from_settings(setting)
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 active_lt = get_active_ligand_target_matrix(setting[[1]] \%>\% .$response, ligand_target_matrix)
+}
 }

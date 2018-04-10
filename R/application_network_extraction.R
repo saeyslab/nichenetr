@@ -14,6 +14,7 @@
 #' @return A data frame containing at least the variables from, to, sender_expression, receiver_expression. In this network, the active ligand-receptor interactions in the system of interest are shown.
 #'
 #' @examples
+#' \dontrun{
 #' library(Biobase)
 #' library(dplyr)
 #' mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
@@ -26,6 +27,7 @@
 #' expression_vector_receiver = expression_vector_receiver %>% .[!is.na(names(.))]
 #' weighted_lr_network = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df, n_output_networks = 3) %>% .$lr
 #' lsec_mono_lr_network = get_active_ligand_receptor_network(expression_vector_sender,expression_vector_receiver,weighted_lr_network,expression_cutoff_sender = 0, expression_cutoff_receiver = 4)
+#' }
 #' @export
 #'
 get_active_ligand_receptor_network = function(expression_sender, expression_receiver, lr_network, expression_cutoff_sender = 0, expression_cutoff_receiver = 0){
@@ -63,6 +65,7 @@ get_active_ligand_receptor_network = function(expression_sender, expression_rece
 #' @return A data frame containing at least the variables from, to, receiver_expression. In this network, the active signaling interactions in the system of interest are shown.
 #'
 #' @examples
+#' \dontrun{
 #' library(Biobase)
 #' library(dplyr)
 #' mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
@@ -71,6 +74,7 @@ get_active_ligand_receptor_network = function(expression_sender, expression_rece
 #' names(expression_vector_receiver) = names(expression_vector_receiver) %>% mousesymbol2humansymbol[.]
 #' expression_vector_receiver = expression_vector_receiver %>% .[!is.na(names(.))]
 #' mono_sig_network = get_active_signaling_network(expression_vector_receiver,sig_network,expression_cutoff_receiver = 4)
+#' }
 #' @export
 #'
 get_active_signaling_network = function(expression_receiver, sig_network, expression_cutoff_receiver = 0){
@@ -104,6 +108,7 @@ get_active_signaling_network = function(expression_receiver, sig_network, expres
 #' @return A data frame containing at least the variables from, to, receiver_expression. In this network, the active gene regulatory interactions in the system of interest are shown.
 #'
 #' @examples
+#' \dontrun{
 #' library(Biobase)
 #' library(dplyr)
 #' mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
@@ -112,6 +117,7 @@ get_active_signaling_network = function(expression_receiver, sig_network, expres
 #' names(expression_vector_receiver) = names(expression_vector_receiver) %>% mousesymbol2humansymbol[.]
 #' expression_vector_receiver = expression_vector_receiver %>% .[!is.na(names(.))]
 #' mono_gr_network = get_active_regulatory_network(expression_vector_receiver,gr_network,expression_cutoff_receiver = 4)
+#' }
 #' @export
 #'
 get_active_regulatory_network = function(expression_receiver, gr_network, expression_cutoff_receiver = 0){
@@ -144,12 +150,14 @@ get_active_regulatory_network = function(expression_receiver, gr_network, expres
 #' @return A matrix with ligand-target probability scores (or discrete ligand-target assignments) for the active target genes in the system of interest.
 #'
 #' @examples
+#' \dontrun{
 #' library(dplyr)
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' setting = lapply(expression_settings_validation[1:2],convert_expression_settings_evaluation)
 #' ligands = extract_ligands_from_settings(setting)
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' active_lt = get_active_ligand_target_matrix(setting[[1]] %>% .$response, ligand_target_matrix)
+#' }
 #' @export
 #'
 get_active_ligand_target_matrix = function(response,ligand_target_matrix, ligands_position = "cols"){
@@ -189,6 +197,7 @@ get_active_ligand_target_matrix = function(response,ligand_target_matrix, ligand
 #' @return A data frame representing the active ligand-target network; with variables $ligand, $target and $score.
 #'
 #' @examples
+#' \dontrun{
 #' library(dplyr)
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' setting = lapply(expression_settings_validation[1:2],convert_expression_settings_evaluation)
@@ -196,6 +205,7 @@ get_active_ligand_target_matrix = function(response,ligand_target_matrix, ligand
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' ligand_target_matrix_discrete = make_discrete_ligand_target_matrix(ligand_target_matrix)
 #' active_lt_df = get_active_ligand_target_df(setting[[1]] %>% .$response, ligand_target_matrix_discrete)
+#' }
 #' @export
 #'
 get_active_ligand_target_df = function(response,ligand_target_matrix, ligands_position = "cols", cutoff = 0){

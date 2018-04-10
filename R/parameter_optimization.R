@@ -9,6 +9,7 @@
 #' @inheritParams construct_ligand_target_matrix
 #' @param x A list containing the following elements. $source_weights: numeric vector representing the weight for each data source; $lr_sig_hub: hub correction factor for the ligand-signaling network; $gr_hub: hub correction factor for the gene regulatory network; $damping_factor: damping factor in the PPR algorithm if using PPR and optionally $ltf_cutoff: the cutoff on the ligand-tf matrix. For more information about these parameters: see \code{construct_ligand_target_matrix} and \code{apply_hub_correction}.
 #' @param source_names Character vector containing the names of the data sources. The order of data source names accords to the order of weights in x$source_weights.
+#' @param correct_topology This parameter indicates whether the PPR-constructed ligand-target matrix will be subtracted by a PR-constructed target matrix. TRUE or FALSE.
 #' @param ... Additional arguments to \code{make_discrete_ligand_target_matrix}.
 #'
 #' @return A numeric vector of length 4 containing the average auroc for target gene prediction, average aupr (corrected for TP fraction) for target gene prediction, average auroc for ligand activity prediction and average aupr for ligand activity prediction.
@@ -170,4 +171,97 @@ mlrmbo_optimization = function(run_id,obj_fun,niter,ncores,nstart,additional_arg
 
   parallelStop()
   return(res)
+}
+#' @title Construct and evaluate a ligand-target model given input parameters with the purpose of hyperparameter optimization.
+#'
+#' @description \code{model_evaluation_hyperparameter_optimization} will take as input a setting of parameters (hyperparameters), data source weights and layer-specific networks to construct a ligand-target matrix and evaluate its performance on input validation settings (average performance for both target gene prediction and ligand activity prediction, as measured via the auroc and aupr).
+#'
+#' @usage
+#' model_evaluation_hyperparameter_optimization(x, source_weights, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",...)
+#'
+#' @inheritParams model_evaluation_optimization
+#' @param x A list containing the following elements. $lr_sig_hub: hub correction factor for the ligand-signaling network; $gr_hub: hub correction factor for the gene regulatory network; $damping_factor: damping factor in the PPR algorithm if using PPR and optionally $ltf_cutoff: the cutoff on the ligand-tf matrix. For more information about these parameters: see \code{construct_ligand_target_matrix} and \code{apply_hub_correction}.
+#' @param source_weights A named numeric vector indicating the weight for every data source.
+#' @param ... Additional arguments to \code{make_discrete_ligand_target_matrix}.
+#'
+#' @return A numeric vector of length 4 containing the average auroc for target gene prediction, average aupr (corrected for TP fraction) for target gene prediction, average auroc for ligand activity prediction and average aupr for ligand activity prediction.
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#' nr_datasources = source_weights_df$source %>% unique() %>% length()
+#' test_input = list("lr_sig_hub" = 0.5, "gr_hub" = 0.5, "damping_factor" = 0.5)
+#' source_weights = source_weights_df$weight
+#' names(source_weights) = source_weights_df$source
+# test_evaluation_optimization = model_evaluation_hyperparameter_optimization(test_input, source_weights, "PPR", TRUE, lr_network, sig_network, gr_network, lapply(expression_settings_validation,convert_expression_settings_evaluation), secondary_targets = FALSE, remove_direct_links = "no")
+#' }
+#'
+#' @export
+#'
+model_evaluation_hyperparameter_optimization = function(x, source_weights, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",...){
+
+  requireNamespace("dplyr")
+
+  #input check
+  if (!is.list(x))
+    stop("x should be a list!")
+  if (x$lr_sig_hub < 0 | x$lr_sig_hub > 1)
+    stop("x$lr_sig_hub must be a number between 0 and 1 (0 and 1 included)")
+  if (x$gr_hub < 0 | x$gr_hub > 1)
+    stop("x$gr_hub must be a number between 0 and 1 (0 and 1 included)")
+  if(is.null(x$ltf_cutoff)){
+    if(correct_topology == FALSE)
+      warning("Did you not forget to give a value to x$ltf_cutoff?")
+  } else {
+    if (x$ltf_cutoff < 0 | x$ltf_cutoff > 1)
+      stop("x$ltf_cutoff must be a number between 0 and 1 (0 and 1 included) or NULL")
+  }
+  if (!is.numeric(source_weights) | is.null(names(source_weights)))
+    stop("source_weights should be a named numeric vector")
+  if(algorithm == "PPR"){
+    if (x$damping_factor < 0 | x$damping_factor >= 1)
+      stop("x$damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  }
+  if (algorithm != "PPR" & algorithm != "SPL" & algorithm != "direct")
+    stop("algorithm must be 'PPR' or 'SPL' or 'direct'")
+  if (correct_topology != TRUE & correct_topology != FALSE)
+    stop("correct_topology must be TRUE or FALSE")
+  if (!is.data.frame(lr_network))
+    stop("lr_network must be a data frame or tibble object")
+  if (!is.data.frame(sig_network))
+    stop("sig_network must be a data frame or tibble object")
+  if (!is.data.frame(gr_network))
+    stop("gr_network must be a data frame or tibble object")
+  if (!is.list(settings))
+    stop("settings should be a list!")
+  if(!is.character(settings[[1]]$from) | !is.character(settings[[1]]$name))
+    stop("setting$from and setting$name should be character vectors")
+  if(!is.logical(settings[[1]]$response) | is.null(names(settings[[1]]$response)))
+    stop("setting$response should be named logical vector containing class labels of the response that needs to be predicted ")
+  if (secondary_targets != TRUE & secondary_targets != FALSE)
+    stop("secondary_targets must be TRUE or FALSE")
+  if (remove_direct_links != "no" & remove_direct_links != "ligand" & remove_direct_links != "ligand-receptor")
+    stop("remove_direct_links must be  'no' or 'ligand' or 'ligand-receptor'")
+  if(correct_topology == TRUE && !is.null(x$ltf_cutoff))
+    warning("Because PPR-ligand-target matrix will be corrected for topology, the proposed cutoff on the ligand-tf matrix will be ignored (x$ltf_cutoff")
+  if(correct_topology == TRUE && algorithm != "PPR")
+    warning("Topology correction is PPR-specific and makes no sense when the algorithm is not PPR")
+
+  parameters_setting = list(model_name = "query_design", source_weights = source_weights)
+
+  if (correct_topology == TRUE){
+    parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = 0, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = TRUE)
+  } else {
+    parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = x$ltf_cutoff, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = FALSE)
+  }
+
+  output_evaluation = evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings,calculate_popularity_bias_target_prediction = FALSE,calculate_popularity_bias_ligand_prediction=FALSE,ncitations = ncitations, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links, n_target_bins = 3, ...)
+
+  mean_auroc_target_prediction = output_evaluation$performances_target_prediction$auroc %>% mean()
+  mean_aupr_target_prediction = output_evaluation$performances_target_prediction$aupr_corrected %>% mean()
+
+  mean_auroc_ligand_prediction = output_evaluation$performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% .$auroc %>% unique() # unique necessary because possible that two different ligand importance measures result in same maximal performance
+  mean_aupr_ligand_prediction = output_evaluation$performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% .$aupr_corrected %>% unique()
+
+  return(c(mean_auroc_target_prediction, mean_aupr_target_prediction, mean_auroc_ligand_prediction, mean_aupr_ligand_prediction))
 }

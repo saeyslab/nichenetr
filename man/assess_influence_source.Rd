@@ -15,6 +15,8 @@ assess_influence_source(source, lr_network, sig_network, gr_network, source_weig
 
 \item{gr_network}{A data frame / tibble containing gene regulatory interactions (required columns: from, to, source)}
 
+\item{source_weights_df}{A data frame / tibble containing the weights associated to each individual data source. Sources with higher weights will contribute more to the final model performance (required columns: source, weight). Note that only interactions described by sources included here, will be retained during model construction.}
+
 \item{ligands}{List of ligands for which the model should be constructed}
 
 \item{rankings}{Indicate whether the output of the models should be the ranking of target gene probability scores (TRUE; top target gene rank = 1) or the scores themselves (FALSE). Default: FALSE.}
@@ -34,6 +36,8 @@ If matrix_output == TRUE: A list of sublists; every sublist contains the element
 \code{assess_influence_source} will assess the influence of an individual data source on ligand-target probability scores (or rankings of these). Possible output: the ligand-target matrices of the complete model vs the leave-one-out model in which the data source of interest was left out; or a list indicating which target genes for every ligand of interest are affected the most by leaving out the data source of interest.
 }
 \examples{
+\dontrun{
 ligands =  extract_ligands_from_settings(expression_settings_validation[1:4])
 output = assess_influence_source("ontogenet", lr_network,sig_network, gr_network, source_weights_df, ligands,lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+}
 }

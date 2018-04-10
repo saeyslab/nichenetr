@@ -33,7 +33,8 @@ Imports: dplyr,
     ggplot2,
     mlrMBO,
     parallelMap,
-    emoa
+    emoa,
+    DiceKriging
 Suggests: knitr,
     rmarkdown,
     testthat,

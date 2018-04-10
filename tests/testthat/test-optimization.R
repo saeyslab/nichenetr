@@ -19,6 +19,13 @@ test_that("Objective function to construct and evaluate the model for parameter 
   expect_equal(length(test_evaluation_optimization),4)
 
 
+  test_input = list("lr_sig_hub" = 0.5, "gr_hub" = 0.5, "damping_factor" = 0.5)
+  source_weights = source_weights_df$weight
+  names(source_weights) = source_weights_df$source
+  test_evaluation_optimization = model_evaluation_hyperparameter_optimization(test_input, source_weights, "PPR", TRUE, lr_network, sig_network, gr_network, lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation), secondary_targets = FALSE, remove_direct_links = "no")
+  expect_type(test_evaluation_optimization, "double")
+  expect_equal(length(test_evaluation_optimization),4)
+
 })
 test_that("mlrMBO optimization of a multi-objective function can be performed is ok", {
   model_evaluation_optimization_decoy = function(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",...){

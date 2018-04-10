@@ -181,7 +181,7 @@ add_hyperparameters_parameter_settings = function(parameter_setting,lr_sig_hub,g
 #' @description \code{evaluate_model} will take as input a setting of parameters (data source weights and hyperparameters) and layer-specific networks to construct a ligand-target matrix and evaluate its performance on input validation settings (both target gene prediction and ligand activity prediction).
 #'
 #' @usage
-#' evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings, calculate_popularity_bias_target_prediction,calculate_popularity_bias_ligand_prediction, ncitations = ncitations, secondary_targets = FALSE, remove_direct_links = FALSE, n_target_bins = 3,...)
+#' evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings, calculate_popularity_bias_target_prediction,calculate_popularity_bias_ligand_prediction, ncitations = ncitations, secondary_targets = FALSE, remove_direct_links = "no", n_target_bins = 3,...)
 #'
 #' @inheritParams construct_weighted_networks
 #' @inheritParams construct_ligand_target_matrix
@@ -849,6 +849,7 @@ construct_model = function(parameters_setting, lr_network, sig_network, gr_netwo
 #' @usage
 #' assess_influence_source(source, lr_network, sig_network, gr_network, source_weights_df, ligands, rankings = FALSE, matrix_output = FALSE,  secondary_targets = FALSE, remove_direct_links = "no", ...)
 #'
+#' @inheritParams construct_weighted_networks
 #' @inheritParams construct_model
 #' @param source Name of the data source that will be left out to assess its influence.
 #' @param ... Argumentes for the function \code{add_hyperparameters_parameter_settings}
@@ -857,9 +858,10 @@ construct_model = function(parameters_setting, lr_network, sig_network, gr_netwo
 #' @return If matrix_output == TRUE: A list of sublists; every sublist contains the elements $model_name and $model: the constructed ligand-target matrix. If matrix_output == FALSE: A list of sublist: every sublist contains; $ligand: name of the ligand tested; $targets_higher: sorted vector of ligand-target scores or rankings of target that score higher in the complete model compared to the leave-one-out model; targets_lower: sorted vector of ligand-target scores or rankings of target that score lower in the complete model compared to the leave-one-out model.
 #'
 #' @examples
+#' \dontrun{
 #' ligands =  extract_ligands_from_settings(expression_settings_validation[1:4])
 #' output = assess_influence_source("ontogenet", lr_network,sig_network, gr_network, source_weights_df, ligands,lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
-
+#' }
 #' @export
 #'
 #'

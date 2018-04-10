@@ -4,7 +4,7 @@
 \alias{evaluate_model}
 \title{Construct and evaluate a ligand-target model given input parameters.}
 \usage{
-evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings, calculate_popularity_bias_target_prediction,calculate_popularity_bias_ligand_prediction, ncitations = ncitations, secondary_targets = FALSE, remove_direct_links = FALSE, n_target_bins = 3,...)
+evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings, calculate_popularity_bias_target_prediction,calculate_popularity_bias_ligand_prediction, ncitations = ncitations, secondary_targets = FALSE, remove_direct_links = "no", n_target_bins = 3,...)
 }
 \arguments{
 \item{parameters_setting}{A list containing following elements: $model_name, $source_weights, $lr_sig_hub, $gr_hub, $ltf_cutoff, $algorithm, $damping_factor, $correct_topology. See \code{prepare_settings_leave_one_in_characterization} and \code{add_hyperparameters_parameter_settings}.}

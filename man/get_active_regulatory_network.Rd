@@ -20,6 +20,7 @@ A data frame containing at least the variables from, to, receiver_expression. In
 \code{get_active_regulatory_network} Get active regulatory network by looking for which TFs/regulatory genes are expressed in the receiver cell. Instead of looking at absolute expression, it is possible as well to extract a gene regulatory network of differentially expressed TFs if a vector of log2 fold change values is used as input.
 }
 \examples{
+\dontrun{
 library(Biobase)
 library(dplyr)
 mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
@@ -28,4 +29,5 @@ expression_vector_receiver = Exprs_mono_kc[,Exprs_mono_kc$celltype == "BM_mono"]
 names(expression_vector_receiver) = names(expression_vector_receiver) \%>\% mousesymbol2humansymbol[.]
 expression_vector_receiver = expression_vector_receiver \%>\% .[!is.na(names(.))]
 mono_gr_network = get_active_regulatory_network(expression_vector_receiver,gr_network,expression_cutoff_receiver = 4)
+}
 }

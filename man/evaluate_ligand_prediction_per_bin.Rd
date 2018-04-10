@@ -4,7 +4,7 @@
 \alias{evaluate_ligand_prediction_per_bin}
 \title{Evaluate ligand activity predictions for different bins/groups of targets genes}
 \usage{
-evaluate_ligand_prediction_per_bin(nbins,settings,ligand_target_matrix,ncitations,ligands_position = "cols")
+evaluate_ligand_prediction_per_bin(nbins,settings,ligand_target_matrix,ncitations,ligands_position = "cols",...)
 }
 \arguments{
 \item{nbins}{The number of bins the target genes should be divided in based on popularity.}

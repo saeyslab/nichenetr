@@ -24,6 +24,7 @@ A data frame containing at least the variables from, to, sender_expression, rece
 \code{get_active_ligand_receptor_network} Get active ligand-receptor network by looking for which ligands are expressed in a sender/signaling cell and which receptors are expressed in the receiver cell. Instead of looking at absolute expression, it is possible as well to extract a ligand-receptor network of differentially expressed ligands and receptors if a vector of log2 fold change values is used as input.
 }
 \examples{
+\dontrun{
 library(Biobase)
 library(dplyr)
 mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
@@ -36,4 +37,5 @@ expression_vector_sender = expression_vector_sender \%>\% .[!is.na(names(.))]
 expression_vector_receiver = expression_vector_receiver \%>\% .[!is.na(names(.))]
 weighted_lr_network = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df, n_output_networks = 3) \%>\% .$lr
 lsec_mono_lr_network = get_active_ligand_receptor_network(expression_vector_sender,expression_vector_receiver,weighted_lr_network,expression_cutoff_sender = 0, expression_cutoff_receiver = 4)
+}
 }
