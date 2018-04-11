@@ -332,7 +332,97 @@ process_mlrmbo_nichenet_optimization = function(optimization_results,source_name
   return(output_optimization)
 
 }
+#' @title Construct and evaluate a ligand-target model given input parameters with the purpose of parameter optimization for multi-ligand application.
+#'
+#' @description \code{model_evaluation_optimization_application} will take as input a setting of parameters (data source weights and hyperparameters) and layer-specific networks to construct a ligand-target matrix and evaluate its performance on input application settings (average performance for target gene prediction, as measured via the auroc and aupr).
+#'
+#' @usage
+#' model_evaluation_optimization_application(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",classification_algorithm = "lda",...)
+#'
+#' @inheritParams model_evaluation_optimization
+#' @param classification_algorithm The name of the classification algorithm to be applied. Should be supported by the caret package. Examples of algorithms we recommend: with embedded feature selection: "rf","glm","fda","glmnet","sdwd","gam","glmboost", "pls" (load "pls" package before!); without: "lda","naive_bayes", "pcaNNet". Please notice that not all these algorithms work when the features (i.e. ligand vectors) are categorical (i.e. discrete class assignments).
+#' @param ... Additional arguments to \code{evaluate_multi_ligand_target_prediction}.
+#'
+#' @return A numeric vector of length 2 containing the average auroc and aupr for target gene prediction.
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#' nr_datasources = source_weights_df$source %>% unique() %>% length()
+#' test_input = list("source_weights" = rep(0.5, times = nr_datasources), "lr_sig_hub" = 0.5, "gr_hub" = 0.5, "damping_factor" = 0.5)
+# test_evaluation_optimization = model_evaluation_optimization_application(test_input, source_weights_df$source %>% unique(), algorithm = "PPR", TRUE, lr_network, sig_network, gr_network, list(convert_expression_settings_evaluation(expression_settings_validation$TGFB_IL6_timeseries)), secondary_targets = FALSE, remove_direct_links = "no", classification_algorithm = "lda", var_imps = FALSE, cv_number = 5, cv_repeats = 4)
+#' }
+#'
+#' @export
+#'
+model_evaluation_optimization_application = function(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",classification_algorithm = "lda",...){
 
+  requireNamespace("dplyr")
 
+  #input check
+  if (!is.list(x))
+    stop("x should be a list!")
+  if (!is.numeric(x$source_weights))
+    stop("x$source_weights should be a numeric vector")
+  if (x$lr_sig_hub < 0 | x$lr_sig_hub > 1)
+    stop("x$lr_sig_hub must be a number between 0 and 1 (0 and 1 included)")
+  if (x$gr_hub < 0 | x$gr_hub > 1)
+    stop("x$gr_hub must be a number between 0 and 1 (0 and 1 included)")
+  if(is.null(x$ltf_cutoff)){
+    if(correct_topology == FALSE)
+      warning("Did you not forget to give a value to x$ltf_cutoff?")
+  } else {
+    if (x$ltf_cutoff < 0 | x$ltf_cutoff > 1)
+      stop("x$ltf_cutoff must be a number between 0 and 1 (0 and 1 included) or NULL")
+  }
+  if(algorithm == "PPR"){
+    if (x$damping_factor < 0 | x$damping_factor >= 1)
+      stop("x$damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  }
 
+  if (algorithm != "PPR" & algorithm != "SPL" & algorithm != "direct")
+    stop("algorithm must be 'PPR' or 'SPL' or 'direct'")
+  if (correct_topology != TRUE & correct_topology != FALSE)
+    stop("correct_topology must be TRUE or FALSE")
+  if (!is.data.frame(lr_network))
+    stop("lr_network must be a data frame or tibble object")
+  if (!is.data.frame(sig_network))
+    stop("sig_network must be a data frame or tibble object")
+  if (!is.data.frame(gr_network))
+    stop("gr_network must be a data frame or tibble object")
+  if (!is.list(settings))
+    stop("settings should be a list!")
+  if(!is.character(settings[[1]]$from) | !is.character(settings[[1]]$name))
+    stop("setting$from and setting$name should be character vectors")
+  if(!is.logical(settings[[1]]$response) | is.null(names(settings[[1]]$response)))
+    stop("setting$response should be named logical vector containing class labels of the response that needs to be predicted ")
+  if (secondary_targets != TRUE & secondary_targets != FALSE)
+    stop("secondary_targets must be TRUE or FALSE")
+  if (remove_direct_links != "no" & remove_direct_links != "ligand" & remove_direct_links != "ligand-receptor")
+    stop("remove_direct_links must be  'no' or 'ligand' or 'ligand-receptor'")
+  if(!is.character(source_names))
+    stop("source_names should be a character vector")
+  if(length(source_names) != length(x$source_weights))
+    stop("Length of source_names should be the same as length of x$source_weights")
+  if(correct_topology == TRUE && !is.null(x$ltf_cutoff))
+    warning("Because PPR-ligand-target matrix will be corrected for topology, the proposed cutoff on the ligand-tf matrix will be ignored (x$ltf_cutoff")
+  if(correct_topology == TRUE && algorithm != "PPR")
+    warning("Topology correction is PPR-specific and makes no sense when the algorithm is not PPR")
+  if(!is.character(classification_algorithm))
+    stop("classification_algorithm should be a character vector of length 1")
+  names(x$source_weights) = source_names
+  parameters_setting = list(model_name = "query_design", source_weights = x$source_weights)
 
+  if (correct_topology == TRUE){
+    parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = 0, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = TRUE)
+  } else {
+    parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = x$ltf_cutoff, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = FALSE)
+  }
+
+  output_evaluation = evaluate_model_application_multi_ligand(parameters_setting, lr_network, sig_network, gr_network, settings, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links, classification_algorithm = classification_algorithm,...)
+
+  mean_auroc_target_prediction = output_evaluation$performances_target_prediction$auroc %>% mean()
+  mean_aupr_target_prediction = output_evaluation$performances_target_prediction$aupr_corrected %>% mean()
+
+  return(c(mean_auroc_target_prediction, mean_aupr_target_prediction))
+}

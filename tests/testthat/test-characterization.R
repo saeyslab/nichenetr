@@ -83,6 +83,7 @@ test_that("Leave-one-in models can be evaluated and results of this further proc
   output_characterization = lapply(weights_settings_loi[2:3],evaluate_model,lr_network,sig_network, gr_network,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, cutoff_method = "quantile") # make discrete ligand-target matrix via the quantile-method!
 
   output_characterization_application = lapply(weights_settings_loi[1:2],evaluate_model_application,lr_network,sig_network, gr_network,settings[1:3], cutoff_method = "quantile") # make discrete ligand-target matrix via the quantile-method!
+  expect_type(output_characterization_application, "list")
 
   target_prediction_performances = process_characterization_target_prediction(output_characterization)
   target_prediction_performances_output_characterization_application = process_characterization_target_prediction(output_characterization_application)
@@ -102,6 +103,18 @@ test_that("Leave-one-in models can be evaluated and results of this further proc
   expect_gte(nrow(ligand_prediction_performances_single),1)
   expect_gte(nrow(popularity_slopes_target_prediction_performances),1)
   expect_gte(nrow(popularity_slopes_ligand_prediction_performances),1)
+
+})
+test_that("Leave-one-in models can be evaluated for multi-ligand applications", {
+
+  settings = convert_expression_settings_evaluation(expression_settings_validation$TGFB_IL6_timeseries) %>% list()
+  weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
+  weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+  doMC::registerDoMC(cores = 8)
+  output_characterization_application = parallel::mclapply(weights_settings_loi[1:3],evaluate_model_application_multi_ligand,lr_network,sig_network, gr_network,settings, algorithm = "lda", var_imps = FALSE, cv_number = 5, cv_repeats = 4, parallel = TRUE, mc.cores = 3)
+  expect_type(output_characterization_application, "list")
+  target_prediction_performances = process_characterization_target_prediction(output_characterization_application)
+  expect_gte(nrow(target_prediction_performances),1)
 
 })
 

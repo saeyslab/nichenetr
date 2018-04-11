@@ -662,7 +662,7 @@ prepare_settings_one_vs_one_characterization = function(lr_network, sig_network,
 #' @usage
 #' evaluate_model_application(parameters_setting, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no", ...)
 #'
-#' @inheritParams evaluate_model
+#' @inheritParams evaluate_model_application
 #'
 #' @return A list containing following elements: $model_name, $performances_target_prediction.
 #'
@@ -683,7 +683,6 @@ prepare_settings_one_vs_one_characterization = function(lr_network, sig_network,
 evaluate_model_application = function(parameters_setting, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no", ...){
 
   requireNamespace("dplyr")
-
 
   # input check
   if (!is.list(parameters_setting))
@@ -737,8 +736,7 @@ evaluate_model_application = function(parameters_setting, lr_network, sig_networ
   performances_target_prediction_discrete = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix_discrete))
   performances_target_prediction = performances_target_prediction %>% full_join(performances_target_prediction_discrete, by = c("setting", "ligand"))
 
-    return(list(model_name = model_name, performances_target_prediction = performances_target_prediction))
-
+  return(list(model_name = model_name, performances_target_prediction = performances_target_prediction))
 }
 
 #' @title Construct a ligand-target model given input parameters.
@@ -928,6 +926,93 @@ assess_influence_source = function(source, lr_network, sig_network, gr_network, 
     }
     return(affected_targets_output)
 }
+#' @title Construct and evaluate a ligand-target model given input parameters (for application purposes + multi-ligand predictive model).
+#'
+#' @description \code{evaluate_model_application_multi_ligand} will take as input a setting of parameters (data source weights and hyperparameters) and layer-specific networks to construct a ligand-target matrix and evaluate its performance on input application settings (only target gene prediction; multi-ligand classification).
+#'
+#' @usage
+#' evaluate_model_application_multi_ligand(parameters_setting, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",classification_algorithm = "lda", ...)
+#'
+#' @inheritParams evaluate_model_application
+#' @param classification_algorithm The name of the classification algorithm to be applied. Should be supported by the caret package. Examples of algorithms we recommend: with embedded feature selection: "rf","glm","fda","glmnet","sdwd","gam","glmboost", "pls" (load "pls" package before!); without: "lda","naive_bayes", "pcaNNet". Please notice that not all these algorithms work when the features (i.e. ligand vectors) are categorical (i.e. discrete class assignments).
+#' @param ... Optional arguments to \code{evaluate_multi_ligand_target_prediction}.
+#'
+#' @return A list containing following elements: $model_name, $performances_target_prediction.
+#'
+#' @importFrom tibble tibble
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#' settings = convert_expression_settings_evaluation(expression_settings_validation$TGFB_IL6_timeseries) %>% list()
+#' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
+#' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+#' doMC::registerDoMC(cores = 8)
+#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model_application_multi_ligand,lr_network,sig_network, gr_network,settings, classification_algorithm = "lda", var_imps = FALSE, cv_number = 5, cv_repeats = 4, parallel = TRUE, mc.cores = 3)
+#'
+#' }
+#'
+#' @export
+#'
+evaluate_model_application_multi_ligand = function(parameters_setting, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",classification_algorithm = "lda", ...){
+
+  requireNamespace("dplyr")
+
+  # input check
+  if (!is.list(parameters_setting))
+    stop("parameters_setting should be a list!")
+  if (!is.character(parameters_setting$model_name))
+    stop("parameters_setting$model_name should be a character vector")
+  if (!is.numeric(parameters_setting$source_weights) | is.null(names(parameters_setting$source_weights)))
+    stop("parameters_setting$source_weights should be a named numeric vector")
+  if (parameters_setting$lr_sig_hub < 0 | parameters_setting$lr_sig_hub > 1)
+    stop("parameters_setting$lr_sig_hub must be a number between 0 and 1 (0 and 1 included)")
+  if (parameters_setting$gr_hub < 0 | parameters_setting$gr_hub > 1)
+    stop("parameters_setting$gr_hub must be a number between 0 and 1 (0 and 1 included)")
+  if (parameters_setting$ltf_cutoff < 0 | parameters_setting$ltf_cutoff > 1)
+    stop("parameters_setting$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  if (parameters_setting$algorithm != "PPR" & parameters_setting$algorithm != "SPL" & parameters_setting$algorithm != "direct")
+    stop("parameters_setting$algorithm must be 'PPR' or 'SPL' or 'direct'")
+  if(parameters_setting$algorithm == "PPR"){
+    if (parameters_setting$damping_factor < 0 | parameters_setting$damping_factor >= 1)
+      stop("parameters_setting$damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  }
+  if (parameters_setting$correct_topology != TRUE & parameters_setting$correct_topology != FALSE)
+    stop("parameters_setting$correct_topology must be TRUE or FALSE")
+
+  if (!is.data.frame(lr_network))
+    stop("lr_network must be a data frame or tibble object")
+  if (!is.data.frame(sig_network))
+    stop("sig_network must be a data frame or tibble object")
+  if (!is.data.frame(gr_network))
+    stop("gr_network must be a data frame or tibble object")
+  if (!is.list(settings))
+    stop("settings should be a list!")
+  if(!is.character(settings[[1]]$from) | !is.character(settings[[1]]$name))
+    stop("setting$from and setting$name should be character vectors")
+  if(!is.logical(settings[[1]]$response) | is.null(names(settings[[1]]$response)))
+    stop("setting$response should be named logical vector containing class labels of the response that needs to be predicted ")
+
+  if (secondary_targets != TRUE & secondary_targets != FALSE)
+    stop("secondary_targets must be TRUE or FALSE")
+  if (remove_direct_links != "no" & remove_direct_links != "ligand" & remove_direct_links != "ligand-receptor")
+    stop("remove_direct_links must be  'no' or 'ligand' or 'ligand-receptor'")
+
+  # construct model
+  ligands =  extract_ligands_from_settings(settings)
+  output_model_construction = construct_model(parameters_setting, lr_network, sig_network, gr_network, ligands, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links)
+  model_name = output_model_construction$model_name
+  ligand_target_matrix = output_model_construction$model
+
+  # transcriptional response evaluation
+  performances_target_prediction = bind_rows(lapply(settings,wrapper_evaluate_multi_ligand_target_prediction, ligand_target_matrix,algorithm = classification_algorithm, ...))
+
+  return(list(model_name = model_name, performances_target_prediction = performances_target_prediction))
+}
+
+
+
+
 
 
 

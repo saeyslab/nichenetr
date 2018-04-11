@@ -927,3 +927,6 @@ get_affected_targets_output = function(diff_matrix, rankings){
     return(list(ligand = ligand_oi, targets_higher = sorted_vector_oi_high2low %>% head(100), targets_lower = sorted_vector_oi_low2high %>% head(100)))
   },diff_matrix,rankings ))
 }
+wrapper_evaluate_multi_ligand_target_prediction = function(...){
+  average_performances = evaluate_multi_ligand_target_prediction(...) %>% .$performances %>% select(-Resample) %>% summarise_all(mean)
+}

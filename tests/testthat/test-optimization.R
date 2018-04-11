@@ -26,6 +26,11 @@ test_that("Objective function to construct and evaluate the model for parameter 
   expect_type(test_evaluation_optimization, "double")
   expect_equal(length(test_evaluation_optimization),4)
 
+  nr_datasources = source_weights_df$source %>% unique() %>% length()
+  test_input = list("source_weights" = rep(0.5, times = nr_datasources), "lr_sig_hub" = 0.5, "gr_hub" = 0.5, "damping_factor" = 0.5)
+  test_evaluation_optimization = model_evaluation_optimization_application(test_input, source_weights_df$source %>% unique(), algorithm = "PPR", TRUE, lr_network, sig_network, gr_network, list(convert_expression_settings_evaluation(expression_settings_validation$TGFB_IL6_timeseries)), secondary_targets = FALSE, remove_direct_links = "no", classification_algorithm = "lda", var_imps = FALSE, cv_number = 5, cv_repeats = 4)
+  expect_type(test_evaluation_optimization, "double")
+  expect_equal(length(test_evaluation_optimization),2)
 })
 test_that("mlrMBO optimization of a multi-objective function can be performed is ok", {
   model_evaluation_optimization_decoy = function(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",...){

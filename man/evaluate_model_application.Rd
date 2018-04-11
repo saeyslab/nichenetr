@@ -6,23 +6,6 @@
 \usage{
 evaluate_model_application(parameters_setting, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no", ...)
 }
-\arguments{
-\item{parameters_setting}{A list containing following elements: $model_name, $source_weights, $lr_sig_hub, $gr_hub, $ltf_cutoff, $algorithm, $damping_factor, $correct_topology. See \code{prepare_settings_leave_one_in_characterization} and \code{add_hyperparameters_parameter_settings}.}
-
-\item{lr_network}{A data frame / tibble containing ligand-receptor interactions (required columns: from, to, source)}
-
-\item{sig_network}{A data frame / tibble containing signaling interactions (required columns: from, to, source)}
-
-\item{gr_network}{A data frame / tibble containing gene regulatory interactions (required columns: from, to, source)}
-
-\item{settings}{A list of lists for which each sub-list contains the following elements: .$name: name of the setting; .$from: name(s) of the ligand(s) active in the setting of interest; .$response: named logical vector indicating whether a target is a TRUE target of the possibly active ligand(s) or a FALSE.}
-
-\item{secondary_targets}{Indicate whether a ligand-target matrix should be returned that explicitly includes putative secondary targets of a ligand (by means of an additional matrix multiplication step considering primary targets as possible regulators). Default: FALSE}
-
-\item{remove_direct_links}{Indicate whether direct ligand-target and receptor-target links in the gene regulatory network should be kept or not. "no": keep links; "ligand": remove direct ligand-target links; "ligand-receptor": remove both direct ligand-target and receptor-target links. Default: "no"}
-
-\item{...}{Additional arguments to \code{make_discrete_ligand_target_matrix}.}
-}
 \value{
 A list containing following elements: $model_name, $performances_target_prediction.
 }
