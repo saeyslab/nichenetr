@@ -117,6 +117,7 @@ model_evaluation_optimization = function(x, source_names, algorithm, correct_top
 #' \dontrun{
 #' library(dplyr)
 #' library(mlrMBO)
+#' library(parallelMap)
 #' additional_arguments_topology_correction = list(source_names = source_weights_df$source %>% unique(), algorithm = "PPR", correct_topology = TRUE,lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, settings = lapply(expression_settings_validation,convert_expression_settings_evaluation), secondary_targets = FALSE, remove_direct_links = "no", cutoff_method = "quantile")
 #' nr_datasources = additional_arguments_topology_correction$source_names %>% length()
 #'
@@ -265,3 +266,73 @@ model_evaluation_hyperparameter_optimization = function(x, source_weights, algor
 
   return(c(mean_auroc_target_prediction, mean_aupr_target_prediction, mean_auroc_ligand_prediction, mean_aupr_ligand_prediction))
 }
+#' @title Process the output of mlrmbo multi-objective optimization to extract optimal parameter values.
+#'
+#' @description \code{process_mlrmbo_nichenet_optimization} will process the output of multi-objective mlrmbo optimization. As a result, a list containing the optimal parameter values for model construction will be returned.
+#'
+#' @usage
+#' process_mlrmbo_nichenet_optimization(optimization_results,source_names)
+#'
+#' @param optimization_results A list generated as output from multi-objective optimization by mlrMBO. Should contain the elements $pareto.front, $pareto.set See \code{mlrmbo_optimization}.
+#' @param source_names Character vector containing the names of the data sources. The order of data source names accords to the order of weights in x$source_weights.
+#'
+#' @return A list containing the parameter values leading to maximal performance and thus with the following elements: $source_weight_df, $lr_sig_hub, $gr_hub, $ltf_cutoff, $damping_factor
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#' library(mlrMBO)
+#' library(parallelMap)
+#' additional_arguments_topology_correction = list(source_names = source_weights_df$source %>% unique(), algorithm = "PPR", correct_topology = TRUE,lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, settings = lapply(expression_settings_validation,convert_expression_settings_evaluation), secondary_targets = FALSE, remove_direct_links = "no", cutoff_method = "quantile")
+#' nr_datasources = additional_arguments_topology_correction$source_names %>% length()
+#'
+#' obj_fun_multi_topology_correction = makeMultiObjectiveFunction(name = "nichenet_optimization",description = "data source weight and hyperparameter optimization: expensive black-box function", fn = model_evaluation_optimization, par.set = makeParamSet( makeNumericVectorParam("source_weights", len = nr_datasources, lower = 0, upper = 1), makeNumericVectorParam("lr_sig_hub", len = 1, lower = 0, upper = 1),  makeNumericVectorParam("gr_hub", len = 1, lower = 0, upper = 1),  makeNumericVectorParam("damping_factor", len = 1, lower = 0, upper = 0.99)), has.simple.signature = FALSE,n.objectives = 4, noisy = FALSE,minimize = c(FALSE,FALSE,FALSE,FALSE))
+#'
+#' mlrmbo_optimization_result = lapply(1,mlrmbo_optimization, obj_fun = obj_fun_multi_topology_correction, niter = 3, ncores = 8, nstart = 100, additional_arguments = additional_arguments_topology_correction)
+#' optimized_parameters = process_mlrmbo_nichenet_optimization(mlrmbo_optimization_result[[1]],additional_arguments_topology_correction$source_names)
+#'
+#' }
+#'
+#' @export
+#'
+process_mlrmbo_nichenet_optimization = function(optimization_results,source_names){
+
+  requireNamespace("dplyr")
+  requireNamespace("tibble")
+
+  if(length(optimization_results) == 1){
+    optimization_results = optimization_results[[1]]
+  }
+  # input check
+  if (!is.list(optimization_results))
+    stop("optimization_results should be a list!")
+  if (!is.list(optimization_results$pareto.set))
+    stop("optimization_results$pareto.set should be a list! Are you sure you provided the output of mlrMBO::mbo (multi-objective)?")
+  if (!is.matrix(optimization_results$pareto.front))
+    stop("optimization_results$pareto.front should be a matrix! Are you sure you provided the output of mlrMBO::mbo (multi-objective?")
+  if (!is.character(source_names))
+    stop("source_names should be a character vector")
+  # winning parameter set
+  # parameter_set_index = optimization_results$pareto.front %>% tbl_df() %>% mutate(average = apply(.,1,mean), index = seq(nrow(.))) %>% filter(average == max(average)) %>% .$index
+  parameter_set_index = optimization_results$pareto.front %>% tbl_df() %>% apply(2,function(x){(x-mean(x))/sd(x)}) %>% tbl_df() %>% mutate(average = apply(.,1,mean), index = seq(nrow(.))) %>% filter(average == max(average)) %>% .$index # take the best parameter setting considering the average of z-scores for each objective function result
+  parameter_set = optimization_results$pareto.set[[parameter_set_index]]
+
+  # data source weight model parameter
+  source_weights = parameter_set$source_weights
+  names(source_weights) = source_names
+
+  # "hyperparameters"
+  lr_sig_hub = parameter_set$lr_sig_hub
+  gr_hub =  parameter_set$gr_hub
+  ltf_cutoff =  parameter_set$ltf_cutoff
+  damping_factor = parameter_set$damping_factor
+
+  source_weight_df = tibble(source = names(source_weights), weight = source_weights)
+  output_optimization = list(source_weight_df = source_weight_df, lr_sig_hub = lr_sig_hub, gr_hub = gr_hub,ltf_cutoff = ltf_cutoff, damping_factor = damping_factor)
+  return(output_optimization)
+
+}
+
+
+
+

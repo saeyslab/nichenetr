@@ -53,10 +53,13 @@ test_that("mlrMBO optimization of a multi-objective function can be performed is
 
   obj_fun_multi_topology_correction = makeMultiObjectiveFunction(name = "nichenet_optimization",description = "data source weight and hyperparameter optimization: expensive black-box function", fn = model_evaluation_optimization_decoy, par.set = makeParamSet( makeNumericVectorParam("source_weights", len = nr_datasources, lower = 0, upper = 1), makeNumericVectorParam("lr_sig_hub", len = 1, lower = 0, upper = 1),  makeNumericVectorParam("gr_hub", len = 1, lower = 0, upper = 1),  makeNumericVectorParam("damping_factor", len = 1, lower = 0, upper = 0.99)), has.simple.signature = FALSE,n.objectives = 4, noisy = FALSE,minimize = c(FALSE,FALSE,FALSE,FALSE))
 
-  mlrmbo_optimization = lapply(1,mlrmbo_optimization, obj_fun = obj_fun_multi_topology_correction, niter = 2, ncores = 1, nstart = 100, additional_arguments = additional_arguments_topology_correction)
+  mlrmbo_optimization_result = lapply(1,mlrmbo_optimization, obj_fun = obj_fun_multi_topology_correction, niter = 2, ncores = 1, nstart = 100, additional_arguments = additional_arguments_topology_correction)
 
-  expect_type(mlrmbo_optimization, "list")
-  expect_type(mlrmbo_optimization[[1]]$pareto.set[[1]]$source_weights, "double")
-  expect_equal(length(mlrmbo_optimization[[1]]$pareto.set[[1]]$source_weights),nr_datasources)
-
+  optimized_parameters = process_mlrmbo_nichenet_optimization(mlrmbo_optimization_result[[1]],additional_arguments_topology_correction$source_names)
+  optimized_parameters = process_mlrmbo_nichenet_optimization(mlrmbo_optimization_result,additional_arguments_topology_correction$source_names)
+  expect_type(mlrmbo_optimization_result, "list")
+  expect_type(mlrmbo_optimization_result[[1]]$pareto.set[[1]]$source_weights, "double")
+  expect_equal(length(mlrmbo_optimization_result[[1]]$pareto.set[[1]]$source_weights),nr_datasources)
+  expect_type(optimized_parameters, "list")
+  expect_equal(is.data.frame(optimized_parameters$source_weight_df), TRUE)
 })
