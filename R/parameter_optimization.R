@@ -426,3 +426,77 @@ model_evaluation_optimization_application = function(x, source_names, algorithm,
 
   return(c(mean_auroc_target_prediction, mean_aupr_target_prediction))
 }
+#' @title Estimate data source weights of data sources of interest based on leave-one-in and leave-one-out characterization performances.
+#'
+#' @description \code{estimate_source_weights_characterization} will estimate data source weights of data sources of interest based on a model that was trained to predict weights of data sources based on leave-one-in and leave-one-out characterization performances.
+#'
+#' @usage
+#' estimate_source_weights_characterization(loi_performances,loo_performances,source_weights_df, sources_oi, random_forest =FALSE)
+#'
+#' @param loi_performances Performances of models in which a particular data source of interest was the only data source in or the ligand-signaling or the gene regulatory network.
+#' @param loo_performances Performances of models in which a particular data source of interest was removed from the ligand-signaling or the gene regulatory network before model construction.
+#' @param source_weights_df A data frame / tibble containing the weights associated to each individual data source. Sources with higher weights will contribute more to the final model performance (required columns: source, weight). Note that only interactions described by sources included here, will be retained during model construction.
+#' @param sources_oi The names of the data sources of which data source weights should be estimated based on leave-one-in and leave-one-out performances.
+#' @param random_forest Indicate whether for the regression between leave-one-in + leave-one-out performances and data source weights a random forest model should be trained (TRUE) or a linear model (FALSE). Default: FALSE
+#'
+#' @return A list containing two elements. $source_weights_df (the input source_weights_df extended by the estimated source_weighs for data sources of interest) and $model (model object of the regression between leave-one-in, leave-one-out performances and data source weights).
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+# run characterization loi
+#' settings = lapply(expression_settings_validation[1:4], convert_expression_settings_evaluation)
+#' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, source_weights_df)
+#' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR", damping_factor = 0.2, correct_topology = TRUE)
+
+#' doMC::registerDoMC(cores = 4)
+#' job_characterization_loi = parallel::mclapply(weights_settings_loi[1:4], evaluate_model,lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, settings,calculate_popularity_bias_target_prediction = FALSE, calculate_popularity_bias_ligand_prediction = FALSE, ncitations, mc.cores = 4)
+#' loi_performances = process_characterization_target_prediction_average(job_characterization_loi)
+
+# run characterization loo
+#' weights_settings_loo = prepare_settings_leave_one_out_characterization(lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, source_weights_df)
+#' weights_settings_loo = lapply(weights_settings_loo,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR", damping_factor = 0.2, correct_topology = TRUE)
+
+#' doMC::registerDoMC(cores = 4)
+#' job_characterization_loo = parallel::mclapply(weights_settings_loo[1:4], evaluate_model,lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, settings,calculate_popularity_bias_target_prediction = FALSE, calculate_popularity_bias_ligand_prediction = FALSE,ncitations,mc.cores = 4)
+#' loo_performances = process_characterization_target_prediction_average(job_characterization_loo)
+
+# run the regression
+#' sources_oi = c("kegg_cytokines")
+#' output = estimate_source_weights_characterization(loi_performances,loo_performances,source_weights_df %>% filter(source != "kegg_cytokines"), sources_oi, random_forest =FALSE)
+#' }
+#'
+#' @export
+#'
+estimate_source_weights_characterization = function(loi_performances,loo_performances,source_weights_df, sources_oi, random_forest =FALSE){
+
+  requireNamespace("dplyr")
+  requireNamespace("tibble")
+
+  #input check
+  if(!is.data.frame(loi_performances))
+    stop("loi_performances should be a data frame")
+  if(!is.character(loi_performances$model_name))
+    stop("loi_performances$model_name should be a character vector")
+  if(!is.data.frame(loo_performances))
+    stop("loo_performances should be a data frame")
+  if(!is.character(loo_performances$model_name))
+    stop("loo_performances$model_name should be a character vector")
+  if (!is.data.frame(source_weights_df) || sum((source_weights_df$weight > 1)) != 0)
+    stop("source_weights_df must be a data frame or tibble object and no data source weight may be higher than 1")
+  if(!is.character(sources_oi))
+    stop("sources_oi should be a character vector")
+  if(random_forest != TRUE & random_forest != FALSE)
+    stop("random_forest should be TRUE or FALSE")
+
+  loi_performances_train = loi_performances %>% filter((model_name %in% sources_oi) == FALSE)
+  loo_performances_train = loo_performances %>% filter((model_name %in% sources_oi) == FALSE)
+
+  loi_performances_test = loi_performances %>% filter(model_name == "complete_model" | (model_name %in% sources_oi))
+  loo_performances_test = loo_performances %>% filter(model_name == "complete_model" | (model_name %in% sources_oi))
+
+  output_regression_model = regression_characterization_optimization(loi_performances_train, loo_performances_train, source_weights_df, random_forest = random_forest)
+
+  new_source_weight_df = assign_new_weight(loi_performances_test, loo_performances_test,output_regression_model,source_weights_df)
+  return(list(source_weights_df = new_source_weight_df, model = output_regression_model))
+}

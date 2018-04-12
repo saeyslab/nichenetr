@@ -454,7 +454,7 @@ process_characterization_target_prediction_average = function(output_characteriz
   requireNamespace("dplyr")
 
   performances_target_prediction = process_characterization_target_prediction(output_characterization)
-  performances_target_prediction_averages = performances_target_prediction %>% group_by(model_name) %>% select(-ligand, -setting) %>% mutate_all(mean) %>% distinct()
+  performances_target_prediction_averages = performances_target_prediction %>% group_by(model_name) %>% select(-ligand, -setting) %>% mutate_all(mean) %>% distinct() %>% ungroup()
   return(performances_target_prediction_averages)
 }
 #' @title Process the output of model evaluation for data source characterization purposes on the ligand prediction performance (for every importance score individually)
@@ -662,7 +662,7 @@ prepare_settings_one_vs_one_characterization = function(lr_network, sig_network,
 #' @usage
 #' evaluate_model_application(parameters_setting, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no", ...)
 #'
-#' @inheritParams evaluate_model_application
+#' @inheritParams evaluate_model
 #'
 #' @return A list containing following elements: $model_name, $performances_target_prediction.
 #'

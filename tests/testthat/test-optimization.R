@@ -68,3 +68,25 @@ test_that("mlrMBO optimization of a multi-objective function can be performed is
   expect_type(optimized_parameters, "list")
   expect_equal(is.data.frame(optimized_parameters$source_weight_df), TRUE)
 })
+
+test_that("Data source weights can be estimated from leave-one-in and leave-one-out performances", {
+
+  # run characterization loi
+  settings = lapply(expression_settings_validation[1:4], convert_expression_settings_evaluation)
+  weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, source_weights_df)
+  weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR", damping_factor = 0.2, correct_topology = TRUE)
+
+  job_characterization_loi = lapply(weights_settings_loi[1:4], evaluate_model,lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, settings,calculate_popularity_bias_target_prediction = FALSE, calculate_popularity_bias_ligand_prediction = FALSE, ncitations)
+  loi_performances = process_characterization_target_prediction_average(job_characterization_loi)
+
+  # run characterization loo
+  weights_settings_loo = prepare_settings_leave_one_out_characterization(lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, source_weights_df)
+  weights_settings_loo = lapply(weights_settings_loo,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR", damping_factor = 0.2, correct_topology = TRUE)
+
+  job_characterization_loo = lapply(weights_settings_loo[1:4], evaluate_model,lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, settings,calculate_popularity_bias_target_prediction = FALSE, calculate_popularity_bias_ligand_prediction = FALSE,ncitations)
+  loo_performances = process_characterization_target_prediction_average(job_characterization_loo)
+
+  # run the regression
+  sources_oi = c("kegg_cytokines")
+  output = estimate_source_weights_characterization(loi_performances,loo_performances,source_weights_df %>% filter(source != "kegg_cytokines"), sources_oi, random_forest =FALSE)
+})

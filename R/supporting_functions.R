@@ -202,6 +202,7 @@ evaluate_target_prediction_strict = function(response,prediction,continuous = TR
 
 }
 classification_evaluation_continuous_pred = function(prediction,response, iregulon = TRUE){
+
   if ((sd(response) == 0 & sd(prediction) == 0) | is.null(prediction) | is.null(response)){ # problems can occur otherwise in these leave-one-in models
     return(dplyr::tibble(auroc = NA,
                          aupr = NA,
@@ -229,6 +230,7 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
 
 
   metrics = get_split_auroc(prediction, response)
+
   sensitivity = metrics$auroc_sensitivity
   specificity = metrics$auroc_specificity
   auroc = metrics$auroc
@@ -426,6 +428,7 @@ caret_classification_evaluation_categorical = function(data, lev = NULL, model =
 }
 wrapper_caret_classification = function(train_data, algorithm, continuous = TRUE, var_imps = TRUE, cv = TRUE, cv_number = 5, cv_repeats = 2, parallel = FALSE, n_cores = 4,prediction_response_df = NULL,ignore_errors = FALSE, return_model = FALSE){
 
+
   if (sum( table(train_data$obs) >= cv_number) != 2 )
     stop("Make sure that there are more instances of each class than the folds in the cross-validation scheme")
   if (parallel == TRUE){
@@ -463,6 +466,7 @@ wrapper_caret_classification = function(train_data, algorithm, continuous = TRUE
       }
       model = model$result
     } else {
+
       model = caret::train(y = train_data$obs,
                            x = train_data[,-(which(colnames(train_data) == "obs"))],
                            method=algorithm,
@@ -930,3 +934,40 @@ get_affected_targets_output = function(diff_matrix, rankings){
 wrapper_evaluate_multi_ligand_target_prediction = function(...){
   average_performances = evaluate_multi_ligand_target_prediction(...) %>% .$performances %>% select(-Resample) %>% summarise_all(mean)
 }
+subtract_performances = function(performances, metric){
+  performances_base = performances %>% filter(model_name == "complete_model")
+  performances_oi = performances %>% filter(model_name != "complete_model")
+  performances_diff = (performances_oi %>% select(metric) %>% unlist()) - (performances_base %>% select(metric) %>% unlist())
+  performances_diff_df = tibble(metric = performances_diff, model_name = performances_oi$model_name)
+  colnames(performances_diff_df)  = c(paste0(metric), "model_name")
+  return(performances_diff_df )
+}
+combine_loi_loo_performances = function(loi_performances,loo_performances){
+  loi_diff_auroc = subtract_performances(loi_performances, "auroc") %>% rename(auroc_loi = auroc)
+  loi_diff_aupr = subtract_performances(loi_performances, "aupr") %>% rename(aupr_loi = aupr)
+  loi_diff_pearson = subtract_performances(loi_performances, "pearson") %>% rename(pearson_loi = pearson)
+  loo_diff_auroc = subtract_performances(loo_performances, "auroc") %>% rename(auroc_loo = auroc)
+  loo_diff_aupr = subtract_performances(loo_performances, "aupr") %>% rename(aupr_loo = aupr)
+  loo_diff_pearson = subtract_performances(loo_performances, "pearson") %>% rename(pearson_loo = pearson)
+  input_df = reduce(list(loi_diff_aupr, loi_diff_auroc, loi_diff_pearson, loo_diff_aupr, loo_diff_auroc, loo_diff_pearson), inner_join, by = "model_name") %>% select(model_name, aupr_loi, auroc_loi:pearson_loo)
+}
+regression_characterization_optimization = function(loi_performances, loo_performances,source_weights_df, random_forest = FALSE){
+  input_df = combine_loi_loo_performances(loi_performances,loo_performances)
+  combined_df = inner_join(input_df %>% rename(source = model_name), source_weights_df, by = "source") %>% select(-source)
+  if (random_forest == FALSE){
+    model = lm(weight ~ ., data = combined_df)
+  } else {
+    model = randomForest::randomForest(data = combined_df %>% drop_na(), weight ~ ., ntree = 1000)
+  }
+  return(model)
+}
+assign_new_weight = function(loi_performances, loo_performances, output_regression_model, source_weights_df){
+  performances_oi = combine_loi_loo_performances(loi_performances, loo_performances)
+  source_oi = performances_oi$model_name
+  performances_oi = performances_oi %>% select(-model_name)
+  weight_oi =  predict(output_regression_model,performances_oi)
+  weight_oi = min(weight_oi,1) # weight should be lower than 1
+  weight_oi = max(weight_oi,0) # weight should be higher than 0
+  source_weights_df = source_weights_df %>% bind_rows(tibble(source = source_oi,weight= weight_oi ))
+}
+

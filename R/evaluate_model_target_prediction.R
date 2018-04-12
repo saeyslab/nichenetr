@@ -271,6 +271,7 @@ evaluate_multi_ligand_target_prediction = function(setting,ligand_target_matrix,
   combined = inner_join(response_df,prediction_df, by = "gene")
   if (nrow(combined) == 0)
     stop("Gene names in response don't accord to gene names in ligand-target matrix (did you consider differences human-mouse namings?)")
+
   train_data = combined %>% select(-gene) %>% rename(obs = response) %>% data.frame()
 
   output = wrapper_caret_classification(train_data,algorithm,continuous = continuous,var_imps,cv,cv_number,cv_repeats,parallel,n_cores,ignore_errors, prediction_response_df = combined)
