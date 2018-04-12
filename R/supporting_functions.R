@@ -949,7 +949,7 @@ combine_loi_loo_performances = function(loi_performances,loo_performances){
   loo_diff_auroc = subtract_performances(loo_performances, "auroc") %>% rename(auroc_loo = auroc)
   loo_diff_aupr = subtract_performances(loo_performances, "aupr") %>% rename(aupr_loo = aupr)
   loo_diff_pearson = subtract_performances(loo_performances, "pearson") %>% rename(pearson_loo = pearson)
-  input_df = reduce(list(loi_diff_aupr, loi_diff_auroc, loi_diff_pearson, loo_diff_aupr, loo_diff_auroc, loo_diff_pearson), inner_join, by = "model_name") %>% select(model_name, aupr_loi, auroc_loi:pearson_loo)
+  input_df = purrr::reduce(list(loi_diff_aupr, loi_diff_auroc, loi_diff_pearson, loo_diff_aupr, loo_diff_auroc, loo_diff_pearson), inner_join, by = "model_name") %>% select(model_name, aupr_loi, auroc_loi:pearson_loo)
 }
 regression_characterization_optimization = function(loi_performances, loo_performances,source_weights_df, random_forest = FALSE){
   input_df = combine_loi_loo_performances(loi_performances,loo_performances)
@@ -968,6 +968,6 @@ assign_new_weight = function(loi_performances, loo_performances, output_regressi
   weight_oi =  predict(output_regression_model,performances_oi)
   weight_oi = min(weight_oi,1) # weight should be lower than 1
   weight_oi = max(weight_oi,0) # weight should be higher than 0
-  source_weights_df = source_weights_df %>% bind_rows(tibble(source = source_oi,weight= weight_oi ))
+  source_weights_df = source_weights_df %>% bind_rows(tibble(source = source_oi, weight = weight_oi ))
 }
 

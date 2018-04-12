@@ -441,6 +441,9 @@ model_evaluation_optimization_application = function(x, source_names, algorithm,
 #'
 #' @return A list containing two elements. $source_weights_df (the input source_weights_df extended by the estimated source_weighs for data sources of interest) and $model (model object of the regression between leave-one-in, leave-one-out performances and data source weights).
 #'
+#' @importFrom purrr reduce
+#' @importFrom randomForest randomForest
+#'
 #' @examples
 #' \dontrun{
 #' library(dplyr)
