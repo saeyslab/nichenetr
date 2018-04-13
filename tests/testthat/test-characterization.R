@@ -1,6 +1,7 @@
 context("Data source and model characterization functions")
 #
 test_that("Settings leave-one-in can be constructed and hyperparameters added", {
+  print("Settings leave-one-in can be constructed and hyperparameters added")
   weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 
   expect_type(weights_settings_loi, "list")
@@ -20,6 +21,7 @@ test_that("Settings leave-one-in can be constructed and hyperparameters added", 
 
 })
 test_that("Settings leave-one-out can be constructed and hyperparameters added", {
+  print("Settings leave-one-out can be constructed and hyperparameters added")
   weights_settings_loo = prepare_settings_leave_one_out_characterization(lr_network,sig_network, gr_network, source_weights_df)
 
   expect_type(weights_settings_loo, "list")
@@ -38,6 +40,7 @@ test_that("Settings leave-one-out can be constructed and hyperparameters added",
 
 })
 test_that("Settings one-vs-one can be constructed and hyperparameters added", {
+  print("Settings one-vs-one can be constructed and hyperparameters added")
   weights_settings_ovo = prepare_settings_one_vs_one_characterization(lr_network,sig_network, gr_network)
 
   expect_type(weights_settings_ovo, "list")
@@ -76,7 +79,7 @@ test_that("Settings one-vs-one can be constructed and hyperparameters added", {
 
 })
 test_that("Leave-one-in models can be evaluated and results of this further processed", {
-
+  print("Leave-one-in models can be evaluated and results of this further processed")
   settings = lapply(expression_settings_validation[1:20], convert_expression_settings_evaluation)
   weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
   weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
@@ -106,7 +109,7 @@ test_that("Leave-one-in models can be evaluated and results of this further proc
 
 })
 test_that("Leave-one-in models can be evaluated for multi-ligand applications", {
-
+  print("Leave-one-in models can be evaluated for multi-ligand applications")
   settings = convert_expression_settings_evaluation(expression_settings_validation$TGFB_IL6_timeseries) %>% list()
   weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
   weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
@@ -118,7 +121,7 @@ test_that("Leave-one-in models can be evaluated for multi-ligand applications", 
 })
 
 test_that("Influence individual data source on ligand-target scores can be assessed", {
-
+  print("Influence individual data source on ligand-target scores can be assessed")
   ligands =  extract_ligands_from_settings(expression_settings_validation[1:4])
   output = assess_influence_source("ontogenet", lr_network,sig_network, gr_network, source_weights_df, ligands,lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
   expect_type(output, "list")
