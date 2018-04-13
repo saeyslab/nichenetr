@@ -4,12 +4,14 @@
 \alias{process_mlrmbo_nichenet_optimization}
 \title{Process the output of mlrmbo multi-objective optimization to extract optimal parameter values.}
 \usage{
-process_mlrmbo_nichenet_optimization(optimization_results,source_names)
+process_mlrmbo_nichenet_optimization(optimization_results,source_names,parameter_set_index = NULL)
 }
 \arguments{
 \item{optimization_results}{A list generated as output from multi-objective optimization by mlrMBO. Should contain the elements $pareto.front, $pareto.set See \code{mlrmbo_optimization}.}
 
 \item{source_names}{Character vector containing the names of the data sources. The order of data source names accords to the order of weights in x$source_weights.}
+
+\item{parameter_set_index}{Number indicating which of the proposed solutions must be selected to extract optimal parameters. If NULL: the solution of which that average z-score of the objective functions outputs is the highest will be selected. Default: NULL.}
 }
 \value{
 A list containing the parameter values leading to maximal performance and thus with the following elements: $source_weight_df, $lr_sig_hub, $gr_hub, $ltf_cutoff, $damping_factor
