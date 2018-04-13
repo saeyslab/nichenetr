@@ -16,7 +16,7 @@ test_that("Objective function to construct and evaluate the model for parameter 
   test_evaluation_optimization = model_evaluation_optimization(test_input, source_weights_df$source %>% unique(), "PPR", FALSE, lr_network, sig_network, gr_network, lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation), secondary_targets = FALSE, remove_direct_links = "no")
 
   expect_type(test_evaluation_optimization, "double")
-  expect_equal(length(test_evaluation_optimization),4)
+  expect_equal(length(test_evaluation_optimization),4) # sometimes error here?
 
 
   test_input = list("lr_sig_hub" = 0.5, "gr_hub" = 0.5, "damping_factor" = 0.5)
