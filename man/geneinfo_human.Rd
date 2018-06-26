@@ -15,6 +15,6 @@
 geneinfo_human
 }
 \description{
-A data.frame/tibble describing weight associated to each data source. These weights will be used for weighted aggregagion of source networks
+A data.frame/tibble describing HGNC human gene symbols, their entrez ids and the MGI mouse gene symbols and entrez ids of the one-one orthologs as determined via NCBI's homologene db and biomaRt ensembl db.
 }
 \keyword{datasets}

@@ -10,6 +10,7 @@
 #'   \item{from}{the ligand}
 #'   \item{to}{receptor of the ligand}
 #'   \item{source}{name of data source describing the interaction}
+#'   \item{database}{name of the more comprehensive database the data source is part of}
 #'   }
 #'
 "lr_network"
@@ -23,6 +24,7 @@
 #'   \item{from}{source gene}
 #'   \item{to}{target gene}
 #'   \item{source}{name of data source describing the interaction}
+#'   \item{database}{name of the more comprehensive database the data source is part of}
 #'   }
 #'
 "sig_network"
@@ -36,6 +38,7 @@
 #'   \item{from}{regulatory gene}
 #'   \item{to}{target gene}
 #'   \item{source}{name of data source describing the interaction}
+#'   \item{database}{name of the more comprehensive database the data source is part of}
 #'   }
 #'
 "gr_network"
@@ -71,7 +74,7 @@
 "expression_settings_validation"
 #' Gene annotation information
 #'
-#' A data.frame/tibble describing weight associated to each data source. These weights will be used for weighted aggregagion of source networks
+#' A data.frame/tibble describing HGNC human gene symbols, their entrez ids and the MGI mouse gene symbols and entrez ids of the one-one orthologs as determined via NCBI's homologene db and biomaRt ensembl db.
 #'
 #' @format A data frame/tibble
 #' \describe{

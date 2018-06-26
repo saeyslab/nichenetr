@@ -57,13 +57,17 @@ devtools::use_package("parallel", "Suggests")
 # devtools::use_data(y,internal = TRUE,overwrite = T) # you can add all datasets in same dataset here!
 
 # real data
-lr_network = readRDS("../staticNicheNet/results/networks/conf_ccc_complete_human_links_nov2017_121orths.rds")
-sig_network = readRDS("../staticNicheNet/results/networks/conf_signaling_net_dec2017_121orths.rds")
-gr_network = readRDS("../staticNicheNet/results/networks/conf_grn_human_nov2017_121orths.rds")
+# lr_network = readRDS("../staticNicheNet/results/networks/conf_ccc_complete_human_links_nov2017_121orths.rds")
+# sig_network = readRDS("../staticNicheNet/results/networks/conf_signaling_net_dec2017_121orths.rds")
+# gr_network = readRDS("../staticNicheNet/results/networks/conf_grn_human_nov2017_121orths.rds")
+#
+# lr_network = lr_network %>% rename(source = evidence) %>% select(from,to,source) %>% mutate(from = humanentrez2humansymbol[from], to = humanentrez2humansymbol[to]) %>% drop_na()
+# sig_network = sig_network %>% rename(source = type) %>% select(from,to,source) %>% mutate(from = humanentrez2humansymbol[from], to = humanentrez2humansymbol[to]) %>% drop_na()
+# gr_network = gr_network  %>% rename(source = type) %>% select(from,to,source) %>% mutate(from = humanentrez2humansymbol[from], to = humanentrez2humansymbol[to]) %>% drop_na()
 
-lr_network = lr_network %>% rename(source = evidence) %>% select(from,to,source) %>% mutate(from = humanentrez2humansymbol[from], to = humanentrez2humansymbol[to]) %>% drop_na()
-sig_network = sig_network %>% rename(source = type) %>% select(from,to,source) %>% mutate(from = humanentrez2humansymbol[from], to = humanentrez2humansymbol[to]) %>% drop_na()
-gr_network = gr_network  %>% rename(source = type) %>% select(from,to,source) %>% mutate(from = humanentrez2humansymbol[from], to = humanentrez2humansymbol[to]) %>% drop_na()
+lr_network = readRDS("../paper/networks/data/ligand_receptor/lr_network")
+sig_network = readRDS("../paper/networks/data/signaling/signaling_network")
+gr_network = readRDS("../paper/networks/data/gene_regulatory/gr_network")
 
 devtools::use_data(lr_network,sig_network,overwrite = T,compress = "bzip2")
 devtools::use_data(gr_network,overwrite = T,compress = "xz")
@@ -71,7 +75,8 @@ devtools::use_data(gr_network,overwrite = T,compress = "xz")
 source_weights_df = tibble(source = c(lr_network$source %>% unique,sig_network$source %>% unique(), gr_network$source %>% unique()) %>% unique(), weight = 1)
 devtools::use_data(source_weights_df,overwrite = T,compress = "bzip2")
 
-expression_settings_validation = readRDS("../staticNicheNet/results/expression_settings_validation")
+# expression_settings_validation = readRDS("../staticNicheNet/results/expression_settings_validation")
+expression_settings_validation = readRDS("../paper/evaluation/ligand_treatment_datasets/expression_settings")
 devtools::use_data(expression_settings_validation,overwrite = T, compress = "bzip2")
 
 
@@ -88,22 +93,21 @@ ncitations = get_ncitations_genes()
 devtools::use_data(ncitations,overwrite = T, compress = "bzip2")
 
 
-library(org.Mm.eg.db)
-library(org.Hs.eg.db)
-library(dplyr)
-library(purrr)
-mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
-geneinfo = tibble(symbol=unlist(as.list(org.Mm.egSYMBOL)), entrez=names(unlist(as.list(org.Mm.egSYMBOL))))
-geneinfo_human = tibble(symbol=unlist(as.list(org.Hs.egSYMBOL)), entrez=names(unlist(as.list(org.Hs.egSYMBOL))))
-# load("../staticNichenet/data/homologs.RData")
-homologs = annotationTools::getHOMOLOG(geneinfo$entrez, 9606, read.delim("../staticNichenet/data/preproc/homologene/homologene.data", header=F))
-mouseentrez2humanentrez = map_chr(homologs, ~.[[1]]) %>% setNames(geneinfo$entrez) %>% keep(!is.na(.))
-humanentrez2mouseentrez = names(mouseentrez2humanentrez) %>% setNames(mouseentrez2humanentrez)
-entrez2symbol = mapper(geneinfo, "symbol", "entrez")
-symbol2entrez = mapper(geneinfo, "entrez", "symbol")
-geneinfo_human = geneinfo_human %>% mutate(entrez_mouse=humanentrez2mouseentrez[entrez]) %>% mutate(symbol_mouse = entrez2symbol[entrez_mouse])
+# library(org.Mm.eg.db)
+# library(org.Hs.eg.db)
+# library(dplyr)
+# library(purrr)
+# mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
+# geneinfo = tibble(symbol=unlist(as.list(org.Mm.egSYMBOL)), entrez=names(unlist(as.list(org.Mm.egSYMBOL))))
+# geneinfo_human = tibble(symbol=unlist(as.list(org.Hs.egSYMBOL)), entrez=names(unlist(as.list(org.Hs.egSYMBOL))))
+# # load("../staticNichenet/data/homologs.RData")
+# homologs = annotationTools::getHOMOLOG(geneinfo$entrez, 9606, read.delim("../staticNichenet/data/preproc/homologene/homologene.data", header=F))
+# mouseentrez2humanentrez = map_chr(homologs, ~.[[1]]) %>% setNames(geneinfo$entrez) %>% keep(!is.na(.))
+# humanentrez2mouseentrez = names(mouseentrez2humanentrez) %>% setNames(mouseentrez2humanentrez)
+# entrez2symbol = mapper(geneinfo, "symbol", "entrez")
+# symbol2entrez = mapper(geneinfo, "entrez", "symbol")
+# geneinfo_human = geneinfo_human %>% mutate(entrez_mouse=humanentrez2mouseentrez[entrez]) %>% mutate(symbol_mouse = entrez2symbol[entrez_mouse])
+
+geneinfo_human = readRDS("../paper/networks/data/annotation/complete_geneinfo")
 devtools::use_data(geneinfo_human, overwrite = T, compress = "bzip2")
-
-
-
 

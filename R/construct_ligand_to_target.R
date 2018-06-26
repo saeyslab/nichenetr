@@ -48,7 +48,6 @@ construct_weighted_networks = function(lr_network, sig_network, gr_network,sourc
     lr_network_w = lr_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight)) %>% ungroup()
     sig_network_w = sig_network %>% inner_join(source_weights_df,by = "source") %>% group_by(from, to) %>% summarize(weight = sum(weight)) %>% ungroup()
     weighted_networks = list(lr = lr_network_w %>% ungroup(), sig = sig_network_w %>% ungroup(), gr = gr_network_w %>% ungroup())
-
   }
 }
 #' @title Add a new data source to the model
@@ -195,7 +194,7 @@ construct_ligand_tf_matrix = function(weighted_networks, ligands, ltf_cutoff = 0
   if (!is.list(ligands))
     stop("ligands must be a list object")
   if ( sum((unique(unlist(ligands)) %in% unique(c(lr_network$from,lr_network$to))) == FALSE) > 0)
-    warning("one or more ligands of interest not present in ligand-receptor network")
+    warning("One or more ligands of interest not present in the ligand-receptor network 'lr_network'. You can possibly ignore this warning if you provided your own ligand_receptor network to the weighted networks." )
   if (ltf_cutoff < 0 | ltf_cutoff > 1)
     stop("ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
   if (algorithm != "PPR" & algorithm != "SPL" & algorithm != "direct")
