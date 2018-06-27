@@ -17,7 +17,7 @@
 
 #' Signaling network
 #'
-#' A data.frame/tibble describing gene-gene interactions such as common PPI, phosphorylation,...
+#' A data.frame/tibble describing gene-gene interactions that are involved in signaling transduction (e.g. PPI, kinase-target,...)
 #'
 #' @format A data frame/tibble
 #' \describe{
