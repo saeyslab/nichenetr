@@ -27,8 +27,6 @@ Imports: dplyr,
     caret,
     purrr,
     randomForest,
-    Biobase,
-    BiocGenerics,
     DiagrammeR,
     ggplot2,
     mlrMBO,
@@ -39,5 +37,6 @@ Suggests: knitr,
     rmarkdown,
     testthat,
     doMC,
-    parallel
+    parallel,
+    covr
 VignetteBuilder: knitr

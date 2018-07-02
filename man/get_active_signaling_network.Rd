@@ -21,13 +21,9 @@ A data frame containing at least the variables from, to, receiver_expression. In
 }
 \examples{
 \dontrun{
-library(Biobase)
 library(dplyr)
-mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
-mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
-expression_vector_receiver = Exprs_mono_kc[,Exprs_mono_kc$celltype == "BM_mono"] \%>\% apply(1,mean)
-names(expression_vector_receiver) = names(expression_vector_receiver) \%>\% mousesymbol2humansymbol[.]
-expression_vector_receiver = expression_vector_receiver \%>\% .[!is.na(names(.))]
-mono_sig_network = get_active_signaling_network(expression_vector_receiver,sig_network,expression_cutoff_receiver = 4)
+expression_vector_receiver = rnorm(n = 10000, mean = 6, sd = 3)
+names(expression_vector_receiver) = sample(x = geneinfo_human$symbol,size = 10000,replace = FALSE)
+receiver_sig_network = get_active_signaling_network(expression_vector_receiver,sig_network,expression_cutoff_receiver = 4)
 }
 }

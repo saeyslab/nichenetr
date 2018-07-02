@@ -89,11 +89,11 @@ model_evaluation_optimization = function(x, source_names, algorithm, correct_top
 
   output_evaluation = evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings,calculate_popularity_bias_target_prediction = FALSE,calculate_popularity_bias_ligand_prediction=FALSE,ncitations = ncitations, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links, n_target_bins = 3, ...)
 
-  mean_auroc_target_prediction = output_evaluation$performances_target_prediction$auroc %>% mean()
-  mean_aupr_target_prediction = output_evaluation$performances_target_prediction$aupr_corrected %>% mean()
+  mean_auroc_target_prediction = output_evaluation$performances_target_prediction$auroc %>% mean() %>% unique()
+  mean_aupr_target_prediction = output_evaluation$performances_target_prediction$aupr_corrected %>% mean() %>% unique()
 
   mean_auroc_ligand_prediction = output_evaluation$performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% .$auroc %>% unique() # unique necessary because possible that two different ligand importance measures result in same maximal performance
-  mean_aupr_ligand_prediction = output_evaluation$performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% .$aupr_corrected %>% unique()
+  mean_aupr_ligand_prediction = output_evaluation$performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% .$aupr_corrected %>% unique() # get aupr corresponding to importance measure resulting in best auroc
 
   return(c(mean_auroc_target_prediction, mean_aupr_target_prediction, mean_auroc_ligand_prediction, mean_aupr_ligand_prediction))
 }

@@ -9,3 +9,7 @@ addons:
       - libusb-1.0-0-dev
 bioc_required: true
 warnings_are_errors: false
+r_packages:
+  - covr
+after_success:
+  - Rscript -e 'library(covr); codecov()'

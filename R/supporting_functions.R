@@ -426,7 +426,7 @@ caret_classification_evaluation_categorical = function(data, lev = NULL, model =
   names(out) = colnames(out_tibble)
   out
 }
-wrapper_caret_classification = function(train_data, algorithm, continuous = TRUE, var_imps = TRUE, cv = TRUE, cv_number = 5, cv_repeats = 2, parallel = FALSE, n_cores = 4,prediction_response_df = NULL,ignore_errors = FALSE, return_model = FALSE){
+wrapper_caret_classification = function(train_data, algorithm, continuous = TRUE, var_imps = TRUE, cv = TRUE, cv_number = 4, cv_repeats = 2, parallel = FALSE, n_cores = 4,prediction_response_df = NULL,ignore_errors = FALSE, return_model = FALSE){
 
 
   if (sum( table(train_data$obs) >= cv_number) != 2 )
@@ -699,7 +699,7 @@ regression_evaluation = function(prediction,response){
 mae = function(error){
   mean(abs(error))
 }
-wrapper_caret_regression = function(train_data, algorithm, var_imps = TRUE, cv = TRUE, cv_number = 5, cv_repeats = 2, parallel = FALSE, n_cores = 4,prediction_response_df = NULL,ignore_errors = FALSE, return_model = FALSE){
+wrapper_caret_regression = function(train_data, algorithm, var_imps = TRUE, cv = TRUE, cv_number = 4, cv_repeats = 2, parallel = FALSE, n_cores = 4,prediction_response_df = NULL,ignore_errors = FALSE, return_model = FALSE){
 
   if (parallel == TRUE){
     requireNamespace("doMC", quietly = TRUE)

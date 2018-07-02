@@ -85,21 +85,6 @@
 #'   }
 #'
 "geneinfo_human"
-#' ExpressionSet object containing gene expression data from liver sinusoidal endothelial cells (LSECs) in wild type situation and also 12 hours and 36 hours after Kupffer cells were killed by giving Diphteria toxin to KC-DTR mice.
-#'
-#' Formal class 'ExpressionSet'
-#'
-"Exprs_lsec"
-#' Limma voom object corresponding to the ExpressionSet object \code{Exprs_lsec}.
-#'
-#' Formal class 'EList'
-#'
-"voom_lsec"
-#' ExpressionSet object containing gene expression data from bone marrow monocytes (data from 'van de Laar et al, 2016') and liver monocytes that differentiate into Kupffer cells after Kupffer cells were killed by giving Diphteria toxin to KC-DTR mice. Time points in differentiation process after treatment with toxin: 1 day, 3 days, 7 days, 15 days and 30 days.
-#'
-#' Formal class 'ExpressionSet'
-#'
-"Exprs_mono_kc"
 #' Number of citations for genes
 #'
 #' A data.frame/tibble describing the number of times a particular gene is cited in the pubmed literature (date: 13-03-2018)

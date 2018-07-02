@@ -865,8 +865,9 @@ construct_model = function(parameters_setting, lr_network, sig_network, gr_netwo
 #'
 assess_influence_source = function(source, lr_network, sig_network, gr_network, source_weights_df, ligands, rankings = FALSE, matrix_output = FALSE,  secondary_targets = FALSE, remove_direct_links = "no", ...){
   # input check
-  if (!is.character(source))
-    stop("source must be a character vector")
+  all_sources = unique(c(lr_network$source,sig_network$source,gr_network$source))
+  if (!is.character(source) | (source %in% all_sources) == FALSE)
+    stop("source must be a character vector and exist in one of the networks")
   if (!is.data.frame(lr_network))
     stop("lr_network must be a data frame or tibble object")
   if (!is.data.frame(sig_network))
@@ -914,6 +915,14 @@ assess_influence_source = function(source, lr_network, sig_network, gr_network, 
 
   ## Construct models
   models_output = lapply(weights_settings,construct_model,lr_network,sig_network, gr_network,ligands, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links)
+
+  ## because different data sources used, target genes of the models can be different
+  ## therefore we will keep only target genes present in both models
+
+  intersecting_rownames = intersect(rownames(models_output[[1]]$model), rownames(models_output[[2]]$model))
+  models_output[[1]]$model = models_output[[1]]$model %>% .[rownames(.) %in% intersecting_rownames,]
+  models_output[[2]]$model = models_output[[2]]$model %>% .[rownames(.) %in% intersecting_rownames,]
+
   if(rankings == TRUE){
     models_output[[1]]$model = models_output[[1]]$model %>% apply(2,rank_desc)
     models_output[[2]]$model = models_output[[2]]$model %>% apply(2,rank_desc)

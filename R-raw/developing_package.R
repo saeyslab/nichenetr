@@ -37,8 +37,8 @@ devtools::use_package("caret")
 devtools::use_package("purrr")
 devtools::use_package("randomForest")
 devtools::use_package("limma")
-devtools::use_package("Biobase")
-devtools::use_package("BiocGenerics")
+# devtools::use_package("Biobase")
+# devtools::use_package("BiocGenerics")
 devtools::use_package("DiagrammeR")
 devtools::use_package("ggplot2")
 devtools::use_package("mlrMBO")
@@ -48,6 +48,7 @@ devtools::use_package("DiceKriging")
 
 devtools::use_package("doMC","Suggests")
 devtools::use_package("parallel", "Suggests")
+devtools::use_package("covr", "Suggests")
 
 
 # test data
@@ -80,13 +81,13 @@ expression_settings_validation = readRDS("../paper/evaluation/ligand_treatment_d
 devtools::use_data(expression_settings_validation,overwrite = T, compress = "bzip2")
 
 
-Exprs_lsec = readRDS("../staticNicheNet/data/expression/niche/lsec_E.rds")
-voom_lsec = readRDS("../staticNicheNet/data/expression/niche/lsec_v.rds")
-devtools::use_data(Exprs_lsec,overwrite = T, compress = "bzip2")
-devtools::use_data(voom_lsec,overwrite = T, compress = "bzip2")
-
-Exprs_mono_kc = readRDS("../staticNicheNet/data/expression/immune/E_mono_kc.rds")
-devtools::use_data(Exprs_mono_kc,overwrite = T, compress = "bzip2")
+# Exprs_lsec = readRDS("../staticNicheNet/data/expression/niche/lsec_E.rds")
+# voom_lsec = readRDS("../staticNicheNet/data/expression/niche/lsec_v.rds")
+# devtools::use_data(Exprs_lsec,overwrite = T, compress = "bzip2")
+# devtools::use_data(voom_lsec,overwrite = T, compress = "bzip2")
+#
+# Exprs_mono_kc = readRDS("../staticNicheNet/data/expression/immune/E_mono_kc.rds")
+# devtools::use_data(Exprs_mono_kc,overwrite = T, compress = "bzip2")
 
 
 ncitations = get_ncitations_genes()
@@ -111,3 +112,20 @@ devtools::use_data(ncitations,overwrite = T, compress = "bzip2")
 geneinfo_human = readRDS("../paper/networks/data/annotation/complete_geneinfo")
 devtools::use_data(geneinfo_human, overwrite = T, compress = "bzip2")
 
+
+#'
+#' #' ExpressionSet object containing gene expression data from liver sinusoidal endothelial cells (LSECs) in wild type situation and also 12 hours and 36 hours after Kupffer cells were killed by giving Diphteria toxin to KC-DTR mice.
+#' #'
+#' #' Formal class 'ExpressionSet'
+#' #'
+#' "Exprs_lsec"
+#' #' Limma voom object corresponding to the ExpressionSet object \code{Exprs_lsec}.
+#' #'
+#' #' Formal class 'EList'
+#' #'
+#' "voom_lsec"
+#' #' ExpressionSet object containing gene expression data from bone marrow monocytes (data from 'van de Laar et al, 2016') and liver monocytes that differentiate into Kupffer cells after Kupffer cells were killed by giving Diphteria toxin to KC-DTR mice. Time points in differentiation process after treatment with toxin: 1 day, 3 days, 7 days, 15 days and 30 days.
+#' #'
+#' #' Formal class 'ExpressionSet'
+#' #'
+#' "Exprs_mono_kc"

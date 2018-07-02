@@ -15,18 +15,13 @@
 #'
 #' @examples
 #' \dontrun{
-#' library(Biobase)
 #' library(dplyr)
-#' mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
-#' mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
-#' expression_vector_sender = Exprs_lsec[,Exprs_lsec$celltype == "LSEC_12h"] %>% apply(1,mean)
-#' expression_vector_receiver = Exprs_mono_kc[,Exprs_mono_kc$celltype == "BM_mono"] %>% apply(1,mean)
-#' names(expression_vector_sender) = names(expression_vector_sender) %>% mousesymbol2humansymbol[.]
-#' names(expression_vector_receiver) = names(expression_vector_receiver) %>% mousesymbol2humansymbol[.]
-#' expression_vector_sender = expression_vector_sender %>% .[!is.na(names(.))]
-#' expression_vector_receiver = expression_vector_receiver %>% .[!is.na(names(.))]
+#' expression_vector_sender = rnorm(n = 10000, mean = 6, sd = 3)
+#' expression_vector_receiver = rnorm(n = 10000, mean = 6, sd = 3)
+#' names(expression_vector_sender) = sample(x = geneinfo_human$symbol,size = 10000,replace = FALSE)
+#' names(expression_vector_receiver) = sample(x = geneinfo_human$symbol,size = 10000,replace = FALSE)
 #' weighted_lr_network = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df, n_output_networks = 3) %>% .$lr
-#' lsec_mono_lr_network = get_active_ligand_receptor_network(expression_vector_sender,expression_vector_receiver,weighted_lr_network,expression_cutoff_sender = 0, expression_cutoff_receiver = 4)
+#' sender_cell_receiver_lr_network = get_active_ligand_receptor_network(expression_vector_sender,expression_vector_receiver,weighted_lr_network,expression_cutoff_sender = 4, expression_cutoff_receiver = 4)
 #' }
 #' @export
 #'
@@ -66,14 +61,10 @@ get_active_ligand_receptor_network = function(expression_sender, expression_rece
 #'
 #' @examples
 #' \dontrun{
-#' library(Biobase)
 #' library(dplyr)
-#' mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
-#' mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
-#' expression_vector_receiver = Exprs_mono_kc[,Exprs_mono_kc$celltype == "BM_mono"] %>% apply(1,mean)
-#' names(expression_vector_receiver) = names(expression_vector_receiver) %>% mousesymbol2humansymbol[.]
-#' expression_vector_receiver = expression_vector_receiver %>% .[!is.na(names(.))]
-#' mono_sig_network = get_active_signaling_network(expression_vector_receiver,sig_network,expression_cutoff_receiver = 4)
+#' expression_vector_receiver = rnorm(n = 10000, mean = 6, sd = 3)
+#' names(expression_vector_receiver) = sample(x = geneinfo_human$symbol,size = 10000,replace = FALSE)
+#' receiver_sig_network = get_active_signaling_network(expression_vector_receiver,sig_network,expression_cutoff_receiver = 4)
 #' }
 #' @export
 #'
@@ -109,14 +100,10 @@ get_active_signaling_network = function(expression_receiver, sig_network, expres
 #'
 #' @examples
 #' \dontrun{
-#' library(Biobase)
 #' library(dplyr)
-#' mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
-#' mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
-#' expression_vector_receiver = Exprs_mono_kc[,Exprs_mono_kc$celltype == "BM_mono"] %>% apply(1,mean)
-#' names(expression_vector_receiver) = names(expression_vector_receiver) %>% mousesymbol2humansymbol[.]
-#' expression_vector_receiver = expression_vector_receiver %>% .[!is.na(names(.))]
-#' mono_gr_network = get_active_regulatory_network(expression_vector_receiver,gr_network,expression_cutoff_receiver = 4)
+#' expression_vector_receiver = rnorm(n = 10000, mean = 6, sd = 3)
+#' names(expression_vector_receiver) = sample(x = geneinfo_human$symbol,size = 10000,replace = FALSE)
+#' receiver_gr_network = get_active_regulatory_network(expression_vector_receiver,gr_network,expression_cutoff_receiver = 4)
 #' }
 #' @export
 #'
