@@ -20,6 +20,7 @@ A list with the elements $performances and $prediction_response_df. $performance
 \code{evaluate_target_prediction_interprete} Evaluate how well the model (i.e. the inferred ligand-target probability scores) is able to predict the observed response to a ligand (e.g. the set of DE genes after treatment of cells by a ligand; or the log fold change values). It shows several classification evaluation metrics for the prediction when response is categorical, or several regression model fit metrics when the response is continuous.
 }
 \examples{
+\dontrun{
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 setting = lapply(expression_settings_validation[1],convert_expression_settings_evaluation)
 ligands = extract_ligands_from_settings(setting)
@@ -27,5 +28,5 @@ ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands
 perf1 = lapply(setting,evaluate_target_prediction_interprete,ligand_target_matrix)
 setting = lapply(expression_settings_validation[1],convert_expression_settings_evaluation_regression)
 perf2 = lapply(setting,evaluate_target_prediction_interprete,ligand_target_matrix)
-
+}
 }

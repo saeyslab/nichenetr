@@ -22,6 +22,6 @@ A list of lists. Every sub-list contains 2 elements: $model_name: the name of th
 \code{prepare_settings_leave_one_out_characterization} will generate a list of lists containing the data source weights that need to be used for model construction. Every sub-list will contain the data source weights needed to make so called leave-one-out models in one ligand-signaling data source is or gene regulatory data source is left out.
 }
 \examples{
-
-
+\dontrun{
+}
 }

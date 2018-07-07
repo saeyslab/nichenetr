@@ -22,6 +22,7 @@ A data.frame with for each ligand - data set combination, classification evaluat
 \code{get_single_ligand_importances} Get ligand importance measures for ligands based on how well a single, individual, ligand can predict an observed response. Assess how well every ligand of interest is able to predict the observed transcriptional response in a particular dataset, according to the ligand-target model. It can be assumed that the ligand that best predicts the observed response, is more likely to be the true ligand.
 }
 \examples{
+\dontrun{
 settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
 settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 
@@ -30,4 +31,5 @@ ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
 print(head(ligand_importances))
+}
 }

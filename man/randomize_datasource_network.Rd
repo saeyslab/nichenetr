@@ -18,8 +18,9 @@ A randomized network ($from, $to, $source)
 \code{randomize_datasource_network} Randomizes a network of a data source of interest by edge swapping to preserve the degree of the nodes.
 }
 \examples{
+\dontrun{
 datasource_lr = lr_network$source[1]
 lr_randomized_source = randomize_datasource_network(datasource_lr, lr_network)
-
+}
 
 }

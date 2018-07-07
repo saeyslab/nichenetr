@@ -13,9 +13,9 @@
 #' @importFrom igraph graph_from_adjacency_matrix degree sample_degseq get.data.frame
 #'
 #' @examples
-#'
+#' \dontrun{
 #' random_lr = randomize_network(lr_network)
-#'
+#' }
 #'
 #' @export
 #'
@@ -59,9 +59,10 @@ randomize_network = function(network, output_weighted = FALSE){
 #' @importFrom igraph graph_from_adjacency_matrix degree sample_degseq get.data.frame
 #'
 #' @examples
+#' \dontrun{
 #' datasource_lr = lr_network$source[1]
 #' lr_randomized_source = randomize_datasource_network(datasource_lr, lr_network)
-#'
+#'}
 #'
 #' @export
 #'
@@ -99,9 +100,9 @@ randomize_datasource_network = function(datasource,network){
 #' @importFrom igraph graph_from_adjacency_matrix degree sample_degseq get.data.frame
 #'
 #' @examples
-#'
+#'\dontrun{
 #' random_lr = randomize_complete_network_source_specific(lr_network)
-#'
+#'}
 #'
 #' @export
 #'

@@ -24,8 +24,9 @@ A list containing 2 elements (lr_sig and gr) or 3 elements (lr, sig, gr): the in
 \code{construct_weighted_networks} construct layer-specific weighted integrated networks from input source networks via weighted aggregation.
 }
 \examples{
+\dontrun{
 ## Generate the weighted networks from input source networks
 wn = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
-
+}
 
 }

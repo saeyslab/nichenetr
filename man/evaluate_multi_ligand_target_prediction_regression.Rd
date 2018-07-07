@@ -36,11 +36,12 @@ A list with the following elements. $performances: data frame containing regress
 \code{evaluate_multi_ligand_target_prediction_regression} Evaluate how well a trained model is able to predict the observed response to a combination of ligands (e.g. the absolute log fold change value of genes after treatment of cells by a ligand). A regression algorithm chosen by the user is trained to construct one model based on the target gene predictions of all ligands of interest (ligands are considered as features). It shows several regression model fit metrics for the prediction. In addition, variable importance scores can be extracted to rank the possible active ligands in order of importance for response prediction.
 }
 \examples{
+\dontrun{
 library(dplyr)
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 setting = convert_expression_settings_evaluation_regression(expression_settings_validation$TGFB_IL6_timeseries) \%>\% list()
 ligands = extract_ligands_from_settings(setting)
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 output = lapply(setting,evaluate_multi_ligand_target_prediction_regression,ligand_target_matrix,ligands_position = "cols",algorithm = "lm" )
-
+}
 }

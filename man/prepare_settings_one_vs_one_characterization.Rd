@@ -22,7 +22,8 @@ A list of lists. Every sub-list contains following elements: $model_name; $sourc
 \code{prepare_settings_one_vs_one_characterization} will generate a list of lists containing the data source weights that need to be used for model construction. Every sub-list will contain the data source weights needed to make so called one-vs-one models in which only one ligand-signaling data source and only one gene regulatory data source is used. It is also possible to construct one-vs-one-vs-one models by keeping 1 ligand-receptor, 1 signaling and 1 gene regulatory data source.
 }
 \examples{
-
+\dontrun{
 weights_settings_ovo = prepare_settings_one_vs_one_characterization(lr_network,sig_network, gr_network)
 weights_settings_ovo_lr_separate = prepare_settings_one_vs_one_characterization(lr_network,sig_network, gr_network, lr_network_separate = TRUE)
+}
 }

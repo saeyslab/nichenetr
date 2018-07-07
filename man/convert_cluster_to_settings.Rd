@@ -24,8 +24,8 @@ A list with following elements: $name (indicating the cluster id), $from, $respo
 \code{convert_cluster_to_settings} Convert cluster assignment to settings format suitable for target gene prediction.
 }
 \examples{
-
+\dontrun{
 genes_clusters = c("TGFB1" = 1,"TGFB2" = 1,"TGFB3" = 2)
 cluster_settings = lapply(seq(length(unique(genes_clusters))), convert_cluster_to_settings, cluster_vector = genes_clusters, setting_name = "example", setting_from = "BMP2")
-
+}
 }

@@ -18,6 +18,7 @@ A list containing the ligands and ligands combinations for which a ligand-target
 \code{extract_ligands_from_settings} Extract ligands of interest from (expression) settings in correct to construct the ligand-target matrix.
 }
 \examples{
+\dontrun{
 ligands = extract_ligands_from_settings(expression_settings_validation)
-
+}
 }

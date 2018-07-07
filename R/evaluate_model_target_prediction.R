@@ -11,8 +11,9 @@
 #' @return A list containing the ligands and ligands combinations for which a ligand-target matrix should be constructed. When for a particular dataset multiple ligands are possibly active (i.e. more than ligand in .$from slot of sublist of settings), then both the combination of these multiple ligands and each of these multiple ligands individually will be select for model construction.
 #'
 #' @examples
+#' \dontrun{
 #' ligands = extract_ligands_from_settings(expression_settings_validation)
-#'
+#' }
 #' @export
 #'
 extract_ligands_from_settings = function(settings, combination = TRUE){
@@ -66,8 +67,9 @@ extract_ligands_from_settings = function(settings, combination = TRUE){
 #' @return A list with following elements: $name, $from, $response. $response will be a gene-named logical vector indicating whether the gene's transcription was influenced by the active ligand(s) in the setting of interest.
 #'
 #' @examples
+#' \dontrun{
 #' settings = lapply(expression_settings_validation,convert_expression_settings_evaluation)
-#'
+#' }
 #' @export
 #'
 #'
@@ -111,6 +113,7 @@ convert_expression_settings_evaluation = function(setting) {
 #' @importFrom limma wilcoxGST
 #'
 #' @examples
+#' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' setting = lapply(expression_settings_validation[1],convert_expression_settings_evaluation)
 #' ligands = extract_ligands_from_settings(setting)
@@ -118,7 +121,7 @@ convert_expression_settings_evaluation = function(setting) {
 #' perf1 = lapply(setting,evaluate_target_prediction,ligand_target_matrix)
 #' print(head(perf1))
 #' perf2 = lapply(setting,evaluate_target_prediction,make_discrete_ligand_target_matrix(ligand_target_matrix))
-#'
+#' }
 #' @export
 #'
 evaluate_target_prediction = function(setting,ligand_target_matrix, ligands_position = "cols"){
@@ -195,6 +198,7 @@ evaluate_target_prediction = function(setting,ligand_target_matrix, ligands_posi
 #' @importFrom purrr safely
 #'
 #' @examples
+#' \dontrun{
 #' library(dplyr)
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' setting = convert_expression_settings_evaluation(expression_settings_validation$TGFB_IL6_timeseries) %>% list()
@@ -202,7 +206,7 @@ evaluate_target_prediction = function(setting,ligand_target_matrix, ligands_posi
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' output = lapply(setting,evaluate_multi_ligand_target_prediction,ligand_target_matrix,ligands_position = "cols",algorithm = "glm")
 #' output = lapply(setting,evaluate_multi_ligand_target_prediction,make_discrete_ligand_target_matrix(ligand_target_matrix),ligands_position = "cols",algorithm = "glm" )
-#'
+#' }
 #' @export
 #'
 evaluate_multi_ligand_target_prediction = function(setting,ligand_target_matrix, ligands_position = "cols", algorithm, var_imps = TRUE, cv = TRUE, cv_number = 4, cv_repeats = 2, parallel = FALSE, n_cores = 4, ignore_errors = FALSE, continuous = TRUE){
@@ -299,6 +303,7 @@ evaluate_multi_ligand_target_prediction = function(setting,ligand_target_matrix,
 #' @importFrom limma wilcoxGST
 #'
 #' @examples
+#' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' setting = lapply(expression_settings_validation[1],convert_expression_settings_evaluation)
 #' ligands = extract_ligands_from_settings(setting)
@@ -306,7 +311,7 @@ evaluate_multi_ligand_target_prediction = function(setting,ligand_target_matrix,
 #' perf1 = lapply(setting,evaluate_target_prediction_interprete,ligand_target_matrix)
 #' setting = lapply(expression_settings_validation[1],convert_expression_settings_evaluation_regression)
 #' perf2 = lapply(setting,evaluate_target_prediction_interprete,ligand_target_matrix)
-#'
+#' }
 #' @export
 #'
 evaluate_target_prediction_interprete = function(setting,ligand_target_matrix, ligands_position = "cols"){
@@ -377,11 +382,12 @@ evaluate_target_prediction_interprete = function(setting,ligand_target_matrix, l
 #' @return A list with following elements: $name, $from, $response
 #'
 #' @examples
+#' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' all_genes = unique(c(weighted_networks$gr$from,weighted_networks$gr$to,weighted_networks$lr_sig$from, weighted_networks$lr_sig$to))
 #' gene_list = c("ID1","ID2","ID3")
 #' setting = list(convert_gene_list_settings_evaluation(gene_list = c("ID1","ID2","ID3"), name = "test",ligands_oi = "TGFB1", background = all_genes))
-#'
+#' }
 #' @export
 #'
 #'
@@ -420,8 +426,9 @@ convert_gene_list_settings_evaluation = function(gene_list, name, ligands_oi, ba
 #' @return A list with following elements: $name, $from, $response. $response will be a gene-named numeric vector of log fold change values.
 #'
 #' @examples
+#' \dontrun{
 #' settings = lapply(expression_settings_validation,convert_expression_settings_evaluation_regression)
-#'
+#' }
 #' @export
 #'
 #'
@@ -456,12 +463,13 @@ convert_expression_settings_evaluation_regression = function(setting) {
 #' @return A data.frame with following variables: setting, ligand and as regression model fit metrics: r_squared: R squared, adj_r_squared: adjusted R squared, f_statistic: estimate of F-statistic, lm_coefficient_abs_t: absolute value of t-value of coefficient, inverse_rse: 1 divided by estimated standard deviation of the errors (inversed to become that higher values indicate better fit), reverse_aic: reverse value of Akaike information criterion (-AIC, to become that higher values indicate better fit), reverse_bic: the reverse value of the bayesian information criterion, inverse_mae: mean absolute error, pearson: pearson correlation coefficient, spearman: spearman correlation coefficient.
 #'
 #' @examples
+#' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' settings = lapply(expression_settings_validation[1:2],convert_expression_settings_evaluation_regression)
 #' ligands = extract_ligands_from_settings(settings)
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' perf1 = lapply(settings,evaluate_target_prediction_regression,ligand_target_matrix)
-#'
+#' }
 #' @export
 #'
 evaluate_target_prediction_regression = function(setting,ligand_target_matrix, ligands_position = "cols"){
@@ -534,13 +542,14 @@ evaluate_target_prediction_regression = function(setting,ligand_target_matrix, l
 #' @importFrom purrr safely
 #'
 #' @examples
+#' \dontrun{
 #' library(dplyr)
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' setting = convert_expression_settings_evaluation_regression(expression_settings_validation$TGFB_IL6_timeseries) %>% list()
 #' ligands = extract_ligands_from_settings(setting)
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' output = lapply(setting,evaluate_multi_ligand_target_prediction_regression,ligand_target_matrix,ligands_position = "cols",algorithm = "lm" )
-#'
+#' }
 #' @export
 #'
 evaluate_multi_ligand_target_prediction_regression = function(setting, ligand_target_matrix, ligands_position = "cols", algorithm, var_imps = TRUE, cv = TRUE, cv_number = 4, cv_repeats = 2, parallel = FALSE, n_cores = 4, ignore_errors = FALSE){

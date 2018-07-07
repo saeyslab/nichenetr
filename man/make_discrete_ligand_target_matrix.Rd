@@ -24,10 +24,11 @@ A matrix of ligand-target assignments. TRUE: gene is a target of the ligand of i
 \code{make_discrete_ligand_target_matrix} Convert probabilistic ligand-target matrix to a discrete one. This means that for every ligand, genes will be labeled as target (TRUE) or non-target (FALSE).
 }
 \examples{
+\dontrun{
 ## Generate the ligand-target matrix from loaded weighted_networks
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 ligands = list("TNF","BMP2",c("IL4","IL13"))
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 ligand_target_matrix = make_discrete_ligand_target_matrix(ligand_target_matrix, error_rate = 0.1, cutoff_method = "distribution", ligands_position = "cols")
-
+}
 }

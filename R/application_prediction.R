@@ -14,10 +14,10 @@
 #' @return A list with following elements: $name (indicating the cluster id), $from, $response. $response is a gene-named logical vector indicating whether the gene is part of the respective cluster.
 #'
 #' @examples
-#'
+#' \dontrun{
 #' genes_clusters = c("TGFB1" = 1,"TGFB2" = 1,"TGFB3" = 2)
 #' cluster_settings = lapply(seq(length(unique(genes_clusters))), convert_cluster_to_settings, cluster_vector = genes_clusters, setting_name = "example", setting_from = "BMP2")
-#'
+#' }
 #' @export
 #'
 convert_cluster_to_settings = function(i, cluster_vector, setting_name, setting_from, background = NULL){

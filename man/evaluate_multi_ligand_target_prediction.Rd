@@ -38,6 +38,7 @@ A list with the following elements. $performances: data frame containing classif
 \code{evaluate_multi_ligand_target_prediction} Evaluate how well a trained model is able to predict the observed response to a combination of ligands (e.g. the set of DE genes after treatment of cells by multiple ligands). A classificiation algorithm chosen by the user is trained to construct one model based on the target gene predictions of all ligands of interest (ligands are considered as features). Several classification evaluation metrics for the prediction are calculated depending on whether the input ligand-target matrix contains probability scores for targets or discrete target assignments. In addition, variable importance scores can be extracted to rank the possible active ligands in order of importance for response prediction.
 }
 \examples{
+\dontrun{
 library(dplyr)
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 setting = convert_expression_settings_evaluation(expression_settings_validation$TGFB_IL6_timeseries) \%>\% list()
@@ -45,5 +46,5 @@ ligands = extract_ligands_from_settings(setting)
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 output = lapply(setting,evaluate_multi_ligand_target_prediction,ligand_target_matrix,ligands_position = "cols",algorithm = "glm")
 output = lapply(setting,evaluate_multi_ligand_target_prediction,make_discrete_ligand_target_matrix(ligand_target_matrix),ligands_position = "cols",algorithm = "glm" )
-
+}
 }

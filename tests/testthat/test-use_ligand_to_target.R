@@ -21,8 +21,7 @@ test_that("Get targets genes of a ligand: no error", {
 
   expect_type(get_target_genes_ligand_oi("BMP2", ligand_target_matrix, cutoff_method = "distribution", fdr_method = "global", output = "logical",ligands_position = "cols"),"logical")
   expect_type(get_target_genes_ligand_oi("BMP2", ligand_target_matrix, cutoff_method = "distribution", fdr_method = "global", output = "logical",ligands_position = "rows"),"logical")
-  expect_type(get_target_genes_ligand_oi("BMP2", ligand_target_matrix, cutoff_method = "fdrtool", fdr_method = "global", output = "logical",ligands_position = "cols"),"logical")
-  expect_type(get_target_genes_ligand_oi("BMP2", ligand_target_matrix, cutoff_method = "fdrtool", fdr_method = "local", output = "logical",ligands_position = "cols"),"logical")
+
   expect_type(get_target_genes_ligand_oi("BMP2", ligand_target_matrix, cutoff_method = "quantile", fdr_method = "local", output = "logical",ligands_position = "cols"),"logical")
   expect_type(get_target_genes_ligand_oi("BMP2", ligand_target_matrix, cutoff_method = "quantile", fdr_method = "local", output = "gene_symbols",ligands_position = "cols"),"character")
   expect_equal(length(get_target_genes_ligand_oi("BMP2", ligand_target_matrix, cutoff_method = "quantile", fdr_method = "local", output = "logical",ligands_position = "cols")),nrow(ligand_target_matrix))

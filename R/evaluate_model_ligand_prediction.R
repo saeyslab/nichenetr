@@ -13,10 +13,11 @@
 #' @return A list with following elements: $name, $ligand: name of active ligand(s) (only if validation is TRUE), $from (ligand(s) that will be tested for activity prediction), $response
 #'
 #' @examples
+#' \dontrun{
 #' settings = lapply(expression_settings_validation,convert_expression_settings_evaluation)
 #' ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE))
 #' settings_ligand_pred = convert_settings_ligand_prediction(settings, ligands, validation = TRUE, single = TRUE)
-#'
+#' }
 #' @export
 #'
 #'
@@ -78,6 +79,7 @@ convert_settings_ligand_prediction = function(settings,all_ligands,validation = 
 #' @return A data.frame with for each ligand - data set combination, classification evaluation metrics indicating how well the query ligand predicts the response in the particular dataset. Evaluation metrics are the same as in \code{\link{evaluate_target_prediction}}. In addition to the metrics, the name of the particular setting ($setting), the name of the query ligand($test_ligand), the name of the true active ligand (if known: $ligand).
 #'
 #' @examples
+#' \dontrun{
 #' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
 #' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 #'
@@ -86,6 +88,7 @@ convert_settings_ligand_prediction = function(settings,all_ligands,validation = 
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
 #' print(head(ligand_importances))
+#' }
 #' @export
 #'
 get_single_ligand_importances = function(setting,ligand_target_matrix, ligands_position = "cols", known = TRUE){
@@ -267,6 +270,7 @@ evaluate_importances_ligand_prediction = function(importances, normalization, al
 #' @importFrom limma wilcoxGST
 #'
 #' @examples
+#' \dontrun{
 #' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
 #' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 #'
@@ -276,6 +280,7 @@ evaluate_importances_ligand_prediction = function(importances, normalization, al
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
 #' evaluation = evaluate_single_importances_ligand_prediction(ligand_importances,normalization = "median")
 #' print(head(evaluation))
+#' }
 #' @export
 #'
 evaluate_single_importances_ligand_prediction = function(importances,normalization){
@@ -487,6 +492,7 @@ get_multi_ligand_rf_importances = function(setting,ligand_target_matrix, ligands
 #' @return A data.frame with for each ligand - data set combination, regression model fit metrics indicating how well the query ligand predicts the response in the particular dataset. Evaluation metrics are the same as in \code{\link{evaluate_target_prediction_regression}}. In addition to the metrics, the name of the particular setting ($setting), the name of the query ligand($test_ligand), the name of the true active ligand (if known: $ligand).
 #'
 #' @examples
+#' \dontrun{
 #' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation_regression)
 #' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 #'
@@ -495,7 +501,7 @@ get_multi_ligand_rf_importances = function(setting,ligand_target_matrix, ligands
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances_regression,ligand_target_matrix))
 #' print(head(ligand_importances))
-#'
+#' }
 #' @export
 #'
 get_single_ligand_importances_regression = function(setting,ligand_target_matrix, ligands_position = "cols", known = TRUE){

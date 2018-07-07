@@ -22,9 +22,10 @@ A list containing 2 elements (network and source_weights_df): the updated networ
 \code{add_new_datasource} adds a new data source to one of the ligand-receptor, signaling and gene regulatory data sources.
 }
 \examples{
+ \dontrun{
 ## Update the lr_network with a new ligand-receptor data source
 library(dplyr)
 lr_toy = tibble(from = "A", to = "B", source = "toy")
 new_lr_network = add_new_datasource(lr_toy, lr_network,1,source_weights_df)
-
+}
 }

@@ -28,10 +28,11 @@ A vector with target gene names should be returned ("gene_symbols") or a logical
 \code{get_target_genes_ligand_oi} Get a set of predicted target genes of a ligand of interest.
 }
 \examples{
+\dontrun{
 ## Generate the ligand-target matrix from loaded weighted_networks
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 ligands = list("TNF","BMP2",c("IL4","IL13"))
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 targets = get_target_genes_ligand_oi("BMP2", ligand_target_matrix, error_rate = 0.1, cutoff_method = "distribution", fdr_method = "global", output = "logical",ligands_position = "cols")
-
+}
 }

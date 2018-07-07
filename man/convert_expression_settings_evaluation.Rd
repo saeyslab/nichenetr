@@ -16,6 +16,7 @@ A list with following elements: $name, $from, $response. $response will be a gen
 \code{convert_expression_settings_evaluation} Converts expression settings to correct settings format for evaluation of target gene prediction.
 }
 \examples{
+\dontrun{
 settings = lapply(expression_settings_validation,convert_expression_settings_evaluation)
-
+}
 }

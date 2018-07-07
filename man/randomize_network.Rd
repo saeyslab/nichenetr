@@ -18,8 +18,8 @@ A randomized network ($from, $to; and $weight = 1 if output_weighted == TRUE).
 \code{randomize_network} Randomizes a network of interest by edge swapping to preserve the degree of the nodes
 }
 \examples{
-
+\dontrun{
 random_lr = randomize_network(lr_network)
-
+}
 
 }

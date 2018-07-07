@@ -74,6 +74,9 @@ SPL_wrapper = function(ligand,G,id2allgenes,spl_cutoff) {
 PPR_wrapper = function(ligand,E,G,delta,id2allgenes,ppr_cutoff) {
   partial_matrix = lapply(ligand,single_ligand_ppr_wrapper,E,G,delta,id2allgenes)
   ppr_matrix = matrix(unlist(partial_matrix), ncol = length(E), byrow = TRUE)
+  if (delta == 0 & is.null(ppr_cutoff)){
+    ppr_cutoff = 0
+  }
   # put cutoff
   if (ppr_cutoff > 0){
     ppr_matrix_TRUE = apply(ppr_matrix,1,function(x){x <= quantile(x,ppr_cutoff)}) %>% t()
@@ -91,6 +94,9 @@ direct_wrapper = function(ligand,G,id2allgenes,cutoff) {
   ltf_matrix = G[id2allgenes[ligand],]
   if (length(ligand) == 1){
     ltf_matrix = matrix(ltf_matrix, nrow = 1)
+  }
+  if(is.null(cutoff)){
+    cutoff = 0
   }
   if (cutoff > 0){
     ltf_matrix_TRUE = apply(ltf_matrix,1,function(x){x <= quantile(x,cutoff)}) %>% t()

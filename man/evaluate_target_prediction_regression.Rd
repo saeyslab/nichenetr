@@ -20,10 +20,11 @@ A data.frame with following variables: setting, ligand and as regression model f
 \code{evaluate_target_prediction_regression} Evaluate how well the model (i.e. the inferred ligand-target probability scores) is able to predict the observed response to a ligand (e.g. the absolute log fold change value of genes after treatment of cells by a ligand). It shows several regression model fit metrics for the prediction.
 }
 \examples{
+\dontrun{
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 settings = lapply(expression_settings_validation[1:2],convert_expression_settings_evaluation_regression)
 ligands = extract_ligands_from_settings(settings)
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 perf1 = lapply(settings,evaluate_target_prediction_regression,ligand_target_matrix)
-
+}
 }

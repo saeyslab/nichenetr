@@ -3,21 +3,43 @@ context("Parameter optimization functions")
 test_that("Objective function to construct and evaluate the model for parameter optimization is ok", {
   nr_datasources = source_weights_df$source %>% unique() %>% length()
 
+  print("PPR-correct topology")
   test_input = list("source_weights" = rep(0.5, times = nr_datasources), "lr_sig_hub" = 0.5, "gr_hub" = 0.5, "damping_factor" = 0.5)
-
   test_evaluation_optimization = model_evaluation_optimization(test_input, source_weights_df$source %>% unique(), "PPR", TRUE, lr_network, sig_network, gr_network, lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation), secondary_targets = FALSE, remove_direct_links = "no")
 
   expect_type(test_evaluation_optimization, "double")
-  expect_equal(length(test_evaluation_optimization),4) # sometimes error here?- if output not unique!!
+  expect_equal(length(test_evaluation_optimization),4)
 
+  print("PPR-ltf cutoff")
   test_input = list("source_weights" = rep(0.5, times = nr_datasources), "lr_sig_hub" = 0.5, "gr_hub" = 0.5, "ltf_cutoff" = 0.95, "damping_factor" = 0.5)
-
   test_evaluation_optimization = model_evaluation_optimization(test_input, source_weights_df$source %>% unique(), "PPR", FALSE, lr_network, sig_network, gr_network, lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation), secondary_targets = FALSE, remove_direct_links = "no")
 
   expect_type(test_evaluation_optimization, "double")
-  expect_equal(length(test_evaluation_optimization),4) # sometimes error here?- if output not unique!!
+  expect_equal(length(test_evaluation_optimization),4)
+
+  print("direct ligand-tf links")
+  test_input = list("source_weights" = rep(0.5, times = nr_datasources), "lr_sig_hub" = 0.5, "gr_hub" = 0.5)
+  test_evaluation_optimization = model_evaluation_optimization(test_input, source_weights_df$source %>% unique(), "direct", FALSE, lr_network, sig_network, gr_network, lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation), secondary_targets = FALSE, remove_direct_links = "no")
+
+  expect_type(test_evaluation_optimization, "double")
+  expect_equal(length(test_evaluation_optimization),4)
+
+  print("SPL")
+  test_input = list("source_weights" = rep(0.5, times = nr_datasources), "lr_sig_hub" = 0.5, "gr_hub" = 0.5,"ltf_cutoff" = 0.95)
+  test_evaluation_optimization = model_evaluation_optimization(test_input, source_weights_df$source %>% unique(), "SPL", FALSE, lr_network, sig_network, gr_network, lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation), secondary_targets = FALSE, remove_direct_links = "no")
+
+  expect_type(test_evaluation_optimization, "double")
+  expect_equal(length(test_evaluation_optimization),4)
+
+  print("direct target links")
+  test_input = list("source_weights" = rep(0.5, times = nr_datasources), "lr_sig_hub" = 0.5, "gr_hub" = 0.5, "damping_factor" = 0)
+  test_evaluation_optimization = model_evaluation_optimization(test_input, source_weights_df$source %>% unique(), "PPR", FALSE, lr_network, sig_network, gr_network, lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation), secondary_targets = FALSE, remove_direct_links = "no")
+
+  expect_type(test_evaluation_optimization, "double")
+  expect_equal(length(test_evaluation_optimization),4)
 
 
+  print("hyperparameter optimization")
   test_input = list("lr_sig_hub" = 0.5, "gr_hub" = 0.5, "damping_factor" = 0.5)
   source_weights = source_weights_df$weight
   names(source_weights) = source_weights_df$source
@@ -31,6 +53,7 @@ test_that("Objective function to construct and evaluate the model for parameter 
   expect_type(test_evaluation_optimization, "double")
   expect_equal(length(test_evaluation_optimization),2)
 })
+
 test_that("mlrMBO optimization of a multi-objective function can be performed is ok", {
   library(mlrMBO)
   library(parallelMap)

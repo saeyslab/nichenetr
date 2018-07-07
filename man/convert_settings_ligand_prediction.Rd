@@ -22,8 +22,9 @@ A list with following elements: $name, $ligand: name of active ligand(s) (only i
 \code{convert_settings_ligand_prediction} Converts settings to correct settings format for ligand activity prediction. In this prediction problem, ligands (out of a set of possibly active ligands) will be ranked based on feature importance scores. The format can be made suited for: 1) validation of ligand activity state prediction by calculating individual feature importane scores or 2) feature importance based on models with embedded feature importance determination; applications in which ligands need to be scores based on their possible upstream activity: 3) by calculating individual feature importane scores or 4) feature importance based on models with embedded feature importance determination.
 }
 \examples{
+\dontrun{
 settings = lapply(expression_settings_validation,convert_expression_settings_evaluation)
 ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE))
 settings_ligand_pred = convert_settings_ligand_prediction(settings, ligands, validation = TRUE, single = TRUE)
-
+}
 }

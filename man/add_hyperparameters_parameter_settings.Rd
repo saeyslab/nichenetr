@@ -28,7 +28,8 @@ A list of lists. Every sub-list contains parameter values for a different parame
 \code{add_hyperparameters_parameter_settings} will generate a list of lists containing the parameter values that need to be used for model construction.
 }
 \examples{
+\dontrun{
 weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
-
+}
 }

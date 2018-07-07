@@ -22,9 +22,10 @@ A list with following elements: $name, $from, $response
 \code{convert_gene_list_settings_evaluation} Converts a gene list to correct settings format for evaluation of target gene prediction.
 }
 \examples{
+\dontrun{
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 all_genes = unique(c(weighted_networks$gr$from,weighted_networks$gr$to,weighted_networks$lr_sig$from, weighted_networks$lr_sig$to))
 gene_list = c("ID1","ID2","ID3")
 setting = list(convert_gene_list_settings_evaluation(gene_list = c("ID1","ID2","ID3"), name = "test",ligands_oi = "TGFB1", background = all_genes))
-
+}
 }

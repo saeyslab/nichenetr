@@ -22,10 +22,11 @@ A named numeric vector of ligand-target gene probability scores of the top ligan
 \code{extract_top_fraction_ligands} Get the predicted top n percentage ligands of a target of interest
 }
 \examples{
+\dontrun{
 ## Generate the ligand-target matrix from loaded weighted_networks
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 ligands = list("TNF","BMP2",c("IL4","IL13"))
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 targets = extract_top_fraction_ligands("ID3",0.01,ligand_target_matrix)
-
+}
 }

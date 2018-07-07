@@ -16,8 +16,8 @@ A randomized network ($from, $to, $source).
 \code{randomize_complete_network_source_specific} Randomizes an integrated network of interest by edge swapping in the source-specific networks to preserve the degree of the nodes
 }
 \examples{
-
+\dontrun{
 random_lr = randomize_complete_network_source_specific(lr_network)
-
+}
 
 }

@@ -20,6 +20,7 @@ A data.frame with following variables: setting, ligand and for probabilistic pre
 \code{evaluate_target_prediction} Evaluate how well the model (i.e. the inferred ligand-target probability scores) is able to predict the observed response to a ligand (e.g. the set of DE genes after treatment of cells by a ligand). It shows several classification evaluation metrics for the prediction. Different classification metrics are calculated depending on whether the input ligand-target matrix contains probability scores for targets or discrete target assignments.
 }
 \examples{
+\dontrun{
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 setting = lapply(expression_settings_validation[1],convert_expression_settings_evaluation)
 ligands = extract_ligands_from_settings(setting)
@@ -27,5 +28,5 @@ ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands
 perf1 = lapply(setting,evaluate_target_prediction,ligand_target_matrix)
 print(head(perf1))
 perf2 = lapply(setting,evaluate_target_prediction,make_discrete_ligand_target_matrix(ligand_target_matrix))
-
+}
 }

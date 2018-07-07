@@ -38,11 +38,11 @@ model_evaluation_optimization = function(x, source_names, algorithm, correct_top
   if (x$gr_hub < 0 | x$gr_hub > 1)
     stop("x$gr_hub must be a number between 0 and 1 (0 and 1 included)")
   if(is.null(x$ltf_cutoff)){
-    if(correct_topology == FALSE)
+    if( (algorithm == "PPR" | algorithm == "SPL") & correct_topology == FALSE)
       warning("Did you not forget to give a value to x$ltf_cutoff?")
   } else {
     if (x$ltf_cutoff < 0 | x$ltf_cutoff > 1)
-      stop("x$ltf_cutoff must be a number between 0 and 1 (0 and 1 included) or NULL")
+      stop("x$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
   }
   if(algorithm == "PPR"){
     if (x$damping_factor < 0 | x$damping_factor >= 1)
@@ -81,10 +81,15 @@ model_evaluation_optimization = function(x, source_names, algorithm, correct_top
   names(x$source_weights) = source_names
   parameters_setting = list(model_name = "query_design", source_weights = x$source_weights)
 
-  if (correct_topology == TRUE){
+  if (algorithm == "PPR") {
+    if (correct_topology == TRUE){
     parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = 0, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = TRUE)
-  } else {
-    parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = x$ltf_cutoff, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = FALSE)
+    } else {
+      parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = x$ltf_cutoff, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = FALSE)
+    }
+  }
+  if (algorithm == "SPL" | algorithm == "direct"){
+    parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = x$ltf_cutoff, algorithm = algorithm,damping_factor = NULL,correct_topology = FALSE)
   }
 
   output_evaluation = evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings,calculate_popularity_bias_target_prediction = FALSE,calculate_popularity_bias_ligand_prediction=FALSE,ncitations = ncitations, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links, n_target_bins = 3, ...)
@@ -211,11 +216,11 @@ model_evaluation_hyperparameter_optimization = function(x, source_weights, algor
   if (x$gr_hub < 0 | x$gr_hub > 1)
     stop("x$gr_hub must be a number between 0 and 1 (0 and 1 included)")
   if(is.null(x$ltf_cutoff)){
-    if(correct_topology == FALSE)
+    if( (algorithm == "PPR" | algorithm == "SPL") & correct_topology == FALSE)
       warning("Did you not forget to give a value to x$ltf_cutoff?")
   } else {
     if (x$ltf_cutoff < 0 | x$ltf_cutoff > 1)
-      stop("x$ltf_cutoff must be a number between 0 and 1 (0 and 1 included) or NULL")
+      stop("x$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
   }
   if (!is.numeric(source_weights) | is.null(names(source_weights)))
     stop("source_weights should be a named numeric vector")
@@ -250,10 +255,15 @@ model_evaluation_hyperparameter_optimization = function(x, source_weights, algor
 
   parameters_setting = list(model_name = "query_design", source_weights = source_weights)
 
-  if (correct_topology == TRUE){
-    parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = 0, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = TRUE)
-  } else {
-    parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = x$ltf_cutoff, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = FALSE)
+  if (algorithm == "PPR") {
+    if (correct_topology == TRUE){
+      parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = 0, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = TRUE)
+    } else {
+      parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = x$ltf_cutoff, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = FALSE)
+    }
+  }
+  if (algorithm == "SPL" | algorithm == "direct"){
+    parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = x$ltf_cutoff, algorithm = algorithm,damping_factor = NULL,correct_topology = FALSE)
   }
 
   output_evaluation = evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings,calculate_popularity_bias_target_prediction = FALSE,calculate_popularity_bias_ligand_prediction=FALSE,ncitations = ncitations, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links, n_target_bins = 3, ...)
@@ -377,11 +387,11 @@ model_evaluation_optimization_application = function(x, source_names, algorithm,
   if (x$gr_hub < 0 | x$gr_hub > 1)
     stop("x$gr_hub must be a number between 0 and 1 (0 and 1 included)")
   if(is.null(x$ltf_cutoff)){
-    if(correct_topology == FALSE)
+    if( (algorithm == "PPR" | algorithm == "SPL") & correct_topology == FALSE)
       warning("Did you not forget to give a value to x$ltf_cutoff?")
   } else {
     if (x$ltf_cutoff < 0 | x$ltf_cutoff > 1)
-      stop("x$ltf_cutoff must be a number between 0 and 1 (0 and 1 included) or NULL")
+      stop("x$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
   }
   if(algorithm == "PPR"){
     if (x$damping_factor < 0 | x$damping_factor >= 1)
@@ -421,10 +431,15 @@ model_evaluation_optimization_application = function(x, source_names, algorithm,
   names(x$source_weights) = source_names
   parameters_setting = list(model_name = "query_design", source_weights = x$source_weights)
 
-  if (correct_topology == TRUE){
-    parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = 0, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = TRUE)
-  } else {
-    parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = x$ltf_cutoff, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = FALSE)
+  if (algorithm == "PPR") {
+    if (correct_topology == TRUE){
+      parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = 0, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = TRUE)
+    } else {
+      parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = x$ltf_cutoff, algorithm = algorithm,damping_factor = x$damping_factor,correct_topology = FALSE)
+    }
+  }
+  if (algorithm == "SPL" | algorithm == "direct"){
+    parameters_setting = add_hyperparameters_parameter_settings(parameters_setting, lr_sig_hub = x$lr_sig_hub, gr_hub = x$gr_hub, ltf_cutoff = x$ltf_cutoff, algorithm = algorithm,damping_factor = NULL,correct_topology = FALSE)
   }
 
   output_evaluation = evaluate_model_application_multi_ligand(parameters_setting, lr_network, sig_network, gr_network, settings, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links, classification_algorithm = classification_algorithm,...)

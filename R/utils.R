@@ -48,4 +48,5 @@ scaling_modified_zscore = function(x){
     }
   } else {return(x)}
 }
+
 mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])

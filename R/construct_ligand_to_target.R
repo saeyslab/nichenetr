@@ -15,9 +15,10 @@
 #'
 #'
 #' @examples
+#' \dontrun{
 #' ## Generate the weighted networks from input source networks
 #' wn = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
-#'
+#' }
 #'
 #' @export
 #'
@@ -66,11 +67,12 @@ construct_weighted_networks = function(lr_network, sig_network, gr_network,sourc
 #'
 #'
 #' @examples
+#'  \dontrun{
 #' ## Update the lr_network with a new ligand-receptor data source
 #' library(dplyr)
 #' lr_toy = tibble(from = "A", to = "B", source = "toy")
 #' new_lr_network = add_new_datasource(lr_toy, lr_network,1,source_weights_df)
-#'
+#' }
 #' @export
 #'
 add_new_datasource = function(new_source, network, new_weight,source_weights_df) {
@@ -110,8 +112,10 @@ add_new_datasource = function(new_source, network, new_weight,source_weights_df)
 #' @return A list containing 2 elements (lr_sig and gr): the hubiness-corrected integrated weighted ligand-signaling and gene regulatory networks in data frame / tibble format with columns: from, to, weight.
 #'
 #' @examples
+#' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' wn = apply_hub_corrections(weighted_networks, lr_sig_hub= 0.5, gr_hub= 0.5)
+#' }
 #' @export
 #'
 apply_hub_corrections = function(weighted_networks,lr_sig_hub, gr_hub) {
@@ -169,11 +173,12 @@ apply_hub_corrections = function(weighted_networks,lr_sig_hub, gr_hub) {
 #' @importFrom Matrix sparseMatrix
 #'
 #' @examples
+#'  \dontrun{
 #' ## Generate the ligand-target matrix from loaded weighted_networks
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_tf = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
-#'
+#' }
 #' @export
 #'
 construct_ligand_tf_matrix = function(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, ligands_as_cols = FALSE) {
@@ -195,8 +200,15 @@ construct_ligand_tf_matrix = function(weighted_networks, ligands, ltf_cutoff = 0
     stop("ligands must be a list object")
   if ( sum((unique(unlist(ligands)) %in% unique(c(lr_network$from,lr_network$to))) == FALSE) > 0)
     warning("One or more ligands of interest not present in the ligand-receptor network 'lr_network'. You can possibly ignore this warning if you provided your own ligand_receptor network to the weighted networks." )
-  if (ltf_cutoff < 0 | ltf_cutoff > 1)
-    stop("ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+
+  if(is.null(ltf_cutoff)){
+    if( algorithm == "PPR" | algorithm == "SPL" )
+      warning("Did you not forget to give a value to ltf_cutoff?")
+  } else {
+    if (ltf_cutoff < 0 | ltf_cutoff > 1)
+      stop("ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  }
+
   if (algorithm != "PPR" & algorithm != "SPL" & algorithm != "direct")
     stop("algorithm must be 'PPR' or 'SPL' or 'direct'")
   if(algorithm == "PPR"){
@@ -216,6 +228,7 @@ construct_ligand_tf_matrix = function(weighted_networks, ligands, ltf_cutoff = 0
   allgenes = c(ligand_signaling_network$from, ligand_signaling_network$to, regulatory_network$from, regulatory_network$to) %>% unique() %>% sort()
   allgenes_integer = allgenes %>% factor() %>% as.numeric()
   allgenes_id_tbl = data.frame(allgenes,allgenes_integer) %>% tbl_df()
+  mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
   id2allgenes = mapper(allgenes_id_tbl,"allgenes_integer","allgenes")
 
   ligand_signaling_network = ligand_signaling_network %>% mutate(from_allgenes = id2allgenes[from], to_allgenes = id2allgenes[to]) %>% arrange(from_allgenes) %>% dplyr::select(from_allgenes,to_allgenes,weight)
@@ -270,10 +283,11 @@ construct_ligand_tf_matrix = function(weighted_networks, ligands, ltf_cutoff = 0
 #' @importFrom Matrix sparseMatrix
 #'
 #' @examples
+#'  \dontrun{
 #' ## Generate the ligand-target matrix from loaded weighted_networks
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' tf_target = construct_tf_target_matrix(weighted_networks, tfs_as_cols = TRUE, standalone_output = TRUE)
-#'
+#' }
 #' @export
 #'
 construct_tf_target_matrix = function(weighted_networks, tfs_as_cols = FALSE, standalone_output = FALSE) {
@@ -304,6 +318,7 @@ construct_tf_target_matrix = function(weighted_networks, tfs_as_cols = FALSE, st
   allgenes = c(ligand_signaling_network$from, ligand_signaling_network$to, regulatory_network$from, regulatory_network$to) %>% unique() %>% sort()
   allgenes_integer = allgenes %>% factor() %>% as.numeric()
   allgenes_id_tbl = data.frame(allgenes,allgenes_integer) %>% tbl_df()
+  mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
   id2allgenes = mapper(allgenes_id_tbl,"allgenes_integer","allgenes")
 
   regulatory_network = regulatory_network %>% mutate(from_allgenes = id2allgenes[from], to_allgenes = id2allgenes[to]) %>% arrange(from_allgenes) %>% dplyr::select(from_allgenes,to_allgenes,weight)
@@ -345,11 +360,12 @@ construct_tf_target_matrix = function(weighted_networks, tfs_as_cols = FALSE, st
 #' @importFrom Matrix sparseMatrix
 #'
 #' @examples
+#'  \dontrun{
 #' ## Generate the ligand-target matrix from loaded weighted_networks
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE, remove_direct_links = "no")
-#'
+#' }
 #' @export
 #'
 construct_ligand_target_matrix = function(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE,ligands_as_cols = TRUE, remove_direct_links = "no") {
@@ -369,8 +385,15 @@ construct_ligand_target_matrix = function(weighted_networks, ligands, ltf_cutoff
 
   if (!is.list(ligands))
     stop("ligands must be a list object")
-  if (ltf_cutoff < 0 | ltf_cutoff > 1)
-    stop("ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+
+  if(is.null(ltf_cutoff)){
+    if( algorithm == "PPR" | algorithm == "SPL" )
+      warning("Did you not forget to give a value to ltf_cutoff?")
+  } else {
+    if (ltf_cutoff < 0 | ltf_cutoff > 1)
+      stop("ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  }
+
   if (algorithm != "PPR" & algorithm != "SPL" & algorithm != "direct")
     stop("algorithm must be 'PPR' or 'SPL' or 'direct'")
   if(algorithm == "PPR"){
@@ -455,12 +478,13 @@ construct_ligand_target_matrix = function(weighted_networks, ligands, ltf_cutoff
 #' @importFrom Matrix sparseMatrix
 #'
 #' @examples
+#' \dontrun{
 #' ## Generate the ligand-target matrix from loaded weighted_networks
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 #' ligand_target_matrix = correct_topology_ppr(ligand_target_matrix,weighted_networks,ligands_position = "cols")
-#'
+#' }
 #' @export
 #'
 correct_topology_ppr = function(ligand_target_matrix,weighted_networks,ligands_position = "cols"){
@@ -512,12 +536,13 @@ correct_topology_ppr = function(ligand_target_matrix,weighted_networks,ligands_p
 #' @return A matrix of ligand-target assignments. TRUE: gene is a target of the ligand of interest; FALSE: gene is not a target of the ligand of interest.
 #'
 #' @examples
+#' \dontrun{
 #' ## Generate the ligand-target matrix from loaded weighted_networks
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
 #' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 #' ligand_target_matrix = make_discrete_ligand_target_matrix(ligand_target_matrix, error_rate = 0.1, cutoff_method = "distribution", ligands_position = "cols")
-#'
+#'}
 #' @export
 #'
 make_discrete_ligand_target_matrix = function(ligand_target_matrix, error_rate = 0.1, cutoff_method = "distribution", fdr_method = "global",ligands_position = "cols"){

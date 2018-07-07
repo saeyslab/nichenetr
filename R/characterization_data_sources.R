@@ -9,9 +9,9 @@
 #' @return A list of lists. Every sub-list contains 2 elements: $model_name: the name of the left-in data source; $source_weights: named numeric vector containing the data source weights that will be used for the construction of leave-one-in models.
 #'
 #' @examples
-#'
+#' \dontrun{
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
-#'
+#' }
 #' @export
 #'
 #'
@@ -74,9 +74,9 @@ prepare_settings_leave_one_in_characterization = function(lr_network, sig_networ
 #' @return A list of lists. Every sub-list contains 2 elements: $model_name: the name of the left-out data source; $source_weights: named numeric vector containing the data source weights that will be used for the construction of leave-one-out models.
 #'
 #' @examples
-#'
+#' \dontrun{
 # weights_settings_loo = prepare_settings_leave_one_out_characterization(lr_network,sig_network, gr_network, source_weights_df)
-#'
+#'}
 #' @export
 #'
 #'
@@ -141,9 +141,10 @@ prepare_settings_leave_one_out_characterization = function(lr_network, sig_netwo
 #' @return A list of lists. Every sub-list contains parameter values for a different parameter.
 #'
 #' @examples
+#' \dontrun{
 #' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
 #' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
-#'
+#' }
 #' @export
 #'
 #'
@@ -156,8 +157,14 @@ add_hyperparameters_parameter_settings = function(parameter_setting,lr_sig_hub,g
     stop("lr_sig_hub must be a number between 0 and 1 (0 and 1 included)")
   if (gr_hub < 0 | gr_hub > 1)
     stop("gr_hub must be a number between 0 and 1 (0 and 1 included)")
-  if (ltf_cutoff < 0 | ltf_cutoff > 1)
-    stop("ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+
+  if(is.null(ltf_cutoff)){
+    if( algorithm == "PPR" | algorithm == "SPL" )
+      warning("Did you not forget to give a value to ltf_cutoff?")
+  } else {
+    if (ltf_cutoff < 0 | ltf_cutoff > 1)
+      stop("ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  }
   if (algorithm != "PPR" & algorithm != "SPL" & algorithm != "direct")
     stop("algorithm must be 'PPR' or 'SPL' or 'direct'")
   if(algorithm == "PPR"){
@@ -224,8 +231,13 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
     stop("parameters_setting$lr_sig_hub must be a number between 0 and 1 (0 and 1 included)")
   if (parameters_setting$gr_hub < 0 | parameters_setting$gr_hub > 1)
     stop("parameters_setting$gr_hub must be a number between 0 and 1 (0 and 1 included)")
-  if (parameters_setting$ltf_cutoff < 0 | parameters_setting$ltf_cutoff > 1)
-    stop("parameters_setting$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  if(is.null(parameters_setting$ltf_cutoff)){
+    if( parameters_setting$algorithm == "PPR" | parameters_setting$algorithm == "SPL" )
+      warning("Did you not forget to give a value to parameters_setting$ltf_cutoff?")
+  } else {
+    if (parameters_setting$ltf_cutoff < 0 | parameters_setting$ltf_cutoff > 1)
+      stop("parameters_setting$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  }
   if (parameters_setting$algorithm != "PPR" & parameters_setting$algorithm != "SPL" & parameters_setting$algorithm != "direct")
     stop("parameters_setting$algorithm must be 'PPR' or 'SPL' or 'direct'")
   if(parameters_setting$algorithm == "PPR"){
@@ -595,9 +607,10 @@ process_characterization_popularity_slopes_ligand_prediction = function(output_c
 #' @return A list of lists. Every sub-list contains following elements: $model_name; $source_lr_sig: the name of the left-in ligand-signaling data source (or $source_lr and $source_sig if lr_network_separate is TRUE); $source_gr: the name of the left-in gene regulatory data source and $source_weights: named numeric vector containing the data source weights that will be used for the construction of one-vs-one models.
 #'
 #' @examples
-#'
+#' \dontrun{
 #' weights_settings_ovo = prepare_settings_one_vs_one_characterization(lr_network,sig_network, gr_network)
 #' weights_settings_ovo_lr_separate = prepare_settings_one_vs_one_characterization(lr_network,sig_network, gr_network, lr_network_separate = TRUE)
+#' }
 #' @export
 #'
 #'
@@ -695,8 +708,13 @@ evaluate_model_application = function(parameters_setting, lr_network, sig_networ
     stop("parameters_setting$lr_sig_hub must be a number between 0 and 1 (0 and 1 included)")
   if (parameters_setting$gr_hub < 0 | parameters_setting$gr_hub > 1)
     stop("parameters_setting$gr_hub must be a number between 0 and 1 (0 and 1 included)")
-  if (parameters_setting$ltf_cutoff < 0 | parameters_setting$ltf_cutoff > 1)
-    stop("parameters_setting$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  if(is.null(parameters_setting$ltf_cutoff)){
+    if( parameters_setting$algorithm == "PPR" | parameters_setting$algorithm == "SPL" )
+      warning("Did you not forget to give a value to parameters_setting$ltf_cutoff?")
+  } else {
+    if (parameters_setting$ltf_cutoff < 0 | parameters_setting$ltf_cutoff > 1)
+      stop("parameters_setting$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  }
   if (parameters_setting$algorithm != "PPR" & parameters_setting$algorithm != "SPL" & parameters_setting$algorithm != "direct")
     stop("parameters_setting$algorithm must be 'PPR' or 'SPL' or 'direct'")
   if(parameters_setting$algorithm == "PPR"){
@@ -782,8 +800,13 @@ construct_model = function(parameters_setting, lr_network, sig_network, gr_netwo
     stop("parameters_setting$lr_sig_hub must be a number between 0 and 1 (0 and 1 included)")
   if (parameters_setting$gr_hub < 0 | parameters_setting$gr_hub > 1)
     stop("parameters_setting$gr_hub must be a number between 0 and 1 (0 and 1 included)")
-  if (parameters_setting$ltf_cutoff < 0 | parameters_setting$ltf_cutoff > 1)
-    stop("parameters_setting$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  if(is.null(parameters_setting$ltf_cutoff)){
+    if( parameters_setting$algorithm == "PPR" | parameters_setting$algorithm == "SPL" )
+      warning("Did you not forget to give a value to parameters_setting$ltf_cutoff?")
+  } else {
+    if (parameters_setting$ltf_cutoff < 0 | parameters_setting$ltf_cutoff > 1)
+      stop("parameters_setting$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  }
   if (parameters_setting$algorithm != "PPR" & parameters_setting$algorithm != "SPL" & parameters_setting$algorithm != "direct")
     stop("parameters_setting$algorithm must be 'PPR' or 'SPL' or 'direct'")
 
@@ -978,8 +1001,13 @@ evaluate_model_application_multi_ligand = function(parameters_setting, lr_networ
     stop("parameters_setting$lr_sig_hub must be a number between 0 and 1 (0 and 1 included)")
   if (parameters_setting$gr_hub < 0 | parameters_setting$gr_hub > 1)
     stop("parameters_setting$gr_hub must be a number between 0 and 1 (0 and 1 included)")
-  if (parameters_setting$ltf_cutoff < 0 | parameters_setting$ltf_cutoff > 1)
-    stop("parameters_setting$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  if(is.null(parameters_setting$ltf_cutoff)){
+    if( parameters_setting$algorithm == "PPR" | parameters_setting$algorithm == "SPL" )
+      warning("Did you not forget to give a value to parameters_setting$ltf_cutoff?")
+  } else {
+    if (parameters_setting$ltf_cutoff < 0 | parameters_setting$ltf_cutoff > 1)
+      stop("parameters_setting$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  }
   if (parameters_setting$algorithm != "PPR" & parameters_setting$algorithm != "SPL" & parameters_setting$algorithm != "direct")
     stop("parameters_setting$algorithm must be 'PPR' or 'SPL' or 'direct'")
   if(parameters_setting$algorithm == "PPR"){

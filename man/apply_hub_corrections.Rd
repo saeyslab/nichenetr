@@ -20,6 +20,8 @@ A list containing 2 elements (lr_sig and gr): the hubiness-corrected integrated 
 \code{apply_hub_corrections} downweighs the importance of nodes with a lot of incoming links in the ligand-signaling and/or gene regulatory network. Hub correction method according to following equation: \eqn{Wcor =W * D^-h} with \eqn{D} the indegree matrix of the respective network and \eqn{h} the correction factor.
 }
 \examples{
+\dontrun{
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 wn = apply_hub_corrections(weighted_networks, lr_sig_hub= 0.5, gr_hub= 0.5)
+}
 }

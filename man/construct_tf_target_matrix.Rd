@@ -20,8 +20,9 @@ A matrix containing tf-target regulatory weights.
 \code{construct_tf_target_matrix} Convert integrated gene regulatory weighted network into matrix format.
 }
 \examples{
+ \dontrun{
 ## Generate the ligand-target matrix from loaded weighted_networks
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 tf_target = construct_tf_target_matrix(weighted_networks, tfs_as_cols = TRUE, standalone_output = TRUE)
-
+}
 }
