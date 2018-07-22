@@ -3,13 +3,14 @@
 #' @description \code{model_evaluation_optimization} will take as input a setting of parameters (data source weights and hyperparameters) and layer-specific networks to construct a ligand-target matrix and evaluate its performance on input validation settings (average performance for both target gene prediction and ligand activity prediction, as measured via the auroc and aupr).
 #'
 #' @usage
-#' model_evaluation_optimization(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",...)
+#' model_evaluation_optimization(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",damping_factor = NULL,...)
 #'
 #' @inheritParams evaluate_model
 #' @inheritParams construct_ligand_target_matrix
-#' @param x A list containing the following elements. $source_weights: numeric vector representing the weight for each data source; $lr_sig_hub: hub correction factor for the ligand-signaling network; $gr_hub: hub correction factor for the gene regulatory network; $damping_factor: damping factor in the PPR algorithm if using PPR and optionally $ltf_cutoff: the cutoff on the ligand-tf matrix. For more information about these parameters: see \code{construct_ligand_target_matrix} and \code{apply_hub_correction}.
+#' @param x A list containing parameter values for parameter optimization. $source_weights: numeric vector representing the weight for each data source; $lr_sig_hub: hub correction factor for the ligand-signaling network; $gr_hub: hub correction factor for the gene regulatory network; $damping_factor: damping factor in the PPR algorithm if using PPR and optionally $ltf_cutoff: the cutoff on the ligand-tf matrix. For more information about these parameters: see \code{construct_ligand_target_matrix} and \code{apply_hub_correction}.
 #' @param source_names Character vector containing the names of the data sources. The order of data source names accords to the order of weights in x$source_weights.
 #' @param correct_topology This parameter indicates whether the PPR-constructed ligand-target matrix will be subtracted by a PR-constructed target matrix. TRUE or FALSE.
+#' @param damping_factor The value of the damping factor if damping factor is a fixed parameter and will not be optimized and thus not belong to x. Default NULL.
 #' @param ... Additional arguments to \code{make_discrete_ligand_target_matrix}.
 #'
 #' @return A numeric vector of length 4 containing the average auroc for target gene prediction, average aupr (corrected for TP fraction) for target gene prediction, average auroc for ligand activity prediction and average aupr for ligand activity prediction.
@@ -24,10 +25,12 @@
 #'
 #' @export
 #'
-model_evaluation_optimization = function(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",...){
+model_evaluation_optimization = function(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",damping_factor = NULL,...){
 
   requireNamespace("dplyr")
-
+  if (!is.null(damping_factor) & is.null(x$damping_factor)){ # for the case damping factor is a fixed parameter
+    x$damping_factor = damping_factor
+  }
   #input check
   if (!is.list(x))
     stop("x should be a list!")
@@ -183,7 +186,7 @@ mlrmbo_optimization = function(run_id,obj_fun,niter,ncores,nstart,additional_arg
 #' @description \code{model_evaluation_hyperparameter_optimization} will take as input a setting of parameters (hyperparameters), data source weights and layer-specific networks to construct a ligand-target matrix and evaluate its performance on input validation settings (average performance for both target gene prediction and ligand activity prediction, as measured via the auroc and aupr).
 #'
 #' @usage
-#' model_evaluation_hyperparameter_optimization(x, source_weights, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",...)
+#' model_evaluation_hyperparameter_optimization(x, source_weights, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",damping_factor = NULL,...)
 #'
 #' @inheritParams model_evaluation_optimization
 #' @param x A list containing the following elements. $lr_sig_hub: hub correction factor for the ligand-signaling network; $gr_hub: hub correction factor for the gene regulatory network; $damping_factor: damping factor in the PPR algorithm if using PPR and optionally $ltf_cutoff: the cutoff on the ligand-tf matrix. For more information about these parameters: see \code{construct_ligand_target_matrix} and \code{apply_hub_correction}.
@@ -204,10 +207,12 @@ mlrmbo_optimization = function(run_id,obj_fun,niter,ncores,nstart,additional_arg
 #'
 #' @export
 #'
-model_evaluation_hyperparameter_optimization = function(x, source_weights, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",...){
+model_evaluation_hyperparameter_optimization = function(x, source_weights, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",damping_factor = NULL,...){
 
   requireNamespace("dplyr")
-
+  if (!is.null(damping_factor) & is.null(x$damping_factor)){ # for the case damping factor is a fixed parameter
+    x$damping_factor = damping_factor
+  }
   #input check
   if (!is.list(x))
     stop("x should be a list!")
@@ -355,7 +360,7 @@ process_mlrmbo_nichenet_optimization = function(optimization_results,source_name
 #' @description \code{model_evaluation_optimization_application} will take as input a setting of parameters (data source weights and hyperparameters) and layer-specific networks to construct a ligand-target matrix and evaluate its performance on input application settings (average performance for target gene prediction, as measured via the auroc and aupr).
 #'
 #' @usage
-#' model_evaluation_optimization_application(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",classification_algorithm = "lda",...)
+#' model_evaluation_optimization_application(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",classification_algorithm = "lda",damping_factor = NULL,...)
 #'
 #' @inheritParams model_evaluation_optimization
 #' @param classification_algorithm The name of the classification algorithm to be applied. Should be supported by the caret package. Examples of algorithms we recommend: with embedded feature selection: "rf","glm","fda","glmnet","sdwd","gam","glmboost", "pls" (load "pls" package before!); without: "lda","naive_bayes", "pcaNNet". Please notice that not all these algorithms work when the features (i.e. ligand vectors) are categorical (i.e. discrete class assignments).
@@ -373,10 +378,12 @@ process_mlrmbo_nichenet_optimization = function(optimization_results,source_name
 #'
 #' @export
 #'
-model_evaluation_optimization_application = function(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",classification_algorithm = "lda",...){
+model_evaluation_optimization_application = function(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",classification_algorithm = "lda",damping_factor = NULL,...){
 
   requireNamespace("dplyr")
-
+  if (!is.null(damping_factor) & is.null(x$damping_factor)){ # for the case damping factor is a fixed parameter
+    x$damping_factor = damping_factor
+  }
   #input check
   if (!is.list(x))
     stop("x should be a list!")

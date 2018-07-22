@@ -4,7 +4,7 @@
 \alias{model_evaluation_hyperparameter_optimization}
 \title{Construct and evaluate a ligand-target model given input parameters with the purpose of hyperparameter optimization.}
 \usage{
-model_evaluation_hyperparameter_optimization(x, source_weights, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",...)
+model_evaluation_hyperparameter_optimization(x, source_weights, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",damping_factor = NULL,...)
 }
 \arguments{
 \item{x}{A list containing the following elements. $lr_sig_hub: hub correction factor for the ligand-signaling network; $gr_hub: hub correction factor for the gene regulatory network; $damping_factor: damping factor in the PPR algorithm if using PPR and optionally $ltf_cutoff: the cutoff on the ligand-tf matrix. For more information about these parameters: see \code{construct_ligand_target_matrix} and \code{apply_hub_correction}.}
@@ -26,6 +26,8 @@ model_evaluation_hyperparameter_optimization(x, source_weights, algorithm, corre
 \item{secondary_targets}{Indicate whether a ligand-target matrix should be returned that explicitly includes putative secondary targets of a ligand (by means of an additional matrix multiplication step considering primary targets as possible regulators). Default: FALSE}
 
 \item{remove_direct_links}{Indicate whether direct ligand-target and receptor-target links in the gene regulatory network should be kept or not. "no": keep links; "ligand": remove direct ligand-target links; "ligand-receptor": remove both direct ligand-target and receptor-target links. Default: "no"}
+
+\item{damping_factor}{The value of the damping factor if damping factor is a fixed parameter and will not be optimized and thus not belong to x. Default NULL.}
 
 \item{...}{Additional arguments to \code{make_discrete_ligand_target_matrix}.}
 }

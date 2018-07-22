@@ -51,4 +51,4 @@ gr_network = bind_rows(gr_network_real %>% filter(from %in% (expression_settings
 devtools::use_data(gr_network,overwrite = T,compress = "xz")
 
 
-devtools::use_data(gr_network_real, sig_network_real,expression_settings_validation_real,overwrite = T, compress = "bzip2",internal = TRUE)
+# devtools::use_data(gr_network_real, sig_network_real,expression_settings_validation_real,overwrite = T, compress = "bzip2",internal = TRUE)

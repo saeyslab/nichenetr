@@ -4,10 +4,10 @@
 \alias{model_evaluation_optimization_application}
 \title{Construct and evaluate a ligand-target model given input parameters with the purpose of parameter optimization for multi-ligand application.}
 \usage{
-model_evaluation_optimization_application(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",classification_algorithm = "lda",...)
+model_evaluation_optimization_application(x, source_names, algorithm, correct_topology, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",classification_algorithm = "lda",damping_factor = NULL,...)
 }
 \arguments{
-\item{x}{A list containing the following elements. $source_weights: numeric vector representing the weight for each data source; $lr_sig_hub: hub correction factor for the ligand-signaling network; $gr_hub: hub correction factor for the gene regulatory network; $damping_factor: damping factor in the PPR algorithm if using PPR and optionally $ltf_cutoff: the cutoff on the ligand-tf matrix. For more information about these parameters: see \code{construct_ligand_target_matrix} and \code{apply_hub_correction}.}
+\item{x}{A list containing parameter values for parameter optimization. $source_weights: numeric vector representing the weight for each data source; $lr_sig_hub: hub correction factor for the ligand-signaling network; $gr_hub: hub correction factor for the gene regulatory network; $damping_factor: damping factor in the PPR algorithm if using PPR and optionally $ltf_cutoff: the cutoff on the ligand-tf matrix. For more information about these parameters: see \code{construct_ligand_target_matrix} and \code{apply_hub_correction}.}
 
 \item{source_names}{Character vector containing the names of the data sources. The order of data source names accords to the order of weights in x$source_weights.}
 
@@ -28,6 +28,8 @@ model_evaluation_optimization_application(x, source_names, algorithm, correct_to
 \item{remove_direct_links}{Indicate whether direct ligand-target and receptor-target links in the gene regulatory network should be kept or not. "no": keep links; "ligand": remove direct ligand-target links; "ligand-receptor": remove both direct ligand-target and receptor-target links. Default: "no"}
 
 \item{classification_algorithm}{The name of the classification algorithm to be applied. Should be supported by the caret package. Examples of algorithms we recommend: with embedded feature selection: "rf","glm","fda","glmnet","sdwd","gam","glmboost", "pls" (load "pls" package before!); without: "lda","naive_bayes", "pcaNNet". Please notice that not all these algorithms work when the features (i.e. ligand vectors) are categorical (i.e. discrete class assignments).}
+
+\item{damping_factor}{The value of the damping factor if damping factor is a fixed parameter and will not be optimized and thus not belong to x. Default NULL.}
 
 \item{...}{Additional arguments to \code{evaluate_multi_ligand_target_prediction}.}
 }

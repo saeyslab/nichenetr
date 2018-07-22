@@ -32,8 +32,8 @@ test_that("Objective function to construct and evaluate the model for parameter 
   expect_equal(length(test_evaluation_optimization),4)
 
   print("direct target links")
-  test_input = list("source_weights" = rep(0.5, times = nr_datasources), "lr_sig_hub" = 0.5, "gr_hub" = 0.5, "damping_factor" = 0)
-  test_evaluation_optimization = model_evaluation_optimization(test_input, source_weights_df$source %>% unique(), "PPR", FALSE, lr_network, sig_network, gr_network, lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation), secondary_targets = FALSE, remove_direct_links = "no")
+  test_input = list("source_weights" = rep(0.5, times = nr_datasources), "lr_sig_hub" = 0.5, "gr_hub" = 0.5)
+  test_evaluation_optimization = model_evaluation_optimization(test_input, source_weights_df$source %>% unique(), "PPR", FALSE, lr_network, sig_network, gr_network, lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation), secondary_targets = FALSE, remove_direct_links = "no", damping_factor = 0)
 
   expect_type(test_evaluation_optimization, "double")
   expect_equal(length(test_evaluation_optimization),4)
