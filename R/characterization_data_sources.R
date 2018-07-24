@@ -509,6 +509,47 @@ process_characterization_ligand_prediction_single_measures = function(output_cha
   }) %>% bind_rows()
   return(performances_ligand_prediction_single)
 }
+#' @title Process the output of model evaluation for data source characterization purposes on the ligand prediction performance
+#'
+#' @description \code{process_characterization_ligand_prediction} will process output formed by model evaluation to get a data frame containing performance measures in ligand prediction.
+#'
+#' @usage
+#' process_characterization_ligand_prediction(output_characterization)
+#'
+#' @inheritParams  process_characterization_target_prediction
+#' @return A data frame containing the ligand activity prediction performance for all the models that were evaluated.
+#'
+#' @examples
+#'
+#' \dontrun{
+#' settings = lapply(expression_settings_validation, convert_expression_settings_evaluation)
+#' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
+#' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+#' doMC::registerDoMC(cores = 8)
+#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model,lr_network,sig_network, gr_network,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, mc.cores = 3)
+#' ligand_prediction_performances = process_characterization_ligand_prediction(output_characterization)
+#' }
+#'
+#' @export
+#'
+process_characterization_ligand_prediction = function(output_characterization){
+  # input check
+  if (!is.list(output_characterization))
+    stop("output_characterization should be a list!")
+  if (!is.data.frame(output_characterization[[1]]$performances_ligand_prediction))
+    stop("output_characterization[[1]]$performances_ligand_prediction should be a data frame")
+  if (!is.character(output_characterization[[1]]$model_name))
+    stop("output_characterization[[1]]$model_name should be a character vector")
+
+  requireNamespace("dplyr")
+
+  performances_ligand_prediction = output_characterization %>% lapply(function(x){
+    performances = x$performances_ligand_prediction %>% mutate(model_name = x$model_name)
+    return(performances)
+  }) %>% bind_rows()
+  performances_ligand_prediction = performances_ligand_prediction %>% select(-Resample) %>% group_by(model_name) %>% mutate_all(mean) %>% distinct()
+  return(performances_ligand_prediction)
+}
 #' @title Process the output of model evaluation for data source characterization purposes on the popularity bias assessment of target prediction performance
 #'
 #' @description \code{process_characterization_popularity_slopes_target_prediction} will process output formed by model evaluation to get a data frame containing popularity bias measures in performance of target gene prediction.
