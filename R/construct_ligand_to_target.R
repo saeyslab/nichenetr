@@ -164,7 +164,7 @@ apply_hub_corrections = function(weighted_networks,lr_sig_hub, gr_hub) {
 #' @param weighted_networks A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)
 #' @param ligands A list of all ligands and ligand-combinations of which target gene probability scores should be calculated. Example format: list("TNF","BMP2",c("IL4","IL13")).
 #' @param ltf_cutoff Ligand-tf scores beneath the "ltf_cutoff" quantile will be set to 0. Default: 0.99 such that only the 1 percent closest tfs will be considered as possible tfs downstream of the ligand of choice.
-#' @param algorithm Selection of the algorithm to calculate ligand-tf signaling probability scores. Different options: "PPR" (personalized pagerank), "SPL" (shortest path length) and "direct"(just take weights of ligand-signaling network as ligand-tf weights). Default and recommended: PPR.
+#' @param algorithm Selection of the algorithm to calculate ligand-tf signaling probability scores. Different options: "PPR" (personalized pagerank), "SPL" (shortest path length) and "direct"(just take weights of ligand-signaling network as ligand-tf weights + give the ligand itself the max score). Default and recommended: PPR.
 #' @param damping_factor Only relevant when algorithm is PPR. In the PPR algorithm, the damping factor is the probability that the random walker will continue its walk on the graph; 1-damping factor is the probability that the walker will return to the seed node. Default: 0.5.
 #' @param ligands_as_cols Indicate whether ligands should be in columns of the matrix and target genes in rows or vice versa. Default: FALSE
 #'
@@ -250,6 +250,8 @@ construct_ligand_tf_matrix = function(weighted_networks, ligands, ltf_cutoff = 0
     # SPL
     complete_matrix = lapply(ligands,SPL_wrapper,signaling_igraph,id2allgenes,ltf_cutoff)
   } else if (algorithm == "direct"){
+    ligand_ligand_network = tibble::tibble(from_allgenes = id2allgenes[unlist(ligands)], to_allgenes = id2allgenes[unlist(ligands)]) %>% inner_join(ligand_signaling_network %>% filter(from_allgenes %in% id2allgenes[unlist(ligands)]) %>% group_by(from_allgenes) %>% top_n(1,weight) %>% ungroup() %>% distinct(from_allgenes,weight), by = "from_allgenes")
+    ligand_signaling_network = ligand_signaling_network %>% bind_rows(ligand_ligand_network)
     ligand_signaling_network_matrix = Matrix::sparseMatrix(ligand_signaling_network$from_allgenes %>% as.integer, ligand_signaling_network$to_allgenes %>% as.integer, x=ligand_signaling_network$weight %>% as.numeric, dims = c(length(allgenes), length(allgenes)))
     signaling_igraph = igraph::graph_from_adjacency_matrix(ligand_signaling_network_matrix, weighted=TRUE, mode="directed")
 
