@@ -22,12 +22,8 @@ You can install nichenetr from github with:
 
 ```{r gh-installation, eval = FALSE}
 # install.packages("devtools")
-devtools::install_github("browaeysrobin/nichenetr", build_vignettes = TRUE)
+devtools::install_github("browaeysrobin/nichenetr")
 ```
-
-## Example: model construction
-
-This is a basic example which shows you how to construct the matrix of ligand-target probability scores for ligands of interest, starting from collecting ligand-receptor, signaling and gene regulatory interactions.
 
 To start using nichenetr: 
 ```{r example}
@@ -35,59 +31,67 @@ library(nichenetr)
 library(tidyverse)
 ```
 
+## Example: model construction
+
+This is a basic example which shows you how to construct the matrix of ligand-target probability scores for ligands of interest, starting from collected ligand-receptor, signaling and gene regulatory interactions. For real application of this package, please download and use the complete networks and not the networks provided by the package.
+
 First convert the individual ligand-receptor, signaling and gene regulatory data source networks into weighted integrated networks by weighted aggregation of the individual networks. 
 
 ```{r}
-weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, source_weights_df = source_weights_df)
 ```
 
-In a next step, we will downweigh the importance of hubs in the ligand-signaling and gene regualtory network.
+In a next step, we will downweigh the importance of hubs in the ligand-signaling and gene regulatory network.
 
 ```{r}
-weighted_networks = apply_hub_corrections(weighted_networks, lr_sig_hub = 0.5, gr_hub = 0.5)
+weighted_networks = weighted_networks %>% apply_hub_corrections(lr_sig_hub = 0.5, gr_hub = 0.5)
 ```
 Now we will use these hubiness-corrected weighted networks to calculate probability scores for ligands of interest, here: the ligands of which we will evaluate the target gene prediction later on.
 ```{r}
-ligands = extract_ligands_from_settings(expression_settings_validation)
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, algorithm = "PPR", damping_factor = 0.5)
+ligands = extract_ligands_from_settings(settings = expression_settings_validation)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = 0.5)
 ```
 
-Show the names and scores of the top 50 target genes of BMP2
+Show the names and scores of the top 10 target genes of BMP4
 ```{r}
-extract_top_n_targets("BMP2",50,ligand_target_matrix)
+extract_top_n_targets(ligand_oi = "BMP4", top_n = 10, ligand_target_matrix = ligand_target_matrix)
 ```
 
 ## Example: transcriptional response prediction evaluation
 
-Evaluate the target gene prediction performance for 53 ligand-treatment expression datasets
+Evaluate the target gene prediction performance for the Nodal ligand-treatment expression dataset.
+```{r}
+performance_targets_prediction_nodal = evaluate_target_prediction(setting = expression_settings_validation$nodal_Nodal %>% convert_expression_settings_evaluation(),ligand_target_matrix = ligand_target_matrix)
+```
+
+Evaluate the target gene prediction performance for all 5 ligand-treatment expression datasets provided by the package.
 ```{r}
 settings = lapply(expression_settings_validation, convert_expression_settings_evaluation)
 performances = bind_rows(lapply(settings, evaluate_target_prediction, ligand_target_matrix))
-performances_discrete = bind_rows(lapply(settings, evaluate_target_prediction, ligand_target_matrix %>% make_discrete_ligand_target_matrix()))
 ```
 
 ## Example: ligand activity state prediction evaluation
 
-Get ligand importance scores for 53 ligand-treatment expression datasets of which the true acive ligand is known: single-ligand scores
+Get ligand importance scores for all 5 ligand-treatment expression datasets of which the true acive ligand is known: single-ligand scores
 ```{r}
 all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE))
-settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = all_ligands, validation = TRUE, single = TRUE)
+settings_ligand_pred = convert_settings_ligand_prediction(settings = settings, all_ligands = all_ligands, validation = TRUE, single = TRUE)
 
 ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances,ligand_target_matrix[,all_ligands]))
-ligand_importances_discrete = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix[,all_ligands] %>% make_discrete_ligand_target_matrix()))
-
 ```
-Get ligand importance scores for 53 ligand-treatment expression datasets of which the true acive ligand is known: logistic regression ligand importance scores
+Get ligand importance scores for all 5 ligand-treatment expression datasets of which the true acive ligand is known: logistic regression ligand importance scores
 ```{r}
-settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = all_ligands, validation = TRUE, single = FALSE)
+settings_ligand_pred = convert_settings_ligand_prediction(settings = settings, all_ligands = all_ligands, validation = TRUE, single = FALSE)
 ligand_importances_glm = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances,ligand_target_matrix[,all_ligands], algorithm = "glm", filter_genes = TRUE)) %>% rename(glm_imp = importance)
 
 ```
 Process the ligand importance scores and see how well these scores can predict ligand activity
 ```{r}
-all_importances = list(ligand_importances,ligand_importances_discrete,ligand_importances_glm) %>% reduce(inner_join, by = c("setting","ligand","test_ligand"))
-evaluation = evaluate_importances_ligand_prediction(all_importances,"median","lda",cv_number = 3, cv_repeats = 20)
-evaluation$performances
-evaluation$var_imps
-evaluation_single = evaluate_single_importances_ligand_prediction(all_importances,normalization = "median")
+all_importances = inner_join(ligand_importances,ligand_importances_glm, by = c("setting","ligand","test_ligand"))
+
+# look at predictive performance individual importance measures to predict ligand activity
+evaluation_ligand_prediction_single = evaluate_single_importances_ligand_prediction(importances = all_importances, normalization = "mean")
+# look at predictive performance classifier using all importance measures to predict ligand activity
+evaluation_ligand_prediction = evaluate_importances_ligand_prediction(importances = all_importances, normalization = "mean", algorithm = "lda")
+evaluation_ligand_prediction$performances
 ```
