@@ -533,3 +533,107 @@ estimate_source_weights_characterization = function(loi_performances,loo_perform
   new_source_weight_df = assign_new_weight(loi_performances_test, loo_performances_test,output_regression_model,source_weights_df)
   return(list(source_weights_df = new_source_weight_df, model = output_regression_model))
 }
+#' @title Construct and evaluate a ligand-target model given input parameters with the purpose of evaluating cross-validation models.
+#'
+#' @description \code{evaluate_model_cv} will take as input a setting of parameters (data source weights and hyperparameters) and layer-specific networks to construct a ligand-target matrix and calculate the model's performance in target gene prediction and feature importance scores for ligand prediction).
+#'
+#' @usage
+#' evaluate_model_cv(parameters_setting, lr_network, sig_network, gr_network, settings, secondary_targets = FALSE, remove_direct_links = "no",...)
+#'
+#' @inheritParams evaluate_model
+#'
+#' @return A list containing following elements: $performances_target_prediction, $importances_ligand_prediction.
+#'
+#' @importFrom tibble tibble
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#' settings = lapply(expression_settings_validation[1:4], convert_expression_settings_evaluation)
+#' weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network,sig_network, gr_network, source_weights_df)
+#' weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+#' doMC::registerDoMC(cores = 8)
+#' output_characterization = parallel::mclapply(weights_settings_loi[1:3],evaluate_model_cv,lr_network,sig_network, gr_network,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, mc.cores = 3)
+#' }
+#'
+#' @export
+#'
+evaluate_model_cv = function(parameters_setting, lr_network, sig_network, gr_network, settings,secondary_targets = FALSE, remove_direct_links = "no", ...){
+
+  requireNamespace("dplyr")
+
+  # input check
+  if (!is.list(parameters_setting))
+    stop("parameters_setting should be a list!")
+  if (!is.character(parameters_setting$model_name))
+    stop("parameters_setting$model_name should be a character vector")
+  if (!is.numeric(parameters_setting$source_weights) | is.null(names(parameters_setting$source_weights)))
+    stop("parameters_setting$source_weights should be a named numeric vector")
+  if (parameters_setting$lr_sig_hub < 0 | parameters_setting$lr_sig_hub > 1)
+    stop("parameters_setting$lr_sig_hub must be a number between 0 and 1 (0 and 1 included)")
+  if (parameters_setting$gr_hub < 0 | parameters_setting$gr_hub > 1)
+    stop("parameters_setting$gr_hub must be a number between 0 and 1 (0 and 1 included)")
+  if(is.null(parameters_setting$ltf_cutoff)){
+    if( parameters_setting$algorithm == "PPR" | parameters_setting$algorithm == "SPL" )
+      warning("Did you not forget to give a value to parameters_setting$ltf_cutoff?")
+  } else {
+    if (parameters_setting$ltf_cutoff < 0 | parameters_setting$ltf_cutoff > 1)
+      stop("parameters_setting$ltf_cutoff must be a number between 0 and 1 (0 and 1 included)")
+  }
+  if (parameters_setting$algorithm != "PPR" & parameters_setting$algorithm != "SPL" & parameters_setting$algorithm != "direct")
+    stop("parameters_setting$algorithm must be 'PPR' or 'SPL' or 'direct'")
+  if(parameters_setting$algorithm == "PPR"){
+    if (parameters_setting$damping_factor < 0 | parameters_setting$damping_factor >= 1)
+      stop("parameters_setting$damping_factor must be a number between 0 and 1 (0 included, 1 not)")
+  }
+
+  if (parameters_setting$correct_topology != TRUE & parameters_setting$correct_topology != FALSE)
+    stop("parameters_setting$correct_topology must be TRUE or FALSE")
+
+  if (!is.data.frame(lr_network))
+    stop("lr_network must be a data frame or tibble object")
+  if (!is.data.frame(sig_network))
+    stop("sig_network must be a data frame or tibble object")
+  if (!is.data.frame(gr_network))
+    stop("gr_network must be a data frame or tibble object")
+  if (!is.list(settings))
+    stop("settings should be a list!")
+  if(!is.character(settings[[1]]$from) | !is.character(settings[[1]]$name))
+    stop("setting$from and setting$name should be character vectors")
+  if(!is.logical(settings[[1]]$response) | is.null(names(settings[[1]]$response)))
+    stop("setting$response should be named logical vector containing class labels of the response that needs to be predicted ")
+
+  if (secondary_targets != TRUE & secondary_targets != FALSE)
+    stop("secondary_targets must be TRUE or FALSE")
+  if (remove_direct_links != "no" & remove_direct_links != "ligand" & remove_direct_links != "ligand-receptor")
+    stop("remove_direct_links must be  'no' or 'ligand' or 'ligand-receptor'")
+    # construct model
+  ligands =  extract_ligands_from_settings(settings)
+  output_model_construction = construct_model(parameters_setting, lr_network, sig_network, gr_network, ligands, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links)
+  model_name = output_model_construction$model_name
+  ligand_target_matrix = output_model_construction$model
+  ligand_target_matrix_discrete = ligand_target_matrix %>% make_discrete_ligand_target_matrix(...)
+
+  # transcriptional response evaluation
+  performances_target_prediction = bind_rows(lapply(settings,evaluate_target_prediction, ligand_target_matrix))
+  performances_target_prediction_discrete = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix_discrete))
+  performances_target_prediction = performances_target_prediction %>% full_join(performances_target_prediction_discrete, by = c("setting", "ligand"))
+
+  # ligand activity state prediction
+  all_ligands = unlist(extract_ligands_from_settings(settings, combination = FALSE))
+
+  settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = TRUE)
+  ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix[, all_ligands]))
+
+  ligand_importances_discrete = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix_discrete[, all_ligands]))
+
+  settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = FALSE)
+  ligand_importances_glm = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances, ligand_target_matrix[,all_ligands], algorithm = "glm", cv = FALSE)) %>% rename(glm_imp = importance)
+
+  all_importances = full_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand")) %>% full_join(ligand_importances_discrete, by = c("setting","test_ligand", "ligand"))
+
+  all_importances = all_importances %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
+
+  return(list(performances_target_prediction = performances_target_prediction, importances_ligand_prediction = all_importances))
+
+}
