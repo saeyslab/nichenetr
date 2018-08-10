@@ -290,7 +290,7 @@ model_evaluation_hyperparameter_optimization = function(x, source_weights, algor
 #'
 #' @param optimization_results A list generated as output from multi-objective optimization by mlrMBO. Should contain the elements $pareto.front, $pareto.set See \code{mlrmbo_optimization}.
 #' @param source_names Character vector containing the names of the data sources. The order of data source names accords to the order of weights in x$source_weights.
-#' @param parameter_set_index Number indicating which of the proposed solutions must be selected to extract optimal parameters. If NULL: the solution of which that average z-score of the objective functions outputs is the highest will be selected. Default: NULL.
+#' @param parameter_set_index Number indicating which of the proposed solutions must be selected to extract optimal parameters. If NULL: the solution with the highest geometric mean will be selected. Default: NULL.
 #'
 #' @return A list containing the parameter values leading to maximal performance and thus with the following elements: $source_weight_df, $lr_sig_hub, $gr_hub, $ltf_cutoff, $damping_factor
 #'
@@ -334,7 +334,7 @@ process_mlrmbo_nichenet_optimization = function(optimization_results,source_name
   # winning parameter set
   if(is.null(parameter_set_index)){
     # parameter_set_index = optimization_results$pareto.front %>% tbl_df() %>% mutate(average = apply(.,1,mean), index = seq(nrow(.))) %>% filter(average == max(average)) %>% .$index
-    parameter_set_index = optimization_results$pareto.front %>% tbl_df() %>% apply(2,function(x){(x-mean(x))/sd(x)}) %>% tbl_df() %>% mutate(average = apply(.,1,mean), index = seq(nrow(.))) %>% filter(average == max(average)) %>% .$index # take the best parameter setting considering the average of z-scores for each objective function result
+    parameter_set_index = optimization_results$pareto.front %>% tbl_df() %>% mutate(average = apply(.,1,function(x){exp(mean(log(x)))}), index = seq(nrow(.))) %>% filter(average == max(average)) %>% .$index # take the best parameter setting considering the geometric mean of the objective function results
   }
   if(parameter_set_index > nrow(optimization_results$pareto.front))
     stop("parameter_set_index may not be a number higher than the total number of proposed solutions")

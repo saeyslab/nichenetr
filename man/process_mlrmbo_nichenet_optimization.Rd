@@ -11,7 +11,7 @@ process_mlrmbo_nichenet_optimization(optimization_results,source_names,parameter
 
 \item{source_names}{Character vector containing the names of the data sources. The order of data source names accords to the order of weights in x$source_weights.}
 
-\item{parameter_set_index}{Number indicating which of the proposed solutions must be selected to extract optimal parameters. If NULL: the solution of which that average z-score of the objective functions outputs is the highest will be selected. Default: NULL.}
+\item{parameter_set_index}{Number indicating which of the proposed solutions must be selected to extract optimal parameters. If NULL: the solution with the highest geometric mean will be selected. Default: NULL.}
 }
 \value{
 A list containing the parameter values leading to maximal performance and thus with the following elements: $source_weight_df, $lr_sig_hub, $gr_hub, $ltf_cutoff, $damping_factor
