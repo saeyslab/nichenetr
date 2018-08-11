@@ -693,41 +693,43 @@ wrapper_caret_regression = function(train_data, algorithm, var_imps = TRUE, cv =
     doMC::registerDoMC(cores = n_cores)
   }
 
-    if (cv == TRUE){
-      control =  caret::trainControl(method="repeatedcv",
-                                     number=cv_number,
-                                     repeats=cv_repeats,
-                                     preProcOptions = NULL,
-                                     summaryFunction = caret_regression_evaluation_continuous)
-    } else if (cv == FALSE) {
-      control =  caret::trainControl(method="none",
-                                     preProcOptions = NULL,
-                                     summaryFunction = caret_regression_evaluation_continuous)
-    }
-    if (ignore_errors == TRUE){
-      # avoid errors due to bad splits during cross-validation that make that not both classes are present
-      caret_train = purrr::safely(caret::train)
-      result = NULL
-      while(is.null(result)){
-        model = caret_train(y = train_data$obs,
-                            x = train_data[,-(which(colnames(train_data) == "obs"))],
-                            method=algorithm,
-                            trControl=control,
-                            metric = 'inverse_rmse',
-                            maximize = TRUE) # RMSE should be minimized - so maximize its inverse
-        result = model$result
-        # if(!is.null(model$error)){print(model$error)}
+  if (cv == TRUE){
+    control =  caret::trainControl(method="repeatedcv",
+                                   number=cv_number,
+                                   repeats=cv_repeats,
+                                   preProcOptions = NULL,
+                                   summaryFunction = caret_regression_evaluation_continuous)
+  } else if (cv == FALSE) {
+    control =  caret::trainControl(method="none",
+                                   preProcOptions = NULL,
+                                   summaryFunction = caret_regression_evaluation_continuous)
+  }
+  if (ignore_errors == TRUE){
+    # avoid errors due to bad splits during cross-validation that make that not both classes are present
+    caret_train = purrr::safely(caret::train)
+    result = NULL
+    while(is.null(result)){
+      model = caret_train(y = train_data$obs,
+                          x = train_data[,-(which(colnames(train_data) == "obs"))],
+                          method=algorithm,
+                          trControl=control,
+                          metric = 'inverse_rmse',
+                          maximize = TRUE,
+                          importance = TRUE) # RMSE should be minimized - so maximize its inverse
+      result = model$result
+      # if(!is.null(model$error)){print(model$error)}
 
-      }
-      model = model$result
-    } else {
-      model = caret::train(y = train_data$obs,
-                           x = train_data[,-(which(colnames(train_data) == "obs"))],
-                           method=algorithm,
-                           trControl=control,
-                           metric = 'inverse_rmse',
-                           maximize = TRUE) # RMSE should be minimized - so maximize its inverse
-      }
+    }
+    model = model$result
+  } else {
+    model = caret::train(y = train_data$obs,
+                         x = train_data[,-(which(colnames(train_data) == "obs"))],
+                         method=algorithm,
+                         trControl=control,
+                         metric = 'inverse_rmse',
+                         maximize = TRUE,
+                         importance = TRUE) # RMSE should be minimized - so maximize its inverse
+  }
 
 
   performances =  model$resample
