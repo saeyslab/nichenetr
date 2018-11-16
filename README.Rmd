@@ -35,7 +35,7 @@ devtools::install_github("browaeysrobin/nichenetr")
 
 ## Learning to use nichenetr
 
-To start learning nichenetr, read the introductory example below, or read one of the vignettes containing more elaborate examples:
+To learn using nichenetr, read one of the vignettes explaining several types of analyses:
 
 * [NicheNet's ligand activity analysis on a gene set of interest](vignettes/ligand_activity_geneset.md): `vignette("ligand_activity_geneset", package="nichenetr")`
 * [Single-cell NicheNet's ligand activity analysis](vignettes/ligand_activity_single_cell.md): `vignette("ligand_activity_single_cell", package="nichenetr")`
@@ -43,14 +43,6 @@ To start learning nichenetr, read the introductory example below, or read one of
 * [Construction of NicheNet's ligand-target model](vignettes/model_construction.md): `vignette("model_construction", package="nichenetr")`
 * [Evaluation of NicheNet's ligand-target predictions](vignettes/model_evaluation.md): `vignette("model_evaluation", package="nichenetr")`
 
-## Introductory example
 
-To start using nichenetr: 
-```{r example}
-library(nichenetr)
-library(tidyverse)
-```
-
-## References
 
 
