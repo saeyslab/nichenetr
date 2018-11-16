@@ -1,7 +1,7 @@
 ---
-output: 
-  md_document:
-    variant: markdown_github
+output:
+  github_document:
+    html_preview: false
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -9,14 +9,22 @@ output:
 <!-- github markdown built using
 rmarkdown::render("README.Rmd",output_format = "md_document")
 -->
+
 # nichenetr
 
 [![Build Status](https://travis-ci.com/browaeysrobin/nichenetr.svg?token=VGtLRzaypARgyC5XCHLK&branch=master)](https://travis-ci.com/browaeysrobin/nichenetr)
 [![Coverage Status](https://codecov.io/gh/browaeysrobin/nichenetr/branch/master/graph/badge.svg?token=6MVsN4nFlq)](https://codecov.io/gh/browaeysrobin/nichenetr?branch=master&token=6MVsN4nFlq)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1484138.svg)](https://doi.org/10.5281/zenodo.1484138)
 
-The goal of nichenetr is to explore intercellular communication from a computational perspective. At the basis of this package, is a probabilistic model of ligand-target links that was inferred by data-integration.
+**nichenetr: the R implementation of the NicheNet method.** The goal of NicheNet is to study intercellular communication from a computational perspective. NicheNet integrates expression data of interacting cells with prior information on potential links between ligands and target genes. Hereby, NicheNet can be used to study how one cell (or cell type) influences gene expression in an interacting cell (or cell type). This type of analysis can provide novel functional insights into intercellular signaling processes compared to limiting the analyis to ligand-receptor inference. 
 
-## Installation
+Specific functionalities include: 
+* assessing how well ligands expressed by a sender cell can predict changes in gene expression in the receiver cell
+* prioritizing ligands based on their effect on gene expression
+* inferring putative ligand-target links active in the system under study
+* inferring potential signaling paths between ligands and target genes of interest
+
+## Installation of nichenetr
 
 You can install nichenetr from github with:
 
@@ -25,73 +33,24 @@ You can install nichenetr from github with:
 devtools::install_github("browaeysrobin/nichenetr")
 ```
 
+## Learning to use nichenetr
+
+To start learning nichenetr, read the introductory example below, or read one of the vignettes containing more elaborate examples:
+
+* [NicheNet's ligand activity analysis on a gene set of interest](vignettes/ligand_activity_geneset.md): `vignette("ligand_activity_geneset", package="nichenetr")`
+* [Single-cell NicheNet's ligand activity analysis](vignettes/ligand_activity_single_cell.md): `vignette("ligand_activity_single_cell", package="nichenetr")`
+* [Inferring ligand-to-target signaling paths](vignettes/ligand_target_signaling_path.md): `vignette("ligand_target_signaling_path", package="nichenetr")`
+* [Construction of NicheNet's ligand-target model](vignettes/model_construction.md): `vignette("model_construction", package="nichenetr")`
+* [Evaluation of NicheNet's ligand-target predictions](vignettes/model_evaluation.md): `vignette("model_evaluation", package="nichenetr")`
+
+## Introductory example
+
 To start using nichenetr: 
 ```{r example}
 library(nichenetr)
 library(tidyverse)
 ```
 
-## Example: model construction
+## References
 
-This is a basic example which shows you how to construct the matrix of ligand-target probability scores for ligands of interest, starting from collected ligand-receptor, signaling and gene regulatory interactions. For real application of this package, please download and use the complete networks and not the networks provided by the package.
 
-First convert the individual ligand-receptor, signaling and gene regulatory data source networks into weighted integrated networks by weighted aggregation of the individual networks. 
-
-```{r}
-weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, source_weights_df = source_weights_df)
-```
-
-In a next step, we will downweigh the importance of hubs in the ligand-signaling and gene regulatory network.
-
-```{r}
-weighted_networks = weighted_networks %>% apply_hub_corrections(lr_sig_hub = 0.5, gr_hub = 0.5)
-```
-Now we will use these hubiness-corrected weighted networks to calculate probability scores for ligands of interest, here: the ligands of which we will evaluate the target gene prediction later on.
-```{r}
-ligands = extract_ligands_from_settings(settings = expression_settings_validation)
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = 0.5)
-```
-
-Show the names and scores of the top 10 target genes of BMP4
-```{r}
-extract_top_n_targets(ligand_oi = "BMP4", top_n = 10, ligand_target_matrix = ligand_target_matrix)
-```
-
-## Example: transcriptional response prediction evaluation
-
-Evaluate the target gene prediction performance for the Nodal ligand-treatment expression dataset.
-```{r}
-performance_targets_prediction_nodal = evaluate_target_prediction(setting = expression_settings_validation$nodal_Nodal %>% convert_expression_settings_evaluation(),ligand_target_matrix = ligand_target_matrix)
-```
-
-Evaluate the target gene prediction performance for all 5 ligand-treatment expression datasets provided by the package.
-```{r}
-settings = lapply(expression_settings_validation, convert_expression_settings_evaluation)
-performances = bind_rows(lapply(settings, evaluate_target_prediction, ligand_target_matrix))
-```
-
-## Example: ligand activity state prediction evaluation
-
-Get ligand importance scores for all 5 ligand-treatment expression datasets of which the true acive ligand is known: single-ligand scores
-```{r}
-all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE))
-settings_ligand_pred = convert_settings_ligand_prediction(settings = settings, all_ligands = all_ligands, validation = TRUE, single = TRUE)
-
-ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances,ligand_target_matrix[,all_ligands]))
-```
-Get ligand importance scores for all 5 ligand-treatment expression datasets of which the true acive ligand is known: logistic regression ligand importance scores
-```{r}
-settings_ligand_pred = convert_settings_ligand_prediction(settings = settings, all_ligands = all_ligands, validation = TRUE, single = FALSE)
-ligand_importances_glm = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances,ligand_target_matrix[,all_ligands], algorithm = "glm", filter_genes = TRUE)) %>% rename(glm_imp = importance)
-
-```
-Process the ligand importance scores and see how well these scores can predict ligand activity
-```{r}
-all_importances = inner_join(ligand_importances,ligand_importances_glm, by = c("setting","ligand","test_ligand"))
-
-# look at predictive performance individual importance measures to predict ligand activity
-evaluation_ligand_prediction_single = evaluate_single_importances_ligand_prediction(importances = all_importances, normalization = "mean")
-# look at predictive performance classifier using all importance measures to predict ligand activity
-evaluation_ligand_prediction = evaluate_importances_ligand_prediction(importances = all_importances, normalization = "mean", algorithm = "lda")
-evaluation_ligand_prediction$performances
-```
