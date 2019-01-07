@@ -305,8 +305,8 @@ ligand_activity_performance_top_i_removed = function(i, importances, ncitations)
   requireNamespace("dplyr")
 
   if (i > 0){
-    ncitations_filtered = ncitations %>% filter(symbol %in% all_ligands)
-    top_i_ligands = ncitations_filtered %>% top_n(i, ncitations) %>% .$symbol
+    ncitations_filtered = ncitations %>% distinct(symbol, ncitations) %>% filter(symbol %in% all_ligands)
+    top_i_ligands = ncitations_filtered %>% top_n(i, ncitations) %>% arrange(-ncitations) %>% .$symbol
     top_ligands_active = are_ligands_oi_active(importances, top_i_ligands)
     importances = importances %>% mutate(active = top_ligands_active)
     importances_filtered = importances %>% filter(active == FALSE) %>% select(-active)
@@ -319,7 +319,8 @@ ligand_activity_performance_top_i_removed = function(i, importances, ncitations)
   # print(importances_filtered)
 
   performances_ligand_prediction_single = evaluate_single_importances_ligand_prediction(importances_filtered, "median")
-  performances = performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% mutate(popularity_index = (i)/(total_ligands))
+  performances = performances_ligand_prediction_single %>% filter(importance_measure == "pearson" | importance_measure == "ipa_pval") %>% mutate(popularity_index = (i)/(total_ligands))
+  # performances = performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% mutate(popularity_index = (i)/(total_ligands))
   return(performances)
 }
 #' @title Regression analysis between popularity of left-out ligands for ligand activity prediction performance

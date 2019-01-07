@@ -663,15 +663,13 @@ prepare_settings_one_vs_one_characterization = function(lr_network, sig_network,
     stop("sig_network must be a data frame or tibble object")
   if (!is.data.frame(gr_network))
     stop("gr_network must be a data frame or tibble object")
-  if (!is.data.frame(source_weights_df) || sum((source_weights_df$weight > 1)) != 0)
-    stop("source_weights_df must be a data frame or tibble object and no data source weight may be higher than 1")
-  if(lr_network_separate != TRUE & lr_network_separate != FALSE)
+   if(lr_network_separate != TRUE & lr_network_separate != FALSE)
     stop("lr_network_separate should be TRUE or FALSE")
 
   requireNamespace("dplyr")
   if (lr_network_separate == FALSE){
-    lr_sig_sources = source_weights_df %>% filter(source %in% c(lr_network$source %>% unique(), sig_network$source %>% unique())) %>% .$source
-    gr_sources = source_weights_df %>% filter(source %in% unique(gr_network$source)) %>% .$source
+    lr_sig_sources = c(lr_network$source, sig_network$source) %>% unique()
+    gr_sources = unique(gr_network$source)
 
     source_possibilities_df = expand.grid(lr_sig_sources, gr_sources) %>% tbl_df() %>% rename(lr_sig_source = Var1, gr_source = Var2) %>% mutate(lr_sig_source = as.character(lr_sig_source), gr_source = as.character(gr_source))
 
@@ -687,9 +685,9 @@ prepare_settings_one_vs_one_characterization = function(lr_network, sig_network,
       return(list(model_name = model_name, lr_sig_source = lr_sig_source, gr_source = gr_source, source_weights = novel_weights))
     }, source_possibilities_df)
   } else {
-    lr_sources = source_weights_df %>% filter(source %in% c(lr_network$source %>% unique())) %>% .$source
-    sig_sources = source_weights_df %>% filter(source %in% c(sig_network$source %>% unique())) %>% .$source
-    gr_sources = source_weights_df %>% filter(source %in% unique(gr_network$source)) %>% .$source
+    lr_sources = unique(lr_network$source)
+    sig_sources = unique(sig_network$source)
+    gr_sources = unique(gr_network$source)
 
     source_possibilities_df = expand.grid(lr_sources,sig_sources, gr_sources) %>% tbl_df() %>% rename(lr_source = Var1, sig_source = Var2, gr_source = Var3) %>% mutate(lr_source = as.character(lr_source), sig_source = as.character(sig_source), gr_source = as.character(gr_source))
 
