@@ -27,7 +27,7 @@ First, we will load the necessary networks to infer signaling paths between liga
 
 ```{r}
 library(nichenetr)
-library(tidyverse)
+library(dplyr)
 
 weighted_networks = readRDS(url("https://zenodo.org/record/1484138/files/weighted_networks.rds"))
 ligand_tf_matrix = readRDS(url("https://zenodo.org/record/1484138/files/ligand_tf_matrix.rds"))
@@ -39,7 +39,7 @@ gr_network = readRDS(url("https://zenodo.org/record/1484138/files/gr_network.rds
 
 As example, we will infer signaling paths between TGFB3 and its top-predicted target genes LAMA3, LAMC2 and TNC.
 
-```{r, fig.width=8, fig.height=8}
+```{r}
 ligands_all = "TGFB3"
 targets_all = c("LAMA3","LAMC2","TNC")
 
@@ -51,7 +51,7 @@ active_signaling_network_min_max$sig = active_signaling_network_min_max$sig %>% 
 active_signaling_network_min_max$gr = active_signaling_network_min_max$gr %>% mutate(weight = 2*((weight-min(weight))/(max(weight)-min(weight))) + 0.75)
 
 graph_min_max = diagrammer_format_signaling_graph(active_signaling_network_min_max, ligands_all,targets_all, sig_color = "indianred", gr_color = "steelblue")
-DiagrammeR::render_graph(graph_min_max, layout = "tree")
+# DiagrammeR::render_graph(graph_min_max, layout = "tree")
 
 ```
 
