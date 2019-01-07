@@ -2,15 +2,17 @@
 title: "NicheNet's ligand activity analysis on a gene set of interest"
 author: "Robin Browaeys"
 date: "2018-11-12"
-output:
-  md_document:
-    variant: markdown_github
+output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{NicheNet's ligand activity analysis on a gene set of interest}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 bibliography: library.bib
 ---
+
+<!-- github markdown built using 
+rmarkdown::render("vignettes/ligand_activity_geneset.Rmd", output_format = "github_document")
+-->
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(

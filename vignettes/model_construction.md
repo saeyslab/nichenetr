@@ -1,3 +1,11 @@
+Construction of NicheNet's ligand-target model
+================
+Robin Browaeys
+2018-11-12
+
+<!-- github markdown built using 
+rmarkdown::render("vignettes/model_construction.Rmd", output_format = "github_document")
+-->
 This vignette shows how ligand-target regulatory potential scores are inferred in the NicheNet framework. You can use the procedure shown here to develop your own model with inclusion of context-specific networks or removal of noisy irrelevant data sources. The networks at the basis of NicheNet can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1484138.svg)](https://doi.org/10.5281/zenodo.1484138). Load the required packages and networks we will use to construct the model.
 
 ``` r

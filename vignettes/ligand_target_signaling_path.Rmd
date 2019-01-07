@@ -6,10 +6,14 @@ output:
   md_document:
     variant: markdown_github
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Inferring ligand-to-target signaling paths}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+<!-- github markdown built using 
+rmarkdown::render("vignettes/ligand_target_signaling_path.Rmd", output_format = "github_document")
+-->
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(

@@ -1,3 +1,11 @@
+Inferring ligand-to-target signaling paths
+================
+Robin Browaeys
+2018-11-12
+
+<!-- github markdown built using 
+rmarkdown::render("vignettes/ligand_target_signaling_path.Rmd", output_format = "github_document")
+-->
 ### Infer signaling paths beween ligand(s) and target(s) of interest
 
 To determine signaling paths between a ligand and target of interest, we look at which transcription factors are best regulating the target genes and are most closely downstream of the ligand. Then, the shortest paths between these transcription factors and the ligand of interests are determined and genes forming part in this path are considered as important signaling mediators. Finally, we give all interactions between the ligand, signaling mediators, transcription factors and target genes.

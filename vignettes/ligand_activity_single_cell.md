@@ -1,3 +1,11 @@
+Single-cell NicheNet's ligand activity analysis
+================
+Robin Browaeys
+2018-11-12
+
+<!-- github markdown built using 
+rmarkdown::render("vignettes/ligand_activity_single_cell.Rmd", output_format = "github_document")
+-->
 This vignette shows how NicheNet can be used to predict which ligands might be active in single-cells. If a ligand has a high activity in a cell, this means that target genes of that ligand are stronger expressed in that cell than in other cells. In this example, we will use data from Puram et al. to explore intercellular communication in the tumor microenvironment in head and neck squamous cell carcinoma (HNSCC) (See Puram et al. 2017). More specifically, we will assess the activity of fibroblast ligands in malignant cells. The used ligand-target matrix and example expression data of interacting cells can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1484138.svg)](https://doi.org/10.5281/zenodo.1484138).
 
 ### Load nichenetr and tidyverse

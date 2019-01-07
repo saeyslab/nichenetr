@@ -2,14 +2,16 @@
 title: "Construction of NicheNet's ligand-target model"
 author: "Robin Browaeys"
 date: "2018-11-12"
-output:
-  md_document:
-    variant: markdown_github
+output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Construction of NicheNet's ligand-target model}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+<!-- github markdown built using 
+rmarkdown::render("vignettes/model_construction.Rmd", output_format = "github_document")
+-->
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(

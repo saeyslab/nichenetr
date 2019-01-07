@@ -1,3 +1,11 @@
+NicheNet's ligand activity analysis on a gene set of interest
+================
+Robin Browaeys
+2018-11-12
+
+<!-- github markdown built using 
+rmarkdown::render("vignettes/ligand_activity_geneset.Rmd", output_format = "github_document")
+-->
 This vignette shows how NicheNet can be used to predict which ligands might regulate a given set of genes. In this example, we will use data from Puram et al. to explore intercellular communication in the tumor microenvironment in head and neck squamous cell carcinoma (HNSCC) (See Puram et al. 2017). More specifically, we will look at which ligands expressed by cancer-associated fibroblast can induce a specific gene program in neighboring malignant cells. This program, a partial epithelial-mesenschymal transition (p-EMT) program, could be linked by Puram et al. to metastasis. For this analysis, we will assess the ligand activity of each ligand, or in other words, we will assess how well each fibroblast ligand can predict the p-EMT gene set compared to the background of expressed genes. This allows us to prioritize p-EMT-regulating ligands. In a final step, we will infer target genes of these top ligands and signaling paths between these targets and ligands. The used ligand-target matrix and example expression data of interacting cells can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1484138.svg)](https://doi.org/10.5281/zenodo.1484138).
 
 ### Load nichenetr and tidyverse
@@ -154,7 +162,7 @@ p_ligand_target_network = active_ligand_target_links %>% t() %>% make_heatmap_gg
 p_ligand_target_network
 ```
 
-![](C:/Users/rbrowaey/AppData/Local/Temp/RtmpsP37uZ/preview-1ca4334d53e0.dir/ligand_activity_geneset_files/figure-markdown_github/unnamed-chunk-10-1.png)
+![](ligand_activity_geneset_files/figure-markdown_github/unnamed-chunk-30-1.png)
 
 ### Infer signaling paths beween ligand(s) and target(s) of interest
 
