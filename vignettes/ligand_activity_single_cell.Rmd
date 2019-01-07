@@ -26,6 +26,7 @@ This vignette shows how NicheNet can be used to predict which ligands might be a
 ```{r}
 library(nichenetr)
 library(dplyr)
+library(ggplot2)
 ```
 
 ### Read in expression data of interacting cells

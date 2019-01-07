@@ -26,6 +26,7 @@ This vignette shows how NicheNet can be used to predict which ligands might regu
 ```{r}
 library(nichenetr)
 library(dplyr)
+library(ggplot2)
 ```
 
 ### Read in expression data of interacting cells
@@ -63,7 +64,7 @@ ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 Because we want to investigate how fibroblast regulate the expression of p-EMT genes in malignant cells, we will use the p-EMT gene set defined by Puram et al. as gene set of interset and use all genes expressed in malignant cells as background of genes.
 
 ```{r}
-pemt_geneset = read_tsv(url("https://zenodo.org/record/1484138/files/pemt_signature.txt"), col_names = "gene") %>% .$gene %>% .[. %in% rownames(ligand_target_matrix)] # only consider genes also present in the NicheNet model - this excludes genes from the gene list for which the official HGNC symbol was not used by Puram et al.
+pemt_geneset = readr::read_tsv(url("https://zenodo.org/record/1484138/files/pemt_signature.txt"), col_names = "gene") %>% .$gene %>% .[. %in% rownames(ligand_target_matrix)] # only consider genes also present in the NicheNet model - this excludes genes from the gene list for which the official HGNC symbol was not used by Puram et al.
 head(pemt_geneset)
 background_expressed_genes = expressed_genes_malignant %>% .[. %in% rownames(ligand_target_matrix)]
 ```

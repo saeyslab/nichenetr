@@ -59,6 +59,6 @@ We will now look which of the collected data sources support the interactions in
 
 ```{r}
 data_source_network = infer_supporting_datasources(active_signaling_network,lr_network, sig_network , gr_network)
-data_source_network 
+head(data_source_network)
 ```
 

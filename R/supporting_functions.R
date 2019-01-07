@@ -795,7 +795,7 @@ get_network_df = function(ligand_to_vis,target_to_vis,k,weighted_networks,ligand
 
   ligand_tf_matrix_visualization = ligand_tf_matrix[,ligand_to_vis] %>% as.matrix()
 
-
+  colnames(ligand_tf_matrix_visualization) = "V1"
 
   ligand_tf_matrix_visualization_df = tbl_df(ligand_tf_matrix_visualization) %>% rename(weight = V1) %>% mutate(TF = rownames(ligand_tf_matrix)) %>% select(TF,weight)
   ligand_tf_matrix_visualization_df_filtered = ligand_tf_matrix_visualization_df %>% filter(weight > 0) %>% mutate(ligand = ligand_to_vis)
