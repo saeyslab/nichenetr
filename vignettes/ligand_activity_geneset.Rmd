@@ -2,7 +2,9 @@
 title: "NicheNet's ligand activity analysis on a gene set of interest"
 author: "Robin Browaeys"
 date: "2018-11-12"
-output: rmarkdown::html_vignette
+output:
+  md_document:
+    variant: markdown_github
 vignette: >
   %\VignetteIndexEntry{Vignette Title}
   %\VignetteEngine{knitr::rmarkdown}

@@ -1,15 +1,11 @@
-NicheNet's ligand activity analysis on a gene set of interest
-================
-Robin Browaeys
-2018-11-12
-
 This vignette shows how NicheNet can be used to predict which ligands might regulate a given set of genes. In this example, we will use data from Puram et al. to explore intercellular communication in the tumor microenvironment in head and neck squamous cell carcinoma (HNSCC) (See Puram et al. 2017). More specifically, we will look at which ligands expressed by cancer-associated fibroblast can induce a specific gene program in neighboring malignant cells. This program, a partial epithelial-mesenschymal transition (p-EMT) program, could be linked by Puram et al. to metastasis. For this analysis, we will assess the ligand activity of each ligand, or in other words, we will assess how well each fibroblast ligand can predict the p-EMT gene set compared to the background of expressed genes. This allows us to prioritize p-EMT-regulating ligands. In a final step, we will infer target genes of these top ligands and signaling paths between these targets and ligands. The used ligand-target matrix and example expression data of interacting cells can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1484138.svg)](https://doi.org/10.5281/zenodo.1484138).
 
 ### Load nichenetr and tidyverse
 
 ``` r
 library(nichenetr)
-library(tidyverse)
+library(dplyr)
+library(ggplot2)
 ```
 
 ### Read in expression data of interacting cells
@@ -52,7 +48,7 @@ ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 Because we want to investigate how fibroblast regulate the expression of p-EMT genes in malignant cells, we will use the p-EMT gene set defined by Puram et al. as gene set of interset and use all genes expressed in malignant cells as background of genes.
 
 ``` r
-pemt_geneset = read_tsv(url("https://zenodo.org/record/1484138/files/pemt_signature.txt"), col_names = "gene") %>% .$gene %>% .[. %in% rownames(ligand_target_matrix)] # only consider genes also present in the NicheNet model - this excludes genes from the gene list for which the official HGNC symbol was not used by Puram et al.
+pemt_geneset = readr::read_tsv(url("https://zenodo.org/record/1484138/files/pemt_signature.txt"), col_names = "gene") %>% .$gene %>% .[. %in% rownames(ligand_target_matrix)] # only consider genes also present in the NicheNet model - this excludes genes from the gene list for which the official HGNC symbol was not used by Puram et al.
 head(pemt_geneset)
 ## [1] "SERPINE1" "TGFBI"    "MMP10"    "LAMC2"    "P4HA2"    "PDPN"
 background_expressed_genes = expressed_genes_malignant %>% .[. %in% rownames(ligand_target_matrix)]
@@ -158,7 +154,7 @@ p_ligand_target_network = active_ligand_target_links %>% t() %>% make_heatmap_gg
 p_ligand_target_network
 ```
 
-![](ligand_activity_geneset_files/figure-markdown_github/unnamed-chunk-10-1.png)
+![](C:/Users/rbrowaey/AppData/Local/Temp/RtmpsP37uZ/preview-1ca4334d53e0.dir/ligand_activity_geneset_files/figure-markdown_github/unnamed-chunk-10-1.png)
 
 ### Infer signaling paths beween ligand(s) and target(s) of interest
 

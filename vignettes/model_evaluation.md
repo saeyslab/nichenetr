@@ -1,8 +1,3 @@
-Evaluation of NicheNet's ligand-target predictions
-================
-Robin Browaeys
-2018-11-12
-
 This vignette shows how the ligand-target predictions of NicheNet were evaluated. For validation, we collected transcriptome data of cells before and after they were treated by one or two ligands in culture. Using these ligand treatment datasets for validation has the advantage that observed gene expression changes can be directly attributed to the addition of the ligand(s). Hence, differentially expressed genes can be considered as a gold standard of target genes of a particular ligand.
 
 You can use the procedure shown here to evaluate your own model and compare its performance to NicheNet. Ligand treatment validation datasets and NicheNet's ligand-target model can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1484138.svg)](https://doi.org/10.5281/zenodo.1484138).
@@ -11,7 +6,11 @@ You can use the procedure shown here to evaluate your own model and compare its 
 
 ``` r
 library(nichenetr)
-library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(purrr)
+library(tibble)
 
 # Load in all expression datasets
 expression_settings_validation = readRDS(url("https://zenodo.org/record/1484138/files/expression_settings.rds"))
@@ -50,7 +49,7 @@ performances %>%
   theme_bw()
 ```
 
-![](model_evaluation_files/figure-markdown_github/unnamed-chunk-2-1.png)
+![](C:/Users/rbrowaey/AppData/Local/Temp/RtmpsP37uZ/preview-1ca4684b4342.dir/model_evaluation_files/figure-markdown_github/unnamed-chunk-2-1.png)
 
 ### Example: ligand activity prediction evaluation
 
@@ -84,4 +83,4 @@ evaluation_ligand_prediction %>%
   theme(axis.text.x = element_text(angle = 90))
 ```
 
-![](model_evaluation_files/figure-markdown_github/unnamed-chunk-3-1.png)
+![](C:/Users/rbrowaey/AppData/Local/Temp/RtmpsP37uZ/preview-1ca4684b4342.dir/model_evaluation_files/figure-markdown_github/unnamed-chunk-3-1.png)

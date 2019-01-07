@@ -2,8 +2,9 @@
 title: "Inferring ligand-to-target signaling paths"
 author: "Robin Browaeys"
 date: "2018-11-12"
-output: rmarkdown::html_vignette
-always_allow_html: yes
+output:
+  md_document:
+    variant: markdown_github
 vignette: >
   %\VignetteIndexEntry{Vignette Title}
   %\VignetteEngine{knitr::rmarkdown}
@@ -59,6 +60,6 @@ We will now look which of the collected data sources support the interactions in
 
 ```{r}
 data_source_network = infer_supporting_datasources(active_signaling_network,lr_network, sig_network , gr_network)
-head(data_source_network)
+head(data_source_network) 
 ```
 
