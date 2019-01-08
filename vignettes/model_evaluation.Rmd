@@ -36,11 +36,14 @@ library(tidyr)
 library(purrr)
 library(tibble)
 
-# Load in all expression datasets
-expression_settings_validation = readRDS(url("https://zenodo.org/record/1484138/files/expression_settings.rds"))
-
 # Load in the ligand-target model
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/1484138/files/ligand_target_matrix.rds"))
+
+# A subset of ligand treatment datasets for validation is provided by the package. Ligand treatment datasets show the log fold change in expression of genes after treatment with one or more specific ligands. Here: example for the ligand NODAL:
+head(expression_settings_validation$nodal_Nodal$diffexp)
+
+# In this vignette, we will demonstrate the evaluation procedure using this subset of expression datasets. To load in all expression datasets, use:
+#expression_settings_validation = readRDS(url("https://zenodo.org/record/1484138/files/expression_settings.rds"))
 
 ```
 

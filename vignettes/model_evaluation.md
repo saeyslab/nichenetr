@@ -20,11 +20,21 @@ library(tidyr)
 library(purrr)
 library(tibble)
 
-# Load in all expression datasets
-expression_settings_validation = readRDS(url("https://zenodo.org/record/1484138/files/expression_settings.rds"))
-
 # Load in the ligand-target model
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/1484138/files/ligand_target_matrix.rds"))
+
+# A subset of ligand treatment datasets for validation is provided by the package. Ligand treatment datasets show the log fold change in expression of genes after treatment with one or more specific ligands. Here: example for the ligand NODAL:
+head(expression_settings_validation$nodal_Nodal$diffexp)
+##            lfc       qval   gene
+## 1 -0.072591381 0.03767323  BEST1
+## 2 -0.133032792 0.62838239 SMIM37
+## 3 -0.001152079 0.98974906  CRADD
+## 4 -0.018723210 0.63536958  RCAN2
+## 5 -0.070250368 0.36418916 MFAP3L
+## 6 -0.192244949 0.23454428   PARL
+
+# In this vignette, we will demonstrate the evaluation procedure using this subset of expression datasets. To load in all expression datasets, use:
+#expression_settings_validation = readRDS(url("https://zenodo.org/record/1484138/files/expression_settings.rds"))
 ```
 
 ### Example: transcriptional response prediction evaluation
@@ -57,7 +67,7 @@ performances %>%
   theme_bw()
 ```
 
-![](model_evaluation_files/figure-markdown_github/unnamed-chunk-2-1.png)
+![](model_evaluation_files/figure-markdown_github/unnamed-chunk-10-1.png)
 
 ### Example: ligand activity prediction evaluation
 
@@ -91,4 +101,4 @@ evaluation_ligand_prediction %>%
   theme(axis.text.x = element_text(angle = 90))
 ```
 
-![](model_evaluation_files/figure-markdown_github/unnamed-chunk-3-1.png)
+![](model_evaluation_files/figure-markdown_github/unnamed-chunk-11-1.png)
