@@ -56,3 +56,11 @@ head(data_source_network)
 ## 5 SMAD2 TNC   regnetwork_source              regnetwork            regulat~
 ## 6 SMAD3 LAMA3 harmonizome_CHEA               harmonizome_gr        regulat~
 ```
+
+``` r
+rm(list = ls())
+gc()
+##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells  2585524 138.1    7115504  380.1   5440012  290.6
+## Vcells 18921451 144.4  246525567 1880.9 385449184 2940.8
+```

@@ -65,3 +65,8 @@ data_source_network = infer_supporting_datasources(active_signaling_network,lr_n
 head(data_source_network) 
 ```
 
+```{r}
+rm(list = ls())
+gc()
+
+```

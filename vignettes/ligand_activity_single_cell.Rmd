@@ -209,5 +209,8 @@ Then, we will determine the correlation between these p-EMT scores and ligand ac
 # regr_pearson_pemt_df %>% arrange(-pearson_regression) %>% select(r_squared, pearson_regression, ligand)
 ```
 
-
+```{r}
+rm(list = ls())
+gc()
+```
 ### References

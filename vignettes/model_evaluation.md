@@ -98,3 +98,11 @@ scorerandom = c(auroc=0.5, aupr_corrected=0) %>% data.frame(scorevalue=.) %>% ro
 #   theme_bw() + 
 #   theme(axis.text.x = element_text(angle = 90))
 ```
+
+``` r
+rm(list = ls())
+gc()
+##           used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells 2644180 141.3    7115504  380.1   7115504  380.1
+## Vcells 7279990  55.6  157776362 1203.8 385449184 2940.8
+```

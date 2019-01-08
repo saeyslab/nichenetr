@@ -164,6 +164,17 @@ p_ligand_target_network
 
 ![](ligand_activity_geneset_files/figure-markdown_github/unnamed-chunk-10-1.png)
 
+clean up environment to avoid problems memory allocation
+========================================================
+
+``` r
+rm(list = ls())
+gc()
+##           used  (Mb) gc trigger   (Mb)  max used   (Mb)
+## Ncells 2547100 136.1    4102685  219.2   4102685  219.2
+## Vcells 4264023  32.6  308156959 2351.1 385449184 2940.8
+```
+
 ### Infer signaling paths beween ligand(s) and target(s) of interest
 
 As follow-up analysis, you can infer possible signaling paths between ligands and targets of interest. You can read how to do this in the following vignette [Inferring ligand-to-target signaling paths](ligand_target_signaling_path.md):`vignette("ligand_target_signaling_path", package="nichenetr")`.

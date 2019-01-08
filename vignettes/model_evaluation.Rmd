@@ -108,3 +108,8 @@ scorerandom = c(auroc=0.5, aupr_corrected=0) %>% data.frame(scorevalue=.) %>% ro
 #   theme_bw() + 
 #   theme(axis.text.x = element_text(angle = 90))
 ```
+
+```{r}
+rm(list = ls())
+gc()
+```

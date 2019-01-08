@@ -70,3 +70,8 @@ extract_top_n_targets("TNF",10,ligand_target_matrix)
 ```{r}
 extract_top_n_targets("TNF-IL6",10,ligand_target_matrix)
 ```
+
+```{r}
+rm(list = ls())
+gc()
+```
