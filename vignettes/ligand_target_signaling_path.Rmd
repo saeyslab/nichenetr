@@ -2,9 +2,7 @@
 title: "Inferring ligand-to-target signaling paths"
 author: "Robin Browaeys"
 date: "2018-11-12"
-output:
-  md_document:
-    variant: markdown_github
+output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Inferring ligand-to-target signaling paths}
   %\VignetteEngine{knitr::rmarkdown}

@@ -162,11 +162,11 @@ p_ligand_target_network = active_ligand_target_links %>% t() %>% make_heatmap_gg
 p_ligand_target_network
 ```
 
-![](ligand_activity_geneset_files/figure-markdown_github/unnamed-chunk-30-1.png)
+![](ligand_activity_geneset_files/figure-markdown_github/unnamed-chunk-10-1.png)
 
 ### Infer signaling paths beween ligand(s) and target(s) of interest
 
-As follow-up analysis, you can infer possible signaling paths between ligands and targets of interest. You can read how to do this in the following vignette [Inferring ligand-to-target signaling paths](vignettes/ligand_target_signaling_path.md): `vignette("ligand_target_signaling_path", package="nichenetr")`.
+As follow-up analysis, you can infer possible signaling paths between ligands and targets of interest. You can read how to do this in the following vignette [Inferring ligand-to-target signaling paths](vignettes/ligand_target_signaling_path.md):`vignette("ligand_target_signaling_path", package="nichenetr")`.
 
 ### References
 

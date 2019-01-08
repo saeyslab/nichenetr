@@ -2,9 +2,7 @@
 title: "Evaluation of NicheNet's ligand-target predictions"
 author: "Robin Browaeys"
 date: "2018-11-12"
-output:
-  md_document:
-    variant: markdown_github
+output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Evaluation of NicheNet's ligand-target predictions}
   %\VignetteEngine{knitr::rmarkdown}
