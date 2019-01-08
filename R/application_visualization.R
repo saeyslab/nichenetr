@@ -225,6 +225,7 @@ infer_supporting_datasources = function(signaling_graph_list,lr_network, sig_net
 #' @param x_axis_position X-axis position: "top" or "bottomm"; only relevant if x_axis == TRUE. Default:"top".
 #' @param legend_position Legend position: "top", "bottom", "left", "right" or "none". Default: "top".
 #' @param color Color for highest continuous value in heatmap. Color gradient will go from "whitesmoke" to this color. Default: "blue".
+#' @param legend_title Title of the legend.
 #' @param ... Optional arguments passed to element_text(); used to set font type and size of axis labels and titles.
 #'
 #' @return A ggplot object displaying a heatmap
@@ -241,7 +242,7 @@ infer_supporting_datasources = function(signaling_graph_list,lr_network, sig_net
 #' }
 #' @export
 #'
-make_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", color = "blue", ...){
+make_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", color = "blue",legend_title = "score", ...){
 
   # input checks
   if(!is.matrix(matrix))
@@ -288,6 +289,7 @@ make_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,x_axis = TR
       plot_object = plot_object + scale_x_discrete(position = x_axis_position) + xlab(paste0(x_name))
     }
   }
+  plot_object = plot_object + labs(fill = legend_title)
 }
 #' @title Make a ggplot heatmap object from an input matrix (3-color).
 #'
@@ -316,7 +318,7 @@ make_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,x_axis = TR
 #' }
 #' @export
 #'
-make_threecolor_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", low_color = "blue",mid_color = "whitesmoke", high_color = "red",mid = 0,...){
+make_threecolor_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", low_color = "blue",mid_color = "whitesmoke", high_color = "red",mid = 0, legend_title = "score",...){
 
   # input checks
   if(!is.matrix(matrix))
@@ -367,6 +369,7 @@ make_threecolor_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,
       plot_object = plot_object + scale_x_discrete(position = x_axis_position) + xlab(paste0(x_name))
     }
   }
+  plot_object = plot_object + labs(fill = legend_title)
 }
 #' @title Make a ggplot heatmap object from an input ligand-target matrix.
 #'
