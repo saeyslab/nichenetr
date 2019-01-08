@@ -56,18 +56,16 @@ performances = performances %>% select(-aupr, -auc_iregulon, -sensitivity_roc, -
 scorelabels = c(auroc="AUROC", aupr_corrected="AUPR (corrected)", auc_iregulon_corrected = "AUC-iRegulon (corrected)",pearson = "Pearson correlation", spearman = "Spearman's rank correlation",mean_rank_GST_log_pval = "Mean-rank gene-set enrichment")
 scorerandom = c(auroc=0.5, aupr_corrected=0, auc_iregulon_corrected = 0, pearson = 0, spearman = 0,mean_rank_GST_log_pval = 0) %>% data.frame(scorevalue=.) %>% rownames_to_column("scorename")
 
-performances %>% 
-  mutate(model = "NicheNet") %>% 
-  ggplot() + 
-  geom_violin(aes(model, scorevalue, group=model, fill = model)) + 
-  geom_boxplot(aes(model, scorevalue, group = model),width = 0.05) + 
-  scale_y_continuous("Score target prediction") + 
-  facet_wrap(~scorename, scales = "free", labeller=as_labeller(scorelabels)) +
-  geom_hline(aes(yintercept=scorevalue), data=scorerandom, linetype = 2, color = "red") +
-  theme_bw()
+# performances %>% 
+#   mutate(model = "NicheNet") %>% 
+#   ggplot() + 
+#   geom_violin(aes(model, scorevalue, group=model, fill = model)) + 
+#   geom_boxplot(aes(model, scorevalue, group = model),width = 0.05) + 
+#   scale_y_continuous("Score target prediction") + 
+#   facet_wrap(~scorename, scales = "free", labeller=as_labeller(scorelabels)) +
+#   geom_hline(aes(yintercept=scorevalue), data=scorerandom, linetype = 2, color = "red") +
+#   theme_bw()
 ```
-
-![](model_evaluation_files/figure-markdown_github/unnamed-chunk-10-1.png)
 
 ### Example: ligand activity prediction evaluation
 
@@ -89,16 +87,14 @@ evaluation_ligand_prediction = evaluation_ligand_prediction %>% select(-aupr, -s
 scorelabels = c(auroc="AUROC", aupr_corrected="AUPR (corrected)")
 scorerandom = c(auroc=0.5, aupr_corrected=0) %>% data.frame(scorevalue=.) %>% rownames_to_column("scorename")
 
-evaluation_ligand_prediction %>% 
- filter(importance_measure %in% c("auroc", "aupr_corrected", "mean_rank_GST_log_pval", "auc_iregulon_corrected", "pearson", "spearman")) %>%
-  ggplot() + 
-  geom_point(aes(importance_measure, scorevalue, group=importance_measure, color = importance_measure), size = 3) + 
-  scale_y_continuous("Evaluation ligand activity prediction") + 
-  scale_x_discrete("Ligand activity measure") + 
-  facet_wrap(~scorename, scales = "free", labeller=as_labeller(scorelabels)) +
-  geom_hline(aes(yintercept=scorevalue), data=scorerandom, linetype = 2, color = "red") +
-  theme_bw() + 
-  theme(axis.text.x = element_text(angle = 90))
+# evaluation_ligand_prediction %>% 
+#  filter(importance_measure %in% c("auroc", "aupr_corrected", "mean_rank_GST_log_pval", "auc_iregulon_corrected", "pearson", "spearman")) %>%
+#   ggplot() + 
+#   geom_point(aes(importance_measure, scorevalue, group=importance_measure, color = importance_measure), size = 3) + 
+#   scale_y_continuous("Evaluation ligand activity prediction") + 
+#   scale_x_discrete("Ligand activity measure") + 
+#   facet_wrap(~scorename, scales = "free", labeller=as_labeller(scorelabels)) +
+#   geom_hline(aes(yintercept=scorevalue), data=scorerandom, linetype = 2, color = "red") +
+#   theme_bw() + 
+#   theme(axis.text.x = element_text(angle = 90))
 ```
-
-![](model_evaluation_files/figure-markdown_github/unnamed-chunk-11-1.png)

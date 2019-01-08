@@ -32,11 +32,11 @@ library(dplyr)
 # in the NicheNet framework, ligand-target links are predicted based on collected biological knowledge on ligand-receptor, signaling and gene regulatory interactions
 
 # Smaller toy networks are included in the package and will be used in this vignette:
-head(lr_network)
-
-head(sig_network)
-
-head(gr_network)
+# head(lr_network)
+# 
+# head(sig_network)
+# 
+# head(gr_network)
 
 # The complete networks can be downloaded from Zenodo
 # lr_network = readRDS(url("https://zenodo.org/record/1484138/files/lr_network.rds"))
