@@ -31,17 +31,10 @@ library(dplyr)
 
 # in the NicheNet framework, ligand-target links are predicted based on collected biological knowledge on ligand-receptor, signaling and gene regulatory interactions
 
-# Smaller toy networks are included in the package and will be used in this vignette:
-# head(lr_network)
-# 
-# head(sig_network)
-# 
-# head(gr_network)
-
 # The complete networks can be downloaded from Zenodo
-# lr_network = readRDS(url("https://zenodo.org/record/1484138/files/lr_network.rds"))
-# sig_network = readRDS(url("https://zenodo.org/record/1484138/files/signaling_network.rds"))
-# gr_network = readRDS(url("https://zenodo.org/record/1484138/files/gr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/1484138/files/lr_network.rds"))
+sig_network = readRDS(url("https://zenodo.org/record/1484138/files/signaling_network.rds"))
+gr_network = readRDS(url("https://zenodo.org/record/1484138/files/gr_network.rds"))
 ```
 
 Construct the weighted integrated ligand-signaling and gene regulatory network. In this vignette, we give every data source the same weight (as given by the `source_weights_df` data frame provided by default by the nichenetr package). The vignette showing how to use mlrMBO to optimize data source weights and other parameters will be written in the near future.
@@ -69,9 +62,4 @@ extract_top_n_targets("TNF",10,ligand_target_matrix)
 
 ```{r}
 extract_top_n_targets("TNF-IL6",10,ligand_target_matrix)
-```
-
-```{r}
-rm(list = ls())
-gc()
 ```

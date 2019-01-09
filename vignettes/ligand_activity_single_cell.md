@@ -197,14 +197,6 @@ Then, we will determine the correlation between these p-EMT scores and ligand ac
 # regr_pearson_pemt_df %>% arrange(-pearson_regression) %>% select(r_squared, pearson_regression, ligand)
 ```
 
-``` r
-rm(list = ls())
-gc()
-##           used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells 2649862 141.6    7115504  380.1   7115504  380.1
-## Vcells 7983777  61.0  359355017 2741.7 449190741 3427.1
-```
-
 ### References
 
 Puram, Sidharth V., Itay Tirosh, Anuraag S. Parikh, Anoop P. Patel, Keren Yizhak, Shawn Gillespie, Christopher Rodman, et al. 2017. “Single-Cell Transcriptomic Analysis of Primary and Metastatic Tumor Ecosystems in Head and Neck Cancer.” *Cell* 171 (7): 1611–1624.e24. doi:[10.1016/j.cell.2017.10.044](https://doi.org/10.1016/j.cell.2017.10.044).

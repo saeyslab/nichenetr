@@ -162,11 +162,6 @@ p_ligand_target_network
 
 ```
 
-# clean up environment to avoid problems memory allocation
-```{r}
-rm(list = ls())
-gc()
-```
 
 ### Infer signaling paths beween ligand(s) and target(s) of interest
 

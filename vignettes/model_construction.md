@@ -16,17 +16,10 @@ library(dplyr)
 
 # in the NicheNet framework, ligand-target links are predicted based on collected biological knowledge on ligand-receptor, signaling and gene regulatory interactions
 
-# Smaller toy networks are included in the package and will be used in this vignette:
-# head(lr_network)
-# 
-# head(sig_network)
-# 
-# head(gr_network)
-
 # The complete networks can be downloaded from Zenodo
-# lr_network = readRDS(url("https://zenodo.org/record/1484138/files/lr_network.rds"))
-# sig_network = readRDS(url("https://zenodo.org/record/1484138/files/signaling_network.rds"))
-# gr_network = readRDS(url("https://zenodo.org/record/1484138/files/gr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/1484138/files/lr_network.rds"))
+sig_network = readRDS(url("https://zenodo.org/record/1484138/files/signaling_network.rds"))
+gr_network = readRDS(url("https://zenodo.org/record/1484138/files/gr_network.rds"))
 ```
 
 Construct the weighted integrated ligand-signaling and gene regulatory network. In this vignette, we give every data source the same weight (as given by the `source_weights_df` data frame provided by default by the nichenetr package). The vignette showing how to use mlrMBO to optimize data source weights and other parameters will be written in the near future.
@@ -51,26 +44,16 @@ Show some top target genes of the ligand TNF and the ligand combination TNF+IL6
 
 ``` r
 extract_top_n_targets("TNF",10,ligand_target_matrix)
-##        LTBR       TRPC1       SNX20        CUBN       EXOC6      FUNDC2 
-## 0.500008609 0.500008609 0.288680105 0.008342635 0.008342635 0.008342635 
-##        GDF3      GEMIN5        HGH1      PRDM11       RIMS4        TEX2 
-## 0.008342635 0.008342635 0.008342635 0.008342635 0.008342635 0.008342635 
-##      TMEM70         TNR     ZSCAN22 
-## 0.008342635 0.008342635 0.008342635
+##     HACD4      P3H2       UBD      SELE     CCL19      IGHD    MUC5AC 
+## 0.2236069 0.1666667 0.1209449 0.1156012 0.1136843 0.1091838 0.1070629 
+##       CRP     CXCL9      COX1 
+## 0.1049671 0.1044287 0.1021654
 ```
 
 ``` r
 extract_top_n_targets("TNF-IL6",10,ligand_target_matrix)
-##       CRP       IL4     ABCC1     DNMT1     SFTPB     STAT3     ICAM1 
-## 0.5000091 0.5000091 0.3535599 0.3535599 0.3535599 0.3535599 0.3063494 
-##    BCL2L1        TF       LEP 
-## 0.2890819 0.2890172 0.2887815
-```
-
-``` r
-rm(list = ls())
-gc()
-##           used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells 2596707 138.7    7115504  380.1   6598465  352.4
-## Vcells 6693322  51.1  197220453 1504.7 385449184 2940.8
+##      BUD23      HACD4       IGHD        CRP       COX1       P3H2 
+## 0.12500000 0.11180344 0.10925690 0.10597879 0.10255118 0.08342425 
+##       SELE       IL11      CASP3       SELP 
+## 0.07758420 0.07678502 0.07460599 0.07351416
 ```

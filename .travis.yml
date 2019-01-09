@@ -9,6 +9,7 @@ addons:
       - libusb-1.0-0-dev
 bioc_required: true
 warnings_are_errors: false
+r_check_args: "--no-vignettes"
 r_packages:
   - covr
 after_success:

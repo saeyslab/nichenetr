@@ -23,7 +23,10 @@ library(tibble)
 # Load in the ligand-target model
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/1484138/files/ligand_target_matrix.rds"))
 
-# A subset of ligand treatment datasets for validation is provided by the package. Ligand treatment datasets show the log fold change in expression of genes after treatment with one or more specific ligands. Here: example for the ligand NODAL:
+# The ligand treatment expression datasets used for validation can be downloaded from Zenodo:
+expression_settings_validation = readRDS(url("https://zenodo.org/record/1484138/files/expression_settings.rds"))
+
+#Ligand treatment datasets show the log fold change in expression of genes after treatment with one or more specific ligands. Here: example for the ligand NODAL:
 head(expression_settings_validation$nodal_Nodal$diffexp)
 ##            lfc       qval   gene
 ## 1 -0.072591381 0.03767323  BEST1
@@ -32,9 +35,6 @@ head(expression_settings_validation$nodal_Nodal$diffexp)
 ## 4 -0.018723210 0.63536958  RCAN2
 ## 5 -0.070250368 0.36418916 MFAP3L
 ## 6 -0.192244949 0.23454428   PARL
-
-# In this vignette, we will demonstrate the evaluation procedure using this subset of expression datasets. To load in all expression datasets, use:
-#expression_settings_validation = readRDS(url("https://zenodo.org/record/1484138/files/expression_settings.rds"))
 ```
 
 ### Example: transcriptional response prediction evaluation
@@ -56,16 +56,18 @@ performances = performances %>% select(-aupr, -auc_iregulon, -sensitivity_roc, -
 scorelabels = c(auroc="AUROC", aupr_corrected="AUPR (corrected)", auc_iregulon_corrected = "AUC-iRegulon (corrected)",pearson = "Pearson correlation", spearman = "Spearman's rank correlation",mean_rank_GST_log_pval = "Mean-rank gene-set enrichment")
 scorerandom = c(auroc=0.5, aupr_corrected=0, auc_iregulon_corrected = 0, pearson = 0, spearman = 0,mean_rank_GST_log_pval = 0) %>% data.frame(scorevalue=.) %>% rownames_to_column("scorename")
 
-# performances %>% 
-#   mutate(model = "NicheNet") %>% 
-#   ggplot() + 
-#   geom_violin(aes(model, scorevalue, group=model, fill = model)) + 
-#   geom_boxplot(aes(model, scorevalue, group = model),width = 0.05) + 
-#   scale_y_continuous("Score target prediction") + 
-#   facet_wrap(~scorename, scales = "free", labeller=as_labeller(scorelabels)) +
-#   geom_hline(aes(yintercept=scorevalue), data=scorerandom, linetype = 2, color = "red") +
-#   theme_bw()
+performances %>%
+  mutate(model = "NicheNet") %>%
+  ggplot() +
+  geom_violin(aes(model, scorevalue, group=model, fill = model)) +
+  geom_boxplot(aes(model, scorevalue, group = model),width = 0.05) +
+  scale_y_continuous("Score target prediction") +
+  facet_wrap(~scorename, scales = "free", labeller=as_labeller(scorelabels)) +
+  geom_hline(aes(yintercept=scorevalue), data=scorerandom, linetype = 2, color = "red") +
+  theme_bw()
 ```
+
+![](model_evaluation_files/figure-markdown_github/unnamed-chunk-2-1.png)
 
 ### Example: ligand activity prediction evaluation
 
@@ -87,22 +89,16 @@ evaluation_ligand_prediction = evaluation_ligand_prediction %>% select(-aupr, -s
 scorelabels = c(auroc="AUROC", aupr_corrected="AUPR (corrected)")
 scorerandom = c(auroc=0.5, aupr_corrected=0) %>% data.frame(scorevalue=.) %>% rownames_to_column("scorename")
 
-# evaluation_ligand_prediction %>% 
-#  filter(importance_measure %in% c("auroc", "aupr_corrected", "mean_rank_GST_log_pval", "auc_iregulon_corrected", "pearson", "spearman")) %>%
-#   ggplot() + 
-#   geom_point(aes(importance_measure, scorevalue, group=importance_measure, color = importance_measure), size = 3) + 
-#   scale_y_continuous("Evaluation ligand activity prediction") + 
-#   scale_x_discrete("Ligand activity measure") + 
-#   facet_wrap(~scorename, scales = "free", labeller=as_labeller(scorelabels)) +
-#   geom_hline(aes(yintercept=scorevalue), data=scorerandom, linetype = 2, color = "red") +
-#   theme_bw() + 
-#   theme(axis.text.x = element_text(angle = 90))
+evaluation_ligand_prediction %>%
+ filter(importance_measure %in% c("auroc", "aupr_corrected", "mean_rank_GST_log_pval", "auc_iregulon_corrected", "pearson", "spearman")) %>%
+  ggplot() +
+  geom_point(aes(importance_measure, scorevalue, group=importance_measure, color = importance_measure), size = 3) +
+  scale_y_continuous("Evaluation ligand activity prediction") +
+  scale_x_discrete("Ligand activity measure") +
+  facet_wrap(~scorename, scales = "free", labeller=as_labeller(scorelabels)) +
+  geom_hline(aes(yintercept=scorevalue), data=scorerandom, linetype = 2, color = "red") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90))
 ```
 
-``` r
-rm(list = ls())
-gc()
-##           used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells 2644180 141.3    7115504  380.1   7115504  380.1
-## Vcells 7279990  55.6  157776362 1203.8 385449184 2940.8
-```
+![](model_evaluation_files/figure-markdown_github/unnamed-chunk-3-1.png)
