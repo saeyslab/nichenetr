@@ -29,6 +29,8 @@ make_threecolor_heatmap_ggplot(matrix, y_name, x_name, y_axis = TRUE,x_axis = TR
 
 \item{mid}{Continuous value that will receive the "mid_color" color. Default: 0}
 
+\item{legend_title}{Title of the legend.}
+
 \item{...}{Optional arguments passed to element_text(); used to set font type and size of axis labels and titles.}
 }
 \value{

@@ -18,6 +18,7 @@
 #' genes_clusters = c("TGFB1" = 1,"TGFB2" = 1,"TGFB3" = 2)
 #' cluster_settings = lapply(seq(length(unique(genes_clusters))), convert_cluster_to_settings, cluster_vector = genes_clusters, setting_name = "example", setting_from = "BMP2")
 #' }
+#'
 #' @export
 #'
 convert_cluster_to_settings = function(i, cluster_vector, setting_name, setting_from, background = NULL){
@@ -51,4 +52,94 @@ convert_cluster_to_settings = function(i, cluster_vector, setting_name, setting_
     response = c(background_logical,cluster_logical)
   }
   return(list(name = paste0(setting_name,"_cluster_",i), from = setting_from, response = response))
+}
+#' @title Infer active ligand target links between possible lignands and target genes of interest
+#'
+#' @description \code{infer_ligand_target_links} Infer active ligand target links between possible lignands and genes belonging to a gene set of interest.
+#'
+#' @usage
+#' infer_ligand_target_links(ligands_oi, targets_oi, background_expressed_genes, ligand_target_matrix, cutoff = 0.025)
+#'
+#' @param targets_oi Character vector of the gene symbols of genes of which the expression is potentially affected by ligands from the interacting cell.
+#' @param ligands_oi Character vector giving the gene symbols of the potentially active ligands you want to define ligand activities for.
+#' @param cutoff Genes with a regulatory potential score for a ligand not part of the top percentage scores, will not be considered as targets. Default: 0.025.
+#' @inheritParams predict_ligand_activities
+#'
+#' @return A matrix giving the ligand-target regulatory potential scores between ligands of interest and their targets genes part of the gene set of interest.
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2","IL4")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' potential_ligands = c("TNF","BMP2","IL4")
+#' geneset = c("SOCS2","SOCS3", "IRF1")
+#' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
+#' active_ligand_target_links = infer_ligand_target_links(ligands_oi = potential_ligands, targets_oi = geneset, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix)
+#' }
+#'
+#' @export
+#'
+infer_ligand_target_links = function(ligands_oi, targets_oi, background_expressed_genes, ligand_target_matrix, cutoff = 0.025){
+  ligand_target_matrix_oi = ligand_target_matrix[background_expressed_genes,ligands_oi]
+
+  ligand_target_matrix_discrete = make_discrete_ligand_target_matrix(ligand_target_matrix = ligand_target_matrix_oi, error_rate = cutoff, cutoff_method = "quantile")
+  ligand_target_matrix_oi[!ligand_target_matrix_discrete] = 0
+
+  ligand_target_vis = ligand_target_matrix_oi[targets_oi,ligands_oi]
+  ligand_target_vis_filtered = ligand_target_vis[ligand_target_vis %>% apply(1,sum) > 0,ligand_target_vis %>% apply(2,sum) > 0]
+
+  distoi = dist(1-cor(t(ligand_target_vis_filtered)))
+  hclust_obj = hclust(distoi, method = "ward.D2")
+  order_targets = hclust_obj$labels[hclust_obj$order]
+
+  distoi_targets = dist(1-cor(ligand_target_vis_filtered))
+  hclust_obj = hclust(distoi_targets, method = "ward.D2")
+  order_ligands = hclust_obj$labels[hclust_obj$order]
+
+  vis_ligand_target_network = ligand_target_vis_filtered[order_targets,order_ligands]
+}
+#' @title Predict activities of ligands in regulating expression of a gene set of interest
+#'
+#' @description \code{predict_ligand_activities} Predict activities of ligands in regulating expression of a gene set of interest. Ligand activities are defined as how well they predict the observed transcriptional response (i.e. gene set) according to the NicheNet model.
+#'
+#' @usage
+#' predict_ligand_activities(geneset, background_expressed_genes,ligand_target_matrix, potential_ligands, single = TRUE)
+#'
+#' @param geneset Character vector of the gene symbols of genes of which the expression is potentially affected by ligands from the interacting cell.
+#' @param background_expressed_genes Character vector of gene symbols of the background, non-affected, genes (can contain the symbols of the affected genes as well).
+#' @param ligand_target_matrix The NicheNet ligand-target matrix denoting regulatory potential scores between ligands and targets (ligands in columns).
+#' @param potential_ligands Character vector giving the gene symbols of the potentially active ligands you want to define ligand activities for.
+#' @param single TRUE if you want to calculate ligand activity scores by considering every ligand individually (recommended). FALSE if you want to calculate ligand activity scores as variable importances of a multi-ligand classification model.
+#'
+#' @return A tibble giving several ligand activity scores. Following columns in the tibble: $test_ligand, $auroc, $aupr and $pearson.
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2","IL4")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' potential_ligands = c("TNF","BMP2","IL4")
+#' geneset = c("SOCS2","SOCS3", "IRF1")
+#' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
+#' ligand_activities = predict_ligand_activities(geneset = geneset, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+#' }
+#'
+#' @export
+#'
+predict_ligand_activities = function(geneset,background_expressed_genes,ligand_target_matrix, potential_ligands, single = TRUE,...){
+  setting = list(geneset) %>%
+    lapply(convert_gene_list_settings_evaluation, name = "gene set", ligands_oi = potential_ligands, background = background_expressed_genes)
+  if (single == TRUE){
+    settings_ligand_prediction = setting %>%
+      convert_settings_ligand_prediction(all_ligands = potential_ligands, validation = FALSE, single = TRUE)
+    ligand_importances = settings_ligand_prediction %>% lapply(get_single_ligand_importances,ligand_target_matrix = ligand_target_matrix, known = FALSE) %>% bind_rows()
+
+  } else {
+    settings_ligand_prediction = setting %>%
+      convert_settings_ligand_prediction(all_ligands = potential_ligands, validation = FALSE, single = FALSE)
+    ligand_importances = settings_ligand_prediction %>% lapply(get_multi_ligand_importances,ligand_target_matrix = ligand_target_matrix, known = FALSE, ...) %>% bind_rows()
+
+  }
+  return(ligand_importances %>% select(test_ligand,auroc,aupr,pearson))
 }

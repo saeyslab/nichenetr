@@ -23,6 +23,8 @@ make_heatmap_ggplot(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_
 
 \item{color}{Color for highest continuous value in heatmap. Color gradient will go from "whitesmoke" to this color. Default: "blue".}
 
+\item{legend_title}{Title of the legend.}
+
 \item{...}{Optional arguments passed to element_text(); used to set font type and size of axis labels and titles.}
 }
 \value{

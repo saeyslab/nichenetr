@@ -21,12 +21,15 @@ type of analysis can provide novel functional insights into
 intercellular signaling processes compared to limiting the analyis to
 ligand-receptor inference.
 
-Specific functionalities include: \* assessing how well ligands
-expressed by a sender cell can predict changes in gene expression in the
-receiver cell \* prioritizing ligands based on their effect on gene
-expression \* inferring putative ligand-target links active in the
-system under study \* inferring potential signaling paths between
-ligands and target genes of interest
+Specific functionalities include:
+
+-   assessing how well ligands expressed by a sender cell can predict
+    changes in gene expression in the receiver cell
+-   prioritizing ligands based on their effect on gene expression
+-   inferring putative ligand-target links active in the system under
+    study
+-   inferring potential signaling paths between ligands and target genes
+    of interest
 
 Installation of nichenetr
 -------------------------
@@ -39,21 +42,17 @@ You can install nichenetr from github with:
 Learning to use nichenetr
 -------------------------
 
-To learn using nichenetr, read one of the vignettes explaining several
-types of analyses:
+To learn using nichenetr, read one of the following, preliminary,
+vignettes explaining several types of analyses:
 
 -   [NicheNet's ligand activity analysis on a gene set of
     interest](vignettes/ligand_activity_geneset.md):
     `vignette("ligand_activity_geneset", package="nichenetr")`
--   [Single-cell NicheNet's ligand activity
-    analysis](vignettes/ligand_activity_single_cell.md):
-    `vignette("ligand_activity_single_cell", package="nichenetr")`
 -   [Inferring ligand-to-target signaling
     paths](vignettes/ligand_target_signaling_path.md):
     `vignette("ligand_target_signaling_path", package="nichenetr")`
--   [Construction of NicheNet's ligand-target
-    model](vignettes/model_construction.md):
-    `vignette("model_construction", package="nichenetr")`
--   [Evaluation of NicheNet's ligand-target
-    predictions](vignettes/model_evaluation.md):
-    `vignette("model_evaluation", package="nichenetr")`
+
+Note that documenation and vignettes are still under development and
+that vignettes on additonal application possibilities, model validation,
+model development and parameter optimization will be added in the near
+future.
