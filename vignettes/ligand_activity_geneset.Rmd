@@ -1,7 +1,7 @@
 ---
 title: "NicheNet's ligand activity analysis on a gene set of interest"
 author: "Robin Browaeys"
-date: "2018-11-12"
+date: "2019-01-17"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{NicheNet's ligand activity analysis on a gene set of interest}

@@ -1,7 +1,7 @@
 ---
 title: "Inferring ligand-to-target signaling paths"
 author: "Robin Browaeys"
-date: "2018-11-12"
+date: "2019-01-17"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Inferring ligand-to-target signaling paths}
@@ -32,19 +32,13 @@ First, we will load the necessary networks to infer signaling paths between liga
 library(nichenetr)
 library(dplyr)
 
-# weighted_networks = readRDS(url("https://zenodo.org/record/1484138/files/weighted_networks.rds"))
-# ligand_tf_matrix = readRDS(url("https://zenodo.org/record/1484138/files/ligand_tf_matrix.rds"))
-# 
-# lr_network = readRDS(url("https://zenodo.org/record/1484138/files/lr_network.rds"))
-# sig_network = readRDS(url("https://zenodo.org/record/1484138/files/signaling_network.rds"))
-# gr_network = readRDS(url("https://zenodo.org/record/1484138/files/gr_network.rds"))
+weighted_networks = readRDS(url("https://zenodo.org/record/1484138/files/weighted_networks.rds"))
+ligand_tf_matrix = readRDS(url("https://zenodo.org/record/1484138/files/ligand_tf_matrix.rds"))
 
-weighted_networks = readRDS("C:/Users/rbrowaey/Research/StaticNicheNet/paper/data_nichenet/networks/weighted_networks.rds")
-ligand_tf_matrix = readRDS("C:/Users/rbrowaey/Research/StaticNicheNet/paper/data_nichenet/model/ligand_tf_matrix.rds")
+lr_network = readRDS(url("https://zenodo.org/record/1484138/files/lr_network.rds"))
+sig_network = readRDS(url("https://zenodo.org/record/1484138/files/signaling_network.rds"))
+gr_network = readRDS(url("https://zenodo.org/record/1484138/files/gr_network.rds"))
 
-lr_network = readRDS("C:/Users/rbrowaey/Research/StaticNicheNet/paper/data_nichenet/networks/lr_network.rds")
-sig_network = readRDS("C:/Users/rbrowaey/Research/StaticNicheNet/paper/data_nichenet/networks/signaling_network.rds")
-gr_network = readRDS("C:/Users/rbrowaey/Research/StaticNicheNet/paper/data_nichenet/networks/gr_network.rds")
 ```
 
 As example, we will infer signaling paths between TGFB3 and its top-predicted target genes LAMA3, LAMC2 and TNC.
