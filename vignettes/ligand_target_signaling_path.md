@@ -1,7 +1,7 @@
 Inferring ligand-to-target signaling paths
 ================
 Robin Browaeys
-2018-11-12
+2019-01-17
 
 <!-- github markdown built using 
 rmarkdown::render("vignettes/ligand_target_signaling_path.Rmd", output_format = "github_document")
@@ -34,10 +34,12 @@ active_signaling_network = get_ligand_signaling_path(ligand_tf_matrix, ligands_a
 
 # normalize edge weights to make them comparable between signaling and gene regulatory interactions
 active_signaling_network_min_max = active_signaling_network
-active_signaling_network_min_max$sig = active_signaling_network_min_max$sig %>% mutate(weight = 2*((weight-min(weight))/(max(weight)-min(weight))) + 0.75)
-active_signaling_network_min_max$gr = active_signaling_network_min_max$gr %>% mutate(weight = 2*((weight-min(weight))/(max(weight)-min(weight))) + 0.75)
+active_signaling_network_min_max$sig = active_signaling_network_min_max$sig %>% mutate(weight = ((weight-min(weight))/(max(weight)-min(weight))) + 0.75)
+active_signaling_network_min_max$gr = active_signaling_network_min_max$gr %>% mutate(weight = ((weight-min(weight))/(max(weight)-min(weight))) + 0.75)
 
 graph_min_max = diagrammer_format_signaling_graph(active_signaling_network_min_max, ligands_all,targets_all, sig_color = "indianred", gr_color = "steelblue")
+
+# To render the graph:
 # DiagrammeR::render_graph(graph_min_max, layout = "tree")
 ```
 

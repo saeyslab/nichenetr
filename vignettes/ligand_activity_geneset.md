@@ -1,7 +1,7 @@
 NicheNet's ligand activity analysis on a gene set of interest
 ================
 Robin Browaeys
-2018-11-12
+2019-01-17
 
 <!-- github markdown built using 
 rmarkdown::render("vignettes/ligand_activity_geneset.Rmd", output_format = "github_document")
@@ -31,8 +31,8 @@ Secondly, we will determine which genes are expressed in fibroblasts and maligna
 ``` r
 tumors_remove = c("HN10","HN","HN12", "HN13", "HN24", "HN7", "HN8","HN23")
 
-fibroblast_ids = sample_info %>% filter(`Lymph node` == 0) %>% filter((tumor %in% tumors_remove == FALSE)) %>% filter(`non-cancer cell type` == "Fibroblast") %>% .$cell
-malignant_ids = sample_info %>% filter(`Lymph node` == 0) %>% filter(`classified  as cancer cell` == 1) %>% filter((tumor %in% tumors_remove == FALSE)) %>% .$cell
+fibroblast_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `non-cancer cell type` == "Fibroblast") %>% pull(cell)
+malignant_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `classified  as cancer cell` == 1) %>% pull(cell)
 
 expressed_genes_fibroblasts = expression[fibroblast_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 expressed_genes_malignant = expression[malignant_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
@@ -53,13 +53,17 @@ ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 
 ### Load the gene set of interest and background of genes
 
-Because we want to investigate how fibroblast regulate the expression of p-EMT genes in malignant cells, we will use the p-EMT gene set defined by Puram et al. as gene set of interset and use all genes expressed in malignant cells as background of genes.
+As gene set of interest, we consider the genes of which the expression is possibly affected due to communication with other cells.
+
+Because we here want to investigate how fibroblast regulate the expression of p-EMT genes in malignant cells, we will use the p-EMT gene set defined by Puram et al. as gene set of interset and use all genes expressed in malignant cells as background of genes.
 
 ``` r
-pemt_geneset = readr::read_tsv(url("https://zenodo.org/record/1484138/files/pemt_signature.txt"), col_names = "gene") %>% .$gene %>% .[. %in% rownames(ligand_target_matrix)] # only consider genes also present in the NicheNet model - this excludes genes from the gene list for which the official HGNC symbol was not used by Puram et al.
+pemt_geneset = readr::read_tsv(url("https://zenodo.org/record/1484138/files/pemt_signature.txt"), col_names = "gene") %>% pull(gene) %>% .[. %in% rownames(ligand_target_matrix)] # only consider genes also present in the NicheNet model - this excludes genes from the gene list for which the official HGNC symbol was not used by Puram et al.
 head(pemt_geneset)
 ## [1] "SERPINE1" "TGFBI"    "MMP10"    "LAMC2"    "P4HA2"    "PDPN"
 background_expressed_genes = expressed_genes_malignant %>% .[. %in% rownames(ligand_target_matrix)]
+head(background_expressed_genes)
+## [1] "RPS11"   "ELMO2"   "PNMA1"   "MMP2"    "TMEM216" "ERCC5"
 ```
 
 ### Perform NicheNet's ligand activity analysis on the gene set of interest
@@ -68,12 +72,14 @@ In a first step, we will define a set of potentially active ligands. As potentia
 
 ``` r
 lr_network = readRDS(url("https://zenodo.org/record/1484138/files/lr_network.rds"))
-ligands = lr_network$from %>% unique()
+
+ligands = lr_network %>% pull(from) %>% unique()
 expressed_ligands = intersect(ligands,expressed_genes_fibroblasts)
-receptors = lr_network$to %>% unique()
+
+receptors = lr_network %>% pull(to) %>% unique()
 expressed_receptors = intersect(receptors,expressed_genes_malignant)
 
-potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% .$from %>% unique()
+potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
 head(potential_ligands)
 ## [1] "HGF"     "TNFSF10" "TGFB2"   "TGFB3"   "INHBA"   "CD99"
 ```
@@ -81,30 +87,13 @@ head(potential_ligands)
 Now perform the ligand activity analysis: infer how well NicheNet's ligand-target potential scores can predict whether a gene belongs to the p-EMT program or not.
 
 ``` r
-predict_ligand_activities = function(geneset,background_expressed_genes,ligand_target_matrix, potential_ligands, single = TRUE,...){
-  setting = list(geneset) %>% 
-    lapply(convert_gene_list_settings_evaluation, name = "gene set", ligands_oi = potential_ligands, background = background_expressed_genes)
-  if (single == TRUE){
-    settings_ligand_prediction = setting %>% 
-      convert_settings_ligand_prediction(all_ligands = potential_ligands, validation = FALSE, single = TRUE)
-    ligand_importances = settings_ligand_prediction %>% lapply(get_single_ligand_importances,ligand_target_matrix = ligand_target_matrix, known = FALSE) %>% bind_rows()
-      
-  } else {
-    settings_ligand_prediction = setting %>% 
-      convert_settings_ligand_prediction(all_ligands = potential_ligands, validation = FALSE, single = FALSE)
-    ligand_importances = settings_ligand_prediction %>% lapply(get_multi_ligand_importances,ligand_target_matrix = ligand_target_matrix, known = FALSE, ...) %>% bind_rows()
-      
-  }
-  return(ligand_importances)
-}
-
-ligand_importances = predict_ligand_activities(geneset = pemt_geneset, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+ligand_activities = predict_ligand_activities(geneset = pemt_geneset, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
 ```
 
-Now, we want to rank the ligands based on their ligand activity. In our study, we showed that the pearson correlation between a ligand's target predictions and the observed transcriptional response was the most informative measure for ligand activity. Therefore, we will rank the ligands based on their pearson correlation coefficient.
+Now, we want to rank the ligands based on their ligand activity. In our validation study, we showed that the pearson correlation between a ligand's target predictions and the observed transcriptional response was the most informative measure to define ligand activity. Therefore, we will rank the ligands based on their pearson correlation coefficient.
 
 ``` r
-ligand_importances %>% arrange(-pearson) %>% select(test_ligand,auroc,aupr,pearson)
+ligand_activities %>% arrange(-pearson) 
 ## # A tibble: 134 x 4
 ##    test_ligand auroc   aupr pearson
 ##    <chr>       <dbl>  <dbl>   <dbl>
@@ -119,38 +108,18 @@ ligand_importances %>% arrange(-pearson) %>% select(test_ligand,auroc,aupr,pears
 ##  9 ADAM17      0.663 0.0454   0.105
 ## 10 BMP5        0.713 0.0423   0.104
 ## # ... with 124 more rows
-best_upstream_ligands = ligand_importances %>% top_n(20, pearson) %>% arrange(-pearson) %>% .$test_ligand
+best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand)
+head(best_upstream_ligands)
+## [1] "AGT"    "CXCL12" "TGFB3"  "IL6"    "CTGF"   "INHBA"
 ```
 
-We see here that the top-ranked ligands can predict the p-EMT genes reasonably, this implies that ranking of the ligands might be accurate as shown in our study. However, it is possible that for some gene sets, the target gene prediction performance of the top-ranked ligands would not be much better than random prediction. In that case, prioritization of ligands will probably not be accurate.
+We see here that the top-ranked ligands can predict the p-EMT genes reasonably, this implies that ranking of the ligands might be accurate as shown in our study. However, it is possible that for some gene sets, the target gene prediction performance of the top-ranked ligands would not be much better than random prediction. In that case, prioritization of ligands will be less trustworthy.
 
 ### Infer target genes of top-ranked ligands
 
 Now we will show how you can look at the regulatory potential scores between ligands and target genes of interest. In this case, we will look at links between top-ranked p-EMT regulating ligands and p-EMT genes.
 
 ``` r
-infer_ligand_target_links = function(ligands_oi, targets_oi, background_expressed_genes, ligand_target_matrix, k = 2){
-  ligand_target_matrix_oi = ligand_target_matrix[background_expressed_genes,ligands_oi]
-  
-  cutoff = k*length(targets_oi)/length(background_expressed_genes) # consider the top "k times the fraction of positive outcomes" ("true target genes") as postive predictions
-  ligand_target_matrix_discrete = make_discrete_ligand_target_matrix(ligand_target_matrix = ligand_target_matrix_oi, error_rate = cutoff, cutoff_method = "quantile")
-  ligand_target_matrix_oi[!ligand_target_matrix_discrete] = 0
-  
-  ligand_target_vis = ligand_target_matrix_oi[targets_oi,ligands_oi]
-  ligand_target_vis_filtered = ligand_target_vis[ligand_target_vis %>% apply(1,sum) > 0,ligand_target_vis %>% apply(2,sum) > 0]
-  
-  distoi = dist(1-cor(t(ligand_target_vis_filtered)))
-  hclust_obj = hclust(distoi, method = "ward.D2")
-  order_targets = hclust_obj$labels[hclust_obj$order]
-  
-  distoi_targets = dist(1-cor(ligand_target_vis_filtered))
-  hclust_obj = hclust(distoi_targets, method = "ward.D2")
-  order_ligands = hclust_obj$labels[hclust_obj$order]
-  
-  vis_ligand_target_network = ligand_target_vis_filtered[order_targets,order_ligands]
-  
-}
-
 active_ligand_target_links = infer_ligand_target_links(ligands_oi = best_upstream_ligands, targets_oi = pemt_geneset, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix)
 ```
 
