@@ -6,9 +6,20 @@ Robin Browaeys
 <!-- github markdown built using 
 rmarkdown::render("vignettes/ligand_activity_geneset.Rmd", output_format = "github_document")
 -->
-This vignette shows how NicheNet can be used to predict which ligands might regulate a given set of genes. In this example, we will use data from Puram et al. to explore intercellular communication in the tumor microenvironment in head and neck squamous cell carcinoma (HNSCC) (See Puram et al. 2017). More specifically, we will look at which ligands expressed by cancer-associated fibroblast can induce a specific gene program in neighboring malignant cells. This program, a partial epithelial-mesenschymal transition (p-EMT) program, could be linked by Puram et al. to metastasis. For this analysis, we will assess the ligand activity of each ligand, or in other words, we will assess how well each fibroblast ligand can predict the p-EMT gene set compared to the background of expressed genes. This allows us to prioritize p-EMT-regulating ligands. In a final step, we will infer target genes of these top ligands and signaling paths between these targets and ligands. The used ligand-target matrix and example expression data of interacting cells can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1484138.svg)](https://doi.org/10.5281/zenodo.1484138).
+This vignette shows how NicheNet can be used to predict which ligands might regulate a given set of genes. For this analysis, you need to define:
 
-### Load nichenetr and tidyverse
+-   a set of genes of which expression in a "receiver cell" is possibly affected by extracellular protein signals (ligands) (e.g. genes differentially expressed upon cell-cell interaction )
+-   a set of potentially active ligands (e.g. ligands expressed by interacting "sender cells")
+
+Therefore, you often first need to process expression data of interacting cells to define both.
+
+In this example, we will use data from Puram et al. to explore intercellular communication in the tumor microenvironment in head and neck squamous cell carcinoma (HNSCC) (See Puram et al. 2017). More specifically, we will look at which ligands expressed by cancer-associated fibroblast can induce a specific gene program in neighboring malignant cells. This program, a partial epithelial-mesenschymal transition (p-EMT) program, could be linked by Puram et al. to metastasis.
+
+For this analysis, we will assess the ligand activity of each ligand, or in other words, we will assess how well each fibroblast ligand can predict the p-EMT gene set compared to the background of expressed genes. This allows us to prioritize p-EMT-regulating ligands. In a final step, we will then infer target genes of these top ligands.
+
+The used ligand-target matrix and example expression data of interacting cells can be downloaded from Zenodo. [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1484138.svg)](https://doi.org/10.5281/zenodo.1484138)
+
+### Load packages required for this vignette
 
 ``` r
 library(nichenetr)
@@ -18,7 +29,7 @@ library(ggplot2)
 
 ### Read in expression data of interacting cells
 
-First, we will read in the single-cell data from fibroblast and malignant cells from HNSCC tumors.
+First, we will read in the publicly available single-cell data from fibroblast and malignant cells from HNSCC tumors.
 
 ``` r
 hnscc_expression = readRDS(url("https://zenodo.org/record/1484138/files/hnscc_expression.rds"))
@@ -61,6 +72,7 @@ Because we here want to investigate how fibroblast regulate the expression of p-
 pemt_geneset = readr::read_tsv(url("https://zenodo.org/record/1484138/files/pemt_signature.txt"), col_names = "gene") %>% pull(gene) %>% .[. %in% rownames(ligand_target_matrix)] # only consider genes also present in the NicheNet model - this excludes genes from the gene list for which the official HGNC symbol was not used by Puram et al.
 head(pemt_geneset)
 ## [1] "SERPINE1" "TGFBI"    "MMP10"    "LAMC2"    "P4HA2"    "PDPN"
+
 background_expressed_genes = expressed_genes_malignant %>% .[. %in% rownames(ligand_target_matrix)]
 head(background_expressed_genes)
 ## [1] "RPS11"   "ELMO2"   "PNMA1"   "MMP2"    "TMEM216" "ERCC5"
