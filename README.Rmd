@@ -40,6 +40,8 @@ To learn using nichenetr, read one of the following, preliminary, vignettes expl
 
 * [NicheNet's ligand activity analysis on a gene set of interest](vignettes/ligand_activity_geneset.md): `vignette("ligand_activity_geneset", package="nichenetr")`
 * [Inferring ligand-to-target signaling paths](vignettes/ligand_target_signaling_path.md): `vignette("ligand_target_signaling_path", package="nichenetr")`
+* [Model evaluation: target gene and ligand activity prediction](vignettes/model_evaluation.md): `vignette("model_evaluation", package="nichenetr")`
+* [Model construction](vignettes/model_construction.md): `vignette("model_construction", package="nichenetr")`
 
 Note that documenation and vignettes are still under development and that vignettes on additonal application possibilities, model validation, model development and parameter optimization will be added in the near future.
 
