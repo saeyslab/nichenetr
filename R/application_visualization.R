@@ -215,7 +215,7 @@ infer_supporting_datasources = function(signaling_graph_list,lr_network, sig_net
 #' @description \code{make_heatmap_ggplot} Make a ggplot heatmap object from an input matrix containing continuous values. Two-color scale from white to color of choice.
 #'
 #' @usage
-#' make_heatmap_ggplot(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", color = "blue", ...)
+#' make_heatmap_ggplot(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", color = "blue", legend_title = "score",...)
 #'
 #' @param matrix Matrix with continuous values to plot in heatmap
 #' @param y_name Title of the y-axis
@@ -296,7 +296,7 @@ make_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,x_axis = TR
 #' @description \code{make_threecolor_heatmap_ggplot} Make a ggplot heatmap object from an input matrix containing continuous values. Three-color scale with colors of choice. Ideal for plotting log fold change expression.
 #'
 #' @usage
-#' make_threecolor_heatmap_ggplot(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", low_color = "blue",mid_color = "whitesmoke", high_color = "red",mid = 0,...)
+#' make_threecolor_heatmap_ggplot(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", low_color = "blue",mid_color = "whitesmoke", high_color = "red",mid = 0,legend_title = "score",...)
 #'
 #' @param low_color Color for lowest continuous value in heatmap. Color gradient will go from "whitesmoke" to this color. Default: "blue".
 #' @param mid_color Color for the "mid" value as defined by that parameter. Default: "whitesmoke".

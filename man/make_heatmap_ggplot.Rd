@@ -4,7 +4,7 @@
 \alias{make_heatmap_ggplot}
 \title{Make a ggplot heatmap object from an input matrix (2-color).}
 \usage{
-make_heatmap_ggplot(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", color = "blue", ...)
+make_heatmap_ggplot(matrix, y_name, x_name, y_axis = TRUE,x_axis = TRUE, x_axis_position = "top", legend_position = "top", color = "blue", legend_title = "score",...)
 }
 \arguments{
 \item{matrix}{Matrix with continuous values to plot in heatmap}

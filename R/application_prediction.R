@@ -53,58 +53,12 @@ convert_cluster_to_settings = function(i, cluster_vector, setting_name, setting_
   }
   return(list(name = paste0(setting_name,"_cluster_",i), from = setting_from, response = response))
 }
-#' @title Infer active ligand target links between possible lignands and target genes of interest
-#'
-#' @description \code{infer_ligand_target_links} Infer active ligand target links between possible lignands and genes belonging to a gene set of interest.
-#'
-#' @usage
-#' infer_ligand_target_links(ligands_oi, targets_oi, background_expressed_genes, ligand_target_matrix, cutoff = 0.025)
-#'
-#' @param targets_oi Character vector of the gene symbols of genes of which the expression is potentially affected by ligands from the interacting cell.
-#' @param ligands_oi Character vector giving the gene symbols of the potentially active ligands you want to define ligand activities for.
-#' @param cutoff Genes with a regulatory potential score for a ligand not part of the top percentage scores, will not be considered as targets. Default: 0.025.
-#' @inheritParams predict_ligand_activities
-#'
-#' @return A matrix giving the ligand-target regulatory potential scores between ligands of interest and their targets genes part of the gene set of interest.
-#'
-#' @examples
-#' \dontrun{
-#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
-#' ligands = list("TNF","BMP2","IL4")
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
-#' potential_ligands = c("TNF","BMP2","IL4")
-#' geneset = c("SOCS2","SOCS3", "IRF1")
-#' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
-#' active_ligand_target_links = infer_ligand_target_links(ligands_oi = potential_ligands, targets_oi = geneset, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix)
-#' }
-#'
-#' @export
-#'
-infer_ligand_target_links = function(ligands_oi, targets_oi, background_expressed_genes, ligand_target_matrix, cutoff = 0.025){
-  ligand_target_matrix_oi = ligand_target_matrix[background_expressed_genes,ligands_oi]
-
-  ligand_target_matrix_discrete = make_discrete_ligand_target_matrix(ligand_target_matrix = ligand_target_matrix_oi, error_rate = cutoff, cutoff_method = "quantile")
-  ligand_target_matrix_oi[!ligand_target_matrix_discrete] = 0
-
-  ligand_target_vis = ligand_target_matrix_oi[targets_oi,ligands_oi]
-  ligand_target_vis_filtered = ligand_target_vis[ligand_target_vis %>% apply(1,sum) > 0,ligand_target_vis %>% apply(2,sum) > 0]
-
-  distoi = dist(1-cor(t(ligand_target_vis_filtered)))
-  hclust_obj = hclust(distoi, method = "ward.D2")
-  order_targets = hclust_obj$labels[hclust_obj$order]
-
-  distoi_targets = dist(1-cor(ligand_target_vis_filtered))
-  hclust_obj = hclust(distoi_targets, method = "ward.D2")
-  order_ligands = hclust_obj$labels[hclust_obj$order]
-
-  vis_ligand_target_network = ligand_target_vis_filtered[order_targets,order_ligands]
-}
 #' @title Predict activities of ligands in regulating expression of a gene set of interest
 #'
 #' @description \code{predict_ligand_activities} Predict activities of ligands in regulating expression of a gene set of interest. Ligand activities are defined as how well they predict the observed transcriptional response (i.e. gene set) according to the NicheNet model.
 #'
 #' @usage
-#' predict_ligand_activities(geneset, background_expressed_genes,ligand_target_matrix, potential_ligands, single = TRUE)
+#' predict_ligand_activities(geneset, background_expressed_genes,ligand_target_matrix, potential_ligands, single = TRUE,...)
 #'
 #' @param geneset Character vector of the gene symbols of genes of which the expression is potentially affected by ligands from the interacting cell.
 #' @param background_expressed_genes Character vector of gene symbols of the background, non-affected, genes (can contain the symbols of the affected genes as well).
@@ -142,4 +96,89 @@ predict_ligand_activities = function(geneset,background_expressed_genes,ligand_t
 
   }
   return(ligand_importances %>% select(test_ligand,auroc,aupr,pearson))
+}
+#' @title Infer weighted active ligand-target links between a possible ligand and target genes of interest
+#'
+#' @description \code{get_weighted_ligand_target_links} Infer active ligand target links between possible lignands and genes belonging to a gene set of interest: consider the intersect between the top n targets of a ligand and the gene set.
+#'
+#' @usage
+#' get_weighted_ligand_target_links(ligand, geneset,ligand_target_matrix,n = 250)
+#'
+#' @param geneset Character vector of the gene symbols of genes of which the expression is potentially affected by ligands from the interacting cell.
+#' @param ligand Character vector giving the gene symbols of the potentially active ligand for which you want to find target genes.
+#' @param n The top n of targets per ligand that will be considered. Default: 250.
+#' @inheritParams predict_ligand_activities
+#'
+#' @return A tibble with columns ligand, target and weight (i.e. regulatory potential score).
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2","IL4")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' potential_ligand = "TNF"
+#' geneset = c("SOCS2","SOCS3", "IRF1")
+#' active_ligand_target_links_df = get_weighted_ligand_target_links(ligand = potential_ligand, geneset = geneset, ligand_target_matrix = ligand_target_matrix, n = 250)
+#' }
+#'
+#' @export
+#'
+get_weighted_ligand_target_links = function(ligand, geneset,ligand_target_matrix,n = 250){
+  targets = intersect(ligand_target_matrix[,ligand] %>% sort(decreasing = T) %>% head(n) %>% names(),geneset)
+  print(ligand)
+  print(targets)
+  if(length(targets) == 0){
+    stop("none of the specified possible targets belongs to the top n")
+  }
+  ligand_target_weighted_df = tibble(ligand = ligand, target = names(ligand_target_matrix[targets,ligand])) %>% inner_join(tibble(target = names(ligand_target_matrix[targets,ligand]), weight = ligand_target_matrix[targets,ligand]), by = "target")
+}
+#' @title Prepare heatmap visualization of the ligand-target links starting from a ligand-target tibble.
+#'
+#' @description \code{prepare_ligand_target_visualization} Prepare heatmap visualization of the ligand-target links starting from a ligand-target tibble. Get regulatory potential scores between all pairs of ligands and targets documented in this tibble. For better visualization, we propose to define a quantile cutoff on the ligand-target scores.
+#'
+#' @usage
+#' prepare_ligand_target_visualization(ligand_target_df, ligand_target_matrix, cutoff = 0.25)
+#'
+#' @param cutoff Quantile cutoff on the ligand-target scores of the input weighted ligand-target network. Scores under this cutoff will be set to 0.
+#' @param ligand_target_df Tibble with columns 'ligand', 'target' and 'weight' to indicate ligand-target regulatory potential scores of interest.
+#' @inheritParams predict_ligand_activities
+#'
+#' @return A matrix giving the ligand-target regulatory potential scores between ligands of interest and their targets genes part of the gene set of interest.
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2","IL4")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#'  = c("TNF","BMP2","IL4")
+#' geneset = c("SOCS2","SOCS3", "IRF1")
+#' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
+#' active_ligand_target_links_df = potential_ligands %>% lapply(get_weighted_ligand_target_links, geneset = geneset, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
+#' active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = 0.25)
+#' }
+#'
+#' @export
+#'
+prepare_ligand_target_visualization = function(ligand_target_df, ligand_target_matrix, cutoff = 0.25){
+
+  # define a cutoff on the ligand-target links
+  cutoff_include_all_ligands = ligand_target_df$weight %>% quantile(cutoff)
+
+  # give a score of 0 to ligand-target links not higher than the defined cutoff
+  ligand_target_matrix_oi = ligand_target_matrix
+  ligand_target_matrix_oi[ligand_target_matrix_oi < cutoff_include_all_ligands] = 0
+
+  # consider only targets belonging to the top250 targets of individual ligands and with at least one ligand-link with score higher than the defined cutoff
+  ligand_target_vis = ligand_target_matrix_oi[ligand_target_df$target %>% unique(),ligand_target_df$ligand %>% unique()]
+  ligand_target_vis_filtered = ligand_target_vis[ligand_target_vis %>% apply(1,sum) > 0,ligand_target_vis %>% apply(2,sum) > 0]
+
+  distoi = dist(1-cor(t(ligand_target_vis_filtered)))
+  hclust_obj = hclust(distoi, method = "ward.D2")
+  order_targets = hclust_obj$labels[hclust_obj$order]
+
+  distoi_targets = dist(1-cor(ligand_target_vis_filtered))
+  hclust_obj = hclust(distoi_targets, method = "ward.D2")
+  order_ligands = hclust_obj$labels[hclust_obj$order]
+
+  vis_ligand_target_network = ligand_target_vis_filtered[order_targets,order_ligands]
 }

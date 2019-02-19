@@ -13,7 +13,7 @@ This vignette shows how NicheNet can be used to predict which ligands might regu
 
 Therefore, you often first need to process expression data of interacting cells to define both.
 
-In this example, we will use data from Puram et al. to explore intercellular communication in the tumor microenvironment in head and neck squamous cell carcinoma (HNSCC) (See Puram et al. 2017). More specifically, we will look at which ligands expressed by cancer-associated fibroblast can induce a specific gene program in neighboring malignant cells. This program, a partial epithelial-mesenschymal transition (p-EMT) program, could be linked by Puram et al. to metastasis.
+In this example, we will use data from Puram et al. to explore intercellular communication in the tumor microenvironment in head and neck squamous cell carcinoma (HNSCC) (See Puram et al. 2017). More specifically, we will look at which ligands expressed by fibroblasts can induce a specific gene program in neighboring malignant cells. This program, a partial epithelial-mesenschymal transition (p-EMT) program, could be linked by Puram et al. to metastasis.
 
 For this analysis, we will assess the ligand activity of each ligand, or in other words, we will assess how well each fibroblast ligand can predict the p-EMT gene set compared to the background of expressed genes. This allows us to prioritize p-EMT-regulating ligands. In a final step, we will then infer target genes of these top ligands.
 
@@ -127,12 +127,71 @@ head(best_upstream_ligands)
 
 We see here that the top-ranked ligands can predict the p-EMT genes reasonably, this implies that ranking of the ligands might be accurate as shown in our study. However, it is possible that for some gene sets, the target gene prediction performance of the top-ranked ligands would not be much better than random prediction. In that case, prioritization of ligands will be less trustworthy.
 
-### Infer target genes of top-ranked ligands
+### Infer target genes of top-ranked ligands and visualize in a heatmap
 
-Now we will show how you can look at the regulatory potential scores between ligands and target genes of interest. In this case, we will look at links between top-ranked p-EMT regulating ligands and p-EMT genes.
+Now we will show how you can look at the regulatory potential scores between ligands and target genes of interest. In this case, we will look at links between top-ranked p-EMT regulating ligands and p-EMT genes. In the ligand-target heatmaps, we showed regulatory potential scores for interactions between the 20 top-ranked ligands and following target genes: genes that belong to the gene set of interest and to the 250 most strongly predicted targets of at least one of the 20 top-ranked ligands. For visualization purposes, we adapted the ligand-target regulatory potential matrix as follows. Regulatory potential scores were set as 0 if their score was below a predefined threshold, which was here the 0.25 quantile of scores of interactions between the 20 top-ranked ligands and each of their respective 250 top targets.
 
 ``` r
-active_ligand_target_links = infer_ligand_target_links(ligands_oi = best_upstream_ligands, targets_oi = pemt_geneset, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix)
+active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = pemt_geneset, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
+## [1] "AGT"
+##  [1] "SERPINE1" "MMP2"     "F3"       "PTHLH"    "TIMP3"    "PLAU"    
+##  [7] "INHBA"    "COL1A1"   "COL4A2"   "VIM"     
+## [1] "CXCL12"
+##  [1] "MT2A"     "SERPINE1" "MMP2"     "MMP10"    "MMP1"     "LTBP1"   
+##  [7] "PLAU"     "ITGA5"    "VIM"      "CAV1"     "FHL2"     "GJA1"    
+## [1] "TGFB3"
+## [1] "TNC"      "SERPINE1" "LTBP1"    "VIM"      "PTHLH"    "PLAU"    
+## [7] "LAMA3"    "LAMC2"   
+## [1] "IL6"
+##  [1] "IGFBP3"   "ITGA5"    "MMP1"     "COL1A1"   "MT2A"     "PTHLH"   
+##  [7] "SLC39A14" "MMP2"     "C1S"      "TIMP3"    "ITGA6"    "MMP10"   
+## [13] "PDLIM7"  
+## [1] "CTGF"
+##  [1] "MMP2"     "SERPINE1" "MMP1"     "TNC"      "PLAU"     "LTBP1"   
+##  [7] "CAV1"     "VIM"      "PTHLH"    "ITGA5"   
+## [1] "INHBA"
+## [1] "SERPINE1" "LTBP1"    "TNC"      "VIM"      "LAMC2"    "PTHLH"   
+## [1] "TNC"
+##  [1] "MMP2"     "TIMP3"    "SERPINE1" "MMP1"     "LTBP1"    "VIM"     
+##  [7] "CAV1"     "PLAU"     "PTHLH"    "GJA1"    
+## [1] "PTHLH"
+##  [1] "MMP1"     "PLAU"     "COL1A1"   "MMP2"     "P4HA2"    "SERPINE1"
+##  [7] "LTBP1"    "ITGA5"    "VIM"      "PTHLH"    "CAV1"    
+## [1] "ADAM17"
+##  [1] "TIMP3"    "MMP1"     "PLAU"     "TNC"      "APP"      "FSTL3"   
+##  [7] "SERPINE1" "VIM"      "PTHLH"    "LTBP1"   
+## [1] "BMP5"
+## [1] "SERPINE1" "LTBP1"    "LAMA3"    "VIM"     
+## [1] "FN1"
+## [1] "MMP10"    "MMP1"     "SERPINE1" "LTBP1"    "CAV1"     "VIM"     
+## [7] "PLAU"     "PTHLH"    "MMP2"    
+## [1] "BMP4"
+## [1] "MMP2"     "SERPINE1" "P4HA2"    "LTBP1"    "VIM"      "PLAU"    
+## [1] "COL4A1"
+##  [1] "SERPINE1" "LTBP1"    "PLAU"     "VIM"      "CAV1"     "PTHLH"   
+##  [7] "LAMA3"    "ITGA5"    "MMP2"     "APP"      "MMP1"    
+## [1] "IBSP"
+##  [1] "SERPINE1" "MMP1"     "LTBP1"    "COL1A1"   "MMP2"     "FHL2"    
+##  [7] "PLAU"     "PTHLH"    "ITGA5"    "CAV1"     "VIM"      "THBS1"   
+## [1] "FBN1"
+##  [1] "MMP1"     "SERPINE1" "MMP2"     "LTBP1"    "VIM"      "PLAU"    
+##  [7] "CAV1"     "THBS1"    "ITGA5"    "GJA1"    
+## [1] "JAM2"
+## [1] "SERPINE1" "LTBP1"    "VIM"      "MMP2"     "ITGA5"    "GJA1"    
+## [7] "TPM1"     "PLAU"    
+## [1] "FGF1"
+## [1] "SERPINE1" "PLAU"     "MMP1"     "LTBP1"    "VIM"      "ITGA5"   
+## [7] "CAV1"     "MMP2"     "PTHLH"   
+## [1] "LAMB2"
+##  [1] "SERPINE1" "LTBP1"    "VIM"      "CAV1"     "ITGA5"    "PLAU"    
+##  [7] "MMP2"     "MMP1"     "PTHLH"    "FHL2"    
+## [1] "IL24"
+## [1] "MMP1"     "SERPINE1" "LTBP1"    "ITGA5"    "VIM"      "MMP2"    
+## [7] "FHL2"     "PLAU"     "CAV1"    
+## [1] "TGFB2"
+## [1] "SERPINE1" "COL1A1"   "C1S"      "PTHLH"    "DKK3"
+
+active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = 0.25)
 ```
 
 The putatively active ligand-target links will be visualized in a heatmap.
