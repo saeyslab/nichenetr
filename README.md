@@ -51,6 +51,11 @@ vignettes explaining several types of analyses:
 -   [Inferring ligand-to-target signaling
     paths](vignettes/ligand_target_signaling_path.md):
     `vignette("ligand_target_signaling_path", package="nichenetr")`
+-   [Model evaluation: target gene and ligand activity
+    prediction](vignettes/model_evaluation.md):
+    `vignette("model_evaluation", package="nichenetr")`
+-   [Model construction](vignettes/model_construction.md):
+    `vignette("model_construction", package="nichenetr")`
 
 Note that documenation and vignettes are still under development and
 that vignettes on additonal application possibilities, model validation,
