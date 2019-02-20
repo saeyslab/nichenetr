@@ -293,7 +293,7 @@ get_top_predicted_genes = function(round,gene_prediction_list, quantile_cutoff =
 #' @description \code{calculate_fraction_top_predicted} Defines the fraction of genes belonging to the geneset or background and to the top-predicted genes.
 #'
 #' @usage
-#' calculate_fraction_top_predicted = function(affected_gene_predictions, quantile_cutoff = 0.95)
+#' calculate_fraction_top_predicted(affected_gene_predictions, quantile_cutoff = 0.95)
 #'
 #' @param affected_gene_predictions Tibble with columns "gene", "prediction" and "response" (e.g. output of function `assess_rf_class_probabilities`)
 #' @param quantile_cutoff Quantile of which genes should be considered as top-predicted targets. Default: 0.95, thus considering the top 5 percent predicted genes as predicted targets.
@@ -325,7 +325,7 @@ calculate_fraction_top_predicted = function(affected_gene_predictions, quantile_
 #' @description \code{calculate_fraction_top_predicted_fisher} Performs a Fisher's exact test to determine whether genes belonging to the gene set of interest are more likely to be part of the top-predicted targets.
 #'
 #' @usage
-#' calculate_fraction_top_predicted_fisher = function(affected_gene_predictions, quantile_cutoff = 0.95,output = "p-value")
+#' calculate_fraction_top_predicted_fisher(affected_gene_predictions, quantile_cutoff = 0.95,output = "p-value")
 #'
 #' @param p_value_output Should total summary or p-value be returned as output? Default: TRUE.
 #' @inheritParams calculate_fraction_top_predicted

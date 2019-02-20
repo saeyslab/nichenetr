@@ -2,7 +2,6 @@
 
 library(tidyverse)
 
-
 ## load in real data and save real and toy data in different locations
 
 expression_settings_validation_real = readRDS("../paper/evaluation/ligand_treatment_datasets/expression_settings")

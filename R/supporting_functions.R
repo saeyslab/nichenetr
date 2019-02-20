@@ -998,3 +998,43 @@ rf_target_prediction = function(i,affected_genes_grouped,strict_background_expre
   rf_prediction_confusion_matrix = setting %>% lapply(test_rf,rf_model,ligand_target_matrix[,best_upstream_ligands]) %>% .[[1]]
 
 }
+apply_quantile_scale = function (x, addend, multiplier)
+  # same function as apply_quantile_scale from dynutils (copied here for use in vignette to avoid having dynutils as dependency)
+  # credits to the great (w/z)outer and r(obrecht)cannood(t) from dynverse (https://github.com/dynverse)!
+{
+  if (is.null(dim(x))) {
+    sc <- apply_quantile_scale(matrix(x, ncol = 1), addend = addend,
+                               multiplier = multiplier)
+    out <- sc[, 1]
+    names(out) <- names(x)
+    attr(out, "addend") <- attr(sc, "addend")
+    attr(out, "multiplier") <- attr(sc, "multiplier")
+    out
+  }
+  else {
+    y <- apply_uniform_scale(x, addend, multiplier)
+    y[y > 1] <- 1
+    y[y < 0] <- 0
+    y
+  }
+}
+apply_uniform_scale = function (x, addend, multiplier)
+  # same function as apply_uniform_scale from dynutils (copied here for use in vignette to avoid having dynutils as dependency)
+  # credits to the great (w/z)outer and r(obrecht)cannood(t) from dynverse (https://github.com/dynverse)!
+{
+  if (is.null(dim(x))) {
+    sc <- apply_uniform_scale(matrix(x, ncol = 1), addend = addend,multiplier = multiplier)
+    out <- sc[, 1]
+    names(out) <- names(x)
+    attr(out, "addend") <- attr(sc, "addend")
+    attr(out, "multiplier") <- attr(sc, "multiplier")
+    out
+  }
+  else {
+    y <- x %>% sweep(2, addend, "+") %>% sweep(2, multiplier,
+                                               "*")
+    attr(y, "addend") <- addend
+    attr(y, "multiplier") <- multiplier
+    y
+  }
+}
