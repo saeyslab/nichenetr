@@ -680,6 +680,7 @@ regression_evaluation = function(prediction,response){
 
   return(tbl_perf)
 }
+
 # rmse = function(error){
 #   sqrt(mean(error^2))
 # }
@@ -1038,3 +1039,4 @@ apply_uniform_scale = function (x, addend, multiplier)
     y
   }
 }
+

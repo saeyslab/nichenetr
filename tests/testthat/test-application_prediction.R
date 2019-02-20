@@ -65,3 +65,38 @@ test_that("Target gene prediction can be predicted by multi-ligand models", {
 
 })
 
+context("Single-cell ligand activity prediction functions")
+test_that("Single-cell ligand activity prediction functions work a bit OK", {
+  x = matrix(rnorm(200*2, sd = 10, mean = 5), ncol = 2)
+  x_scaled = scale_quantile(x)
+  expect_type(x_scaled,"double")
+  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+  ligands = list("TNF","BMP2","IL4")
+  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+  potential_ligands = c("TNF","BMP2","IL4")
+  genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
+  cell_ids = c("cell1","cell2","cell3","cell4")
+  set.seed(1)
+  expression_scaled = matrix(rnorm(length(genes)*length(cell_ids), sd = 0.5, mean = 0.5), nrow = length(cell_ids))
+  rownames(expression_scaled) = cell_ids
+  colnames(expression_scaled) = genes
+
+  settings = convert_single_cell_expression_to_settings(cell_id = cell_ids[1], expression_matrix = expression_scaled, setting_name = "test", setting_from = potential_ligands)
+  expect_type(settings,"list")
+
+  ligand_activities = predict_single_cell_ligand_activities(cell_ids = cell_ids, expression_scaled = expression_scaled, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+  expect_type(ligand_activities,"list")
+  expect_type(ligand_activities$test_ligand,"character")
+  expect_type(ligand_activities$setting,"character")
+  expect_type(ligand_activities$pearson,"double")
+
+  normalized_ligand_activities = normalize_single_cell_ligand_activities(ligand_activities)
+  expect_type(normalized_ligand_activities,"list")
+
+  cell_scores_tbl = tibble(cell = cell_ids, score = c(1,4,2,3))
+  regression_analysis_output = single_ligand_activity_score_regression(normalized_ligand_activities,cell_scores_tbl)
+  expect_type(regression_analysis_output,"list")
+
+})
+
+

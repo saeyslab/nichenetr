@@ -362,3 +362,225 @@ calculate_fraction_top_predicted_fisher = function(affected_gene_predictions, qu
     return(summary)
   }
 }
+#' @title Cut off outer quantiles and rescale to a [0, 1] range
+#'
+#' @description \code{scale_quantile} Cut off outer quantiles and rescale to a [0, 1] range
+#'
+#' @usage
+#' scale_quantile(x, outlier_cutoff = .05)
+#'
+#' @param x A numeric vector, matrix or data frame.
+#' @param outlier_cutoff The quantile cutoff for outliers (default 0.05).
+#'
+#' @return The centered, scaled matrix or vector. The numeric centering and scalings used are returned as attributes.
+#'
+#' @examples
+#' \dontrun{
+#' ## Generate a matrix from a normal distribution
+#' ## with a large standard deviation, centered at c(5, 5)
+#' x <- matrix(rnorm(200*2, sd = 10, mean = 5), ncol = 2)
+#'
+#' ## Scale the dataset between [0,1]
+#' x_scaled <- scale_quantile(x)
+#'
+#' ## Show ranges of each column
+#' apply(x_scaled, 2, range)
+#' }
+#' @export
+scale_quantile <- function(x, outlier_cutoff = .05) {
+  # same function as scale_quantile from dynutils (copied here for use in vignette to avoid having dynutils as dependency)
+  # credits to the amazing (w/z)outer and r(obrecht)cannood(t) from dynverse (https://github.com/dynverse)!
+  if (is.null(dim(x))) {
+    sc <- scale_quantile(matrix(x, ncol = 1), outlier_cutoff = outlier_cutoff)
+    out <- sc[,1]
+    names(out) <- names(x)
+    attr(out, "addend") <- attr(sc, "addend")
+    attr(out, "multiplier") <- attr(sc, "multiplier")
+    out
+  } else {
+    quants <- apply(x, 2, stats::quantile, c(outlier_cutoff, 1 - outlier_cutoff), na.rm = TRUE)
+
+    addend <- -quants[1,]
+    divisor <- apply(quants, 2, diff)
+    divisor[divisor == 0] <- 1
+
+    apply_quantile_scale(x, addend, 1 / divisor)
+  }
+}
+#' @title Prepare single-cell expression data to perform ligand activity analysis
+#'
+#' @description \code{convert_single_cell_expression_to_settings} Prepare single-cell expression data to perform ligand activity analysis
+#'
+#' @usage
+#' convert_single_cell_expression_to_settings(cell_id, expression_matrix, setting_name, setting_from, regression = FALSE)
+#'
+#' @param cell_id Identity of the cell of interest
+#' @param setting_name Name of the dataset
+#' @param expression_matrix Gene expression matrix of single-cells
+#' @param setting_from Character vector giving the gene symbols of the potentially active ligands you want to define ligand activities for.
+#' @param regression Perform regression-based ligand activity analysis (TRUE) or classification-based ligand activity analysis (FALSE) by considering the genes expressed higher than the 0.975 quantiles as genes of interest. Default: FALSE.
+#'
+#' @return A list with slots $name, $from and $response respectively containing the setting name, potentially active ligands and the response to predict (whether genes belong to gene set of interest; i.e. most strongly expressed genes in a cell)
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2","IL4")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' potential_ligands = c("TNF","BMP2","IL4")
+#' genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
+#' cell_ids = c("cell1","cell2")
+#' expression_scaled = matrix(rnorm(length(genes)*2, sd = 0.5, mean = 0.5), nrow = 2)
+#' rownames(expression_scaled) = cell_ids
+#' colnames(expression_scaled) = genes
+#' settings = convert_single_cell_expression_to_settings(cell_id = cell_ids[1], expression_matrix = expression_scaled, setting_name = "test", setting_from = potential_ligands)
+#' }
+#'
+#' @export
+#'
+convert_single_cell_expression_to_settings = function(cell_id, expression_matrix, setting_name, setting_from, regression = FALSE){
+  # input check
+  requireNamespace("dplyr")
+
+  if (regression == TRUE){
+    response = expression_matrix[cell_id,]
+  } else {
+    response_continuous = expression_matrix[cell_id,]
+    response = response_continuous >= quantile(response_continuous,0.975)
+  }
+  return(list(name = paste0(setting_name,"_",cell_id), from = setting_from, response = response))
+}
+#' @title Single-cell ligand activity prediction
+#'
+#' @description \code{predict_single_cell_ligand_activities} For every individual cell of interest, predict activities of ligands in regulating expression of genes that are stronger expressed in that cell compared to other cells (0.975 quantile). Ligand activities are defined as how well they predict the observed transcriptional response (i.e. gene set) according to the NicheNet model.
+#'
+#' @usage
+#' predict_single_cell_ligand_activities(cell_ids, expression_scaled,ligand_target_matrix, potential_ligands, single = TRUE,...)
+#'
+#' @param cell_ids Identities of cells for which the ligand activities should be calculated.
+#' @param expression_scaled Scaled expression matrix of single-cells (scaled such that high values indicate that a gene is stronger expressed in that cell compared to others)
+#' @param ligand_target_matrix The NicheNet ligand-target matrix denoting regulatory potential scores between ligands and targets (ligands in columns).
+#' @param potential_ligands Character vector giving the gene symbols of the potentially active ligands you want to define ligand activities for.
+#' @param single TRUE if you want to calculate ligand activity scores by considering every ligand individually (recommended). FALSE if you want to calculate ligand activity scores as variable importances of a multi-ligand classification model.
+#'
+#' @return A tibble giving several ligand activity scores for single cells. Following columns in the tibble: $setting, $test_ligand, $auroc, $aupr and $pearson.
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2","IL4")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' potential_ligands = c("TNF","BMP2","IL4")
+#' genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
+#' cell_ids = c("cell1","cell2")
+#' expression_scaled = matrix(rnorm(length(genes)*2, sd = 0.5, mean = 0.5), nrow = 2)
+#' rownames(expression_scaled) = cell_ids
+#' colnames(expression_scaled) = genes
+#' ligand_activities = predict_single_cell_ligand_activities(cell_ids = cell_ids, expression_scaled = expression_scaled, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+#' }
+#'
+#' @export
+#'
+predict_single_cell_ligand_activities = function(cell_ids, expression_scaled,ligand_target_matrix, potential_ligands, single = TRUE,...){
+  settings_single_cell_ligand_pred = cell_ids %>% lapply(convert_single_cell_expression_to_settings, expression_scaled, "", potential_ligands)
+  if (single == TRUE){
+    settings_ligand_prediction = settings_single_cell_ligand_pred %>% convert_settings_ligand_prediction(all_ligands = potential_ligands, validation = FALSE, single = TRUE)
+
+    ligand_importances = settings_ligand_prediction %>% lapply(get_single_ligand_importances,ligand_target_matrix = ligand_target_matrix, known = FALSE) %>% bind_rows() %>% mutate(setting = gsub("^_","",setting))
+
+  } else {
+    settings_ligand_prediction = settings_single_cell_ligand_pred %>% convert_settings_ligand_prediction(all_ligands = potential_ligands, validation = FALSE, single = FALSE)
+
+    ligand_importances = settings_ligand_prediction %>% lapply(get_multi_ligand_importances,ligand_target_matrix = ligand_target_matrix, known = FALSE, ...) %>% bind_rows() %>% mutate(setting = gsub("^_","",setting))
+
+  }
+  return(ligand_importances %>% select(setting,test_ligand,auroc,aupr,pearson))
+}
+#' @title Normalize single-cell ligand activities
+#'
+#' @description \code{normalize_single_cell_ligand_activities} Normalize single-cell ligand activities to make ligand activities over different cells comparable.
+#' @usage
+#' normalize_single_cell_ligand_activities(ligand_activities)
+#'
+#' @param ligand_activities Output from the function `predict_single_cell_ligand_activities`.
+#'
+#' @return A tibble giving the normalized ligand activity scores for single cells. Following columns in the tibble: $cell, $ligand, $pearson, which is the normalized ligand activity value.
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2","IL4")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' potential_ligands = c("TNF","BMP2","IL4")
+#' genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
+#' cell_ids = c("cell1","cell2")
+#' expression_scaled = matrix(rnorm(length(genes)*2, sd = 0.5, mean = 0.5), nrow = 2)
+#' rownames(expression_scaled) = cell_ids
+#' colnames(expression_scaled) = genes
+#' ligand_activities = predict_single_cell_ligand_activities(cell_ids = cell_ids, expression_scaled = expression_scaled, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+#' normalized_ligand_activities = normalize_single_cell_ligand_activities(ligand_activities)
+#' }
+#'
+#' @export
+#'
+normalize_single_cell_ligand_activities = function(ligand_activities){
+  single_ligand_activities_pearson_norm = ligand_activities %>%
+    group_by(setting) %>%
+    mutate(pearson = nichenetr::scaling_modified_zscore(pearson)) %>%
+    ungroup() %>%
+    rename(cell = setting, ligand = test_ligand) %>%
+    distinct(cell,ligand,pearson)
+
+  single_ligand_activities_pearson_norm_df = single_ligand_activities_pearson_norm %>%
+    spread(cell, pearson,fill = min(.$pearson))
+
+  single_ligand_activities_pearson_norm_matrix = single_ligand_activities_pearson_norm_df  %>%
+    select(-ligand) %>%
+    t() %>%
+    magrittr::set_colnames(single_ligand_activities_pearson_norm_df$ligand)
+
+  single_cell_ligand_activities_pearson_norm_df = single_ligand_activities_pearson_norm_matrix %>%
+    data.frame() %>%
+    rownames_to_column("cell") %>%
+    tbl_df()
+}
+#' @title Perform a correlation and regression analysis between cells' ligand activities and property scores of interest
+#'
+#' @description \code{single_ligand_activity_score_regression} Performs a correlation and regression analysis between cells' ligand activities and property scores of interest.
+#' @usage
+#' single_ligand_activity_score_regression(ligand_activities, scores_tbl)
+#'
+#' @param ligand_activities Output from the function `normalize_single_cell_ligand_activities`.
+#' @param scores_tbl a tibble containing scores for every cell (columns: $cell and $score). The score should correspond to the property of interest
+#'
+#' @return A tibble giving for every ligand, the correlation/regression coefficients giving information about the relation between its activity and the property of interest.
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2","IL4")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' potential_ligands = c("TNF","BMP2","IL4")
+#' genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
+#' cell_ids = c("cell1","cell2")
+#' expression_scaled = matrix(rnorm(length(genes)*2, sd = 0.5, mean = 0.5), nrow = 2)
+#' rownames(expression_scaled) = cell_ids
+#' colnames(expression_scaled) = genes
+#' ligand_activities = predict_single_cell_ligand_activities(cell_ids = cell_ids, expression_scaled = expression_scaled, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+#' normalized_ligand_activities = normalize_single_cell_ligand_activities(ligand_activities)
+#' cell_scores_tbl = tibble(cell = cell_ids, score = c(1,4))
+#' regression_analysis_output = single_ligand_activity_score_regression(normalized_ligand_activities,cell_scores_tbl)
+#' }
+#'
+#' @export
+#'
+single_ligand_activity_score_regression = function(ligand_activities, scores_tbl){
+  combined = inner_join(scores_tbl,ligand_activities)
+  output = lapply(combined %>% select(-cell, -score), function(activity_prediction, combined){
+    geneset_score = combined$score
+    metrics = regression_evaluation(activity_prediction,geneset_score)
+  }, combined)
+  ligands = names(output)
+  output_df = output %>% bind_rows() %>% mutate(ligand = ligands)
+  return(output_df)
+}

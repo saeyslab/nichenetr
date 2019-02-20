@@ -54,6 +54,9 @@ vignettes explaining several types of analyses:
 -   [Assess how well top-ranked ligands can predict a gene set of
     interest](vignettes/target_prediction_evaluation_geneset.md):
     `vignette("target_prediction_evaluation_geneset", package="nichenetr")`
+-   [Single-cell NicheNet's ligand activity
+    analysis](vignettes/ligand_activity_single_cell.md):
+    `vignette("ligand_activity_single_cell", package="nichenetr")`
 -   [Model evaluation: target gene and ligand activity
     prediction](vignettes/model_evaluation.md):
     `vignette("model_evaluation", package="nichenetr")`

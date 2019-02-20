@@ -4,7 +4,7 @@
 \alias{calculate_fraction_top_predicted_fisher}
 \title{Perform a Fisher's exact test to determine whether genes belonging to the gene set of interest are more likely to be part of the top-predicted targets.}
 \usage{
-calculate_fraction_top_predicted_fisher = function(affected_gene_predictions, quantile_cutoff = 0.95,output = "p-value")
+calculate_fraction_top_predicted_fisher(affected_gene_predictions, quantile_cutoff = 0.95,output = "p-value")
 }
 \arguments{
 \item{affected_gene_predictions}{Tibble with columns "gene", "prediction" and "response" (e.g. output of function `assess_rf_class_probabilities`)}

@@ -4,7 +4,7 @@
 \alias{calculate_fraction_top_predicted}
 \title{Determine the fraction of genes belonging to the geneset or background and to the top-predicted genes.}
 \usage{
-calculate_fraction_top_predicted = function(affected_gene_predictions, quantile_cutoff = 0.95)
+calculate_fraction_top_predicted(affected_gene_predictions, quantile_cutoff = 0.95)
 }
 \arguments{
 \item{affected_gene_predictions}{Tibble with columns "gene", "prediction" and "response" (e.g. output of function `assess_rf_class_probabilities`)}
