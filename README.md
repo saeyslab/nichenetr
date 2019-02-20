@@ -62,3 +62,6 @@ vignettes explaining several types of analyses:
     `vignette("model_evaluation", package="nichenetr")`
 -   [Model construction](vignettes/model_construction.md):
     `vignette("model_construction", package="nichenetr")`
+-   [Parameter optimization via
+    mlrMBO](vignettes/parameter_optimization.md):
+    `vignette("parameter_optimization", package="nichenetr")`
