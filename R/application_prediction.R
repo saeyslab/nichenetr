@@ -182,3 +182,183 @@ prepare_ligand_target_visualization = function(ligand_target_df, ligand_target_m
 
   vis_ligand_target_network = ligand_target_vis_filtered[order_targets,order_ligands]
 }
+#' @title Assess probability that a target gene belongs to the geneset based on a multi-ligand random forest model
+#'
+#' @description \code{assess_rf_class_probabilities} Assess probability that a target gene belongs to the geneset based on a multi-ligand random forest model (with cross-validation). Target genes and background genes will be split in different groups in a stratified way.
+#'
+#' @usage
+#' assess_rf_class_probabilities(round,folds,geneset,background_expressed_genes,ligands_oi,ligand_target_matrix)
+#'
+#' @param ligands_oi Character vector giving the gene symbols of the ligands you want to build the multi-ligand with.
+#' @param round Integer describing which fold of the cross-validation scheme it is.
+#' @param folds Integer describing how many folds should be used.
+#' @inheritParams predict_ligand_activities
+#'
+#' @return A tibble with columns: $gene, $response, $prediction. Response indicates whether the gene belongs to the geneset of interest, prediction gives the probability this gene belongs to the geneset according to the random forest model.
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2","IL4")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' potential_ligands = c("TNF","BMP2","IL4")
+#' geneset = c("SOCS2","SOCS3", "IRF1")
+#' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
+#' fold1_rf_prob = assess_rf_class_probabilities(round = 1,folds = 2,geneset = geneset,background_expressed_genes = background_expressed_genes ,ligands_oi = potential_ligands,ligand_target_matrix = ligand_target_matrix)
+#' }
+#'
+#' @export
+#'
+assess_rf_class_probabilities = function(round,folds,geneset,background_expressed_genes,ligands_oi, ligand_target_matrix){
+  set.seed(round)
+  geneset_shuffled = sample(geneset, size = length(geneset))
+  geneset_grouped = split(geneset_shuffled,1:folds)
+
+  strict_background_expressed_genes = background_expressed_genes[!background_expressed_genes %in% geneset]
+  set.seed(round)
+  strict_background_expressed_genes_shuffled = sample(strict_background_expressed_genes, size = length(strict_background_expressed_genes))
+  strict_background_expressed_genes_grouped = split(strict_background_expressed_genes_shuffled,1:folds)
+
+  geneset_predictions_all = seq(length(geneset_grouped)) %>% lapply(rf_target_prediction,geneset_grouped,strict_background_expressed_genes_grouped,ligands_oi,ligand_target_matrix) %>% bind_rows()
+  geneset_predictions_all = geneset_predictions_all %>% mutate(response = gsub("\\.","",response) %>% as.logical())
+}
+#' @title Assess how well classification predictions accord to the expected response
+#'
+#' @description \code{classification_evaluation_continuous_pred_wrapper} Assess how well classification predictions accord to the expected response.
+#'
+#' @usage
+#' classification_evaluation_continuous_pred_wrapper(response_prediction_tibble)
+#'
+#' @param response_prediction_tibble Tibble with columns "response" and "prediction" (e.g. output of function `assess_rf_class_probabilities`)
+#'
+#' @return A tibble showing several classification evaluation metrics.
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2","IL4")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' potential_ligands = c("TNF","BMP2","IL4")
+#' geneset = c("SOCS2","SOCS3", "IRF1")
+#' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
+#' fold1_rf_prob = assess_rf_class_probabilities(round = 1,folds = 2,geneset = geneset,background_expressed_genes = background_expressed_genes ,ligands_oi = potential_ligands,ligand_target_matrix = ligand_target_matrix)
+#  classification_evaluation_continuous_pred_wrapper(fold1_rf_prob)
+#' }
+#'
+#' @export
+#'
+classification_evaluation_continuous_pred_wrapper = function(response_prediction_tibble) {
+  prediction_performances = classification_evaluation_continuous_pred(response_prediction_tibble$prediction, response_prediction_tibble$response, iregulon = FALSE)
+  return(prediction_performances)
+}
+#' @title Find which genes were among the top-predicted targets genes in a specific cross-validation round and see whether these genes belong to the gene set of interest as well.
+#'
+#' @description \code{get_top_predicted_genes} Find which genes were among the top-predicted targets genes in a specific cross-validation round and see whether these genes belong to the gene set of interest as well.
+#'
+#' @usage
+#' get_top_predicted_genes(round,gene_prediction_list, quantile_cutoff = 0.95)
+#'
+#' @param gene_prediction_list List with per round of cross-validation: a tibble with columns "gene", "prediction" and "response" (e.g. output of function `assess_rf_class_probabilities`)
+#' @param round Integer describing which fold of the cross-validation scheme it is.
+#' @param quantile_cutoff Quantile of which genes should be considered as top-predicted targets. Default: 0.95, thus considering the top 5 percent predicted genes as predicted targets.
+#'
+#' @return A tibble indicating for every gene whether it belongs to the geneset and whether it belongs to the top-predicted genes in a specific cross-validation round.
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2","IL4")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' potential_ligands = c("TNF","BMP2","IL4")
+#' geneset = c("SOCS2","SOCS3", "IRF1")
+#' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
+#' gene_predictions_list = seq(2) %>% lapply(assess_rf_class_probabilities,2, geneset = geneset,background_expressed_genes = background_expressed_genes,ligands_oi = potential_ligands,ligand_target_matrix = ligand_target_matrix)
+#' seq(length(gene_predictions_list))  %>% lapply(get_top_predicted_genes,gene_predictions_list)
+#' }
+#'
+#' @export
+#'
+get_top_predicted_genes = function(round,gene_prediction_list, quantile_cutoff = 0.95){
+  affected_gene_predictions = gene_prediction_list[[round]]
+  predicted_positive = affected_gene_predictions %>%
+    arrange(-prediction) %>%
+    mutate(predicted_top_target = prediction >= quantile(prediction,quantile_cutoff)) %>%
+    filter(predicted_top_target) %>% rename(true_target = response) %>%
+    select(gene,true_target,predicted_top_target)
+  colnames(predicted_positive) = c("gene","true_target",paste0("predicted_top_target_round",round))
+  return(predicted_positive)
+}
+#' @title Determine the fraction of genes belonging to the geneset or background and to the top-predicted genes.
+#'
+#' @description \code{calculate_fraction_top_predicted} Defines the fraction of genes belonging to the geneset or background and to the top-predicted genes.
+#'
+#' @usage
+#' calculate_fraction_top_predicted = function(affected_gene_predictions, quantile_cutoff = 0.95)
+#'
+#' @param affected_gene_predictions Tibble with columns "gene", "prediction" and "response" (e.g. output of function `assess_rf_class_probabilities`)
+#' @param quantile_cutoff Quantile of which genes should be considered as top-predicted targets. Default: 0.95, thus considering the top 5 percent predicted genes as predicted targets.
+#'
+#' @return A tibble indicating the number of genes belonging to the gene set of interest or background (true_target column), the number and fraction of genes of these gruops that were part of the top predicted targets in a specific cross-validation round.
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2","IL4")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' potential_ligands = c("TNF","BMP2","IL4")
+#' geneset = c("SOCS2","SOCS3", "IRF1")
+#' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
+#' gene_predictions_list = seq(2) %>% lapply(assess_rf_class_probabilities,2, geneset = geneset,background_expressed_genes = background_expressed_genes,ligands_oi = potential_ligands,ligand_target_matrix = ligand_target_matrix)
+#' target_prediction_performances_discrete_cv = gene_predictions_list %>% lapply(calculate_fraction_top_predicted) %>% bind_rows() %>% ungroup() %>% mutate(round=rep(1:length(gene_predictions_list), each = 2))
+
+#' }
+#'
+#' @export
+#'
+calculate_fraction_top_predicted = function(affected_gene_predictions, quantile_cutoff = 0.95){
+  predicted_positive = affected_gene_predictions %>% arrange(-prediction) %>% filter(prediction >= quantile(prediction,0.95)) %>% group_by(response) %>% count() %>% rename(positive_prediction = n) %>% rename(true_target = response)
+  all = affected_gene_predictions %>% arrange(-prediction) %>% rename(true_target = response) %>% group_by(true_target) %>% count()
+  inner_join(all,predicted_positive, by = "true_target") %>% mutate(fraction_positive_predicted = positive_prediction/n)
+}
+#' @title Perform a Fisher's exact test to determine whether genes belonging to the gene set of interest are more likely to be part of the top-predicted targets.
+#'
+#' @description \code{calculate_fraction_top_predicted_fisher} Performs a Fisher's exact test to determine whether genes belonging to the gene set of interest are more likely to be part of the top-predicted targets.
+#'
+#' @usage
+#' calculate_fraction_top_predicted_fisher = function(affected_gene_predictions, quantile_cutoff = 0.95,output = "p-value")
+#'
+#' @param p_value_output Should total summary or p-value be returned as output? Default: TRUE.
+#' @inheritParams calculate_fraction_top_predicted
+#'
+#' @return Summary of the Fisher's exact test or just the p-value
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2","IL4")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' potential_ligands = c("TNF","BMP2","IL4")
+#' geneset = c("SOCS2","SOCS3", "IRF1")
+#' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
+#' gene_predictions_list = seq(2) %>% lapply(assess_rf_class_probabilities,2, geneset = geneset,background_expressed_genes = background_expressed_genes,ligands_oi = potential_ligands,ligand_target_matrix = ligand_target_matrix)
+#' target_prediction_performances_fisher_pval = gene_predictions_list %>% lapply(calculate_fraction_top_predicted_fisher) %>% unlist() %>% mean()
+#' }
+#'
+#' @export
+#'
+calculate_fraction_top_predicted_fisher = function(affected_gene_predictions, quantile_cutoff = 0.95, p_value_output = TRUE){
+  predicted_positive = affected_gene_predictions %>% arrange(-prediction) %>% filter(prediction >= quantile(prediction,quantile_cutoff)) %>% group_by(response) %>% count() %>% rename(positive_prediction = n)
+  all = affected_gene_predictions %>% arrange(-prediction)  %>% group_by(response) %>% count()
+  results_df = inner_join(all,predicted_positive, by = "response") %>% mutate(fraction_positive_predicted = positive_prediction/n)
+  tp = results_df %>% filter(response == TRUE) %>% .$positive_prediction
+  fp = results_df %>% filter(response == FALSE) %>% .$positive_prediction
+  fn = (results_df %>% filter(response == TRUE) %>% .$n) - (results_df %>% filter(response == TRUE) %>% .$positive_prediction)
+  tn = (results_df %>% filter(response == FALSE) %>% .$n) - (results_df %>% filter(response == FALSE) %>% .$positive_prediction)
+  contingency_table = matrix(c(tp,fp,fn,tn), nrow = 2,dimnames = list(c("geneset", "background"), c("top-predicted", "no-top-predicted")))
+  summary = fisher.test(contingency_table, alternative = "greater")
+  if(p_value_output == TRUE){
+    return(summary$p.value)
+  } else {
+    return(summary)
+  }
+}

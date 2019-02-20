@@ -918,4 +918,83 @@ assign_new_weight = function(loi_performances, loo_performances, output_regressi
   weight_oi = max(weight_oi,0) # weight should be higher than 0
   source_weights_df = source_weights_df %>% bind_rows(tibble(source = source_oi, weight = weight_oi ))
 }
+train_rf = function(setting,ligand_target_matrix, ligands_position = "cols", ntrees = 1000, mtry = 2,  continuous = TRUE, known = TRUE, filter_genes = FALSE){
+  setting_name = setting$name
+  ligands_oi = setting$from
 
+  prediction_matrix = ligand_target_matrix[,ligands_oi]
+  target_genes = rownames(ligand_target_matrix)
+
+  response_vector = setting$response
+  response_df = tibble(gene = names(response_vector), response = response_vector %>% make.names() %>% as.factor())
+
+  prediction_df = prediction_matrix %>% data.frame() %>% tbl_df()
+
+  prediction_df = tibble(gene = target_genes) %>% bind_cols(prediction_df)
+  combined = inner_join(response_df,prediction_df, by = "gene")
+  train_data = combined %>% select(-gene) %>% rename(obs = response) %>% data.frame()
+  #
+  # w_pos = table(train_data$obs)["TRUE."]/length(train_data$obs)
+  # w_neg = table(train_data$obs)["FALSE."]/length(train_data$obs)
+  #
+  # classwt = c(w_neg,w_pos) %>% set_names(c("FALSE.","TRUE."))
+  # set.seed(1)
+  # rf_model = randomForest::randomForest(y = train_data$obs,
+  #                                       x = train_data[,-(which(colnames(train_data) == "obs"))],
+  #                                       ntree = ntrees,
+  #                                       mtry = ncol(train_data[,-(which(colnames(train_data) == "obs"))])**(1/mtry) %>% ceiling(),
+  #                                       importance = FALSE,
+  #                                       classwt = classwt
+  #
+  # )
+  set.seed(1)
+  rf_model = randomForest::randomForest(y = train_data$obs,
+                                        x = train_data[,-(which(colnames(train_data) == "obs"))],
+                                        ntree = ntrees,
+                                        mtry = ncol(train_data[,-(which(colnames(train_data) == "obs"))])**(1/mtry) %>% ceiling(),
+                                        importance = FALSE
+
+  )
+}
+test_rf = function(setting,rf_model, ligand_target_matrix, ligands_position = "cols"){
+  library(e1071)
+  setting_name = setting$name
+  ligands_oi = setting$from
+
+  prediction_matrix = ligand_target_matrix[,ligands_oi]
+  target_genes = rownames(ligand_target_matrix)
+
+  response_vector = setting$response
+  response_df = tibble(gene = names(response_vector), response = response_vector %>% make.names() %>% as.factor())
+
+  prediction_df = prediction_matrix %>% data.frame() %>% tbl_df()
+
+  prediction_df = tibble(gene = target_genes) %>% bind_cols(prediction_df)
+  combined = inner_join(response_df,prediction_df, by = "gene")
+  test_data = combined %>% select(-gene) %>% rename(obs = response) %>% data.frame()
+
+  rf_prediction = predict(rf_model,test_data[,-(which(colnames(test_data) == "obs"))], type = "prob")
+
+  return(tibble(gene = combined$gene, response = combined$response, prediction = rf_prediction[,"TRUE."]))
+
+  # ModelMetrics::confusionMatrix(predicted = rf_prediction[,"TRUE."],
+  #                               actual = test_data$obs,
+  #                 cutoff = quantile(rf_prediction[,"TRUE."],0.5))
+
+}
+rf_target_prediction = function(i,affected_genes_grouped,strict_background_expressed_genes_grouped,best_upstream_ligands,ligand_target_matrix){
+  training_indices = seq(length(affected_genes_grouped)) %>% .[. != i]
+  training_affected_genes = affected_genes_grouped[training_indices] %>% unlist() %>% unique()
+  training_background_expressed_genes = c(training_affected_genes,strict_background_expressed_genes_grouped[training_indices] %>% unlist() %>% unique()) %>% unique()
+
+  test_affected_genes = affected_genes_grouped[[i]]
+  test_background_expressed_genes = c(affected_genes_grouped[[i]],strict_background_expressed_genes_grouped[[i]]) %>% unique()
+
+  setting = lapply(list(training_affected_genes), convert_gene_list_settings_evaluation, name = "target_pred", ligands_oi = best_upstream_ligands, background = training_background_expressed_genes)
+  rf_model = setting %>% lapply(train_rf,ligand_target_matrix[,best_upstream_ligands]) %>% .[[1]]
+
+  # Predicting response variable
+  setting = lapply(list(test_affected_genes), convert_gene_list_settings_evaluation, name = "target_pred", ligands_oi = best_upstream_ligands, background = test_background_expressed_genes)
+  rf_prediction_confusion_matrix = setting %>% lapply(test_rf,rf_model,ligand_target_matrix[,best_upstream_ligands]) %>% .[[1]]
+
+}

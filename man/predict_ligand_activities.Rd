@@ -4,7 +4,7 @@
 \alias{predict_ligand_activities}
 \title{Predict activities of ligands in regulating expression of a gene set of interest}
 \usage{
-predict_ligand_activities(geneset, background_expressed_genes,ligand_target_matrix, potential_ligands, single = TRUE)
+predict_ligand_activities(geneset, background_expressed_genes,ligand_target_matrix, potential_ligands, single = TRUE,...)
 }
 \arguments{
 \item{geneset}{Character vector of the gene symbols of genes of which the expression is potentially affected by ligands from the interacting cell.}

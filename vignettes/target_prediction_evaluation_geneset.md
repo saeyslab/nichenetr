@@ -1,12 +1,12 @@
-NicheNet's ligand activity analysis on a gene set of interest
+Assess how well top-ranked ligands can predict a gene set of interest
 ================
 Robin Browaeys
-2019-01-17
+2019-02-19
 
-<!-- github markdown built using 
-rmarkdown::render("vignettes/ligand_activity_geneset.Rmd", output_format = "github_document")
+<!-- github markdown built using
+rmarkdown::render("vignettes/target_prediction_evaluation_geneset.Rmd", output_format = "github_document")
 -->
-This vignette shows how NicheNet can be used to predict which ligands might regulate a given set of genes. For this analysis, you need to define:
+This vignette shows how NicheNet can be used to to predict which ligands might regulate a given set of genes and how well they do this prediction. For this analysis, you need to define:
 
 -   a set of genes of which expression in a "receiver cell" is possibly affected by extracellular protein signals (ligands) (e.g. genes differentially expressed upon cell-cell interaction )
 -   a set of potentially active ligands (e.g. ligands expressed by interacting "sender cells")
@@ -15,7 +15,7 @@ Therefore, you often first need to process expression data of interacting cells 
 
 In this example, we will use data from Puram et al. to explore intercellular communication in the tumor microenvironment in head and neck squamous cell carcinoma (HNSCC) (See Puram et al. 2017). More specifically, we will look at which ligands expressed by fibroblasts can induce a specific gene program in neighboring malignant cells. This program, a partial epithelial-mesenschymal transition (p-EMT) program, could be linked by Puram et al. to metastasis.
 
-For this analysis, we will assess the ligand activity of each ligand, or in other words, we will assess how well each fibroblast ligand can predict the p-EMT gene set compared to the background of expressed genes. This allows us to prioritize p-EMT-regulating ligands. In a final step, we will then infer target genes of these top ligands.
+For this analysis, we will first assess the ligand activity of each ligand, or in other words, we will assess how well each fibroblast ligand can predict the p-EMT gene set compared to the background of expressed genes. This allows us to prioritize p-EMT-regulating ligands. Then, we will assess how well the prioritized ligands together can predict whether genes belong to the gene set of interest or not.
 
 The used ligand-target matrix and example expression data of interacting cells can be downloaded from Zenodo. [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1484138.svg)](https://doi.org/10.5281/zenodo.1484138)
 
@@ -72,7 +72,6 @@ Because we here want to investigate how fibroblast regulate the expression of p-
 pemt_geneset = readr::read_tsv(url("https://zenodo.org/record/1484138/files/pemt_signature.txt"), col_names = "gene") %>% pull(gene) %>% .[. %in% rownames(ligand_target_matrix)] # only consider genes also present in the NicheNet model - this excludes genes from the gene list for which the official HGNC symbol was not used by Puram et al.
 head(pemt_geneset)
 ## [1] "SERPINE1" "TGFBI"    "MMP10"    "LAMC2"    "P4HA2"    "PDPN"
-
 background_expressed_genes = expressed_genes_malignant %>% .[. %in% rownames(ligand_target_matrix)]
 head(background_expressed_genes)
 ## [1] "RPS11"   "ELMO2"   "PNMA1"   "MMP2"    "TMEM216" "ERCC5"
@@ -105,7 +104,7 @@ ligand_activities = predict_ligand_activities(geneset = pemt_geneset, background
 Now, we want to rank the ligands based on their ligand activity. In our validation study, we showed that the pearson correlation between a ligand's target predictions and the observed transcriptional response was the most informative measure to define ligand activity. Therefore, we will rank the ligands based on their pearson correlation coefficient.
 
 ``` r
-ligand_activities %>% arrange(-pearson) 
+ligand_activities %>% arrange(-pearson)
 ## # A tibble: 134 x 4
 ##    test_ligand auroc   aupr pearson
 ##    <chr>       <dbl>  <dbl>   <dbl>
@@ -125,90 +124,84 @@ head(best_upstream_ligands)
 ## [1] "AGT"    "CXCL12" "TGFB3"  "IL6"    "CTGF"   "INHBA"
 ```
 
-We see here that the top-ranked ligands can predict the p-EMT genes reasonably, this implies that ranking of the ligands might be accurate as shown in our study. However, it is possible that for some gene sets, the target gene prediction performance of the top-ranked ligands would not be much better than random prediction. In that case, prioritization of ligands will be less trustworthy.
-
-### Infer target genes of top-ranked ligands and visualize in a heatmap
-
-Now we will show how you can look at the regulatory potential scores between ligands and target genes of interest. In this case, we will look at links between top-ranked p-EMT regulating ligands and p-EMT genes. In the ligand-target heatmaps, we showed regulatory potential scores for interactions between the 20 top-ranked ligands and following target genes: genes that belong to the gene set of interest and to the 250 most strongly predicted targets of at least one of the 20 top-ranked ligands. For visualization purposes, we adapted the ligand-target regulatory potential matrix as follows. Regulatory potential scores were set as 0 if their score was below a predefined threshold, which was here the 0.25 quantile of scores of interactions between the 20 top-ranked ligands and each of their respective 250 top targets.
+For the top 20 ligands, we will now build a multi-ligand model that uses all top-ranked ligands to predict whether a gene belongs to the p-EMT program of not. This classification model will be trained via cross-validation and returns a probability for every gene.
 
 ``` r
-active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = pemt_geneset, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
-## [1] "AGT"
-##  [1] "SERPINE1" "MMP2"     "F3"       "PTHLH"    "TIMP3"    "PLAU"    
-##  [7] "INHBA"    "COL1A1"   "COL4A2"   "VIM"     
-## [1] "CXCL12"
-##  [1] "MT2A"     "SERPINE1" "MMP2"     "MMP10"    "MMP1"     "LTBP1"   
-##  [7] "PLAU"     "ITGA5"    "VIM"      "CAV1"     "FHL2"     "GJA1"    
-## [1] "TGFB3"
-## [1] "TNC"      "SERPINE1" "LTBP1"    "VIM"      "PTHLH"    "PLAU"    
-## [7] "LAMA3"    "LAMC2"   
-## [1] "IL6"
-##  [1] "IGFBP3"   "ITGA5"    "MMP1"     "COL1A1"   "MT2A"     "PTHLH"   
-##  [7] "SLC39A14" "MMP2"     "C1S"      "TIMP3"    "ITGA6"    "MMP10"   
-## [13] "PDLIM7"  
-## [1] "CTGF"
-##  [1] "MMP2"     "SERPINE1" "MMP1"     "TNC"      "PLAU"     "LTBP1"   
-##  [7] "CAV1"     "VIM"      "PTHLH"    "ITGA5"   
-## [1] "INHBA"
-## [1] "SERPINE1" "LTBP1"    "TNC"      "VIM"      "LAMC2"    "PTHLH"   
-## [1] "TNC"
-##  [1] "MMP2"     "TIMP3"    "SERPINE1" "MMP1"     "LTBP1"    "VIM"     
-##  [7] "CAV1"     "PLAU"     "PTHLH"    "GJA1"    
-## [1] "PTHLH"
-##  [1] "MMP1"     "PLAU"     "COL1A1"   "MMP2"     "P4HA2"    "SERPINE1"
-##  [7] "LTBP1"    "ITGA5"    "VIM"      "PTHLH"    "CAV1"    
-## [1] "ADAM17"
-##  [1] "TIMP3"    "MMP1"     "PLAU"     "TNC"      "APP"      "FSTL3"   
-##  [7] "SERPINE1" "VIM"      "PTHLH"    "LTBP1"   
-## [1] "BMP5"
-## [1] "SERPINE1" "LTBP1"    "LAMA3"    "VIM"     
-## [1] "FN1"
-## [1] "MMP10"    "MMP1"     "SERPINE1" "LTBP1"    "CAV1"     "VIM"     
-## [7] "PLAU"     "PTHLH"    "MMP2"    
-## [1] "BMP4"
-## [1] "MMP2"     "SERPINE1" "P4HA2"    "LTBP1"    "VIM"      "PLAU"    
-## [1] "COL4A1"
-##  [1] "SERPINE1" "LTBP1"    "PLAU"     "VIM"      "CAV1"     "PTHLH"   
-##  [7] "LAMA3"    "ITGA5"    "MMP2"     "APP"      "MMP1"    
-## [1] "IBSP"
-##  [1] "SERPINE1" "MMP1"     "LTBP1"    "COL1A1"   "MMP2"     "FHL2"    
-##  [7] "PLAU"     "PTHLH"    "ITGA5"    "CAV1"     "VIM"      "THBS1"   
-## [1] "FBN1"
-##  [1] "MMP1"     "SERPINE1" "MMP2"     "LTBP1"    "VIM"      "PLAU"    
-##  [7] "CAV1"     "THBS1"    "ITGA5"    "GJA1"    
-## [1] "JAM2"
-## [1] "SERPINE1" "LTBP1"    "VIM"      "MMP2"     "ITGA5"    "GJA1"    
-## [7] "TPM1"     "PLAU"    
-## [1] "FGF1"
-## [1] "SERPINE1" "PLAU"     "MMP1"     "LTBP1"    "VIM"      "ITGA5"   
-## [7] "CAV1"     "MMP2"     "PTHLH"   
-## [1] "LAMB2"
-##  [1] "SERPINE1" "LTBP1"    "VIM"      "CAV1"     "ITGA5"    "PLAU"    
-##  [7] "MMP2"     "MMP1"     "PTHLH"    "FHL2"    
-## [1] "IL24"
-## [1] "MMP1"     "SERPINE1" "LTBP1"    "ITGA5"    "VIM"      "MMP2"    
-## [7] "FHL2"     "PLAU"     "CAV1"    
-## [1] "TGFB2"
-## [1] "SERPINE1" "COL1A1"   "C1S"      "PTHLH"    "DKK3"
+# change rounds and folds here, to two rounds to reduce time: normally: do multiple rounds
+k = 3 # 5-fold
+n = 2 # 5 rounds
 
-active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = 0.25)
+pemt_gene_predictions_top20_list = seq(n) %>% lapply(assess_rf_class_probabilities, folds = k, geneset = pemt_geneset, background_expressed_genes = background_expressed_genes, ligands_oi = best_upstream_ligands, ligand_target_matrix = ligand_target_matrix)
 ```
 
-The putatively active ligand-target links will be visualized in a heatmap.
+Evaluate now how well the target gene probabilies accord to the gene set assignments
 
 ``` r
-p_ligand_target_network = active_ligand_target_links %>% t() %>% make_heatmap_ggplot("Ligand","Target", color = "purple",legend_position = "top", x_axis_position = "top") + scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.005,0.01))
-
-p_ligand_target_network
+# get performance: auroc-aupr-pearson
+target_prediction_performances_cv = pemt_gene_predictions_top20_list %>% lapply(classification_evaluation_continuous_pred_wrapper) %>% bind_rows() %>% mutate(round=seq(1:nrow(.)))
 ```
 
-![](ligand_activity_geneset_files/figure-markdown_github/unnamed-chunk-10-1.png)
+What is the AUROC, AUPR and PCC of this model (averaged over cross-validation rounds)?
 
-### Infer signaling paths beween ligand(s) and target(s) of interest
+``` r
+target_prediction_performances_cv$auroc %>% mean()
+## [1] 0.6950711
+target_prediction_performances_cv$aupr %>% mean()
+## [1] 0.05377689
+target_prediction_performances_cv$pearson %>% mean()
+## [1] 0.1277661
+```
 
-As follow-up analysis, you can infer possible signaling paths between ligands and targets of interest. You can read how to do this in the following vignette [Inferring ligand-to-target signaling paths](ligand_target_signaling_path.md):`vignette("ligand_target_signaling_path", package="nichenetr")`.
+Evaluate now whether genes belonging to the gene set are more likely to be top-predicted. We will look at the top 5% of predicted targets here.
 
-Another follow-up analysis is getting a "tangible" measure of how well top-ranked ligands predict the gene set of interest and assess which genes of the gene set can be predicted well. You can read how to do this in the following vignette [Inferring ligand-to-target signaling paths](target_prediction_evaluation_geneset.md):`vignette("target_prediction_evaluation_geneset", package="nichenetr")`.
+``` r
+# get performance: how many p-EMT genes and non-p-EMT-genes among top 5% predicted targets
+target_prediction_performances_discrete_cv = pemt_gene_predictions_top20_list %>% lapply(calculate_fraction_top_predicted, quantile_cutoff = 0.95) %>% bind_rows() %>% ungroup() %>% mutate(round=rep(1:length(pemt_gene_predictions_top20_list), each = 2))
+```
+
+What is the fraction of p-EMT genes that belongs to the top 5% predicted targets?
+
+``` r
+target_prediction_performances_discrete_cv %>% filter(true_target) %>% .$fraction_positive_predicted %>% mean()
+## [1] 0.2239583
+```
+
+What is the fraction of non-p-EMT genes that belongs to the top 5% predicted targets?
+
+``` r
+target_prediction_performances_discrete_cv %>% filter(!true_target) %>% .$fraction_positive_predicted %>% mean()
+## [1] 0.0478581
+```
+
+We see that the p-EMT genes are enriched in the top-predicted target genes. To test this, we will now apply a Fisher's exact test for every cross-validation round and report the average p-value.
+
+``` r
+target_prediction_performances_discrete_fisher = pemt_gene_predictions_top20_list %>% lapply(calculate_fraction_top_predicted_fisher, quantile_cutoff = 0.95) 
+target_prediction_performances_discrete_fisher %>% unlist() %>% mean()
+## [1] 4.640894e-09
+```
+
+Finally, we will look at which p-EMT genes are well-predicted in every cross-validation round.
+
+``` r
+# get top predicted genes
+top_predicted_genes = seq(length(pemt_gene_predictions_top20_list)) %>% lapply(get_top_predicted_genes,pemt_gene_predictions_top20_list) %>% reduce(full_join, by = c("gene","true_target"))
+top_predicted_genes %>% filter(true_target)
+## # A tibble: 27 x 4
+##    gene     true_target predicted_top_target_rou~ predicted_top_target_rou~
+##    <chr>    <lgl>       <lgl>                     <lgl>                    
+##  1 MMP1     TRUE        TRUE                      TRUE                     
+##  2 MMP2     TRUE        TRUE                      TRUE                     
+##  3 COL1A1   TRUE        TRUE                      TRUE                     
+##  4 SERPINE1 TRUE        TRUE                      TRUE                     
+##  5 MT2A     TRUE        TRUE                      TRUE                     
+##  6 INHBA    TRUE        TRUE                      NA                       
+##  7 C1S      TRUE        TRUE                      TRUE                     
+##  8 MMP10    TRUE        TRUE                      TRUE                     
+##  9 TNC      TRUE        TRUE                      TRUE                     
+## 10 PLAU     TRUE        TRUE                      TRUE                     
+## # ... with 17 more rows
+```
 
 ### References
 
