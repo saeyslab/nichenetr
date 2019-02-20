@@ -44,3 +44,4 @@ To learn using nichenetr, read one of the following, preliminary, vignettes expl
 * [Single-cell NicheNet's ligand activity analysis](vignettes/ligand_activity_single_cell.md): `vignette("ligand_activity_single_cell", package="nichenetr")`
 * [Model evaluation: target gene and ligand activity prediction](vignettes/model_evaluation.md): `vignette("model_evaluation", package="nichenetr")`
 * [Model construction](vignettes/model_construction.md): `vignette("model_construction", package="nichenetr")`
+* [Parameter optimization via mlrMBO](vignettes/parameter_optimization.md): `vignette("parameter_optimization", package="nichenetr")`

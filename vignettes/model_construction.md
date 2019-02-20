@@ -22,7 +22,7 @@ sig_network = readRDS(url("https://zenodo.org/record/1484138/files/signaling_net
 gr_network = readRDS(url("https://zenodo.org/record/1484138/files/gr_network.rds"))
 ```
 
-Construct the weighted integrated ligand-signaling and gene regulatory network. In this vignette, we give every data source the same weight (as given by the `source_weights_df` data frame provided by default by the nichenetr package). The vignette showing how to use mlrMBO to optimize data source weights and other parameters will be written in the near future.
+Construct the weighted integrated ligand-signaling and gene regulatory network. In this vignette, we give every data source the same weight (as given by the `source_weights_df` data frame provided by default by the nichenetr package). See the vignette showing how to use mlrMBO to optimize data source weights and other parameters if interested in performing parameter optimization.
 
 ``` r
 # aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
