@@ -146,6 +146,6 @@ p_ligand_target_network
 
 As follow-up analysis, you can infer possible signaling paths between ligands and targets of interest. You can read how to do this in the following vignette [Inferring ligand-to-target signaling paths](ligand_target_signaling_path.md):`vignette("ligand_target_signaling_path", package="nichenetr")`. 
 
-Another follow-up analysis is getting a "tangible" measure of how well top-ranked ligands predict the gene set of interest and assess which genes of the gene set can be predicted well. You can read how to do this in the following vignette [Inferring ligand-to-target signaling paths](target_prediction_evaluation_geneset.md):`vignette("target_prediction_evaluation_geneset", package="nichenetr")`. 
+Another follow-up analysis is getting a "tangible" measure of how well top-ranked ligands predict the gene set of interest and assess which genes of the gene set can be predicted well. You can read how to do this in the following vignette [Assess how well top-ranked ligands can predict a gene set of interest](target_prediction_evaluation_geneset.md):`vignette("target_prediction_evaluation_geneset", package="nichenetr")`. 
 
 ### References
