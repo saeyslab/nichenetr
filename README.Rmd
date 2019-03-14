@@ -42,14 +42,17 @@ devtools::install_github("browaeysrobin/nichenetr")
 To learn using nichenetr, read one of the following vignettes explaining several types of analyses:
 
 Following vignette contains the explanation on how to perform the most basic NicheNet analysis: prioritizing ligands and predicting target genes of top-ranked ligands - this demo analysis takes only a few minutes to run:
+
 * [NicheNet's ligand activity analysis on a gene set of interest](vignettes/ligand_activity_geneset.md): `vignette("ligand_activity_geneset", package="nichenetr")`
 
 Following vignettes contain explanation on how to do some follow-up analyses after performing the most basic analysis:
+
 * [Inferring ligand-to-target signaling paths](vignettes/ligand_target_signaling_path.md): `vignette("ligand_target_signaling_path", package="nichenetr")`
 * [Assess how well top-ranked ligands can predict a gene set of interest](vignettes/target_prediction_evaluation_geneset.md): `vignette("target_prediction_evaluation_geneset", package="nichenetr")`
 * [Single-cell NicheNet's ligand activity analysis](vignettes/ligand_activity_single_cell.md): `vignette("ligand_activity_single_cell", package="nichenetr")`
 
 People interested in building own models or benchmark own models against NicheNet can read one of the following vignettes:
+
 * [Model evaluation: target gene and ligand activity prediction](vignettes/model_evaluation.md): `vignette("model_evaluation", package="nichenetr")`
 * [Model construction](vignettes/model_construction.md): `vignette("model_construction", package="nichenetr")`
 * [Parameter optimization via mlrMBO](vignettes/parameter_optimization.md): `vignette("parameter_optimization", package="nichenetr")`
