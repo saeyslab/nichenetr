@@ -97,6 +97,11 @@ test_that("Single-cell ligand activity prediction functions work a bit OK", {
   regression_analysis_output = single_ligand_activity_score_regression(normalized_ligand_activities,cell_scores_tbl)
   expect_type(regression_analysis_output,"list")
 
+  cell_scores_tbl = tibble(cell = cell_ids, score = c(TRUE, FALSE, TRUE, FALSE))
+  classification_analysis_output = single_ligand_activity_score_classification(normalized_ligand_activities,cell_scores_tbl)
+  expect_type(classification_analysis_output,"list")
+
+
 })
 
 

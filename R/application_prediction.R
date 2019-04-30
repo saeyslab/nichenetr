@@ -125,8 +125,6 @@ predict_ligand_activities = function(geneset,background_expressed_genes,ligand_t
 #'
 get_weighted_ligand_target_links = function(ligand, geneset,ligand_target_matrix,n = 250){
   targets = intersect(ligand_target_matrix[,ligand] %>% sort(decreasing = T) %>% head(n) %>% names(),geneset)
-  print(ligand)
-  print(targets)
   if(length(targets) == 0){
     stop("none of the specified possible targets belongs to the top n")
   }
@@ -580,6 +578,51 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
     geneset_score = combined$score
     metrics = regression_evaluation(activity_prediction,geneset_score)
   }, combined)
+  ligands = names(output)
+  output_df = output %>% bind_rows() %>% mutate(ligand = ligands)
+  return(output_df)
+}
+#' @title Assess how well cells' ligand activities predict a binary property of interest of cells.
+#'
+#' @description \code{single_ligand_activity_score_classification} Evaluates classification performances: it assesses how well cells' ligand activities can predict a binary property of interest.
+#' @usage
+#' single_ligand_activity_score_classification(ligand_activities, scores_tbl)
+#'
+#' @param ligand_activities Output from the function `normalize_single_cell_ligand_activities`.
+#' @param scores_tbl a tibble indicating for every cell whether the property of interests holds TRUE or FALSE (columns: $cell: character vector with cell ids and $score: logical vector according to property of interest).
+#'
+#' @return A tibble giving for every ligand, the classification performance metrics giving information about the relation between its activity and the property of interest.
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2","IL4")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' potential_ligands = c("TNF","BMP2","IL4")
+#' genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
+#' cell_ids = c("cell1","cell2")
+#' expression_scaled = matrix(rnorm(length(genes)*2, sd = 0.5, mean = 0.5), nrow = 2)
+#' rownames(expression_scaled) = cell_ids
+#' colnames(expression_scaled) = genes
+#' ligand_activities = predict_single_cell_ligand_activities(cell_ids = cell_ids, expression_scaled = expression_scaled, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+#' normalized_ligand_activities = normalize_single_cell_ligand_activities(ligand_activities)
+#' cell_scores_tbl = tibble(cell = cell_ids, score = c(TRUE,FALSE))
+#' classification_analysis_output = single_ligand_activity_score_classification(normalized_ligand_activities,cell_scores_tbl)
+#' }
+#'
+#' @export
+#'
+single_ligand_activity_score_classification = function(ligand_activities, scores_tbl){
+  combined = inner_join(scores_tbl, ligand_activities)
+  output = lapply(combined %>% select(-cell, -score), function(activity_prediction,
+                                                               combined) {
+    geneset_score = combined$score
+
+    metrics = classification_evaluation_continuous_pred(activity_prediction,
+                                                        geneset_score, iregulon = F)
+  }, combined)
+
+
   ligands = names(output)
   output_df = output %>% bind_rows() %>% mutate(ligand = ligands)
   return(output_df)

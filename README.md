@@ -31,7 +31,7 @@ Specific functionalities include:
 -   inferring potential signaling paths between ligands and target genes
     of interest
 
-nichenetr was tested on both Windows and Linux (R version 3.5.2 and
+nichenetr was tested on both Windows and Linux (R version 3.6.0 and
 lower)
 
 Installation of nichenetr
