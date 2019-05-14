@@ -16,7 +16,7 @@
 #'
 scaling_zscore = function(x){
   if (typeof(x) == "double"){
-    if(sd(x) > 0){
+    if(sd(x, na.rm = TRUE) > 0){
       return((x - mean(x))/sd(x))
     } else{
       return((x - mean(x)))
@@ -39,14 +39,18 @@ scaling_zscore = function(x){
 #'
 #' @export
 #'
-scaling_modified_zscore = function(x){
-  if (typeof(x) == "double"){
-    if(mad(x) > 0){
-      return(0.6745*(x - median(x))/mad(x))
-    } else{
-      return(0.6745*(x - median(x)))
+scaling_modified_zscore = function (x) {
+  if (typeof(x) == "double") {
+    if (mad(x, na.rm = TRUE) != 0) {
+      return(0.6745 * (x - median(x))/mad(x))
     }
-  } else {return(x)}
+    else {
+      return(0.6745 * (x - median(x)))
+    }
+  }
+  else {
+    return(x)
+  }
 }
 
 mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])

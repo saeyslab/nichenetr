@@ -303,6 +303,10 @@ evaluate_single_importances_ligand_prediction = function(importances,normalizati
     return(bind_cols(output,performances))
   }
 
+  importances = importances %>% select_if(.predicate = function(x) {
+    sum(is.na(x)) == 0
+  })
+
   if (normalization == "mean"){
     normalized_importances = importances %>% group_by(setting) %>% dplyr::select(-ligand,-test_ligand) %>% mutate_all(funs(scaling_zscore)) %>% ungroup() %>% select(-setting)
   } else if (normalization == "median"){
