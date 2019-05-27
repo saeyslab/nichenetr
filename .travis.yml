@@ -1,5 +1,5 @@
 language: r
-r: bioc-devel
+r: bioc-release
 sudo: required
 dist: trusty
 cache: packages
