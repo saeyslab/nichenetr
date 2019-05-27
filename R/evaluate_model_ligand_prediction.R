@@ -253,7 +253,7 @@ evaluate_importances_ligand_prediction = function(importances, normalization, al
   output = wrapper_caret_classification(train_data,algorithm,TRUE,var_imps,cv,cv_number,cv_repeats,parallel,n_cores,prediction_response_df = bind_cols(importances %>% select(setting,ligand,test_ligand,class), normalized_importances),ignore_errors,return_model = TRUE)
   return(output)
 }
-#' @title Evaluation of ligand activity prediction performance of single ligand importance scores.
+#' @title Evaluation of ligand activity prediction performance of single ligand importance scores: aggregate all datasets.
 #'
 #' @description \code{evaluate_single_importances_ligand_prediction} Evaluate how well a single ligand importance score is able to predict the true activity state of a ligand. For this it is assumed, that ligand importance measures for truely active ligands will be higher than for non-active ligands. Several classification evaluation metrics for the prediction are calculated and variable importance scores can be extracted to rank the different importance measures in order of importance for ligand activity state prediction.
 #'
@@ -261,7 +261,7 @@ evaluate_importances_ligand_prediction = function(importances, normalization, al
 #' evaluate_single_importances_ligand_prediction(importances,normalization)
 #'
 #' @param importances A data frame containing at least folowing variables: $setting, $test_ligand, $ligand and one or more feature importance scores. $test_ligand denotes the name of a possibly active ligand, $ligand the name of the truely active ligand.
-#' @param normalization Way of normalization of the importance measures: "mean" (classifcal z-score) or "median" (modified z-score)
+#' @param normalization Way of normalization of the importance measures: "mean" (classifcal z-score) or "median" (modified z-score) or "no" (use unnormalized feature importance scores - only recommended when evaluating ligand activity prediction on individual datasets)
 #'
 #' @return A data frame containing classification evaluation measures for the ligand activity state prediction single, individual feature importance measures.
 #'
@@ -288,8 +288,8 @@ evaluate_single_importances_ligand_prediction = function(importances,normalizati
     stop("importances must be a data frame")
   if(!is.character(importances$setting) | !is.character(importances$test_ligand) | !is.character(importances$ligand))
     stop("importances$setting, importances$test_ligand and importances$ligand should be character vectors")
-  if(normalization != "mean" & normalization != "median")
-    stop("normalization should be 'mean' or 'median'")
+  if(normalization != "mean" & normalization != "median" & normalization != "no")
+    stop("normalization should be 'mean' or 'median' or 'no'")
 
   requireNamespace("dplyr")
   importances0 = importances %>% select(-setting,-ligand,-test_ligand)
@@ -311,6 +311,8 @@ evaluate_single_importances_ligand_prediction = function(importances,normalizati
     normalized_importances = importances %>% group_by(setting) %>% dplyr::select(-ligand,-test_ligand) %>% mutate_all(funs(scaling_zscore)) %>% ungroup() %>% select(-setting)
   } else if (normalization == "median"){
     normalized_importances = importances %>% group_by(setting) %>% dplyr::select(-ligand,-test_ligand) %>% mutate_all(funs(scaling_modified_zscore)) %>% ungroup() %>% select(-setting)
+  } else if (normalization == "no") {
+    normalized_importances = importances %>% select(-c(setting,test_ligand,ligand))
   }
 
   performances = lapply(normalized_importances, classification_evaluation_continuous_pred, added, iregulon = FALSE)
@@ -790,4 +792,37 @@ convert_settings_topn_ligand_prediction = function(setting, importances, model, 
   return(new_setting)
 }
 
+#' @title Evaluation of ligand activity prediction performance of single ligand importance scores: each dataset individually.
+#'
+#' @description \code{wrapper_evaluate_single_importances_ligand_prediction} Evaluate how well a single ligand importance score is able to predict the true activity state of a ligand. For this it is assumed, that ligand importance measures for truely active ligands will be higher than for non-active ligands. Several classification evaluation metrics for the prediction are calculated and variable importance scores can be extracted to rank the different importance measures in order of importance for ligand activity state prediction.
+#'
+#' @usage
+#' wrapper_evaluate_single_importances_ligand_prediction(group,ligand_importances)
+#'
+#' @param group Name of the dataset (setting) you want to calculate ligand activity performance for.
+#' @param importances A data frame containing at least folowing variables: $setting, $test_ligand, $ligand and one or more feature importance scores. $test_ligand denotes the name of a possibly active ligand, $ligand the name of the truely active ligand.
+#'
+#' @return A data frame containing classification evaluation measures for the ligand activity state prediction single, individual feature importance measures.
+#'
+#' @importFrom ROCR prediction performance
+#' @importFrom caTools trapz
+#' @importFrom limma wilcoxGST
+#'
+#' @examples
+#' \dontrun{
+#' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
+#' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
+#'
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+#' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
+#' evaluation = ligand_importances$setting %>% unique() %>% lapply(function(x){x}) %>% lapply(wrapper_evaluate_single_importances_ligand_prediction,ligand_importances) %>% bind_rows() %>% inner_join(ligand_importances %>% distinct(setting,ligand))
+#' print(head(evaluation))
+#' }
+#' @export
+#'
+wrapper_evaluate_single_importances_ligand_prediction = function(group,ligand_importances){
+  ligand_importances %>% filter(setting %in% group) %>% evaluate_single_importances_ligand_prediction(normalization = "no") %>% mutate(setting = group)
+}
 

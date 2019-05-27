@@ -1039,4 +1039,15 @@ apply_uniform_scale = function (x, addend, multiplier)
     y
   }
 }
-
+wrapper_average_performances = function(ligand_oi,performances, averaging = "median"){
+  all_settings = performances$setting %>% unique()
+  settings_oi_indicators = strsplit(performances$ligand,"[-]") %>% lapply(function(real_ligand){sum(ligand_oi %in% real_ligand) > 0}) %>% unlist()
+  settings_oi = all_settings[settings_oi_indicators]
+  performances_oi = performances %>% filter(setting %in% settings_oi)
+  if(averaging == "median"){
+    performances_oi_averaged = performances_oi %>% select(-setting,-ligand) %>% summarise_all(median)
+  } else if (averaging == "mean"){
+    performances_oi_averaged = performances_oi %>% select(-setting,-ligand) %>% summarise_all(mean)
+  }
+  return(performances_oi_averaged %>% mutate(ligand = ligand_oi))
+}

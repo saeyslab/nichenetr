@@ -4,7 +4,7 @@ author: "Robin Browaeys"
 date: "2018-02-20"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Construction of NicheNet's ligand-target model}
+  %\VignetteIndexEntry{Parameter optimization via mlrMBO}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

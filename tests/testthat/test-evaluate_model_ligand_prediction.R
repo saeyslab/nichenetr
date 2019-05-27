@@ -67,6 +67,10 @@ test_that("Get ligand importances: single + evaluation", {
   expect_type(evaluation_single2,"list")
   expect_gte(nrow(evaluation_single2),1)
 
+  evaluation_single3 = ligand_importances$setting %>% unique() %>% lapply(function(x){x}) %>% lapply(wrapper_evaluate_single_importances_ligand_prediction,ligand_importances) %>% bind_rows() %>% inner_join(ligand_importances %>% distinct(setting,ligand))
+  expect_type(evaluation_single3,"list")
+  expect_gte(nrow(evaluation_single3),1)
+
   evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
   expect_type(evaluation,"list")
   expect_gte(nrow(evaluation$performances),1)

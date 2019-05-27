@@ -97,13 +97,24 @@ model_evaluation_optimization = function(x, source_names, algorithm, correct_top
 
   output_evaluation = evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings,calculate_popularity_bias_target_prediction = FALSE,calculate_popularity_bias_ligand_prediction=FALSE,ncitations = ncitations, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links, n_target_bins = 3, ...)
 
-  mean_auroc_target_prediction = output_evaluation$performances_target_prediction$auroc %>% mean() %>% unique()
-  mean_aupr_target_prediction = output_evaluation$performances_target_prediction$aupr_corrected %>% mean() %>% unique()
+  ligands_evaluation = settings %>% sapply(function(x){x$from}) %>% unlist() %>% unique()
 
-  mean_auroc_ligand_prediction = output_evaluation$performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% .$auroc %>% unique() # unique necessary because possible that two different ligand importance measures result in same maximal performance
-  mean_aupr_ligand_prediction = output_evaluation$performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% .$aupr_corrected %>% max() # get aupr corresponding to importance measure resulting in best auroc; take max if two measures have maximal auroc with different aupr.
+  ligand_activity_performance_setting_summary = output_evaluation$performances_ligand_prediction_single %>% select(-setting, -ligand) %>% group_by(importance_measure) %>% summarise_all(mean) %>% group_by(importance_measure) %>% mutate(geom_average = exp(mean(log(c(auroc,aupr_corrected)))))
+  best_metric = ligand_activity_performance_setting_summary %>% ungroup() %>% filter(geom_average == max(geom_average)) %>% pull(importance_measure) %>% .[1]
+  performances_ligand_prediction_single_summary = output_evaluation$performances_ligand_prediction_single %>% filter(importance_measure == best_metric)
 
-  return(c(mean_auroc_target_prediction, mean_aupr_target_prediction, mean_auroc_ligand_prediction, mean_aupr_ligand_prediction))
+  performances_target_prediction_averaged = ligands_evaluation %>% lapply(function(x){x}) %>%
+    lapply(wrapper_average_performances, output_evaluation$performances_target_prediction,"median") %>% bind_rows() %>% drop_na()
+  performances_ligand_prediction_single_summary_averaged = ligands_evaluation %>% lapply(function(x){x}) %>%
+    lapply(wrapper_average_performances, performances_ligand_prediction_single_summary %>% select(-importance_measure),"median") %>% bind_rows() %>% drop_na()
+
+  mean_auroc_target_prediction = performances_target_prediction_averaged$auroc %>% mean() %>% unique()
+  mean_aupr_target_prediction = performances_target_prediction_averaged$aupr_corrected %>% mean() %>% unique()
+
+  median_auroc_ligand_prediction = performances_ligand_prediction_single_summary_averaged$auroc %>% median() %>% unique()
+  median_aupr_ligand_prediction = performances_ligand_prediction_single_summary_averaged$aupr_corrected %>% median() %>% unique()
+
+  return(c(mean_auroc_target_prediction, mean_aupr_target_prediction, median_auroc_ligand_prediction, median_aupr_ligand_prediction))
 }
 #' @title Optimization of objective functions via model-based optimization.
 #'
@@ -162,7 +173,7 @@ mlrmbo_optimization = function(run_id,obj_fun,niter,ncores,nstart,additional_arg
 
   ctrl = makeMBOControl(n.objectives = attributes(obj_fun) %>% .$n.objectives, propose.points = ncores)
   ctrl = setMBOControlMultiObj(ctrl, method = "dib",dib.indicator = "sms")
-  ctrl = setMBOControlInfill(ctrl, crit = makeMBOInfillCritDIB(cb.lambda = 2L))
+  ctrl = setMBOControlInfill(ctrl, crit = makeMBOInfillCritDIB())
   ctrl = setMBOControlMultiPoint(ctrl, method = "cb")
   ctrl = setMBOControlTermination(ctrl, iters = niter)
 
@@ -273,13 +284,24 @@ model_evaluation_hyperparameter_optimization = function(x, source_weights, algor
 
   output_evaluation = evaluate_model(parameters_setting, lr_network, sig_network, gr_network, settings,calculate_popularity_bias_target_prediction = FALSE,calculate_popularity_bias_ligand_prediction=FALSE,ncitations = ncitations, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links, n_target_bins = 3, ...)
 
-  mean_auroc_target_prediction = output_evaluation$performances_target_prediction$auroc %>% mean()
-  mean_aupr_target_prediction = output_evaluation$performances_target_prediction$aupr_corrected %>% mean()
+  ligands_evaluation = settings %>% sapply(function(x){x$from}) %>% unlist() %>% unique()
 
-  mean_auroc_ligand_prediction = output_evaluation$performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% .$auroc %>% unique() # unique necessary because possible that two different ligand importance measures result in same maximal performance
-  mean_aupr_ligand_prediction = output_evaluation$performances_ligand_prediction_single %>% filter(auroc == max(auroc)) %>% .$aupr_corrected %>% unique()
+  ligand_activity_performance_setting_summary = output_evaluation$performances_ligand_prediction_single %>% select(-setting, -ligand) %>% group_by(importance_measure) %>% summarise_all(mean) %>% group_by(importance_measure) %>% mutate(geom_average = exp(mean(log(c(auroc,aupr_corrected)))))
+  best_metric = ligand_activity_performance_setting_summary %>% ungroup() %>% filter(geom_average == max(geom_average)) %>% pull(importance_measure) %>% .[1]
+  performances_ligand_prediction_single_summary = output_evaluation$performances_ligand_prediction_single %>% filter(importance_measure == best_metric)
 
-  return(c(mean_auroc_target_prediction, mean_aupr_target_prediction, mean_auroc_ligand_prediction, mean_aupr_ligand_prediction))
+  performances_target_prediction_averaged = ligands_evaluation %>% lapply(function(x){x}) %>%
+    lapply(wrapper_average_performances, output_evaluation$performances_target_prediction,"median") %>% bind_rows() %>% drop_na()
+  performances_ligand_prediction_single_summary_averaged = ligands_evaluation %>% lapply(function(x){x}) %>%
+    lapply(wrapper_average_performances, performances_ligand_prediction_single_summary %>% select(-importance_measure),"median") %>% bind_rows() %>% drop_na()
+
+  mean_auroc_target_prediction = performances_target_prediction_averaged$auroc %>% mean() %>% unique()
+  mean_aupr_target_prediction = performances_target_prediction_averaged$aupr_corrected %>% mean() %>% unique()
+
+  median_auroc_ligand_prediction = performances_ligand_prediction_single_summary_averaged$auroc %>% median() %>% unique()
+  median_aupr_ligand_prediction = performances_ligand_prediction_single_summary_averaged$aupr_corrected %>% median() %>% unique()
+
+  return(c(mean_auroc_target_prediction, mean_aupr_target_prediction, median_auroc_ligand_prediction, median_aupr_ligand_prediction))
 }
 #' @title Process the output of mlrmbo multi-objective optimization to extract optimal parameter values.
 #'
@@ -612,12 +634,12 @@ evaluate_model_cv = function(parameters_setting, lr_network, sig_network, gr_net
   output_model_construction = construct_model(parameters_setting, lr_network, sig_network, gr_network, ligands, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links)
   model_name = output_model_construction$model_name
   ligand_target_matrix = output_model_construction$model
-  ligand_target_matrix_discrete = ligand_target_matrix %>% make_discrete_ligand_target_matrix(...)
+  # ligand_target_matrix_discrete = ligand_target_matrix %>% make_discrete_ligand_target_matrix(...)
 
   # transcriptional response evaluation
   performances_target_prediction = bind_rows(lapply(settings,evaluate_target_prediction, ligand_target_matrix))
-  performances_target_prediction_discrete = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix_discrete))
-  performances_target_prediction = performances_target_prediction %>% full_join(performances_target_prediction_discrete, by = c("setting", "ligand"))
+  # performances_target_prediction_discrete = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix_discrete))
+  # performances_target_prediction = performances_target_prediction %>% full_join(performances_target_prediction_discrete, by = c("setting", "ligand"))
 
   # ligand activity state prediction
   all_ligands = unlist(extract_ligands_from_settings(settings, combination = FALSE))
@@ -625,15 +647,20 @@ evaluate_model_cv = function(parameters_setting, lr_network, sig_network, gr_net
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = TRUE)
   ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix[, all_ligands]))
 
-  ligand_importances_discrete = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix_discrete[, all_ligands]))
+  # ligand_importances_discrete = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix_discrete[, all_ligands]))
 
-  settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = FALSE)
-  ligand_importances_glm = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances, ligand_target_matrix[,all_ligands], algorithm = "glm", cv = FALSE)) %>% rename(glm_imp = importance)
+  # settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = FALSE)
+  # ligand_importances_glm = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances, ligand_target_matrix[,all_ligands], algorithm = "glm", cv = FALSE)) %>% rename(glm_imp = importance)
 
-  all_importances = full_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand")) %>% full_join(ligand_importances_discrete, by = c("setting","test_ligand", "ligand"))
+  # all_importances = full_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand")) %>% full_join(ligand_importances_discrete, by = c("setting","test_ligand", "ligand"))
 
-  all_importances = all_importances %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
+  all_importances = ligand_importances %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
 
-  return(list(performances_target_prediction = performances_target_prediction, importances_ligand_prediction = all_importances))
+  performances_ligand_prediction_single = all_importances$setting %>% unique() %>% lapply(function(x){x}) %>%
+    lapply(wrapper_evaluate_single_importances_ligand_prediction,all_importances) %>%
+    bind_rows() %>% inner_join(all_importances %>% distinct(setting,ligand))
+  # performances_ligand_prediction_single = evaluate_single_importances_ligand_prediction(all_importances, "median")
+
+  return(list(performances_target_prediction = performances_target_prediction, importances_ligand_prediction = all_importances, performances_ligand_prediction_single = performances_ligand_prediction_single))
 
 }

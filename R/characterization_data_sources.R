@@ -281,13 +281,14 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
   output_model_construction = construct_model(parameters_setting, lr_network, sig_network, gr_network, ligands, secondary_targets = secondary_targets, remove_direct_links = remove_direct_links)
   model_name = output_model_construction$model_name
   ligand_target_matrix = output_model_construction$model
-  ligand_target_matrix_discrete = ligand_target_matrix %>% make_discrete_ligand_target_matrix(...)
+  # ligand_target_matrix_discrete = ligand_target_matrix %>% make_discrete_ligand_target_matrix(...)
 
   # transcriptional response evaluation
   performances_target_prediction = bind_rows(lapply(settings,evaluate_target_prediction, ligand_target_matrix))
-  performances_target_prediction_discrete = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix_discrete))
-  performances_target_prediction = performances_target_prediction %>% full_join(performances_target_prediction_discrete, by = c("setting", "ligand"))
+  # performances_target_prediction_discrete = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix_discrete))
+  # performances_target_prediction = performances_target_prediction %>% full_join(performances_target_prediction_discrete, by = c("setting", "ligand"))
   if (calculate_popularity_bias_target_prediction == TRUE){
+    ligand_target_matrix_discrete = ligand_target_matrix %>% make_discrete_ligand_target_matrix(...)
     performances_target_prediction = performances_target_prediction %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
 
     # print(performances_target_prediction) ########################## print
@@ -312,7 +313,6 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
 
     # print(target_slopes_df) ########################## print
 
-
     performances_target_bins_popularity = evaluate_target_prediction_per_bin(n_target_bins,settings,ligand_target_matrix_discrete, ncitations)
 
     # print(performances_target_bins_popularity) ########################## print
@@ -332,42 +332,32 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
   # ligand activity state prediction
   all_ligands = unlist(extract_ligands_from_settings(settings, combination = FALSE))
 
-  # print(all_ligands) ########################## print
-
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = TRUE)
   ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix[, all_ligands]))
-
-  # print(ligand_importances) ########################## print
-
-  ligand_importances_discrete = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix_discrete[, all_ligands]))
-
-  # print(ligand_importances_discrete) ########################## print
-
-
+  # ligand_importances_discrete = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix_discrete[, all_ligands]))
   # ligand_importances_discrete = ligand_importances_discrete %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
   # if(sum(is.na(ligand_importances_discrete$fisher_odds)) > 0){
   #   ligand_importances_discrete = ligand_importances_discrete %>% select(-fisher_odds) %>% select(-fisher_pval_log) # because contains too much NA sometimes in leave one in models
   # }
 
-  # print(ligand_importances_discrete) ########################## print
+  # settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = FALSE)
+  # ligand_importances_glm = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances, ligand_target_matrix[,all_ligands], algorithm = "glm", cv = FALSE)) %>% rename(glm_imp = importance)
 
-
-  settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = FALSE)
-  ligand_importances_glm = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances, ligand_target_matrix[,all_ligands], algorithm = "glm", cv = FALSE)) %>% rename(glm_imp = importance)
-
-  # print(ligand_importances_glm) ########################## print
-
-  all_importances = full_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand")) %>% full_join(ligand_importances_discrete, by = c("setting","test_ligand", "ligand"))
-  # all_importances = inner_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand"))
+  all_importances = ligand_importances %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
+  # all_importances = full_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand")) %>% full_join(ligand_importances_discrete, by = c("setting","test_ligand", "ligand"))
 
   # evaluation = suppressWarnings(evaluate_importances_ligand_prediction(all_importances, "median","lda",cv_number = 3, cv_repeats = 20))
   # warning lda here: variables are collinear --> not problematic but logical here
   # performances_ligand_prediction = evaluation$performances
-  all_importances = all_importances %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
+  # all_importances = all_importances %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
+  performances_ligand_prediction_single = all_importances$setting %>% unique() %>% lapply(function(x){x}) %>%
+    lapply(wrapper_evaluate_single_importances_ligand_prediction,all_importances) %>%
+    bind_rows() %>% inner_join(all_importances %>% distinct(setting,ligand))
 
-  performances_ligand_prediction_single = evaluate_single_importances_ligand_prediction(all_importances, "median")
+  # performances_ligand_prediction_single = evaluate_single_importances_ligand_prediction(all_importances, "median")
 
   if (calculate_popularity_bias_ligand_prediction == TRUE){
+    ligand_target_matrix_discrete = ligand_target_matrix %>% make_discrete_ligand_target_matrix(...)
     # print(all_importances) ########################## print
     # print(all_importances$test_ligand %>% unique()) ########################## print
     # ligand level

@@ -2,14 +2,14 @@
 % Please edit documentation in R/evaluate_model_ligand_prediction.R
 \name{evaluate_single_importances_ligand_prediction}
 \alias{evaluate_single_importances_ligand_prediction}
-\title{Evaluation of ligand activity prediction performance of single ligand importance scores.}
+\title{Evaluation of ligand activity prediction performance of single ligand importance scores: aggregate all datasets.}
 \usage{
 evaluate_single_importances_ligand_prediction(importances,normalization)
 }
 \arguments{
 \item{importances}{A data frame containing at least folowing variables: $setting, $test_ligand, $ligand and one or more feature importance scores. $test_ligand denotes the name of a possibly active ligand, $ligand the name of the truely active ligand.}
 
-\item{normalization}{Way of normalization of the importance measures: "mean" (classifcal z-score) or "median" (modified z-score)}
+\item{normalization}{Way of normalization of the importance measures: "mean" (classifcal z-score) or "median" (modified z-score) or "no" (use unnormalized feature importance scores - only recommended when evaluating ligand activity prediction on individual datasets)}
 }
 \value{
 A data frame containing classification evaluation measures for the ligand activity state prediction single, individual feature importance measures.
