@@ -108,11 +108,11 @@ model_evaluation_optimization = function(x, source_names, algorithm, correct_top
   performances_ligand_prediction_single_summary_averaged = ligands_evaluation %>% lapply(function(x){x}) %>%
     lapply(wrapper_average_performances, performances_ligand_prediction_single_summary %>% select(-importance_measure),"median") %>% bind_rows() %>% drop_na()
 
-  mean_auroc_target_prediction = performances_target_prediction_averaged$auroc %>% mean() %>% unique()
-  mean_aupr_target_prediction = performances_target_prediction_averaged$aupr_corrected %>% mean() %>% unique()
+  mean_auroc_target_prediction = performances_target_prediction_averaged$auroc %>% mean(na.rm = TRUE) %>% unique()
+  mean_aupr_target_prediction = performances_target_prediction_averaged$aupr_corrected %>% mean(na.rm = TRUE) %>% unique()
 
-  median_auroc_ligand_prediction = performances_ligand_prediction_single_summary_averaged$auroc %>% median() %>% unique()
-  median_aupr_ligand_prediction = performances_ligand_prediction_single_summary_averaged$aupr_corrected %>% median() %>% unique()
+  median_auroc_ligand_prediction = performances_ligand_prediction_single_summary_averaged$auroc %>% median(na.rm = TRUE) %>% unique()
+  median_aupr_ligand_prediction = performances_ligand_prediction_single_summary_averaged$aupr_corrected %>% median(na.rm = TRUE) %>% unique()
 
   return(c(mean_auroc_target_prediction, mean_aupr_target_prediction, median_auroc_ligand_prediction, median_aupr_ligand_prediction))
 }
@@ -295,11 +295,11 @@ model_evaluation_hyperparameter_optimization = function(x, source_weights, algor
   performances_ligand_prediction_single_summary_averaged = ligands_evaluation %>% lapply(function(x){x}) %>%
     lapply(wrapper_average_performances, performances_ligand_prediction_single_summary %>% select(-importance_measure),"median") %>% bind_rows() %>% drop_na()
 
-  mean_auroc_target_prediction = performances_target_prediction_averaged$auroc %>% mean() %>% unique()
-  mean_aupr_target_prediction = performances_target_prediction_averaged$aupr_corrected %>% mean() %>% unique()
+  mean_auroc_target_prediction = performances_target_prediction_averaged$auroc %>% mean(na.rm = TRUE) %>% unique()
+  mean_aupr_target_prediction = performances_target_prediction_averaged$aupr_corrected %>% mean(na.rm = TRUE) %>% unique()
 
-  median_auroc_ligand_prediction = performances_ligand_prediction_single_summary_averaged$auroc %>% median() %>% unique()
-  median_aupr_ligand_prediction = performances_ligand_prediction_single_summary_averaged$aupr_corrected %>% median() %>% unique()
+  median_auroc_ligand_prediction = performances_ligand_prediction_single_summary_averaged$auroc %>% median(na.rm = TRUE) %>% unique()
+  median_aupr_ligand_prediction = performances_ligand_prediction_single_summary_averaged$aupr_corrected %>% median(na.rm = TRUE) %>% unique()
 
   return(c(mean_auroc_target_prediction, mean_aupr_target_prediction, median_auroc_ligand_prediction, median_aupr_ligand_prediction))
 }

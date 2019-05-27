@@ -1045,9 +1045,9 @@ wrapper_average_performances = function(ligand_oi,performances, averaging = "med
   settings_oi = all_settings[settings_oi_indicators]
   performances_oi = performances %>% filter(setting %in% settings_oi)
   if(averaging == "median"){
-    performances_oi_averaged = performances_oi %>% select(-setting,-ligand) %>% summarise_all(median)
+    performances_oi_averaged = performances_oi %>% select(-setting,-ligand) %>% summarise_all(median, na.rm = TRUE)
   } else if (averaging == "mean"){
-    performances_oi_averaged = performances_oi %>% select(-setting,-ligand) %>% summarise_all(mean)
+    performances_oi_averaged = performances_oi %>% select(-setting,-ligand) %>% summarise_all(mean, na.rm = TRUE)
   }
   return(performances_oi_averaged %>% mutate(ligand = ligand_oi))
 }
