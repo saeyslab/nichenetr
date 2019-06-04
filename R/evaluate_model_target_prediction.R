@@ -640,6 +640,7 @@ evaluate_multi_ligand_target_prediction_regression = function(setting, ligand_ta
 #' perf1 = lapply(settings,evaluate_target_prediction,ligand_target_matrix)
 #' performances_target_prediction_averaged = ligands %>% lapply(wrapper_average_performances, perf1,"median") %>% bind_rows() %>% drop_na()
 #' }
+#'
 #' @export
 #'
 wrapper_average_performances = function(ligand_oi,performances, averaging = "median"){
