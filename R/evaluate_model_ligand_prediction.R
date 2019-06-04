@@ -804,10 +804,6 @@ convert_settings_topn_ligand_prediction = function(setting, importances, model, 
 #'
 #' @return A data frame containing classification evaluation measures for the ligand activity state prediction single, individual feature importance measures.
 #'
-#' @importFrom ROCR prediction performance
-#' @importFrom caTools trapz
-#' @importFrom limma wilcoxGST
-#'
 #' @examples
 #' \dontrun{
 #' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
@@ -823,6 +819,10 @@ convert_settings_topn_ligand_prediction = function(setting, importances, model, 
 #' @export
 #'
 wrapper_evaluate_single_importances_ligand_prediction = function(group,ligand_importances){
+  if (!is.data.frame(ligand_importances))
+    stop("ligand_importances must be a data frame")
+  if (!is.character(group))
+    stop("group must be a character")
   ligand_importances %>% filter(setting %in% group) %>% evaluate_single_importances_ligand_prediction(normalization = "no") %>% mutate(setting = group)
 }
 

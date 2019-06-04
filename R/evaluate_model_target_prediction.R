@@ -618,7 +618,49 @@ evaluate_multi_ligand_target_prediction_regression = function(setting, ligand_ta
   output$ligands = ligands_oi
   return(output)
 }
+#' @title Calculate average performance of datasets of a specific ligand.
+#'
+#' @description \code{wrapper_average_performances} Calculate average performance of datasets of a specific ligand. Datasets profiling more than one ligand (and thus ligands other than the ligand of interest), will be included as well.
+#'
+#' @usage
+#' wrapper_average_performances(ligand_oi,performances, averaging = "median")
+#'
+#' @param ligand_oi Name of the ligand for which datasets should be averaged.
+#' @param performances A data frame with performance values, containing at least folowing variables: $setting, $ligand and one or more metrics.
+#' @param averaging How should performances of datasets of the same ligand be averaged? 'median' or 'mean'.
+#'
+#' @return A data frame containing classification evaluation measures for the ligand activity state prediction single, individual feature importance measures.
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+#' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
+#' ligands = extract_ligands_from_settings(settings)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' perf1 = lapply(settings,evaluate_target_prediction,ligand_target_matrix)
+#' performances_target_prediction_averaged = ligands %>% lapply(wrapper_average_performances, perf1,"median") %>% bind_rows() %>% drop_na()
+#' }
+#' @export
+#'
+wrapper_average_performances = function(ligand_oi,performances, averaging = "median"){
+  if (!is.character(ligand_oi))
+    stop("ligand_oi must be a character")
+  if (!is.data.frame(performances))
+    stop("performances must be a data frame")
+  if(averaging != "median" & averaging != "mean")
+    stop("averaging should be 'median' or 'mean' ")
 
+  all_settings = performances$setting %>% unique()
+  settings_oi_indicators = strsplit(performances$ligand,"[-]") %>% lapply(function(real_ligand){sum(ligand_oi %in% real_ligand) > 0}) %>% unlist()
+  settings_oi = all_settings[settings_oi_indicators]
+  performances_oi = performances %>% filter(setting %in% settings_oi)
+  if(averaging == "median"){
+    performances_oi_averaged = performances_oi %>% select(-setting,-ligand) %>% summarise_all(median, na.rm = TRUE)
+  } else if (averaging == "mean"){
+    performances_oi_averaged = performances_oi %>% select(-setting,-ligand) %>% summarise_all(mean, na.rm = TRUE)
+  }
+  return(performances_oi_averaged %>% mutate(ligand = ligand_oi))
+}
 
 
 
