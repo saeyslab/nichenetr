@@ -244,6 +244,9 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
   cor_p = cor(prediction, response)
   cor_s = cor(prediction, response, method = "s")
 
+  cor_p_pval = cor.test(prediction, response) %>% .$p.value
+  cor_s_pval = cor.test(prediction, response, method =  "s") %>% .$p.value
+
   mean_rank_GST = limma::wilcoxGST(response, prediction)
   #### now start calculating the AUC-iRegulon
   tbl_perf = tibble(auroc = auroc,
@@ -252,6 +255,8 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
                     sensitivity_roc = sensitivity,
                     specificity_roc = specificity,
                     mean_rank_GST_log_pval = -log(mean_rank_GST),
+                    pearson_log_pval = -log10(cor_p_pval),
+                    spearman_log_pval = -log10(cor_s_pval),
                     pearson = cor_p,
                     spearman = cor_s)
   if (iregulon == TRUE){
@@ -264,6 +269,8 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
                       mean_rank_GST_log_pval = -log(mean_rank_GST),
                       auc_iregulon = output_iregulon$auc_iregulon,
                       auc_iregulon_corrected = output_iregulon$auc_iregulon_corrected,
+                      pearson_log_pval = -log10(cor_p_pval),
+                      spearman_log_pval = -log10(cor_s_pval),
                       pearson = cor_p,
                       spearman = cor_s)
   }
@@ -667,6 +674,9 @@ regression_evaluation = function(prediction,response){
   cor_p = cor(prediction, response)
   cor_s = cor(prediction, response, method = "s")
 
+  cor_p_pval = cor.test(prediction, response) %>% .$p.value
+  cor_s_pval = cor.test(prediction, response, method =  "s") %>% .$p.value
+
   tbl_perf = tibble(r_squared = model_summary$r.squared,
                     adj_r_squared = model_summary$adj.r.squared,
                     f_statistic = model_summary$fstatistic[1],
@@ -675,6 +685,8 @@ regression_evaluation = function(prediction,response){
                     reverse_aic = AIC(model) * -1,
                     reverse_bic = BIC(model) * -1,
                     inverse_mae = 1/(mae(model$residuals)),
+                    pearson_log_pval = -log10(cor_p_pval),
+                    spearman_log_pval = -log10(cor_s_pval),
                     pearson_regression = cor_p,
                     spearman_regression = cor_s)
 

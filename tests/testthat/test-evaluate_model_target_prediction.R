@@ -99,3 +99,4 @@ test_that("Evaluate target gene prediction multiple ligands: regression", {
   performances = lapply(setting,evaluate_multi_ligand_target_prediction_regression,ligand_target_matrix,ligands_position = "cols",algorithm = "lm",var_imps = TRUE) %>% .[[1]]
   expect_type(performances,"list")
 })
+
