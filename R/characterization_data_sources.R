@@ -374,7 +374,7 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
   else {
     popularity_slopes_ligand_prediction = NULL
   }
-  return(list(model_name = model_name, performances_target_prediction = performances_target_prediction, performances_ligand_prediction_single = performances_ligand_prediction_single, popularity_slopes_target_prediction = popularity_slopes_target_prediction,popularity_slopes_ligand_prediction = popularity_slopes_ligand_prediction))
+  return(list(model_name = model_name, performances_target_prediction = performances_target_prediction, performances_ligand_prediction_single = performances_ligand_prediction_single, popularity_slopes_target_prediction = popularity_slopes_target_prediction,popularity_slopes_ligand_prediction = popularity_slopes_ligand_prediction,all_importances = all_importances))
     # return(list(model_name = model_name, performances_target_prediction = performances_target_prediction,performances_ligand_prediction = performances_ligand_prediction, performances_ligand_prediction_single = performances_ligand_prediction_single, popularity_slopes_target_prediction = popularity_slopes_target_prediction,popularity_slopes_ligand_prediction = popularity_slopes_ligand_prediction))
 
 }
