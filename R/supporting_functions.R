@@ -244,8 +244,8 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
   cor_p = cor(prediction, response)
   cor_s = cor(prediction, response, method = "s")
 
-  cor_p_pval = cor.test(prediction, response) %>% .$p.value
-  cor_s_pval = cor.test(prediction, response, method =  "s") %>% .$p.value
+  cor_p_pval = cor.test(as.numeric(prediction), as.numeric(response)) %>% .$p.value
+  cor_s_pval = cor.test(as.numeric(prediction), as.numeric(response), method =  "s") %>% .$p.value
 
   mean_rank_GST = limma::wilcoxGST(response, prediction)
   #### now start calculating the AUC-iRegulon
@@ -674,8 +674,8 @@ regression_evaluation = function(prediction,response){
   cor_p = cor(prediction, response)
   cor_s = cor(prediction, response, method = "s")
 
-  cor_p_pval = cor.test(prediction, response) %>% .$p.value
-  cor_s_pval = cor.test(prediction, response, method =  "s") %>% .$p.value
+  cor_p_pval = cor.test(as.numeric(prediction), as.numeric(response)) %>% .$p.value
+  cor_s_pval = cor.test(as.numeric(prediction), as.numeric(response), method =  "s") %>% .$p.value
 
   tbl_perf = tibble(r_squared = model_summary$r.squared,
                     adj_r_squared = model_summary$adj.r.squared,
