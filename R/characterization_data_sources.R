@@ -283,6 +283,12 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
   ligand_target_matrix = output_model_construction$model
   # ligand_target_matrix_discrete = ligand_target_matrix %>% make_discrete_ligand_target_matrix(...)
 
+  ## if in ligand-target matrix: all targets are zero for some ligands
+  ligands_zero = ligand_target_matrix %>% colnames() %>% sapply(function(ligand){sum(ligand_target_matrix[,ligand]) == 0}) %>% .[. == TRUE]
+  if (length(ligands_zero > 0)){
+    noisy_target_scores = runif(nrow(ligand_target_matrix), min = 0, max = min(ligand_target_matrix[ligand_target_matrix>0])) # give ligands not in model a very low noisy random score; why not all 0 --> ties --> problem aupr calculation
+    ligand_target_matrix[,ligands_zero] = noisy_target_scores
+  }
   # transcriptional response evaluation
   performances_target_prediction = bind_rows(lapply(settings,evaluate_target_prediction, ligand_target_matrix))
   # performances_target_prediction_discrete = bind_rows(lapply(settings,evaluate_target_prediction,ligand_target_matrix_discrete))
