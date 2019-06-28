@@ -2,6 +2,7 @@
 <!-- github markdown built using
 rmarkdown::render("README.Rmd",output_format = "md_document")
 -->
+
 nichenetr
 =========
 
@@ -31,8 +32,7 @@ Specific functionalities include:
 -   inferring potential signaling paths between ligands and target genes
     of interest
 
-nichenetr was tested on both Windows and Linux (R version 3.6.0 and
-higher)
+nichenetr was tested on both Windows and Linux (R version 3.6.0)
 
 Installation of nichenetr
 -------------------------
@@ -55,7 +55,7 @@ basic NicheNet analysis: prioritizing ligands and predicting target
 genes of top-ranked ligands - this demo analysis takes only a few
 minutes to run:
 
--   [NicheNet's ligand activity analysis on a gene set of
+-   [NicheNet’s ligand activity analysis on a gene set of
     interest](vignettes/ligand_activity_geneset.md):
     `vignette("ligand_activity_geneset", package="nichenetr")`
 
@@ -68,7 +68,7 @@ analyses after performing the most basic analysis:
 -   [Assess how well top-ranked ligands can predict a gene set of
     interest](vignettes/target_prediction_evaluation_geneset.md):
     `vignette("target_prediction_evaluation_geneset", package="nichenetr")`
--   [Single-cell NicheNet's ligand activity
+-   [Single-cell NicheNet’s ligand activity
     analysis](vignettes/ligand_activity_single_cell.md):
     `vignette("ligand_activity_single_cell", package="nichenetr")`
 
