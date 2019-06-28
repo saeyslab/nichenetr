@@ -32,7 +32,7 @@ Specific functionalities include:
     of interest
 
 nichenetr was tested on both Windows and Linux (R version 3.6.0 and
-lower)
+higher)
 
 Installation of nichenetr
 -------------------------
