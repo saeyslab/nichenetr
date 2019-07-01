@@ -9,7 +9,7 @@ rmarkdown::render("vignettes/parameter_optimization.Rmd", output_format = "githu
 
 This vignette shows how we optimized both hyperparameters and data source weights via model-based optimization (see manuscript for more information). Because the optimization requires intensive parallel computation, we performed optimization in parallel on a gridengine cluster via the qsub package (https://cran.r-project.org/web/packages/qsub/qsub.pdf). This script is merely illustrative and should be adapted by the user to work on its own system.
 
-The input data used in this vignette can be found at: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1484138.svg)](https://doi.org/10.5281/zenodo.1484138). 
+The input data used in this vignette can be found at: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758). 
 
 First, we will load in the required packages and networks we will use to construct the models which we will evaluate during the optimization procedure.
 ```{r}
@@ -19,16 +19,16 @@ library(qsub)
 library(mlrMBO)
 
 # in the NicheNet framework, ligand-target links are predicted based on collected biological knowledge on ligand-receptor, signaling and gene regulatory interactions
-lr_network = readRDS(url("https://zenodo.org/record/1484138/files/lr_network.rds"))
-sig_network = readRDS(url("https://zenodo.org/record/1484138/files/signaling_network.rds"))
-gr_network = readRDS(url("https://zenodo.org/record/1484138/files/gr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
+sig_network = readRDS(url("https://zenodo.org/record/3260758/files/signaling_network.rds"))
+gr_network = readRDS(url("https://zenodo.org/record/3260758/files/gr_network.rds"))
 ```
 
 Because we optimize the paramters to maximize target gene and ligand activity prediction, we will load in the validation datasets. In this vignette, we do the optimization on all datasets (so no cross-validation).
 
 ```{r}
 # The ligand treatment expression datasets used for validation can be downloaded from Zenodo:
-expression_settings_validation = readRDS(url("https://zenodo.org/record/1484138/files/expression_settings.rds"))
+expression_settings_validation = readRDS(url("https://zenodo.org/record/3260758/files/expression_settings.rds"))
 ```
 
 Define the optimization wrapper function and config information for the qsub package

@@ -1,4 +1,4 @@
-Evaluation of NicheNet's ligand-target predictions
+Evaluation of NicheNet’s ligand-target predictions
 ================
 Robin Browaeys
 2018-11-12
@@ -6,9 +6,20 @@ Robin Browaeys
 <!-- github markdown built using 
 rmarkdown::render("vignettes/model_evaluation.Rmd", output_format = "github_document")
 -->
-This vignette shows how the ligand-target predictions of NicheNet were evaluated. For validation, we collected transcriptome data of cells before and after they were treated by one or two ligands in culture. Using these ligand treatment datasets for validation has the advantage that observed gene expression changes can be directly attributed to the addition of the ligand(s). Hence, differentially expressed genes can be considered as a gold standard of target genes of a particular ligand.
 
-You can use the procedure shown here to evaluate your own model and compare its performance to NicheNet. Ligand treatment validation datasets and NicheNet's ligand-target model can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1484138.svg)](https://doi.org/10.5281/zenodo.1484138).
+This vignette shows how the ligand-target predictions of NicheNet were
+evaluated. For validation, we collected transcriptome data of cells
+before and after they were treated by one or two ligands in culture.
+Using these ligand treatment datasets for validation has the advantage
+that observed gene expression changes can be directly attributed to the
+addition of the ligand(s). Hence, differentially expressed genes can be
+considered as a gold standard of target genes of a particular ligand.
+
+You can use the procedure shown here to evaluate your own model and
+compare its performance to NicheNet. Ligand treatment validation
+datasets and NicheNet’s ligand-target model can be downloaded from
+Zenodo
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758).
 
 ### Load nichenetr, the model we want to evaluate, and the datasets on which we want to evaluate it.
 
@@ -21,10 +32,10 @@ library(purrr)
 library(tibble)
 
 # Load in the ligand-target model
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/1484138/files/ligand_target_matrix.rds"))
+ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
 
 # The ligand treatment expression datasets used for validation can be downloaded from Zenodo:
-expression_settings_validation = readRDS(url("https://zenodo.org/record/1484138/files/expression_settings.rds"))
+expression_settings_validation = readRDS(url("https://zenodo.org/record/3260758/files/expression_settings.rds"))
 
 #Ligand treatment datasets show the log fold change in expression of genes after treatment with one or more specific ligands. Here: example for the ligand NODAL:
 head(expression_settings_validation$nodal_Nodal$diffexp)
@@ -39,7 +50,13 @@ head(expression_settings_validation$nodal_Nodal$diffexp)
 
 ### Example: transcriptional response prediction evaluation
 
-First, we will demonstrate how to evaluate the transcriptional response (i.e. target gene prediction) performance for all ligand treatment expression datasets. For this, we determine how well the model predicts which genes are differentially expressed after treatment with a ligand. Ideally, target genes with high regulatory potential scores for a ligand, should be differentially expressed in response to that ligand.
+First, we will demonstrate how to evaluate the transcriptional response
+(i.e. target gene prediction) performance for all ligand treatment
+expression datasets. For this, we determine how well the model predicts
+which genes are differentially expressed after treatment with a ligand.
+Ideally, target genes with high regulatory potential scores for a
+ligand, should be differentially expressed in response to that
+ligand.
 
 ``` r
 # Convert expression datasets to the required format to perform target gene prediction
@@ -67,11 +84,22 @@ performances %>%
   theme_bw()
 ```
 
-![](model_evaluation_files/figure-markdown_github/unnamed-chunk-2-1.png)
+![](model_evaluation_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
 ### Example: ligand activity prediction evaluation
 
-Now we will show how to assess the accuracy of the model in predicting whether cells were treated by a particular ligand or not. In other words, we will evaluate how well NicheNet prioritizes active ligand(s), given a set of differentially expressed genes. For this procedure, we assume the following: the better a ligand predicts the transcriptional response compared to other ligands, the more likely it is that this ligand is active. Therefore, we first get ligand activity/importance scores for all ligands on all ligand-treatment expression datasets of which the true acive ligand is known. Then we assess whether the truly active ligands get indeed higher ligand activity scores as should be for a good ligand-target model.
+Now we will show how to assess the accuracy of the model in predicting
+whether cells were treated by a particular ligand or not. In other
+words, we will evaluate how well NicheNet prioritizes active ligand(s),
+given a set of differentially expressed genes. For this procedure, we
+assume the following: the better a ligand predicts the transcriptional
+response compared to other ligands, the more likely it is that this
+ligand is active. Therefore, we first get ligand activity/importance
+scores for all ligands on all ligand-treatment expression datasets of
+which the true acive ligand is known. Then we assess whether the truly
+active ligands get indeed higher ligand activity scores as should be for
+a good ligand-target
+model.
 
 ``` r
 # convert expression datasets to correct format for ligand activity prediction
@@ -101,4 +129,4 @@ evaluation_ligand_prediction %>%
   theme(axis.text.x = element_text(angle = 90))
 ```
 
-![](model_evaluation_files/figure-markdown_github/unnamed-chunk-3-1.png)
+![](model_evaluation_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->

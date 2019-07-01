@@ -1,4 +1,4 @@
-Construction of NicheNet's ligand-target model
+Construction of NicheNet’s ligand-target model
 ================
 Robin Browaeys
 2018-11-12
@@ -6,9 +6,16 @@ Robin Browaeys
 <!-- github markdown built using 
 rmarkdown::render("vignettes/model_construction.Rmd", output_format = "github_document")
 -->
-This vignette shows how ligand-target regulatory potential scores are inferred in the NicheNet framework. You can use the procedure shown here to develop your own model with inclusion of context-specific networks or removal of noisy irrelevant data sources. The networks at the basis of NicheNet can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1484138.svg)](https://doi.org/10.5281/zenodo.1484138).
 
-Load the required packages and networks we will use to construct the model.
+This vignette shows how ligand-target regulatory potential scores are
+inferred in the NicheNet framework. You can use the procedure shown here
+to develop your own model with inclusion of context-specific networks or
+removal of noisy irrelevant data sources. The networks at the basis of
+NicheNet can be downloaded from Zenodo
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758).
+
+Load the required packages and networks we will use to construct the
+model.
 
 ``` r
 library(nichenetr)
@@ -17,12 +24,18 @@ library(dplyr)
 # in the NicheNet framework, ligand-target links are predicted based on collected biological knowledge on ligand-receptor, signaling and gene regulatory interactions
 
 # The complete networks can be downloaded from Zenodo
-lr_network = readRDS(url("https://zenodo.org/record/1484138/files/lr_network.rds"))
-sig_network = readRDS(url("https://zenodo.org/record/1484138/files/signaling_network.rds"))
-gr_network = readRDS(url("https://zenodo.org/record/1484138/files/gr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
+sig_network = readRDS(url("https://zenodo.org/record/3260758/files/signaling_network.rds"))
+gr_network = readRDS(url("https://zenodo.org/record/3260758/files/gr_network.rds"))
 ```
 
-Construct the weighted integrated ligand-signaling and gene regulatory network. In this vignette, we give every data source the same weight (as given by the `source_weights_df` data frame provided by default by the nichenetr package). See the vignette showing how to use mlrMBO to optimize data source weights and other parameters if interested in performing parameter optimization.
+Construct the weighted integrated ligand-signaling and gene regulatory
+network. In this vignette, we give every data source the same weight (as
+given by the `source_weights_df` data frame provided by default by the
+nichenetr package). See the vignette showing how to use mlrMBO to
+optimize data source weights and other parameters if interested in
+performing parameter
+optimization.
 
 ``` r
 # aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
@@ -32,7 +45,9 @@ weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_netw
 weighted_networks = apply_hub_corrections(weighted_networks, lr_sig_hub = 0.5, gr_hub = 0.5)
 ```
 
-Infer ligand-target regulatory potential scores based on the weighted integrated networks
+Infer ligand-target regulatory potential scores based on the weighted
+integrated
+networks
 
 ``` r
 # in this example we will calculate target gene regulatory potential scores for TNF and the ligand combination TNF+IL6
@@ -40,7 +55,8 @@ ligands = list("TNF",c("TNF","IL6"))
 ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, algorithm = "PPR", damping_factor = 0.5)
 ```
 
-Show some top target genes of the ligand TNF and the ligand combination TNF+IL6
+Show some top target genes of the ligand TNF and the ligand combination
+TNF+IL6
 
 ``` r
 extract_top_n_targets("TNF",10,ligand_target_matrix)

@@ -41,12 +41,12 @@ First, we will load the necessary packages and networks to infer signaling paths
 library(nichenetr)
 library(dplyr)
 
-weighted_networks = readRDS(url("https://zenodo.org/record/1484138/files/weighted_networks.rds"))
-ligand_tf_matrix = readRDS(url("https://zenodo.org/record/1484138/files/ligand_tf_matrix.rds"))
+weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
+ligand_tf_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_tf_matrix.rds"))
 
-lr_network = readRDS(url("https://zenodo.org/record/1484138/files/lr_network.rds"))
-sig_network = readRDS(url("https://zenodo.org/record/1484138/files/signaling_network.rds"))
-gr_network = readRDS(url("https://zenodo.org/record/1484138/files/gr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
+sig_network = readRDS(url("https://zenodo.org/record/3260758/files/signaling_network.rds"))
+gr_network = readRDS(url("https://zenodo.org/record/3260758/files/gr_network.rds"))
 
 ```
 
