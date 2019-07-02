@@ -99,3 +99,41 @@
 #'   }
 #'
 "ncitations"
+#' Annotation table of all data sources used in the NicheNet model
+#'
+#' A data.frame/tibble describing for each type of data source the "parent" database and type of interactions it countains.
+#'
+#' @format A data frame/tibble
+#' \describe{
+#'   \item{source}{Name of the data source}
+#'   \item{database}{Name of the comprehensive database to which the data source belongs}
+#'   \item{type_db}{Type of data source}
+#'   \item{type_interaction}{Interaction type}
+#'   \item{network}{Network layer to which the data source belongs: ligand_receptor, signaling or gene_regulatory}
+#'   }
+#'
+"annotation_data_sources"
+#' Optimized data source weights
+#'
+#' A data.frame/tibble describing weight associated to each data source. These weights will be used for weighted aggregagion of source networks and were determined via parameter optimization (see NicheNet paper).
+#'
+#' @format A data frame/tibble
+#' \describe{
+#'   \item{source}{name of data source}
+#'   \item{weight}{weight associated to a data source}
+#'   }
+#'
+"optimized_source_weights_df"
+#' Optimized hyperparameter values
+#'
+#' A list
+#'
+#' @format A list
+#' \describe{
+#'   \item{lr_sig_hub}{ligand-signaling network hub correction factor}
+#'   \item{gr_hub}{gene regulatory network hub correction factor}
+#'   \item{ltf_cutoff}{cutoff on PPR scores}
+#'   \item{damping_factor}{damping factor used in the PPR algorithm}
+#'   }
+#'
+"hyperparameter_list"

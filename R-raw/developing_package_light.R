@@ -51,3 +51,19 @@ devtools::use_data(gr_network,overwrite = T,compress = "xz")
 
 
 # devtools::use_data(gr_network_real, sig_network_real,expression_settings_validation_real,overwrite = T, compress = "bzip2",internal = TRUE)
+
+
+# load in the annotation table of the data sources
+annotation_data_sources = read_tsv("../paper/networks/results/databases_sources_annotation.txt")
+devtools::use_data(annotation_data_sources,overwrite = T,compress = "bzip2")
+
+
+list_parameter_settings = readRDS("../paper/evaluation/evaluation/results/list_parameter_settings_nocv")
+optimized_source_weights_df = tibble(source = list_parameter_settings$source_weights %>% names(),  weight = list_parameter_settings$source_weights)
+hyperparameter_list = list(lr_sig_hub = list_parameter_settings$lr_sig_hub,
+                           gr_hub = list_parameter_settings$gr_hub,
+                           damping_factor = list_parameter_settings$damping_factor,
+                           ltf_cutoff = list_parameter_settings$ltf_cutoff)
+devtools::use_data(optimized_source_weights_df,overwrite = T,compress = "bzip2")
+devtools::use_data(hyperparameter_list,overwrite = T,compress = "bzip2")
+

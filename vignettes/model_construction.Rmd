@@ -24,6 +24,8 @@ knitr::opts_chunk$set(
 
 This vignette shows how ligand-target regulatory potential scores are inferred in the NicheNet framework. You can use the procedure shown here to develop your own model with inclusion of context-specific networks or removal of noisy irrelevant data sources. The networks at the basis of NicheNet can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758). 
 
+First, we will demonstrate how to construct a new ligand-target model from all ligand-receptor, signaling and gene regulatory network data sources we collected.
+
 Load the required packages and networks we will use to construct the model.
 ```{r}
 library(nichenetr)
@@ -37,14 +39,16 @@ sig_network = readRDS(url("https://zenodo.org/record/3260758/files/signaling_net
 gr_network = readRDS(url("https://zenodo.org/record/3260758/files/gr_network.rds"))
 ```
 
-Construct the weighted integrated ligand-signaling and gene regulatory network. In this vignette, we give every data source the same weight (as given by the `source_weights_df` data frame provided by default by the nichenetr package). See the vignette showing how to use mlrMBO to optimize data source weights and other parameters if interested in performing parameter optimization.
+## Construct NicheNet's ligand-target model from unoptimized data source weights
+
+Construct the weighted integrated ligand-signaling and gene regulatory network. In this first example, we give every data source the same weight (as given by the `source_weights_df` data frame provided by default by the nichenetr package). See the vignette showing how to use mlrMBO to optimize data source weights and the hyperparameters if interested in performing parameter optimization. For the hyperparameters of the model (hub correction factors and damping factor), we will use the optimized values (as given by the `hyperparameter_list` data frame provided by default by the nichenetr package).
 
 ```{r}
 # aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
-weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, source_weights_df = source_weights_df)
 
-# downweigh the importance of signaling and gene regulatory hubs - the parameters used here are unoptimized
-weighted_networks = apply_hub_corrections(weighted_networks, lr_sig_hub = 0.5, gr_hub = 0.5)
+# downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
 ```
 
 Infer ligand-target regulatory potential scores based on the weighted integrated networks
@@ -52,7 +56,7 @@ Infer ligand-target regulatory potential scores based on the weighted integrated
 ```{r}
 # in this example we will calculate target gene regulatory potential scores for TNF and the ligand combination TNF+IL6
 ligands = list("TNF",c("TNF","IL6"))
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, algorithm = "PPR", damping_factor = 0.5)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
 ```
 
 Show some top target genes of the ligand TNF and the ligand combination TNF+IL6
@@ -63,3 +67,180 @@ extract_top_n_targets("TNF",10,ligand_target_matrix)
 ```{r}
 extract_top_n_targets("TNF-IL6",10,ligand_target_matrix)
 ```
+
+
+## Construct NicheNet's ligand-target model from optimized data source weights
+
+Now, we will demonstrate how you can make an alternative model with the optimized data source weights (as given by the `optimized_source_weights_df` data frame provided by default by the nichenetr package)
+
+```{r}
+# aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
+weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = sig_network, gr_network = gr_network,source_weights_df = optimized_source_weights_df)
+
+# downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+
+# Infer ligand-target regulatory potential scores based on the weighted integrated networks
+ligands = list("TNF")
+
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+```
+
+Show some top target genes of the ligand TNF 
+```{r}
+extract_top_n_targets("TNF",10,ligand_target_matrix)
+```
+
+
+## Change the data sources at the basis of the NicheNet ligand-target model
+
+### Keep only specific data sources of interest
+
+Now, we will demonstrate how you can decide which data sources to use in the model you want to create.
+Let's say for this example, that you are interested in making a model that only consists of literature-derived ligand-receptor interactions, signaling and gene regulatory interactions from comprehensive databases and gene regulatory interactions inferred from ChIP-seq. An annotation of the different data sources is given by the `annotation_data_sources` data frame provided by default by the nichenetr package)
+
+```{r}
+annotation_data_sources$type_db %>% unique()
+```
+
+```{r}
+data_sources_to_keep = annotation_data_sources %>% filter(type_db %in% c("literature","comprehensive_db","ChIP")) %>% pull(source)
+
+new_source_weights_df = source_weights_df %>% filter(source %in% data_sources_to_keep)
+new_lr_network = lr_network %>% filter(source %in% data_sources_to_keep) 
+new_sig_network = sig_network %>% filter(source %in% data_sources_to_keep)
+new_gr_network = gr_network %>% filter(source %in% data_sources_to_keep)
+
+```
+
+```{r}
+# aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
+weighted_networks = construct_weighted_networks(lr_network = new_lr_network, sig_network = new_sig_network, gr_network = new_gr_network, source_weights_df = new_source_weights_df)
+
+# downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+
+# Infer ligand-target regulatory potential scores based on the weighted integrated networks
+ligands = list("TNF")
+
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+```
+
+Show some top target genes of the ligand TNF 
+```{r}
+extract_top_n_targets("TNF",10,ligand_target_matrix)
+```
+
+To give a second example: say that you don't trust TF-target links inferred from motif information and want to construct a model with all data sources except the motif ones.
+
+```{r}
+data_sources_to_remove = annotation_data_sources %>% filter(type_db %in% c("motif")) %>% pull(source)
+data_sources_to_keep = annotation_data_sources$source %>% setdiff(data_sources_to_remove) 
+
+new_source_weights_df = source_weights_df %>% filter(source %in% data_sources_to_keep)
+new_lr_network = lr_network %>% filter(source %in% data_sources_to_keep) 
+new_sig_network = sig_network %>% filter(source %in% data_sources_to_keep)
+new_gr_network = gr_network %>% filter(source %in% data_sources_to_keep)
+
+```
+
+```{r}
+# aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
+weighted_networks = construct_weighted_networks(lr_network = new_lr_network, sig_network = new_sig_network, gr_network = new_gr_network, source_weights_df = new_source_weights_df)
+
+# downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+
+# Infer ligand-target regulatory potential scores based on the weighted integrated networks
+ligands = list("TNF")
+
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+```
+
+Show some top target genes of the ligand TNF 
+```{r}
+extract_top_n_targets("TNF",10,ligand_target_matrix)
+```
+
+
+### Add own data sources to the NicheNet model
+
+In addition to removing data sources, you can also add new data sources. This could for example help you in making context-specific models, if you would have a network or data containing containing context-specific interactions of interest.
+
+Here, we will show how you can download, process and integrate an online data source within the NichenNet framework. As example, this is the data source "Hub Proteins Protein-Protein Interactions" from the Harmonizome portal (https://amp.pharm.mssm.edu/Harmonizome/dataset/Hub+Proteins+Protein-Protein+Interactions).
+
+```{r}
+input_file = "https://amp.pharm.mssm.edu/static/hdfs/harmonizome/data/hubs/gene_attribute_edges.txt.gz"
+ppi_network = read_tsv(input_file, col_names = TRUE)
+
+ppi_network = ppi_network %>% transmute(from=target,to=source) %>% 
+    filter(from %in% geneinfo_human$symbol & to %in% geneinfo_human$symbol) # keep only interactions between genes with oficial gene symbols: optional step
+
+# give your data source a name
+ppi_network = ppi_network %>% mutate(source = "harmonizome_hub_ppi", database = "harmonizome") 
+
+head(ppi_network)
+```
+
+First, we will add this new data source to all other data sources. Because this data sources contains intracellular protein-protein interactions, we will consider this data source as a signaling data source. As example, we will assign to this data source a weight of 1, because we want it to have a strong contribution to the final model.
+
+```{r}
+new_sig_network = sig_network %>% bind_rows(ppi_network)
+
+new_network_weights_df = tibble(source = "harmonizome_hub_ppi", weight = 1)
+new_source_weights_df = optimized_source_weights_df %>% bind_rows(new_network_weights_df)
+```
+
+Now make this model
+
+```{r}
+# aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
+weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = new_sig_network, gr_network = gr_network, source_weights_df = new_source_weights_df)
+
+# downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+
+# Infer ligand-target regulatory potential scores based on the weighted integrated networks
+ligands = list("TNF")
+
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+```
+
+Show some top target genes of the ligand TNF 
+```{r}
+extract_top_n_targets("TNF",10,ligand_target_matrix)
+```
+
+In some cases, it's possible that you want that your data source will be considered as only data source in a specific layer (i.e. ligand-receptor, signaling or gene regulatory layer). Therefore, we will show how you use this new data source as only data source part of the signaling network. 
+
+```{r}
+new_sig_network = ppi_network
+
+new_network_weights_df = tibble(source = "harmonizome_hub_ppi", weight = 1)
+new_source_weights_df = optimized_source_weights_df %>% bind_rows(new_network_weights_df)
+```
+
+```{r}
+# aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
+weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = new_sig_network, gr_network = gr_network, source_weights_df = new_source_weights_df)
+
+# downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+
+# Infer ligand-target regulatory potential scores based on the weighted integrated networks
+ligands = list("TNF")
+
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+```
+
+Show some top target genes of the ligand TNF 
+```{r}
+extract_top_n_targets("TNF",10,ligand_target_matrix)
+```
+
+## Final note
+
+Most optimally, you would like to optimize the parameters again when including own data sources. Instructions to do this are given in the following vignette: 
+[Parameter optimization via mlrMBO](vignettes/parameter_optimization.md): `vignette("parameter_optimization", package="nichenetr")`
+
+However, this optimization process takes a lot of time and requires the availability of multiple cores to perform the optimization in parallel. Because we demonstrate in the NicheNet paper that unoptimized models also perform considerably well, data source weight optmization is not necessary to have decent predictive ability.
