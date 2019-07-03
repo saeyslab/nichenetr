@@ -40,8 +40,7 @@ The used ligand-target matrix and example expression data of interacting cells c
 
 ```{r}
 library(nichenetr)
-library(dplyr)
-library(ggplot2)
+library(tidyverse)
 ```
 
 ### Read in expression data of interacting cells

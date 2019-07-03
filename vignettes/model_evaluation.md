@@ -25,11 +25,7 @@ Zenodo
 
 ``` r
 library(nichenetr)
-library(dplyr)
-library(ggplot2)
-library(tidyr)
-library(purrr)
-library(tibble)
+library(tidyverse)
 
 # Load in the ligand-target model
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
@@ -55,21 +51,37 @@ First, we will demonstrate how to evaluate the transcriptional response
 expression datasets. For this, we determine how well the model predicts
 which genes are differentially expressed after treatment with a ligand.
 Ideally, target genes with high regulatory potential scores for a
-ligand, should be differentially expressed in response to that
-ligand.
+ligand, should be differentially expressed in response to that ligand.
+\# For the sake of simplicity, we exclude in this vignette the
+ligand-treatment datasets profiling the response to multiple ligands. To
+see how to build a ligand-target model with target predictions for
+multiple ligands at once: see vignette [Construction of NicheNet’s
+ligand-target model](model_construction.md):
+`vignette("model_construction", package="nichenetr")`.
+
+Step 1: convert expression datasets to the required format to perform
+target gene
+prediction
 
 ``` r
-# Convert expression datasets to the required format to perform target gene prediction
 settings = expression_settings_validation %>% lapply(convert_expression_settings_evaluation)
-
-# For the sake of simplicity, we exclude in this vignette the ligand-treatment datasets profiling the response to multiple ligands. To see how to build a ligand-target model with target predictions for multiple ligands at once: see vignette [Construction of NicheNet's ligand-target model](vignettes/model_construction.md): `vignette("model_construction", package="nichenetr")`.
 settings = settings %>% discard(~length(.$from) > 1)
+```
 
+Step 2: calculate the target gene prediction performances
+
+``` r
 # Evaluate transcriptional response prediction on every dataset
 performances = settings %>% lapply(evaluate_target_prediction, ligand_target_matrix) %>% bind_rows()
+```
 
+Step 3: visualize the results: show here different classification
+evaluation
+metrics
+
+``` r
 # Visualize some classification evaluation metrics showing the target gene prediction performance
-performances = performances %>% select(-aupr, -auc_iregulon, -sensitivity_roc, -specificity_roc) %>% gather(key = scorename, value = scorevalue, auroc:spearman)
+performances = performances %>% select(-aupr, -auc_iregulon,-pearson_log_pval,-spearman_log_pval ,-sensitivity_roc, -specificity_roc) %>% gather(key = scorename, value = scorevalue, auroc:spearman)
 scorelabels = c(auroc="AUROC", aupr_corrected="AUPR (corrected)", auc_iregulon_corrected = "AUC-iRegulon (corrected)",pearson = "Pearson correlation", spearman = "Spearman's rank correlation",mean_rank_GST_log_pval = "Mean-rank gene-set enrichment")
 scorerandom = c(auroc=0.5, aupr_corrected=0, auc_iregulon_corrected = 0, pearson = 0, spearman = 0,mean_rank_GST_log_pval = 0) %>% data.frame(scorevalue=.) %>% rownames_to_column("scorename")
 
@@ -84,7 +96,7 @@ performances %>%
   theme_bw()
 ```
 
-![](model_evaluation_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+![](model_evaluation_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ### Example: ligand activity prediction evaluation
 
@@ -98,20 +110,43 @@ ligand is active. Therefore, we first get ligand activity/importance
 scores for all ligands on all ligand-treatment expression datasets of
 which the true acive ligand is known. Then we assess whether the truly
 active ligands get indeed higher ligand activity scores as should be for
-a good ligand-target
-model.
+a good ligand-target model.
+
+Step 1: convert expression datasets to the required format to perform
+target gene
+prediction
 
 ``` r
 # convert expression datasets to correct format for ligand activity prediction
 all_ligands = settings %>% extract_ligands_from_settings(combination = FALSE) %>% unlist()
 settings_ligand_prediction = settings %>% convert_settings_ligand_prediction(all_ligands = all_ligands, validation = TRUE)
+```
 
+Step 2: calculate the ligand importances (these are classification
+evaluation metrics indicating how well a ligand can predict the observed
+DE genes in a specific ligand treatment
+dataset)
+
+``` r
 # infer ligand importances: for all ligands of interest, we assess how well a ligand explains the differential expression in a specific datasets (and we do this for all datasets).
 ligand_importances = settings_ligand_prediction %>% lapply(get_single_ligand_importances,ligand_target_matrix) %>% bind_rows()
+```
 
+Step 3: evaluate how separate ligand importances can predict ligand
+activity
+
+``` r
 # Look at predictive performance of single/individual importance measures to predict ligand activity: of all ligands tested, the ligand that is truly active in a dataset should get the highest activity score (i.e. best target gene prediction performance)
-evaluation_ligand_prediction = ligand_importances %>% evaluate_single_importances_ligand_prediction(normalization = "median")
+evaluation_ligand_prediction = ligand_importances$setting %>% unique() %>% lapply(function(x){x}) %>%
+    lapply(wrapper_evaluate_single_importances_ligand_prediction,ligand_importances) %>%
+    bind_rows() %>% inner_join(ligand_importances %>% distinct(setting,ligand))
+```
 
+Step 4: visualize the results: show here different classification
+evaluation
+metrics
+
+``` r
 # Visualize some classification evaluation metrics showing the ligand activity prediction performance
 evaluation_ligand_prediction = evaluation_ligand_prediction %>% select(-aupr, -sensitivity_roc, -specificity_roc, -pearson, -spearman, -mean_rank_GST_log_pval) %>% gather(key = scorename, value = scorevalue, auroc:aupr_corrected)
 scorelabels = c(auroc="AUROC", aupr_corrected="AUPR (corrected)")
@@ -120,7 +155,8 @@ scorerandom = c(auroc=0.5, aupr_corrected=0) %>% data.frame(scorevalue=.) %>% ro
 evaluation_ligand_prediction %>%
  filter(importance_measure %in% c("auroc", "aupr_corrected", "mean_rank_GST_log_pval", "auc_iregulon_corrected", "pearson", "spearman")) %>%
   ggplot() +
-  geom_point(aes(importance_measure, scorevalue, group=importance_measure, color = importance_measure), size = 3) +
+  geom_violin(aes(importance_measure, scorevalue, group=importance_measure, fill = importance_measure)) +
+  geom_boxplot(aes(importance_measure, scorevalue, group = importance_measure),width = 0.1) +
   scale_y_continuous("Evaluation ligand activity prediction") +
   scale_x_discrete("Ligand activity measure") +
   facet_wrap(~scorename, scales = "free", labeller=as_labeller(scorelabels)) +
@@ -129,4 +165,8 @@ evaluation_ligand_prediction %>%
   theme(axis.text.x = element_text(angle = 90))
 ```
 
-![](model_evaluation_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+![](model_evaluation_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+
+This plots shows that using the pearson correlation coefficient target
+prediction metric is the best metric to use for ranking ligands
+according to predicted ligand activity.

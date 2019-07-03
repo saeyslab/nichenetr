@@ -23,7 +23,7 @@ model.
 
 ``` r
 library(nichenetr)
-library(dplyr)
+library(tidyverse)
 
 # in the NicheNet framework, ligand-target links are predicted based on collected biological knowledge on ligand-receptor, signaling and gene regulatory interactions
 
@@ -319,8 +319,8 @@ extract_top_n_targets("TNF",10,ligand_target_matrix)
 Most optimally, you would like to optimize the parameters again when
 including own data sources. Instructions to do this are given in the
 following vignette: [Parameter optimization via
-mlrMBO](vignettes/parameter_optimization.md):
-`vignette("parameter_optimization", package="nichenetr")`
+mlrMBO](parameter_optimization.md): `vignette("parameter_optimization",
+package="nichenetr")`
 
 However, this optimization process takes a lot of time and requires the
 availability of multiple cores to perform the optimization in parallel.

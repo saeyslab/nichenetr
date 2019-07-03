@@ -43,8 +43,7 @@ cells can be downloaded from Zenodo.
 
 ``` r
 library(nichenetr)
-library(dplyr)
-library(ggplot2)
+library(tidyverse)
 ```
 
 ### Read in expression data of interacting cells

@@ -37,7 +37,7 @@ signaling paths between ligand and target genes of interest.
 
 ``` r
 library(nichenetr)
-library(dplyr)
+library(tidyverse)
 
 weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
 ligand_tf_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_tf_matrix.rds"))

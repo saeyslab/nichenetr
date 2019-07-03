@@ -35,8 +35,7 @@ cells.
 
 ``` r
 library(nichenetr)
-library(dplyr)
-library(ggplot2)
+library(tidyverse)
 ```
 
 ### Read in expression data of interacting cells

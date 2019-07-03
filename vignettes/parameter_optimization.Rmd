@@ -29,7 +29,7 @@ The input data used in this vignette can be found at: [![DOI](https://zenodo.org
 First, we will load in the required packages and networks we will use to construct the models which we will evaluate during the optimization procedure.
 ```{r}
 library(nichenetr)
-library(dplyr)
+library(tidyverse)
 library(qsub)
 library(mlrMBO)
 
@@ -39,7 +39,7 @@ sig_network = readRDS(url("https://zenodo.org/record/3260758/files/signaling_net
 gr_network = readRDS(url("https://zenodo.org/record/3260758/files/gr_network.rds"))
 ```
 
-Because we optimize the paramters to maximize target gene and ligand activity prediction, we will load in the validation datasets. In this vignette, we do the optimization on all datasets (so no cross-validation).
+We will load in the ligand treatment validation datasets and try to optimize the parameters to maximize both target gene and ligand activity prediction. In this vignette, we do the optimization on all datasets. Alternatively, you can select a specific of datasets and evaluate the final performance on the left-out datasets.
 
 ```{r}
 # The ligand treatment expression datasets used for validation can be downloaded from Zenodo:
@@ -68,7 +68,7 @@ qsub_config = create_qsub_config(
 )
 ```
 
-Perform optimization fold 1: optimize model performances on expression datasets groups 1 and 2
+Perform optimization:
 
 ```{r}
 additional_arguments_topology_correction = list(source_names = source_weights_df$source %>% unique(), 
@@ -114,4 +114,7 @@ Get now the most optimal parameter setting as a result of this analysis
 ```{r}
 optimized_parameters = res_job_mlrmbo %>% process_mlrmbo_nichenet_optimization(source_names = source_weights_df$source %>% unique())
 ```
+
+
+When you would be interested to generate a context-specific model, it could be possible that you would like to optimize the parameters specifically on your dataset of interest and not on the general ligand treatment datasets (be aware for overfitting though!). Because for your own data, you don't know the true active ligands, you could only optimize target gene prediction performance and not ligand activity performance. In order to this, you would need to change the expression settings in the optimization functions such that they include your data and use the function `model_evaluation_optimization_application` instead of `model_evaluation_optimization`.
 

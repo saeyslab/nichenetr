@@ -19,7 +19,7 @@ with prior information on potential links between ligands and target
 genes. Hereby, NicheNet can be used to study how one cell (or cell type)
 influences gene expression in an interacting cell (or cell type). This
 type of analysis can provide novel functional insights into
-intercellular signaling processes compared to limiting the analyis to
+intercellular signaling processes compared to limiting the analysis to
 ligand-receptor inference.
 
 Specific functionalities include:
@@ -32,7 +32,12 @@ Specific functionalities include:
 -   inferring potential signaling paths between ligands and target genes
     of interest
 
+Moreover, we provide instructions on how to make intuitive
+visualizations of the main predictions.
+
 nichenetr was tested on both Windows and Linux (R version 3.6.0)
+
+![](vignettes/circos_plot_adapted.png)
 
 Installation of nichenetr
 -------------------------
@@ -71,15 +76,18 @@ analyses after performing the most basic analysis:
 -   [Single-cell NicheNet’s ligand activity
     analysis](vignettes/ligand_activity_single_cell.md):
     `vignette("ligand_activity_single_cell", package="nichenetr")`
+-   [Circos plot visualization to show active ligand-target links
+    between interacting
+    cells](vignettes/circos.md):`vignette("circos", package="nichenetr")`.
 
 People interested in building own models or benchmark own models against
 NicheNet can read one of the following vignettes:
 
+-   [Model construction](vignettes/model_construction.md):
+    `vignette("model_construction", package="nichenetr")`
 -   [Model evaluation: target gene and ligand activity
     prediction](vignettes/model_evaluation.md):
     `vignette("model_evaluation", package="nichenetr")`
--   [Model construction](vignettes/model_construction.md):
-    `vignette("model_construction", package="nichenetr")`
 -   [Parameter optimization via
     mlrMBO](vignettes/parameter_optimization.md):
     `vignette("parameter_optimization", package="nichenetr")`
