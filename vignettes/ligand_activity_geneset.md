@@ -7,26 +7,46 @@ Robin Browaeys
 rmarkdown::render("vignettes/ligand_activity_geneset.Rmd", output_format = "github_document")
 -->
 
-This vignette shows how NicheNet can be used to predict which ligands
-might regulate a given set of genes. For this analysis, you need to
-define:
+In this vignette, you can learn how to perform a basic NicheNet
+analysis. A NicheNet analysis can help you to generate hypotheses about
+an intercellular communication process of interest for which you have
+bulk or single-cell gene expression data. Specifically, NicheNet can
+predict 1) which ligands from one cell population (“sender/niche”) are
+most likely to affect target gene expression in an interacting cell
+population (“receiver/target”) and 2) which specific target genes are
+affected by which of these predicted ligands. The pipeline of a basic
+NicheNet analysis consist mainly of the following steps:
 
-  - a set of genes of which expression in a “receiver cell” is possibly
-    affected by extracellular protein signals (ligands) (e.g. genes
-    differentially expressed upon cell-cell interaction )
-  - a set of potentially active ligands (e.g. ligands expressed by
-    interacting “sender cells”)
+  - 1.  Define a “sender/niche” cell population and a “receiver/target”
+        cell population present in your expression data and determine
+        which genes are expressed in both populations
 
-Therefore, you often first need to process expression data of
-interacting cells to define both.
+  - 2.  Define a gene set of interest: these are the genes in the
+        “receiver/target” cell population that are potentially
+        affected by ligands expressed by interacting cells (e.g. genes
+        differentially expressed upon cell-cell interaction)
 
-In this example, we will use data from Puram et al. to explore
-intercellular communication in the tumor microenvironment in head and
-neck squamous cell carcinoma (HNSCC) (See Puram et al. 2017). More
-specifically, we will look at which ligands expressed by fibroblasts can
-induce a specific gene program in neighboring malignant cells. This
-program, a partial epithelial-mesenschymal transition (p-EMT) program,
-could be linked by Puram et al. to metastasis.
+  - 3.  Define a set of potential ligands: these are ligands that are
+        expressed by the “sender/niche” cell population and bind a
+        (putative) receptor expressed by the “receiver/target”
+        population
+
+  - 4)  Perform NicheNet ligand activity analysis: rank the potential
+        ligands based on the presence of their target genes in the gene
+        set of interest (compared to the background set of genes)
+
+  - 5)  Infer top-predicted target genes of ligands that are top-ranked
+        in the ligand activity analysis
+
+This vignette guides you in detail through all these steps. As example
+expression data of interacting cells, we will use data from Puram et
+al. to explore intercellular communication in the tumor
+microenvironment in head and neck squamous cell carcinoma (HNSCC) (See
+Puram et al. 2017). More specifically, we will look at which ligands
+expressed by fibroblasts can induce a specific gene program in
+neighboring malignant cells. This program, a partial
+epithelial-mesenschymal transition (p-EMT) program, could be linked by
+Puram et al. to metastasis.
 
 For this analysis, we will assess the ligand activity of each ligand, or
 in other words, we will assess how well each fibroblast ligand can
@@ -38,18 +58,32 @@ The used ligand-target matrix and example expression data of interacting
 cells can be downloaded from Zenodo.
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
 
-### Load packages required for this vignette
+## Step 0: Load required packages, NicheNet ligand-target prior model and processed expression data of interacting cells
+
+Packages:
 
 ``` r
 library(nichenetr)
 library(tidyverse)
 ```
 
-### Read in expression data of interacting cells
+Ligand-target
+model:
 
-First, we will read in the publicly available single-cell data from
-fibroblast and malignant cells from HNSCC
-tumors.
+``` r
+ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
+##                 CXCL1        CXCL2        CXCL3        CXCL5         PPBP
+## A1BG     3.534343e-04 4.041324e-04 3.729920e-04 3.080640e-04 2.628388e-04
+## A1BG-AS1 1.650894e-04 1.509213e-04 1.583594e-04 1.317253e-04 1.231819e-04
+## A1CF     5.787175e-04 4.596295e-04 3.895907e-04 3.293275e-04 3.211944e-04
+## A2M      6.027058e-04 5.996617e-04 5.164365e-04 4.517236e-04 4.590521e-04
+## A2M-AS1  8.898724e-05 8.243341e-05 7.484018e-05 4.912514e-05 5.120439e-05
+```
+
+Expression data of interacting cells: publicly available single-cell
+data from fibroblast and malignant cells from HNSCC
+tumors:
 
 ``` r
 hnscc_expression = readRDS(url("https://zenodo.org/record/3260758/files/hnscc_expression.rds"))
@@ -57,7 +91,14 @@ expression = hnscc_expression$expression
 sample_info = hnscc_expression$sample_info # contains meta-information about the cells
 ```
 
-Secondly, we will determine which genes are expressed in fibroblasts and
+## Step 1: Define expressed genes in sender and receiver cell populations
+
+Our research question is to prioritize which ligands expressed by
+fibroblasts can induce p-EMT in neighboring malignant cells. Therefore,
+fibroblasts are the sender cells in this example and malignant cells are
+the receiver cells.
+
+Now, we will determine which genes are expressed in fibroblasts and
 malignant cells from high quality primary tumors. Therefore, we wil not
 consider cells from tumor samples of less quality or from lymph node
 metastases. To determine expressed genes, we use the definition used by
@@ -74,27 +115,14 @@ expressed_genes_fibroblasts = expression[fibroblast_ids,] %>% apply(2,function(x
 expressed_genes_malignant = expression[malignant_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 ```
 
-### Load the ligand-target model we want to use
-
-``` r
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
-ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
-##                 CXCL1        CXCL2        CXCL3        CXCL5         PPBP
-## A1BG     3.534343e-04 4.041324e-04 3.729920e-04 3.080640e-04 2.628388e-04
-## A1BG-AS1 1.650894e-04 1.509213e-04 1.583594e-04 1.317253e-04 1.231819e-04
-## A1CF     5.787175e-04 4.596295e-04 3.895907e-04 3.293275e-04 3.211944e-04
-## A2M      6.027058e-04 5.996617e-04 5.164365e-04 4.517236e-04 4.590521e-04
-## A2M-AS1  8.898724e-05 8.243341e-05 7.484018e-05 4.912514e-05 5.120439e-05
-```
-
-### Load the gene set of interest and background of genes
+## Step 2: Define the gene set of interest and a background of genes
 
 As gene set of interest, we consider the genes of which the expression
 is possibly affected due to communication with other cells.
 
 Because we here want to investigate how fibroblasts regulate the
 expression of p-EMT genes in malignant cells, we will use the p-EMT gene
-set defined by Puram et al. as gene set of interset and use all genes
+set defined by Puram et al. as gene set of interest and use all genes
 expressed in malignant cells as background of
 genes.
 
@@ -108,13 +136,12 @@ head(background_expressed_genes)
 ## [1] "RPS11"   "ELMO2"   "PNMA1"   "MMP2"    "TMEM216" "ERCC5"
 ```
 
-### Perform NicheNet’s ligand activity analysis on the gene set of interest
+## Step 3: Define a set of potential ligands
 
-In a first step, we will define a set of potentially active ligands. As
-potentially active ligands, we will use ligands that are 1) expressed by
-fibroblasts and 2) can bind a (putative) receptor expressed by malignant
-cells. Putative ligand-receptor links were gathered from NicheNet’s
-ligand-receptor data
+As potentially active ligands, we will use ligands that are 1) expressed
+by fibroblasts and 2) can bind a (putative) receptor expressed by
+malignant cells. Putative ligand-receptor links were gathered from
+NicheNet’s ligand-receptor data
 sources.
 
 ``` r
@@ -130,6 +157,8 @@ potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% 
 head(potential_ligands)
 ## [1] "IL15"   "CD99"   "COL1A1" "FN1"    "TNC"    "IBSP"
 ```
+
+## Step 4: Perform NicheNet’s ligand activity analysis on the gene set of interest
 
 Now perform the ligand activity analysis: infer how well NicheNet’s
 ligand-target potential scores can predict whether a gene belongs to the
@@ -172,9 +201,10 @@ reasonably, this implies that ranking of the ligands might be accurate
 as shown in our study. However, it is possible that for some gene sets,
 the target gene prediction performance of the top-ranked ligands would
 not be much better than random prediction. In that case, prioritization
-of ligands will be less trustworthy.
+of ligands will be less
+trustworthy.
 
-### Infer target genes of top-ranked ligands and visualize in a heatmap
+## Step 5: Infer target genes of top-ranked ligands and visualize in a heatmap
 
 Now we will show how you can look at the regulatory potential scores
 between ligands and target genes of interest. In this case, we will look
@@ -207,7 +237,15 @@ p_ligand_target_network
 
 ![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
-### Show the predicted ligand-receptor interactions of the top-ranked ligands and visualize in a heatmap
+## Follow-up analysis 1: Ligand-receptor network inference for top-ranked ligands
+
+One type of follow-up analysis is looking at which receptors of the
+receiver cell population (here: malignant cells) can potentially bind to
+the prioritized ligands from the sender cell population (here:
+fibroblasts).
+
+So, we will now infer the predicted ligand-receptor interactions of the
+top-ranked ligands and visualize these in a heatmap.
 
 ``` r
 # get the ligand-receptor network of the top-ranked ligands
@@ -243,11 +281,11 @@ p_ligand_receptor_network
 
 ![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
-### Follow-up analyses
+## Other follow-up analyses:
 
-As follow-up analysis, you can infer possible signaling paths between
-ligands and targets of interest. You can read how to do this in the
-following vignette [Inferring ligand-to-target signaling
+As another follow-up analysis, you can infer possible signaling paths
+between ligands and targets of interest. You can read how to do this in
+the following vignette [Inferring ligand-to-target signaling
 paths](ligand_target_signaling_path.md):`vignette("ligand_target_signaling_path",
 package="nichenetr")`.
 
@@ -265,7 +303,7 @@ vignette [Circos plot visualization to show active ligand-target links
 between interacting cells](circos.md):`vignette("circos",
 package="nichenetr")`.
 
-### References
+## References
 
 <div id="refs" class="references">
 
