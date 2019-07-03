@@ -29,6 +29,8 @@ Moreover, we provide instructions on how to make intuitive visualizations of the
 
 nichenetr was tested on both Windows and Linux (R version 3.6.0)
 
+
+
 ![](vignettes/circos_plot_adapted.png)
 
 ## Installation of nichenetr

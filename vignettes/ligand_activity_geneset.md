@@ -42,8 +42,7 @@ cells can be downloaded from Zenodo.
 
 ``` r
 library(nichenetr)
-library(dplyr)
-library(ggplot2)
+library(tidyverse)
 ```
 
 ### Read in expression data of interacting cells
@@ -93,7 +92,7 @@ ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 As gene set of interest, we consider the genes of which the expression
 is possibly affected due to communication with other cells.
 
-Because we here want to investigate how fibroblast regulate the
+Because we here want to investigate how fibroblasts regulate the
 expression of p-EMT genes in malignant cells, we will use the p-EMT gene
 set defined by Puram et al. as gene set of interset and use all genes
 expressed in malignant cells as background of
@@ -201,14 +200,50 @@ The putatively active ligand-target links will be visualized in a
 heatmap.
 
 ``` r
-p_ligand_target_network = active_ligand_target_links %>% t() %>% make_heatmap_ggplot("Ligand","Target", color = "purple",legend_position = "top", x_axis_position = "top") + scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.005,0.01))
+p_ligand_target_network = active_ligand_target_links %>% t() %>% make_heatmap_ggplot("Prioritized fibroblast ligands","p-EMT genes in malignant cells", color = "purple",legend_position = "top", x_axis_position = "top") + scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.005,0.01))
 
 p_ligand_target_network
 ```
 
 ![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
-### Infer signaling paths beween ligand(s) and target(s) of interest
+### Show the predicted ligand-receptor interactions of the top-ranked ligands and visualize in a heatmap
+
+``` r
+# get the ligand-receptor network of the top-ranked ligands
+lr_network_top = lr_network %>% filter(from %in% best_upstream_ligands & to %in% expressed_receptors) %>% distinct(from,to)
+best_upstream_receptors = lr_network_top %>% pull(to) %>% unique()
+
+# get the weights of the ligand-receptor interactions as used in the NicheNet model
+weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
+lr_network_top_df = weighted_networks$lr_sig %>% filter(from %in% best_upstream_ligands & to %in% best_upstream_receptors)
+
+# convert to a matrix
+lr_network_top_df = lr_network_top_df %>% spread("from","weight",fill = 0)
+lr_network_top_matrix = lr_network_top_df %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df$to)
+
+# perform hierarchical clustering to order the ligands and receptors
+distoi = dist(lr_network_top_matrix, method = "binary")
+hclust_obj = hclust(distoi, method = "ward.D2")
+order_receptors = hclust_obj$labels[hclust_obj$order]
+
+distoi_targets = dist(lr_network_top_matrix %>% t(), method = "binary")
+hclust_obj = hclust(distoi_targets, method = "ward.D2")
+order_ligands_receptor = hclust_obj$labels[hclust_obj$order]
+```
+
+Show a heatmap of the ligand-receptor
+interactions
+
+``` r
+vis_ligand_receptor_network = lr_network_top_matrix[order_receptors, order_ligands_receptor]
+p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap_ggplot("Prioritized fibroblast ligands","Receptors expressed by malignant cells", color = "mediumvioletred", x_axis_position = "top")
+p_ligand_receptor_network
+```
+
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+### Follow-up analyses
 
 As follow-up analysis, you can infer possible signaling paths between
 ligands and targets of interest. You can read how to do this in the
@@ -222,6 +257,12 @@ genes of the gene set can be predicted well. You can read how to do this
 in the following vignette [Assess how well top-ranked ligands can
 predict a gene set of
 interest](target_prediction_evaluation_geneset.md):`vignette("target_prediction_evaluation_geneset",
+package="nichenetr")`.
+
+In case you want to visualize ligand-target links between multiple
+interacting cells, you can make an appealing circos plot as shown in
+vignette [Circos plot visualization to show active ligand-target links
+between interacting cells](circos.md):`vignette("circos",
 package="nichenetr")`.
 
 ### References
