@@ -57,7 +57,7 @@ several types of analyses:
 
 Following vignette contains the explanation on how to perform the most
 basic NicheNet analysis: prioritizing ligands and predicting target
-genes of top-ranked ligands - this demo analysis takes only a few
+genes of prioritized ligands - this demo analysis takes only a few
 minutes to run:
 
 -   [NicheNet’s ligand activity analysis on a gene set of
