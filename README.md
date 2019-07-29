@@ -47,7 +47,7 @@ dependencies that has already been installed on your pc. You can install
 nichenetr (and required dependencies) from github with:
 
     # install.packages("devtools")
-    devtools::install_github("browaeysrobin/nichenetr")
+    devtools::install_github("saeyslab/nichenetr")
 
 Learning to use nichenetr
 -------------------------
