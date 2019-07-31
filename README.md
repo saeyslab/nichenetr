@@ -91,3 +91,11 @@ NicheNet can read one of the following vignettes:
 -   [Parameter optimization via
     mlrMBO](vignettes/parameter_optimization.md):
     `vignette("parameter_optimization", package="nichenetr")`
+
+People working with mouse data can see in the following vignette how to
+convert NicheNet’s ligand-target model (given in human symbols) to mouse
+symbols:
+
+-   [Converting NicheNet’s model from human to mouse
+    symbols](vignettes/symbol_conversion.md):
+    `vignette("symbol_conversion", package="nichenetr")`

@@ -10,6 +10,80 @@ mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_co
 # mousesymbol2humanentrez = mapper(geneinfo_human,"entrez","symbol_mouse")
 # humansymbol2mousesymbol = mapper(geneinfo_human,"symbol_mouse","symbol")
 # mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
+
+#' @title Convert human gene symbols to their mouse one-to-one orthologs.
+#'
+#' @description \code{convert_human_to_mouse_symbols} Convert human gene symbols to their mouse one-to-one orthologs.
+#'
+#' @usage
+#' convert_human_to_mouse_symbols(symbols)
+#'
+#' @param symbols A character vector of official human gene symbols
+#'
+#' @return A character vector of official mouse gene symbols (one-to-one orthologs of the input human gene symbols).
+#'
+#' @examples
+#' library(dplyr)
+#' human_symbols = c("TNF","IFNG")
+#' mouse_symbols = human_symbols %>% convert_human_to_mouse_symbols()
+#' @export
+#'
+convert_human_to_mouse_symbols = function(symbols){
+
+  if(!is.character(symbols))
+    stop("symbols should be a character vector of human gene symbols")
+
+  requireNamespace("dplyr")
+
+  unambiguous_mouse_genes = geneinfo_human %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n<2) %>% .$symbol_mouse
+  ambiguous_mouse_genes = geneinfo_human %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n>=2) %>% .$symbol_mouse
+
+  geneinfo_ambiguous_solved = geneinfo_human %>% filter(symbol_mouse %in% ambiguous_mouse_genes) %>% filter(symbol==toupper(symbol_mouse))
+  geneinfo_human = geneinfo_human %>% filter(symbol_mouse %in% unambiguous_mouse_genes) %>% bind_rows(geneinfo_ambiguous_solved) %>% drop_na()
+
+  humansymbol2mousesymbol = mapper(geneinfo_human,"symbol_mouse","symbol")
+
+  converted_symbols = symbols %>% humansymbol2mousesymbol[.]
+
+  return(converted_symbols)
+}
+#' @title Convert mouse gene symbols to their human one-to-one orthologs.
+#'
+#' @description \code{convert_mouse_to_human_symbols} Convert mouse gene symbols to their human one-to-one orthologs.
+#'
+#' @usage
+#' convert_mouse_to_human_symbols(symbols)
+#'
+#' @param symbols A character vector of official mouse gene symbols
+#'
+#' @return A character vector of official human gene symbols (one-to-one orthologs of the input mouse gene symbols).
+#'
+#' @examples
+#' library(dplyr)
+#' mouse_symbols = c("Tnf","Ifng")
+#' human_symbols = mouse_symbols %>% convert_mouse_to_human_symbols()
+#' @export
+#'
+convert_mouse_to_human_symbols = function(symbols){
+
+  if(!is.character(symbols))
+    stop("symbols should be a character vector of mouse gene symbols")
+
+  requireNamespace("dplyr")
+
+  unambiguous_mouse_genes = geneinfo_human %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n<2) %>% .$symbol_mouse
+  ambiguous_mouse_genes = geneinfo_human %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n>=2) %>% .$symbol_mouse
+
+  geneinfo_ambiguous_solved = geneinfo_human %>% filter(symbol_mouse %in% ambiguous_mouse_genes) %>% filter(symbol==toupper(symbol_mouse))
+  geneinfo_human = geneinfo_human %>% filter(symbol_mouse %in% unambiguous_mouse_genes) %>% bind_rows(geneinfo_ambiguous_solved) %>% drop_na()
+
+  mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
+
+  converted_symbols = symbols %>% mousesymbol2humansymbol[.]
+
+  return(converted_symbols)
+}
+
 get_design = function(E) { # make design matrix for differential expression between celltypes
   TS <- phenoData(E)$celltype
   TS <- factor(TS, levels=unique(TS))

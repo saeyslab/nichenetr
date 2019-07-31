@@ -1,0 +1,67 @@
+---
+title: "Converting NicheNet's model from human to mouse symbols"
+author: "Robin Browaeys"
+date: "2019-07-31"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Converting NicheNet's model from human to mouse symbols}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: library.bib
+---
+
+<!-- github markdown built using
+rmarkdown::render("vignettes/symbol_conversion.Rmd", output_format = "github_document")
+-->
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  # comment = "#>",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+In this vignette, we show how to convert NicheNet's ligand-target matrix model from human to mouse gene symbols. This is necessary if you want to apply NicheNet to mouse expression data, because the NicheNet prior information is given in human gene symbols (because most data sources at the basis of NicheNet are based on human data). One-to-one orthologs were gathered from NCBI HomoloGene and also from ENSEMBL via biomaRt.
+
+### Load required packages
+
+```{r}
+library(nichenetr)
+library(tidyverse)
+```
+
+### Load NicheNet's ligand-target model:
+
+```{r}
+ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
+dim(ligand_target_matrix)
+```
+
+### Convert the ligand-target model from human to mouse symbols. 
+
+Because not all human genes have a mouse one-to-one ortholog, these genes will be removed from the mouse model.
+
+```{r}
+colnames(ligand_target_matrix) = ligand_target_matrix %>% colnames() %>% convert_human_to_mouse_symbols() 
+rownames(ligand_target_matrix) = ligand_target_matrix %>% rownames() %>% convert_human_to_mouse_symbols() 
+
+ligand_target_matrix = ligand_target_matrix %>% .[!is.na(rownames(ligand_target_matrix)), !is.na(colnames(ligand_target_matrix))]
+
+dim(ligand_target_matrix)
+```
+
+Show the top 10 targets of TNF (in mouse symbols):
+
+```{r}
+top_targets = extract_top_n_targets("Tnf",10,ligand_target_matrix) %>% names()
+top_targets
+```
+
+If you want to convert mouse to human symbols, you can use:
+
+```{r}
+top_targets %>% convert_mouse_to_human_symbols()
+```
