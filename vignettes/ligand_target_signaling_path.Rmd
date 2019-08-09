@@ -96,8 +96,8 @@ data_source_network %>% write_tsv(paste0(output_path,"data_source_network.txt"))
 specific_annotation_tbl = bind_rows(
   tibble(gene = ligands_all, annotation = "ligand"),
   tibble(gene = targets_all, annotation = "target"),
-  tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% intersect(lr_network$to %>% unique()) %>% setdiff(ligands_all), annotation = "receptor"),
-  tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% intersect(gr_network$from %>% unique()) %>% setdiff(c(ligands_all,c(data_source_network$from, data_source_network$to) %>% unique() %>% intersect(lr_network$to %>% unique()))),annotation = "transcriptional regulator")
+  tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% setdiff(c(targets_all,ligands_all)) %>% intersect(lr_network$to %>% unique()), annotation = "receptor"),
+  tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% setdiff(c(targets_all,ligands_all)) %>% intersect(gr_network$from %>% unique()) %>% setdiff(c(data_source_network$from, data_source_network$to) %>% unique() %>% intersect(lr_network$to %>% unique())),annotation = "transcriptional regulator")
 )
 non_specific_annotation_tbl = tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% setdiff(specific_annotation_tbl$gene), annotation = "signaling mediator")
 

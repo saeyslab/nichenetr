@@ -261,13 +261,13 @@ lr_network_top_df = lr_network_top_df %>% spread("from","weight",fill = 0)
 lr_network_top_matrix = lr_network_top_df %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df$to)
 
 # perform hierarchical clustering to order the ligands and receptors
-distoi = dist(lr_network_top_matrix, method = "binary")
-hclust_obj = hclust(distoi, method = "ward.D2")
-order_receptors = hclust_obj$labels[hclust_obj$order]
+dist_receptors = dist(lr_network_top_matrix, method = "binary")
+hclust_receptors = hclust(dist_receptors, method = "ward.D2")
+order_receptors = hclust_receptors$labels[hclust_receptors$order]
 
-distoi_targets = dist(lr_network_top_matrix %>% t(), method = "binary")
-hclust_obj = hclust(distoi_targets, method = "ward.D2")
-order_ligands_receptor = hclust_obj$labels[hclust_obj$order]
+dist_ligands = dist(lr_network_top_matrix %>% t(), method = "binary")
+hclust_ligands = hclust(dist_ligands, method = "ward.D2")
+order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
 ```
 
 Show a heatmap of the ligand-receptor
