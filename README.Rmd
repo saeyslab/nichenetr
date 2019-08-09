@@ -12,8 +12,8 @@ rmarkdown::render("README.Rmd",output_format = "md_document")
 
 # nichenetr
 
-[![Build Status](https://travis-ci.org/browaeysrobin/nichenetr.svg?branch=master)](https://travis-ci.org/browaeysrobin/nichenetr)
-[![Coverage Status](https://codecov.io/gh/browaeysrobin/nichenetr/branch/master/graph/badge.svg)](https://codecov.io/gh/browaeysrobin/nichenetr)
+[![Build Status](https://travis-ci.org/saeyslab/nichenetr.svg?branch=master)](https://travis-ci.org/saeyslab/nichenetr)
+[![Coverage Status](https://codecov.io/gh/saeyslab/nichenetr/branch/master/graph/badge.svg)](https://codecov.io/gh/saeyslab/nichenetr)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
 
 **nichenetr: the R implementation of the NicheNet method.** The goal of NicheNet is to study intercellular communication from a computational perspective. NicheNet integrates expression data of interacting cells with prior information on potential links between ligands and target genes. Hereby, NicheNet can be used to study how one cell (or cell type) influences gene expression in an interacting cell (or cell type). This type of analysis can provide novel functional insights into intercellular signaling processes compared to limiting the analysis to ligand-receptor inference. 

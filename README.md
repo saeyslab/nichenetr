@@ -7,9 +7,9 @@ nichenetr
 =========
 
 [![Build
-Status](https://travis-ci.org/browaeysrobin/nichenetr.svg?branch=master)](https://travis-ci.org/browaeysrobin/nichenetr)
+Status](https://travis-ci.org/saeyslab/nichenetr.svg?branch=master)](https://travis-ci.org/saeyslab/nichenetr)
 [![Coverage
-Status](https://codecov.io/gh/browaeysrobin/nichenetr/branch/master/graph/badge.svg)](https://codecov.io/gh/browaeysrobin/nichenetr)
+Status](https://codecov.io/gh/saeyslab/nichenetr/branch/master/graph/badge.svg)](https://codecov.io/gh/saeyslab/nichenetr)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
 
 **nichenetr: the R implementation of the NicheNet method.** The goal of
