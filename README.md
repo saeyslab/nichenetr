@@ -1,7 +1,3 @@
-<style>
-body {
-text-align: justify}
-</style>
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 <!-- github markdown built using
 rmarkdown::render("README.Rmd",output_format = "md_document")
@@ -42,7 +38,7 @@ prioritized ligands. We offer the option to use the prebuilt prior model
 create and use your own prior model (see reference to detailed vignette
 below).
 
-![](vignettes/workflow_nichenet.png)
+<br><br><br><br> ![](vignettes/workflow_nichenet.png) <br><br><br><br>
 
 NicheNet strongly differs from most current computational approaches to
 study intercellular communication. Current approaches study
@@ -67,9 +63,12 @@ and NicheNet (bottom panel) and visualizes the power of NicheNet in
 prioritizing ligand-receptor interactions based on gene expression
 effects.
 
-</center>
-<img src="vignettes/comparison_other_approaches_2.png" style="width:33.0%" />
-</center>
+<br><br><br><br>
+
+    knitr::include_graphics("comparison_other_approaches_2.png")
+
+<img src="comparison_other_approaches_2.png" width="100px" />
+<br><br><br><br>
 
 Main functionalities of nichenetr
 ---------------------------------
