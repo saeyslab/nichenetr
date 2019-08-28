@@ -14,15 +14,60 @@ Status](https://codecov.io/gh/saeyslab/nichenetr/branch/master/graph/badge.svg)]
 
 **nichenetr: the R implementation of the NicheNet method.** The goal of
 NicheNet is to study intercellular communication from a computational
-perspective. NicheNet integrates expression data of interacting cells
-with prior information on potential links between ligands and target
-genes. Hereby, NicheNet can be used to study how one cell (or cell type)
-influences gene expression in an interacting cell (or cell type). This
-type of analysis can provide novel functional insights into
-intercellular signaling processes compared to limiting the analysis to
-ligand-receptor inference.
+perspective. NicheNet uses human or mouse gene expression data of
+interacting cells as input and combines this with a prior model that
+integrates existing knowledge on ligand-to-target signaling paths.
 
-Specific functionalities include:
+nichenetr was tested on both Windows and Linux (R version 3.6.0)
+
+Introduction to NicheNet
+------------------------
+
+The figure below shows a graphical representation of the NicheNet
+workflow. Interactions inferred from several complementary
+ligand-receptor, signaling and gene regulatory data sources were
+aggregated in respective integrated networks from which ligand-target
+regulatory potential scores were calculated. This model of prior
+information on potential ligand-target links can then be used to infer
+active ligand-target links between interacting cells. NicheNet
+prioritizes ligands according to their activity (i.e., how well they
+predict observed changes in gene expression in the receiver cell) and
+looks for affected targets with high potential to be regulated by these
+prioritized ligands. We offer the option to use the prebuilt prior model
+(such that the network integration steps should not be repeated), or to
+create and use your own prior model (see details below).
+
+![](vignettes/workflow_nichenet.png)
+
+NicheNet strongly differs from most current computational approaches to
+study intercellular communication. Current approaches study
+intercellular communication from (single-cell) expression data by
+linking ligands expressed by sender cells to their corresponding
+receptors expressed by receiver cells. However, functional understanding
+of a cellular communication process also requires knowing how these
+inferred ligand-receptor interactions result in changes in the
+expression of downstream target genes within the receiver cells. To
+address this need, we developed NicheNet. Contrary to existing
+approaches, NicheNet looks at gene regulatory effects of ligands because
+the used prior knowledge goes beyond ligand-receptor interactions and
+incorporates intracellular signaling and transcriptional regulation as
+well. As a result, NicheNet allows to predict which ligands influence
+the expression in another cell, which target genes are affected by each
+ligand and which signaling mediators may be involved. By generating
+these novel types of hypotheses, NicheNet can drive an improved
+functional understanding of a cell-cell communication process of
+interest. The figure below summarizes the conceptual differences between
+most current ligand-receptor network inference approaches (top panel)
+and NicheNet (bottom panel) and visualizes the power of NicheNet in
+prioritizing ligand-receptor interactions based on gene expression
+effects.
+
+![](vignettes/comparison_other_approaches_2.png)
+
+Main functionalities of nichenetr
+---------------------------------
+
+Specific functionalities of this package include:
 
 -   assessing how well ligands expressed by a sender cell can predict
     changes in gene expression in the receiver cell
@@ -30,12 +75,14 @@ Specific functionalities include:
 -   inferring putative ligand-target links active in the system under
     study
 -   inferring potential signaling paths between ligands and target genes
-    of interest
+    of interest: to generate causal hypotheses and check which data
+    sources support the predictions
+-   validation of the prior ligand-target model
+-   construction of user-defined prior ligand-target models
 
 Moreover, we provide instructions on how to make intuitive
-visualizations of the main predictions.
-
-nichenetr was tested on both Windows and Linux (R version 3.6.0)
+visualizations of the main predictions (e.g., via circos plots as shown
+here below).
 
 ![](vignettes/circos_plot_adapted.png)
 

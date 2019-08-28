@@ -22,9 +22,20 @@ knitr::opts_chunk$set(
 )
 ```
 
-This vignette shows how ligand-target regulatory potential scores are inferred in the NicheNet framework. You can use the procedure shown here to develop your own model with inclusion of context-specific networks or removal of noisy irrelevant data sources. The networks at the basis of NicheNet can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758). 
+This vignette shows how ligand-target prior regulatory potential scores are inferred in the NicheNet framework. You can use the procedure shown here to develop your own model with inclusion of context-specific networks or removal of noisy irrelevant data sources. The networks at the basis of NicheNet can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758). 
 
-First, we will demonstrate how to construct a new ligand-target model from all ligand-receptor, signaling and gene regulatory network data sources we collected.
+# Background information about NicheNet's prior ligand-target model
+
+The prior model at the basis of NicheNet denotes how strongly existing knowledge supports that a ligand may regulate the expression of a target gene. To calculate this ligand-target regulatory potential, we integrated biological knowledge about ligand-to-target signaling paths as follows.
+
+First, we collected multiple complementary data sources covering ligand-receptor, signal transduction (e.g., protein-protein and kinase-substrate interactions) and gene regulatory interactions (e.g., inferred from ChIP-seq and motifs). 
+
+Secondly, we integrated these individual data sources into two weighted networks: 1) a ligand-signaling network, which contains protein-protein interactions covering the signaling paths from ligands to downstream transcriptional regulators; and 2) a gene regulatory network, which contains gene regulatory interactions between transcriptional regulators and target genes. 
+To let informative data sources contribute more to the final model, we weighted each data source during integration. These data source weights were automatically determined via model-based parameter optimization to improve the accuracy of ligand-target predictions (see the vignette [Parameter optimization via mlrMBO](parameter_optimization.md). In this vignette, we will show how to construct models with unoptimized data source weigths as well.
+
+Finally, we combined the ligand-signaling and gene regulatory network to calculate a regulatory potential score between all pairs of ligands and target genes. A ligand-target pair receives a high regulatory potential if the regulators of the target gene are lying downstream of the signaling network of the ligand. To calculate this, we used network propagation methods on the integrated networks to propagate the signal starting from a ligand, flowing through receptors, signaling proteins, transcriptional regulators, and ultimately ending at target genes. 
+
+# Construct a ligand-target model from all collected ligand-receptor, signaling and gene regulatory network data sources
 
 Load the required packages and networks we will use to construct the model.
 ```{r}
@@ -42,6 +53,9 @@ gr_network = readRDS(url("https://zenodo.org/record/3260758/files/gr_network.rds
 ## Construct NicheNet's ligand-target model from unoptimized data source weights
 
 Construct the weighted integrated ligand-signaling and gene regulatory network. In this first example, we give every data source the same weight (as given by the `source_weights_df` data frame provided by default by the nichenetr package). See the vignette showing how to use mlrMBO to optimize data source weights and the hyperparameters if interested in performing parameter optimization. For the hyperparameters of the model (hub correction factors and damping factor), we will use the optimized values (as given by the `hyperparameter_list` data frame provided by default by the nichenetr package).
+
+The ligand-signaling network hub correction factor and gene regulatory network hub correction factor were defined as hyperparameter of the model to mitigate the potential negative influence of over-dominant hubs on the final model.
+The damping factor hyperparameter is the main parameter of the Personalized PageRank algorithm, which we used as network propagation algorithm to link ligands to downstream regulators.
 
 ```{r}
 # aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
@@ -92,7 +106,7 @@ extract_top_n_targets("TNF",10,ligand_target_matrix)
 ```
 
 
-## Change the data sources at the basis of the NicheNet ligand-target model
+# Change the data sources at the basis of the NicheNet ligand-target model
 
 ### Keep only specific data sources of interest
 
@@ -165,9 +179,12 @@ extract_top_n_targets("TNF",10,ligand_target_matrix)
 
 ### Add own data sources to the NicheNet model
 
-In addition to removing data sources, you can also add new data sources. This could for example help you in making context-specific models, if you would have a network or data containing containing context-specific interactions of interest.
+In addition to removing data sources, you can also add new data sources. This could for example help you in making context-specific models, if you would have a network or data containing context-specific interactions of interest.
+
+As input, we require a data source to contain directional interactions between genes: these interactions are signaling or protein-protein interactions for a signaling data source and a gene regulatory interaction for a gene regulatory data source. The data sources should be formatted in a data frame with following columns: from, to and source. "from" denotes the source node "gene A" of the directional interaction from gene A to B, "to" denotes the target node "gene B" of this directional interaction, and "source" is a user-defined name of this data source.
 
 Here, we will show how you can download, process and integrate an online data source within the NichenNet framework. As example, this is the data source "Hub Proteins Protein-Protein Interactions" from the Harmonizome portal (https://amp.pharm.mssm.edu/Harmonizome/dataset/Hub+Proteins+Protein-Protein+Interactions).
+
 
 ```{r}
 input_file = "https://amp.pharm.mssm.edu/static/hdfs/harmonizome/data/hubs/gene_attribute_edges.txt.gz"

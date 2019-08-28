@@ -118,7 +118,9 @@ expressed_genes_malignant = expression[malignant_ids,] %>% apply(2,function(x){1
 ## Step 2: Define the gene set of interest and a background of genes
 
 As gene set of interest, we consider the genes of which the expression
-is possibly affected due to communication with other cells.
+is possibly affected due to communication with other cells. The
+definition of this gene set depends on your research question and is a
+crucial step in the use of NicheNet.
 
 Because we here want to investigate how fibroblasts regulate the
 expression of p-EMT genes in malignant cells, we will use the p-EMT gene
