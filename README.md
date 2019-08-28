@@ -1,3 +1,7 @@
+<style>
+body {
+text-align: justify}
+</style>
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 <!-- github markdown built using
 rmarkdown::render("README.Rmd",output_format = "md_document")
@@ -35,7 +39,8 @@ predict observed changes in gene expression in the receiver cell) and
 looks for affected targets with high potential to be regulated by these
 prioritized ligands. We offer the option to use the prebuilt prior model
 (such that the network integration steps should not be repeated), or to
-create and use your own prior model (see details below).
+create and use your own prior model (see reference to detailed vignette
+below).
 
 ![](vignettes/workflow_nichenet.png)
 
@@ -62,7 +67,9 @@ and NicheNet (bottom panel) and visualizes the power of NicheNet in
 prioritizing ligand-receptor interactions based on gene expression
 effects.
 
-![](vignettes/comparison_other_approaches_2.png)
+</center>
+<img src="vignettes/comparison_other_approaches_2.png" style="width:33.0%" />
+</center>
 
 Main functionalities of nichenetr
 ---------------------------------
