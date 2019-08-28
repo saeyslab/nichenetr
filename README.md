@@ -38,7 +38,7 @@ prioritized ligands. We offer the option to use the prebuilt prior model
 create and use your own prior model (see reference to detailed vignette
 below).
 
-<br><br><br><br> ![](vignettes/workflow_nichenet.png) <br><br><br><br>
+<br><br> ![](vignettes/workflow_nichenet.png) <br><br>
 
 NicheNet strongly differs from most current computational approaches to
 study intercellular communication. Current approaches study
@@ -63,12 +63,9 @@ and NicheNet (bottom panel) and visualizes the power of NicheNet in
 prioritizing ligand-receptor interactions based on gene expression
 effects.
 
-<br><br><br><br>
-
-    knitr::include_graphics("comparison_other_approaches_2.png")
-
-<img src="comparison_other_approaches_2.png" width="100px" />
-<br><br><br><br>
+<br>&lt;br
+<img src="vignettes/comparison_other_approaches_2.png" style="width:10.0%" />
+<br><br>
 
 Main functionalities of nichenetr
 ---------------------------------
@@ -90,7 +87,7 @@ Moreover, we provide instructions on how to make intuitive
 visualizations of the main predictions (e.g., via circos plots as shown
 here below).
 
-![](vignettes/circos_plot_adapted.png)
+<br><br> ![](vignettes/circos_plot_adapted.png)
 
 Installation of nichenetr
 -------------------------
