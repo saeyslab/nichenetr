@@ -303,13 +303,14 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 }, bg.border = NA) #
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-203-1.png)<!-- -->
+![](circos_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ``` r
 circos.clear()
 ```
 
-Render the circos plot (all links same transparancy)
+Render the circos plot (degree of transparancy determined by the
+regulatory potential value of a ligand-target interaction)
 
 ``` r
 circos.par(gap.degree = gaps)
@@ -322,7 +323,7 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 }, bg.border = NA) #
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-204-1.png)<!-- -->
+![](circos_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 ``` r
 circos.clear()

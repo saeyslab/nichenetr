@@ -65,7 +65,7 @@ prioritizing ligand-receptor interactions based on gene expression
 effects.
 
 <br><br>
-<img src="vignettes/comparison_other_approaches_2.png" width="100" />
+<img src="vignettes/comparison_other_approaches_2.png" width="250" />
 <br><br>
 
 Main functionalities of nichenetr

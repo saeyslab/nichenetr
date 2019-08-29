@@ -47,8 +47,12 @@ if the regulators of the target gene are lying downstream of the
 signaling network of the ligand. To calculate this, we used network
 propagation methods on the integrated networks to propagate the signal
 starting from a ligand, flowing through receptors, signaling proteins,
-transcriptional regulators, and ultimately ending at target
-genes.
+transcriptional regulators, and ultimately ending at target genes.
+
+A graphical summary of this procedure is visualized here
+below:
+
+![](vignettes/workflow_model_construction.png)
 
 # Construct a ligand-target model from all collected ligand-receptor, signaling and gene regulatory network data sources
 
@@ -253,14 +257,14 @@ you would have a network or data containing context-specific
 interactions of interest.
 
 As input, we require a data source to contain directional interactions
-between genes: these interactions are signaling or protein-protein
-interactions for a signaling data source and a gene regulatory
-interaction for a gene regulatory data source. The data sources should
-be formatted in a data frame with following columns: from, to and
-source. “from” denotes the source node “gene A” of the directional
-interaction from gene A to B, “to” denotes the target node “gene B” of
-this directional interaction, and “source” is a user-defined name of
-this data source.
+between genes: these interactions are protein-protein or signaling
+interactions for ligand-receptor and signaling data sources and a gene
+regulatory interaction for gene regulatory data sources. The data
+sources should be formatted in a data frame with following columns:
+from, to and source. “from” denotes the source node “gene A” of the
+directional interaction from gene A to B, “to” denotes the target node
+“gene B” of this directional interaction, and “source” is a
+user-defined name of this data source.
 
 Here, we will show how you can download, process and integrate an online
 data source within the NichenNet framework. As example, this is the data

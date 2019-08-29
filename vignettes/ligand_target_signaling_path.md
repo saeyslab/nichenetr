@@ -48,12 +48,12 @@ gr_network = readRDS(url("https://zenodo.org/record/3260758/files/gr_network.rds
 ```
 
 As example, we will infer signaling paths between TGFB3 and its
-top-predicted target genes LAMA3, LAMC2 and
+top-predicted target genes TGFBI, LAMC2 and
 TNC.
 
 ``` r
 ligands_all = "TGFB3" # this can be a list of multiple ligands if required
-targets_all = c("LAMA3","LAMC2","TNC")
+targets_all = c("TGFBI","LAMC2","TNC")
 
 active_signaling_network = get_ligand_signaling_path(ligand_tf_matrix = ligand_tf_matrix, ligands_all = ligands_all, targets_all = targets_all, weighted_networks = weighted_networks)
 
@@ -76,14 +76,14 @@ network.
 data_source_network = infer_supporting_datasources(signaling_graph_list = active_signaling_network,lr_network = lr_network, sig_network = sig_network, gr_network = gr_network)
 head(data_source_network) 
 ## # A tibble: 6 x 5
-##   from  to    source                         database              layer   
-##   <chr> <chr> <chr>                          <chr>                 <chr>   
-## 1 SMAD1 LAMA3 harmonizome_TRANSFAC_CUR       harmonizome_gr        regulat~
-## 2 SMAD1 LAMA3 pathwaycommons_controls_expre~ pathwaycommons_expre~ regulat~
-## 3 SMAD2 LAMC2 harmonizome_CHEA               harmonizome_gr        regulat~
-## 4 SMAD2 TNC   harmonizome_CHEA               harmonizome_gr        regulat~
-## 5 SMAD2 TNC   regnetwork_source              regnetwork            regulat~
-## 6 SMAD3 LAMA3 harmonizome_CHEA               harmonizome_gr        regulat~
+##   from  to    source            database       layer     
+##   <chr> <chr> <chr>             <chr>          <chr>     
+## 1 SMAD1 TGFBI regnetwork_source regnetwork     regulatory
+## 2 SMAD1 TGFBI Remap_5           Remap          regulatory
+## 3 SMAD2 LAMC2 harmonizome_CHEA  harmonizome_gr regulatory
+## 4 SMAD2 TGFBI harmonizome_CHEA  harmonizome_gr regulatory
+## 5 SMAD2 TNC   harmonizome_CHEA  harmonizome_gr regulatory
+## 6 SMAD2 TNC   regnetwork_source regnetwork     regulatory
 ```
 
 Export the following to e.g. Cytoscape for exploration of the networks

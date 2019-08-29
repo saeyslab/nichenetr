@@ -39,7 +39,7 @@ sig_network = readRDS(url("https://zenodo.org/record/3260758/files/signaling_net
 gr_network = readRDS(url("https://zenodo.org/record/3260758/files/gr_network.rds"))
 ```
 
-We will load in the ligand treatment validation datasets and try to optimize the parameters to maximize both target gene and ligand activity prediction. In this vignette, we do the optimization on all datasets. Alternatively, you can select a specific of datasets and evaluate the final performance on the left-out datasets.
+We will load in the ligand treatment validation datasets and try to optimize the parameters to maximize both target gene and ligand activity prediction. In this vignette, we do the optimization on all datasets. Alternatively, you can select a specific subset of datasets and evaluate the final performance on the left-out datasets.
 
 ```{r}
 # The ligand treatment expression datasets used for validation can be downloaded from Zenodo:

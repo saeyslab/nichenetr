@@ -33,7 +33,7 @@ We offer the option to use the prebuilt prior model (such that the network integ
 NicheNet strongly differs from most current computational approaches to study intercellular communication. Current approaches study intercellular communication from (single-cell) expression data by linking ligands expressed by sender cells to their corresponding receptors expressed by receiver cells. However, functional understanding of a cellular communication process also requires knowing how these inferred ligand-receptor interactions result in changes in the expression of downstream target genes within the receiver cells. To address this need, we developed NicheNet. Contrary to existing approaches, NicheNet looks at gene regulatory effects of ligands because the used prior knowledge goes beyond ligand-receptor interactions and incorporates intracellular signaling and transcriptional regulation as well. As a result, NicheNet allows to predict which ligands influence the expression in another cell, which target genes are affected by each ligand and which signaling mediators may be involved. By generating these novel types of hypotheses, NicheNet can drive an improved functional understanding of a cell-cell communication process of interest. The figure below summarizes the conceptual differences between most current ligand-receptor network inference approaches (top panel) and NicheNet (bottom panel) and visualizes the power of NicheNet in prioritizing ligand-receptor interactions based on gene expression effects.
 
 <br><br>
-![](vignettes/comparison_other_approaches_2.png){width=100}
+![](vignettes/comparison_other_approaches_2.png){width=250}
 <br><br>
 
 ## Main functionalities of nichenetr

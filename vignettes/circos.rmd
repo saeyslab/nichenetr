@@ -242,7 +242,7 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 circos.clear()
 ```
 
-Render the circos plot (all links same transparancy)
+Render the circos plot (degree of transparancy determined by the regulatory potential value of a ligand-target interaction)
 
 ```{r, fig.width=8, fig.height=8}
 circos.par(gap.degree = gaps)

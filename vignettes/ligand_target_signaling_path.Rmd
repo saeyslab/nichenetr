@@ -50,11 +50,11 @@ gr_network = readRDS(url("https://zenodo.org/record/3260758/files/gr_network.rds
 
 ```
 
-As example, we will infer signaling paths between TGFB3 and its top-predicted target genes LAMA3, LAMC2 and TNC.
+As example, we will infer signaling paths between TGFB3 and its top-predicted target genes TGFBI, LAMC2 and TNC.
 
 ```{r}
 ligands_all = "TGFB3" # this can be a list of multiple ligands if required
-targets_all = c("LAMA3","LAMC2","TNC")
+targets_all = c("TGFBI","LAMC2","TNC")
 
 active_signaling_network = get_ligand_signaling_path(ligand_tf_matrix = ligand_tf_matrix, ligands_all = ligands_all, targets_all = targets_all, weighted_networks = weighted_networks)
 

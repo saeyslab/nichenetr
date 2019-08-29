@@ -97,7 +97,7 @@ performances %>%
   theme_bw()
 ```
 
-![](model_evaluation_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](model_evaluation_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 ### Example: ligand activity prediction evaluation
 
@@ -107,14 +107,18 @@ words, we will evaluate how well NicheNet prioritizes active ligand(s),
 given a set of differentially expressed genes. For this procedure, we
 assume the following: the better a ligand predicts the transcriptional
 response compared to other ligands, the more likely it is that this
-ligand is active. Therefore, we first get ligand activity/importance
-scores for all ligands on all ligand-treatment expression datasets of
-which the true acive ligand is known. Then we assess whether the truly
-active ligands get indeed higher ligand activity scores as should be for
-a good ligand-target model.
+ligand is active. Therefore, we first get ligand activity (or ligand
+importance or feature importance) scores for all ligands on all
+ligand-treatment expression datasets of which the true acive ligand is
+known. Then we assess whether the truly active ligands get indeed higher
+ligand activity scores as should be for a good ligand-target model.
+
+A graphical summary of this procedure is visualized here below:
+
+![](vignettes/ligand_activity_prediction_workflow_new.png)
 
 Step 1: convert expression datasets to the required format to perform
-target gene
+ligand activity
 prediction
 
 ``` r
@@ -166,7 +170,7 @@ evaluation_ligand_prediction %>%
   theme(axis.text.x = element_text(angle = 90))
 ```
 
-![](model_evaluation_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](model_evaluation_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 This plots shows that using the pearson correlation coefficient target
 prediction metric is the best metric to use for ranking ligands
