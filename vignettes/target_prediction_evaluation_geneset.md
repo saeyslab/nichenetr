@@ -175,8 +175,8 @@ gene.
 
 ``` r
 # change rounds and folds here, to two rounds to reduce time: normally: do multiple rounds
-k = 3 # 5-fold
-n = 2 # 5 rounds
+k = 3 # 3-fold
+n = 2 # 2 rounds
 
 pemt_gene_predictions_top20_list = seq(n) %>% lapply(assess_rf_class_probabilities, folds = k, geneset = pemt_geneset, background_expressed_genes = background_expressed_genes, ligands_oi = best_upstream_ligands, ligand_target_matrix = ligand_target_matrix)
 ```
