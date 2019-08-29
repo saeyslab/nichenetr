@@ -33,10 +33,11 @@ active ligand-target links between interacting cells. NicheNet
 prioritizes ligands according to their activity (i.e., how well they
 predict observed changes in gene expression in the receiver cell) and
 looks for affected targets with high potential to be regulated by these
-prioritized ligands. We offer the option to use the prebuilt prior model
-(such that the network integration steps should not be repeated), or to
-create and use your own prior model (see reference to detailed vignette
-below).
+prioritized ligands.
+
+We offer the option to use the prebuilt prior model (such that the
+network integration steps should not be repeated), or to create and use
+your own prior model (see reference to detailed vignette below).
 
 <br><br> ![](vignettes/workflow_nichenet.png) <br><br>
 
@@ -63,8 +64,8 @@ and NicheNet (bottom panel) and visualizes the power of NicheNet in
 prioritizing ligand-receptor interactions based on gene expression
 effects.
 
-<br>&lt;br
-<img src="vignettes/comparison_other_approaches_2.png" style="width:10.0%" />
+<br><br>
+<img src="vignettes/comparison_other_approaches_2.png" width="100" />
 <br><br>
 
 Main functionalities of nichenetr
@@ -92,7 +93,7 @@ here below).
 Installation of nichenetr
 -------------------------
 
-Installation takes typically a few minutes, depending on the number of
+Installation typically takes a few minutes, depending on the number of
 dependencies that has already been installed on your pc. You can install
 nichenetr (and required dependencies) from github with:
 

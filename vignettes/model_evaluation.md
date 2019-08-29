@@ -52,7 +52,8 @@ expression datasets. For this, we determine how well the model predicts
 which genes are differentially expressed after treatment with a ligand.
 Ideally, target genes with high regulatory potential scores for a
 ligand, should be differentially expressed in response to that ligand.
-\# For the sake of simplicity, we exclude in this vignette the
+
+For the sake of simplicity, we exclude in this vignette the
 ligand-treatment datasets profiling the response to multiple ligands. To
 see how to build a ligand-target model with target predictions for
 multiple ligands at once: see vignette [Construction of NicheNet’s

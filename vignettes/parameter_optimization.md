@@ -82,6 +82,9 @@ obj_fun_multi_topology_correction = makeMultiObjectiveFunction(name = "nichenet_
                                                                noisy = FALSE,
                                                                minimize = c(FALSE,FALSE,FALSE,FALSE))
 set.seed(1)
+
+# Run with: 50 iterations, 24 desings evaluated in parallel and 240 start designs
+
 job_mlrmbo = qsub_lapply(X = 1,
                                FUN = mlrmbo_optimization_wrapper,
                                object_envir = environment(mlrmbo_optimization_wrapper),
@@ -91,6 +94,10 @@ job_mlrmbo = qsub_lapply(X = 1,
                                obj_fun_multi_topology_correction, 
                                50, 24, 240, 
                                additional_arguments_topology_correction)
+```
+Once the job is finised (which can take a few days - for shorter running time: reduce the number of iterations), run:
+
+```{r}
 res_job_mlrmbo = qsub_retrieve(job_mlrmbo)
 ```
 
@@ -100,4 +107,4 @@ Get now the most optimal parameter setting as a result of this analysis
 optimized_parameters = res_job_mlrmbo %>% process_mlrmbo_nichenet_optimization(source_names = source_weights_df$source %>% unique())
 ```
 
-When you would be interested to generate a context-specific model, it could be possible that you would like to optimize the parameters specifically on your dataset of interest and not on the general ligand treatment datasets (be aware for overfitting though!). Because for your own data, you don't know the true active ligands, you could only optimize target gene prediction performance and not ligand activity performance. In order to this, you would need to change the expression settings in the optimization functions such that they include your data and use the function `model_evaluation_optimization_application` instead of `model_evaluation_optimization`.
+When you would be interested to generate a context-specific model, it could be possible that you would like to optimize the parameters specifically on your dataset of interest and not on the general ligand treatment datasets (be aware for overfitting, though!). Because for your own data, you don't know the true active ligands, you could only optimize target gene prediction performance and not ligand activity performance. In order to this, you would need to change the expression settings in the optimization functions such that they include your data, and use the function `model_evaluation_optimization_application` instead of `model_evaluation_optimization` (define this as the function parameter in `makeMultiObjectiveFunction` shown here above).

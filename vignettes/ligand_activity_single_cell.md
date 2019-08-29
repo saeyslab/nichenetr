@@ -184,7 +184,7 @@ Visualize the relation between ligand activity
 and
 
 ``` r
-inner_join(cell_scores_tbl,normalized_ligand_activities) %>% ggplot(aes(score,TFPI)) + geom_point() + geom_smooth()
+inner_join(cell_scores_tbl,normalized_ligand_activities) %>% ggplot(aes(score,TFPI)) + geom_point() + geom_smooth(method = "lm")
 ```
 
 ![](ligand_activity_single_cell_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
