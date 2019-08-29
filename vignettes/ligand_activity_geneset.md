@@ -98,12 +98,16 @@ fibroblasts can induce p-EMT in neighboring malignant cells. Therefore,
 fibroblasts are the sender cells in this example and malignant cells are
 the receiver cells.
 
-Now, we will determine which genes are expressed in fibroblasts and
-malignant cells from high quality primary tumors. Therefore, we wil not
-consider cells from tumor samples of less quality or from lymph node
-metastases. To determine expressed genes, we use the definition used by
-of Puram et
-al.
+Now, we will determine which genes are expressed in the sender cells
+(fibroblasts) and receiver cells (malignant cells) from high quality
+primary tumors. Therefore, we wil not consider cells from tumor samples
+of less quality or from lymph node metastases.
+
+To determine expressed genes in this case study, we use the definition
+used by Puram et al. (the authors of this dataset). We recommend users
+to define expressed genes in the way that they consider to be most
+appropriate for their
+dataset.
 
 ``` r
 tumors_remove = c("HN10","HN","HN12", "HN13", "HN24", "HN7", "HN8","HN23")
@@ -111,8 +115,8 @@ tumors_remove = c("HN10","HN","HN12", "HN13", "HN24", "HN7", "HN8","HN23")
 fibroblast_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `non-cancer cell type` == "Fibroblast") %>% pull(cell)
 malignant_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `classified  as cancer cell` == 1) %>% pull(cell)
 
-expressed_genes_fibroblasts = expression[fibroblast_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
-expressed_genes_malignant = expression[malignant_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
+expressed_genes_sender = expression[fibroblast_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
+expressed_genes_receiver = expression[malignant_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 ```
 
 ## Step 2: Define the gene set of interest and a background of genes
@@ -129,11 +133,11 @@ expressed in malignant cells as background of
 genes.
 
 ``` r
-pemt_geneset = readr::read_tsv(url("https://zenodo.org/record/3260758/files/pemt_signature.txt"), col_names = "gene") %>% pull(gene) %>% .[. %in% rownames(ligand_target_matrix)] # only consider genes also present in the NicheNet model - this excludes genes from the gene list for which the official HGNC symbol was not used by Puram et al.
-head(pemt_geneset)
+geneset_oi = readr::read_tsv(url("https://zenodo.org/record/3260758/files/pemt_signature.txt"), col_names = "gene") %>% pull(gene) %>% .[. %in% rownames(ligand_target_matrix)] # only consider genes also present in the NicheNet model - this excludes genes from the gene list for which the official HGNC symbol was not used by Puram et al.
+head(geneset_oi)
 ## [1] "SERPINE1" "TGFBI"    "MMP10"    "LAMC2"    "P4HA2"    "PDPN"
 
-background_expressed_genes = expressed_genes_malignant %>% .[. %in% rownames(ligand_target_matrix)]
+background_expressed_genes = expressed_genes_receiver %>% .[. %in% rownames(ligand_target_matrix)]
 head(background_expressed_genes)
 ## [1] "RPS11"   "ELMO2"   "PNMA1"   "MMP2"    "TMEM216" "ERCC5"
 ```
@@ -149,11 +153,14 @@ sources.
 ``` r
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 
+# If wanted, users can remove ligand-receptor interactions that were predicted based on protein-protein interactions and only keep ligand-receptor interactions that are described in curated databases. To do this: uncomment following line of code:
+# lr_network = lr_network %>% filter(database != "ppi_prediction_go" & database != "ppi_prediction")
+
 ligands = lr_network %>% pull(from) %>% unique()
-expressed_ligands = intersect(ligands,expressed_genes_fibroblasts)
+expressed_ligands = intersect(ligands,expressed_genes_sender)
 
 receptors = lr_network %>% pull(to) %>% unique()
-expressed_receptors = intersect(receptors,expressed_genes_malignant)
+expressed_receptors = intersect(receptors,expressed_genes_receiver)
 
 potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
 head(potential_ligands)
@@ -168,14 +175,15 @@ p-EMT program or
 not.
 
 ``` r
-ligand_activities = predict_ligand_activities(geneset = pemt_geneset, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
 ```
 
 Now, we want to rank the ligands based on their ligand activity. In our
-validation study, we showed that the pearson correlation between a
-ligand’s target predictions and the observed transcriptional response
-was the most informative measure to define ligand activity. Therefore,
-we will rank the ligands based on their pearson correlation coefficient.
+validation study, we showed that the pearson correlation coefficient
+(PCC) between a ligand’s target predictions and the observed
+transcriptional response was the most informative measure to define
+ligand activity. Therefore, we will rank the ligands based on their
+pearson correlation coefficient.
 
 ``` r
 ligand_activities %>% arrange(-pearson) 
@@ -198,13 +206,36 @@ head(best_upstream_ligands)
 ## [1] "CXCL12" "AGT"    "IL6"    "ADAM17" "TNC"    "CTGF"
 ```
 
-We see here that the top-ranked ligands can predict the p-EMT genes
-reasonably, this implies that ranking of the ligands might be accurate
-as shown in our study. However, it is possible that for some gene sets,
-the target gene prediction performance of the top-ranked ligands would
-not be much better than random prediction. In that case, prioritization
-of ligands will be less
+We see here that the performance metrics indicate that the 20 top-ranked
+ligands can predict the p-EMT genes reasonably, this implies that
+ranking of the ligands might be accurate as shown in our study. However,
+it is possible that for some gene sets, the target gene prediction
+performance of the top-ranked ligands would not be much better than
+random prediction. In that case, prioritization of ligands will be less
 trustworthy.
+
+Additional note: we looked at the top 20 ligands here and will continue
+the analysis by inferring p-EMT target genes of these 20 ligands.
+However, the choice of looking only at the 20 top-ranked ligands for
+further biological interpretation is based on biological intuition and
+is quite arbitrary. Therefore, users can decide to continue the analysis
+with a different number of ligands. We recommend to check the selected
+cutoff by looking at the distribution of the ligand activity values.
+Here, we show the ligand activity histogram (the score for the 20th
+ligand is indicated via the dashed line).
+
+``` r
+# show histogram of ligand activity scores
+p_hist_lig_activity = ggplot(ligand_activities, aes(x=pearson)) + 
+  geom_histogram(color="black", fill="darkorange")  + 
+  # geom_density(alpha=.1, fill="orange") +
+  geom_vline(aes(xintercept=min(ligand_activities %>% top_n(20, pearson) %>% pull(pearson))), color="red", linetype="dashed", size=1) + 
+  labs(x="ligand activity (PCC)", y = "# ligands") +
+  theme_classic()
+p_hist_lig_activity
+```
+
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 ## Step 5: Infer target genes of top-ranked ligands and visualize in a heatmap
 
@@ -214,16 +245,18 @@ at links between top-ranked p-EMT regulating ligands and p-EMT genes. In
 the ligand-target heatmaps, we showed regulatory potential scores for
 interactions between the 20 top-ranked ligands and following target
 genes: genes that belong to the gene set of interest and to the 250 most
-strongly predicted targets of at least one of the 20 top-ranked ligands.
-For visualization purposes, we adapted the ligand-target regulatory
-potential matrix as follows. Regulatory potential scores were set as 0
-if their score was below a predefined threshold, which was here the 0.25
-quantile of scores of interactions between the 20 top-ranked ligands and
-each of their respective 250 top
+strongly predicted targets of at least one of the 20 top-ranked ligands
+(the top 250 targets according to the general prior model, so not the
+top 250 targets for this dataset). For visualization purposes, we
+adapted the ligand-target regulatory potential matrix as follows.
+Regulatory potential scores were set as 0 if their score was below a
+predefined threshold, which was here the 0.25 quantile of scores of
+interactions between the 20 top-ranked ligands and each of their
+respective 250 top
 targets.
 
 ``` r
-active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = pemt_geneset, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
+active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
 
 active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = 0.25)
 ```
@@ -237,7 +270,20 @@ p_ligand_target_network = active_ligand_target_links %>% t() %>% make_heatmap_gg
 p_ligand_target_network
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+
+Note that the choice of these cutoffs for visualization is quite
+arbitrary. We recommend users to test several cutoff values.
+
+If you would consider more than the top 250 targets based on prior
+information, you will infer more, but less confident, ligand-target
+links; by considering less than 250 targets, you will be more stringent.
+
+If you would change the quantile cutoff that is used to set scores to 0
+(for visualization purposes), lowering this cutoff will result in a more
+dense heatmap, whereas highering this cutoff will result in a more
+sparse
+heatmap.
 
 ## Follow-up analysis 1: Ligand-receptor network inference for top-ranked ligands
 
@@ -281,7 +327,7 @@ p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap
 p_ligand_receptor_network
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 ## Other follow-up analyses:
 
