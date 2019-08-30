@@ -122,10 +122,10 @@ output_correlation_analysis = single_ligand_activity_score_regression(normalized
 output_correlation_analysis %>% arrange(-pearson_regression) %>% select(pearson_regression, ligand)
 ```
 
-Visualize the relation between ligand activity and
+Visualize the relation between ligand activity and the cell's property score of interest
 
 ```{r}
-inner_join(cell_scores_tbl,normalized_ligand_activities) %>% ggplot(aes(score,TFPI)) + geom_point() + geom_smooth(method = "lm")
+inner_join(cell_scores_tbl,normalized_ligand_activities) %>% ggplot(aes(score,TNC)) + geom_point() + geom_smooth(method = "lm")
 ```
 
 ### References

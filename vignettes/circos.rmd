@@ -11,8 +11,7 @@ bibliography: library.bib
 ---
 
 <!-- github markdown built using 
-rmarkdown::render("vignettes/circos.Rmd", output_format = "github_document")
--->
+&<-->
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
