@@ -1,4 +1,5 @@
-NicheNet’s ligand activity analysis on a gene set of interest
+NicheNet’s ligand activity analysis on a gene set of interest: predict
+active ligands and their target genes
 ================
 Robin Browaeys
 2019-01-17
@@ -43,16 +44,16 @@ expression data of interacting cells, we will use data from Puram et
 al. to explore intercellular communication in the tumor
 microenvironment in head and neck squamous cell carcinoma (HNSCC) (See
 Puram et al. 2017). More specifically, we will look at which ligands
-expressed by fibroblasts can induce a specific gene program in
-neighboring malignant cells. This program, a partial
-epithelial-mesenschymal transition (p-EMT) program, could be linked by
-Puram et al. to metastasis.
+expressed by cancer-associated fibroblasts (CAFs) can induce a specific
+gene program in neighboring malignant cells. This program, a partial
+epithelial-mesenschymal transition (p-EMT) program, could be linked to
+metastasis by Puram et al. 
 
 For this analysis, we will assess the ligand activity of each ligand, or
-in other words, we will assess how well each fibroblast ligand can
-predict the p-EMT gene set compared to the background of expressed
-genes. This allows us to prioritize p-EMT-regulating ligands. In a final
-step, we will then infer target genes of these top ligands.
+in other words, we will assess how well each CAF-ligand can predict the
+p-EMT gene set compared to the background of expressed genes. This
+allows us to prioritize p-EMT-regulating ligands. In a final step, we
+will then infer target genes of these top ligands.
 
 The used ligand-target matrix and example expression data of interacting
 cells can be downloaded from Zenodo.
@@ -72,6 +73,8 @@ model:
 
 ``` r
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+## dim
+## dimnames
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 ##                 CXCL1        CXCL2        CXCL3        CXCL5         PPBP
 ## A1BG     3.534343e-04 4.041324e-04 3.729920e-04 3.080640e-04 2.628388e-04
@@ -82,29 +85,41 @@ ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 ```
 
 Expression data of interacting cells: publicly available single-cell
-data from fibroblast and malignant cells from HNSCC
+data from CAF and malignant cells from HNSCC
 tumors:
 
 ``` r
 hnscc_expression = readRDS(url("https://zenodo.org/record/3260758/files/hnscc_expression.rds"))
+##   [1]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+##   [3]
+## names
 expression = hnscc_expression$expression
 sample_info = hnscc_expression$sample_info # contains meta-information about the cells
 ```
 
 ## Step 1: Define expressed genes in sender and receiver cell populations
 
-Our research question is to prioritize which ligands expressed by
-fibroblasts can induce p-EMT in neighboring malignant cells. Therefore,
-fibroblasts are the sender cells in this example and malignant cells are
-the receiver cells.
+Our research question is to prioritize which ligands expressed by CAFs
+can induce p-EMT in neighboring malignant cells. Therefore, CAFs are the
+sender cells in this example and malignant cells are the receiver cells.
 
 Now, we will determine which genes are expressed in the sender cells
-(fibroblasts) and receiver cells (malignant cells) from high quality
-primary tumors. Therefore, we wil not consider cells from tumor samples
-of less quality or from lymph node metastases.
+(CAFs) and receiver cells (malignant cells) from high quality primary
+tumors. Therefore, we wil not consider cells from tumor samples of less
+quality or from lymph node metastases.
 
 To determine expressed genes in this case study, we use the definition
-used by Puram et al. (the authors of this dataset). We recommend users
+used by Puram et al. (the authors of this dataset), which is: Ea, the
+aggregate expression of each gene i across the k cells, calculated as
+Ea(i) = log2(average(TPM(i)1…k)+1), should be \>= 4. We recommend users
 to define expressed genes in the way that they consider to be most
 appropriate for their
 dataset.
@@ -112,10 +127,10 @@ dataset.
 ``` r
 tumors_remove = c("HN10","HN","HN12", "HN13", "HN24", "HN7", "HN8","HN23")
 
-fibroblast_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `non-cancer cell type` == "Fibroblast") %>% pull(cell)
+CAF_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `non-cancer cell type` == "CAF") %>% pull(cell)
 malignant_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `classified  as cancer cell` == 1) %>% pull(cell)
 
-expressed_genes_sender = expression[fibroblast_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
+expressed_genes_sender = expression[CAF_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 expressed_genes_receiver = expression[malignant_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 ```
 
@@ -126,10 +141,10 @@ is possibly affected due to communication with other cells. The
 definition of this gene set depends on your research question and is a
 crucial step in the use of NicheNet.
 
-Because we here want to investigate how fibroblasts regulate the
-expression of p-EMT genes in malignant cells, we will use the p-EMT gene
-set defined by Puram et al. as gene set of interest and use all genes
-expressed in malignant cells as background of
+Because we here want to investigate how CAFs regulate the expression of
+p-EMT genes in malignant cells, we will use the p-EMT gene set defined
+by Puram et al. as gene set of interest and use all genes expressed in
+malignant cells as background of
 genes.
 
 ``` r
@@ -145,13 +160,20 @@ head(background_expressed_genes)
 ## Step 3: Define a set of potential ligands
 
 As potentially active ligands, we will use ligands that are 1) expressed
-by fibroblasts and 2) can bind a (putative) receptor expressed by
-malignant cells. Putative ligand-receptor links were gathered from
-NicheNet’s ligand-receptor data
+by CAFs and 2) can bind a (putative) receptor expressed by malignant
+cells. Putative ligand-receptor links were gathered from NicheNet’s
+ligand-receptor data
 sources.
 
 ``` r
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
+##   [1]
+##   [2]
+##   [3]
+##   [4]
+## row.names
+## class
+## names
 
 # If wanted, users can remove ligand-receptor interactions that were predicted based on protein-protein interactions and only keep ligand-receptor interactions that are described in curated databases. To do this: uncomment following line of code:
 # lr_network = lr_network %>% filter(database != "ppi_prediction_go" & database != "ppi_prediction")
@@ -164,7 +186,7 @@ expressed_receptors = intersect(receptors,expressed_genes_receiver)
 
 potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
 head(potential_ligands)
-## [1] "IL15"   "CD99"   "COL1A1" "FN1"    "TNC"    "IBSP"
+## [1] "HGF"     "TNFSF10" "TGFB2"   "TGFB3"   "INHBA"   "CD99"
 ```
 
 ## Step 4: Perform NicheNet’s ligand activity analysis on the gene set of interest
@@ -187,23 +209,23 @@ pearson correlation coefficient.
 
 ``` r
 ligand_activities %>% arrange(-pearson) 
-## # A tibble: 99 x 4
+## # A tibble: 131 x 4
 ##    test_ligand auroc   aupr pearson
 ##    <chr>       <dbl>  <dbl>   <dbl>
-##  1 CXCL12      0.680 0.0507  0.123 
-##  2 AGT         0.676 0.0581  0.120 
-##  3 IL6         0.693 0.0510  0.115 
-##  4 ADAM17      0.672 0.0526  0.113 
-##  5 TNC         0.700 0.0444  0.109 
-##  6 CTGF        0.680 0.0473  0.108 
-##  7 FN1         0.679 0.0505  0.108 
-##  8 LEFTY2      0.689 0.0427  0.104 
-##  9 COL4A1      0.690 0.0376  0.0942
-## 10 PSEN1       0.662 0.0432  0.0923
-## # ... with 89 more rows
+##  1 PTHLH       0.667 0.0720   0.128
+##  2 CXCL12      0.680 0.0507   0.123
+##  3 AGT         0.676 0.0581   0.120
+##  4 TGFB3       0.689 0.0454   0.117
+##  5 IL6         0.693 0.0510   0.115
+##  6 INHBA       0.695 0.0502   0.113
+##  7 ADAM17      0.672 0.0526   0.113
+##  8 TNC         0.700 0.0444   0.109
+##  9 CTGF        0.680 0.0473   0.108
+## 10 FN1         0.679 0.0505   0.108
+## # ... with 121 more rows
 best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand)
 head(best_upstream_ligands)
-## [1] "CXCL12" "AGT"    "IL6"    "ADAM17" "TNC"    "CTGF"
+## [1] "PTHLH"  "CXCL12" "AGT"    "TGFB3"  "IL6"    "INHBA"
 ```
 
 We see here that the performance metrics indicate that the 20 top-ranked
@@ -232,10 +254,388 @@ p_hist_lig_activity = ggplot(ligand_activities, aes(x=pearson)) +
   geom_vline(aes(xintercept=min(ligand_activities %>% top_n(20, pearson) %>% pull(pearson))), color="red", linetype="dashed", size=1) + 
   labs(x="ligand activity (PCC)", y = "# ligands") +
   theme_classic()
+##   [1]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+##   [2]
+##   [3]
+## [1]
+##   [4]
+##   [5]
+## names
+##   [1]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+##   [2]
+##   [3]
+## [1]
+##   [4]
+##   [5]
+## names
+##   [1]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+## [8]
+##   [2]
+##   [3]
+## [1]
+##   [4]
+##   [5]
+## names
+##   [1]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+##   [2]
+##   [3]
+## [1]
+##   [4]
+##   [5]
+## names
+##   <environment: namespace:ggplot2>
+## mapping
+##   <environment: namespace:ggplot2>
+## object
+## plot
+## object_name
+##   <environment: namespace:ggplot2>
+## p
+## labels
+##   <environment: namespace:ggplot2>
+## e1
+## e2
+##   <environment: namespace:ggplot2>
+## base_size
+## base_family
+## base_line_size
+## base_rect_size
+##   <environment: namespace:ggplot2>
+## base_size
+## base_family
+## base_line_size
+## base_rect_size
+##   <environment: namespace:ggplot2>
+## line
+## rect
+## text
+## title
+## aspect.ratio
+## axis.title
+## axis.title.x
+## axis.title.x.top
+## axis.title.x.bottom
+## axis.title.y
+## axis.title.y.left
+## axis.title.y.right
+## axis.text
+## axis.text.x
+## axis.text.x.top
+## axis.text.x.bottom
+## axis.text.y
+## axis.text.y.left
+## axis.text.y.right
+## axis.ticks
+## axis.ticks.x
+## axis.ticks.x.top
+## axis.ticks.x.bottom
+## axis.ticks.y
+## axis.ticks.y.left
+## axis.ticks.y.right
+## axis.ticks.length
+## axis.line
+## axis.line.x
+## axis.line.x.top
+## axis.line.x.bottom
+## axis.line.y
+## axis.line.y.left
+## axis.line.y.right
+## legend.background
+## legend.margin
+## legend.spacing
+## legend.spacing.x
+## legend.spacing.y
+## legend.key
+## legend.key.size
+## legend.key.height
+## legend.key.width
+## legend.text
+## legend.text.align
+## legend.title
+## legend.title.align
+## legend.position
+## legend.direction
+## legend.justification
+## legend.box
+## legend.box.just
+## legend.box.margin
+## legend.box.background
+## legend.box.spacing
+## panel.background
+## panel.border
+## panel.spacing
+## panel.spacing.x
+## panel.spacing.y
+## panel.grid
+## panel.grid.major
+## panel.grid.minor
+## panel.grid.major.x
+## panel.grid.major.y
+## panel.grid.minor.x
+## panel.grid.minor.y
+## panel.ontop
+## plot.background
+## plot.title
+## plot.subtitle
+## plot.caption
+## plot.tag
+## plot.tag.position
+## plot.margin
+## strip.background
+## strip.background.x
+## strip.background.y
+## strip.placement
+## strip.text
+## strip.text.x
+## strip.text.y
+## strip.switch.pad.grid
+## strip.switch.pad.wrap
+## ...
+## complete
+## validate
+## [1]
+## [2]
+## [3]
+##   <environment: namespace:ggplot2>
+## ...
+##   <environment: namespace:ggplot2>
+## colour
+## size
+## linetype
+## lineend
+## color
+## arrow
+## inherit.blank
+##   <environment: namespace:ggplot2>
+## fill
+## colour
+## size
+## linetype
+## color
+## inherit.blank
+##   <environment: namespace:ggplot2>
+## family
+## face
+## colour
+## size
+## hjust
+## vjust
+## angle
+## lineheight
+## color
+## margin
+## debug
+## inherit.blank
+##   <environment: namespace:ggplot2>
+## t
+## r
+## b
+## l
+## unit
+##   <environment: namespace:ggplot2>
+## x
+##   <environment: namespace:ggplot2>
+##   <environment: namespace:ggplot2>
+## x
+##   <environment: namespace:ggplot2>
+## x
+##   <environment: namespace:ggplot2>
+## el
+## elname
+##   <environment: namespace:ggplot2>
+## object
+## plot
+## object_name
+##   <environment: namespace:ggplot2>
+## oldtheme
+## newtheme
 p_hist_lig_activity
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+    ##   <environment: namespace:ggplot2>
+    ## ...
+    ##   <environment: namespace:ggplot2>
+    ## x_range
+    ## bins
+    ## center
+    ## boundary
+    ## closed
+    ##   <environment: namespace:ggplot2>
+    ## x_range
+    ## width
+    ## center
+    ## boundary
+    ## closed
+    ##   <environment: namespace:ggplot2>
+    ## breaks
+    ## closed
+    ##   <environment: namespace:ggplot2>
+    ## breaks
+    ## closed
+    ## fuzz
+    ##   <environment: namespace:ggplot2>
+    ## x
+    ## bins
+    ## weight
+    ## pad
+    ##   <environment: namespace:ggplot2>
+    ## x
+    ##   <environment: namespace:base>
+    ## x
+    ## breaks
+    ## labels
+    ## include.lowest
+    ## right
+    ## dig.lab
+    ## ordered_result
+    ## ...
+    ##   <environment: namespace:base>
+    ## x
+    ## start
+    ## stop
+    ## value
+    ##   <environment: namespace:base>
+    ## x
+    ## breaks
+    ## right
+    ## include.lowest
+    ##   <environment: namespace:ggplot2>
+    ## count
+    ## x
+    ## width
+    ## xmin
+    ## xmax
+    ##   <environment: namespace:ggplot2>
+    ## x
+    ##   <environment: namespace:ggplot2>
+    ## a
+    ## b
+    ##   <environment: namespace:ggplot2>
+    ## data
+    ##   <environment: namespace:ggplot2>
+    ## data
+    ## width
+    ## name
+    ## strategy
+    ## ...
+    ## check.width
+    ## reverse
+    ##   <environment: namespace:ggplot2>
+    ## data
+    ## width
+    ## name
+    ## strategy
+    ## check.width
+    ## reverse
+    ##   <environment: namespace:base>
+    ## x
+    ## center
+    ## scale
+    ##   <environment: namespace:base>
+    ## x
+    ## center
+    ## scale
+    ## [1]
+    ## [2]
+    ## [3]
+    ##   <environment: namespace:ggplot2>
+    ## df
+    ## width
+    ## vjust
+    ## fill
+    ##   <environment: namespace:plyr>
+    ## dfs
+    ## nrows
+    ##   <environment: namespace:plyr>
+    ## example
+    ## nrows
+    ## dfs
+    ## var
+    ## [1]
+    ## [2]
+    ## [3]
+    ## [1]
+    ## [2]
+    ## [3]
+    ## [1]
+    ## [2]
+    ## [3]
+    ## [1]
+    ## [2]
+    ## [3]
+    ## [1]
+    ## [2]
+    ## [3]
+    ## [1]
+    ## [2]
+    ## [3]
+    ## [1]
+    ## [2]
+    ## [3]
+    ## [1]
+    ## [2]
+    ## [3]
+    ## [1]
+    ## [2]
+    ## [3]
+    ##   <environment: namespace:plyr>
+    ## ndims
+    ##   <environment: namespace:base>
+    ## x
+    ## ...
+    ## value
+    ##   [1]
+    ## [1]
+    ## [2]
+    ## [3]
+    ## [4]
+    ## [5]
+    ## [6]
+    ##   [2]
+    ##   [3]
+    ## [1]
+    ##   [4]
+    ##   [5]
+    ## names
+    ##   <environment: namespace:grid>
+    ## x0
+    ## y0
+    ## x1
+    ## y1
+    ## default.units
+    ## arrow
+    ## name
+    ## gp
+    ## vp
+    ##   <environment: namespace:grid>
+    ## x
+    ##   <environment: namespace:grid>
+    ## x
+    ## recording
 
 ## Step 5: Infer target genes of top-ranked ligands and visualize in a heatmap
 
@@ -259,18 +659,429 @@ targets.
 active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
 
 active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = 0.25)
+##   <environment: namespace:nichenetr>
+## ligand_target_df
+## ligand_target_matrix
+## cutoff
 ```
 
 The putatively active ligand-target links will be visualized in a
 heatmap.
 
 ``` r
-p_ligand_target_network = active_ligand_target_links %>% t() %>% make_heatmap_ggplot("Prioritized fibroblast ligands","p-EMT genes in malignant cells", color = "purple",legend_position = "top", x_axis_position = "top") + scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.005,0.01))
+p_ligand_target_network = active_ligand_target_links %>% t() %>% make_heatmap_ggplot("Prioritized CAF-ligands","p-EMT genes in malignant cells", color = "purple",legend_position = "top", x_axis_position = "top") + scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.005,0.01))
+##   <environment: namespace:nichenetr>
+## matrix
+## y_name
+## x_name
+## y_axis
+## x_axis
+## x_axis_position
+## legend_position
+## color
+## legend_title
+## ...
+##   <environment: namespace:tidyr>
+## data
+## key
+## value
+## ...
+## na.rm
+## convert
+## factor_key
+##   <environment: namespace:tidyr>
+## arg
+##   <environment: namespace:tidyr>
+## data
+## measure.ind
+## [1]
+## [2]
+## [3]
+## [1]
+## [2]
+## [3]
+##   <environment: namespace:tidyr>
+## xs
+##   <environment: namespace:tidyr>
+## data
+## id_ind
+## measure_ind
+## variable_name
+## value_name
+## attrTemplate
+## factorsAsStrings
+## valueAsFactor
+## variableAsFactor
+##   <environment: namespace:ggplot2>
+## mapping
+## data
+## stat
+## position
+## ...
+## na.rm
+## show.legend
+## inherit.aes
+##   [1]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+##   [2]
+##   [3]
+## [1]
+##   [4]
+##   [5]
+## names
+##   <environment: namespace:ggplot2>
+## ...
+## low
+## high
+## space
+## na.value
+## guide
+## aesthetics
+##   <environment: namespace:scales>
+## low
+## high
+## space
+##   <environment: namespace:scales>
+## colours
+## values
+## space
+## [1]
+## [2]
+## [3]
+##   <environment: namespace:scales>
+## colors
+## na.color
+## alpha
+## [1]
+## [2]
+## [3]
+##   <environment: namespace:ggplot2>
+## object
+## plot
+## object_name
+##   <environment: namespace:ggplot2>
+## base_size
+## base_family
+## base_line_size
+## base_rect_size
+##   <environment: namespace:ggplot2>
+## t1
+## t2
+## t2name
+##   <environment: namespace:ggplot2>
+## new
+## old
+##   <environment: namespace:ggplot2>
+## ...
+## expand
+## position
+##   <environment: namespace:ggplot2>
+## aesthetics
+## scale_name
+## palette
+## name
+## breaks
+## labels
+## limits
+## expand
+## na.translate
+## na.value
+## drop
+## guide
+## position
+## super
+##   <environment: namespace:ggplot2>
+##   [1]
+## [1]
+## [2]
+##   [2]
+##   [3]
+## [1]
+##   [4]
+##   [5]
+## names
+##   [1]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+## [8]
+## [9]
+##   [2]
+##   [3]
+## [1]
+##   [4]
+##   [5]
+## names
+##   <environment: namespace:ggplot2>
+## label
+##   <environment: namespace:ggplot2>
+## label
+##   <environment: namespace:scales>
+## low
+## mid
+## high
+## space
+##   <environment: namespace:ggplot2>
+## mid
+## [1]
+## [2]
+## [3]
 
 p_ligand_target_network
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+    ##   <environment: namespace:ggplot2>
+    ## x
+    ##   <environment: namespace:ggplot2>
+    ## ...
+    ## expand
+    ## position
+    ##   <environment: namespace:scales>
+    ## new
+    ## existing
+    ## drop
+    ## na.rm
+    ##   <environment: namespace:scales>
+    ## x
+    ##   <environment: namespace:scales>
+    ## old
+    ## new
+    ## drop
+    ## na.rm
+    ##   <environment: namespace:scales>
+    ## x
+    ## drop
+    ## na.rm
+    ##   <environment: namespace:ggplot2>
+    ## x
+    ## zero
+    ##   <environment: namespace:ggplot2>
+    ## scales
+    ## df
+    ## drop
+    ## [1]
+    ## [2]
+    ## [3]
+    ##   <environment: namespace:ggplot2>
+    ## scales
+    ## df
+    ## [1]
+    ## [2]
+    ## [3]
+    ##   <environment: namespace:scales>
+    ## x
+    ## to
+    ## from
+    ## mid
+    ## ...
+    ##   <environment: namespace:scales>
+    ## colors
+    ## x
+    ## alpha
+    ## naColor
+    ##   <environment: namespace:ggplot2>
+    ## xmin
+    ## xmax
+    ## ymin
+    ## ymax
+    ##   <environment: namespace:ggplot2>
+    ## guide
+    ##   <environment: namespace:ggplot2>
+    ## title
+    ## title.position
+    ## title.theme
+    ## title.hjust
+    ## title.vjust
+    ## label
+    ## label.position
+    ## label.theme
+    ## label.hjust
+    ## label.vjust
+    ## barwidth
+    ## barheight
+    ## nbin
+    ## raster
+    ## frame.colour
+    ## frame.linewidth
+    ## frame.linetype
+    ## ticks
+    ## ticks.colour
+    ## ticks.linewidth
+    ## draw.ulim
+    ## draw.llim
+    ## direction
+    ## default.unit
+    ## reverse
+    ## order
+    ## available_aes
+    ## ...
+    ##   <environment: namespace:ggplot2>
+    ## guide
+    ## scale
+    ## aesthetic
+    ##   <environment: namespace:base>
+    ## data
+    ## expr
+    ## ...
+    ##   <environment: namespace:digest>
+    ## object
+    ## algo
+    ## serialize
+    ## file
+    ## length
+    ## skip
+    ## ascii
+    ## raw
+    ## seed
+    ## errormode
+    ## serializeVersion
+    ## [1]
+    ## [2]
+    ## [3]
+    ##   <environment: namespace:base>
+    ## object
+    ## connection
+    ## ascii
+    ## xdr
+    ## version
+    ## refhook
+    ##   <environment: namespace:digest>
+    ##   <environment: namespace:ggplot2>
+    ## gdefs
+    ## [1]
+    ## [2]
+    ## [3]
+    ## [1]
+    ## [2]
+    ## [3]
+    ## [1]
+    ## [2]
+    ## [3]
+    ##   <environment: namespace:ggplot2>
+    ## gdefs
+    ## layers
+    ## default_mapping
+    ##   <environment: namespace:ggplot2>
+    ## guide
+    ## layers
+    ## default_mapping
+    ## [1]
+    ## [2]
+    ## [3]
+    ##   <environment: namespace:ggplot2>
+    ## layer
+    ## guide
+    ## defaults
+    ##   <environment: namespace:ggplot2>
+    ## gdefs
+    ## theme
+    ## [1]
+    ## [2]
+    ## [3]
+    ##   <environment: namespace:ggplot2>
+    ## guide
+    ## theme
+    ## [1]
+    ## [2]
+    ## [3]
+    ##   <environment: namespace:ggplot2>
+    ## x
+    ##   <environment: namespace:grid>
+    ## x
+    ## unitTo
+    ## valueOnly
+    ##   <environment: namespace:grid>
+    ## x
+    ## unitTo
+    ## axisFrom
+    ## typeFrom
+    ## axisTo
+    ## typeTo
+    ## valueOnly
+    ##   <environment: namespace:ggplot2>
+    ## x
+    ##   <environment: namespace:grid>
+    ## x
+    ## unitTo
+    ## valueOnly
+    ##   <environment: namespace:grid>
+    ## image
+    ## x
+    ## y
+    ## width
+    ## height
+    ## just
+    ## hjust
+    ## vjust
+    ## interpolate
+    ## default.units
+    ## name
+    ## gp
+    ## vp
+    ##   <environment: namespace:grDevices>
+    ## x
+    ## max
+    ## ...
+    ##   <environment: namespace:grid>
+    ## x
+    ##   <environment: namespace:grDevices>
+    ## x
+    ##   <environment: namespace:ggplot2>
+    ## direction
+    ## position
+    ##   <environment: namespace:ggplot2>
+    ## grobs
+    ## x
+    ## y
+    ## hjust
+    ## vjust
+    ## int_angle
+    ## debug
+    ##   <environment: namespace:grid>
+    ## just
+    ##   <environment: namespace:ggplot2>
+    ## ggrobs
+    ## theme
+    ## [1]
+    ## [2]
+    ## [3]
+    ## [1]
+    ## [2]
+    ## [3]
+    ##   <environment: namespace:gtable>
+    ## x
+    ##   <environment: namespace:grid>
+    ## unit
+    ##   <environment: namespace:grid>
+    ## unit
+    ##   <environment: namespace:grid>
+    ## unit
+    ##   <environment: namespace:grid>
+    ## unit
+    ##   <environment: namespace:grid>
+    ## x
+    ## specs
+    ##   <environment: namespace:gtable>
+    ## x
+    ## width
+    ##   <environment: namespace:gtable>
+    ## x
+    ##   <environment: namespace:grid>
+    ## x
+    ## recording
+    ##   <environment: namespace:grid>
+    ## x
 
 Note that the choice of these cutoffs for visualization is quite
 arbitrary. We recommend users to test several cutoff values.
@@ -289,8 +1100,7 @@ heatmap.
 
 One type of follow-up analysis is looking at which receptors of the
 receiver cell population (here: malignant cells) can potentially bind to
-the prioritized ligands from the sender cell population (here:
-fibroblasts).
+the prioritized ligands from the sender cell population (here: CAFs).
 
 So, we will now infer the predicted ligand-receptor interactions of the
 top-ranked ligands and visualize these in a heatmap.
@@ -302,6 +1112,15 @@ best_upstream_receptors = lr_network_top %>% pull(to) %>% unique()
 
 # get the weights of the ligand-receptor interactions as used in the NicheNet model
 weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
+##   [1]
+## [1]
+## [2]
+## [3]
+##   [2]
+## [1]
+## [2]
+## [3]
+## names
 lr_network_top_df = weighted_networks$lr_sig %>% filter(from %in% best_upstream_ligands & to %in% best_upstream_receptors)
 
 # convert to a matrix
@@ -323,11 +1142,11 @@ interactions
 
 ``` r
 vis_ligand_receptor_network = lr_network_top_matrix[order_receptors, order_ligands_receptor]
-p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap_ggplot("Prioritized fibroblast ligands","Receptors expressed by malignant cells", color = "mediumvioletred", x_axis_position = "top")
+p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap_ggplot("Prioritized CAF-ligands","Receptors expressed by malignant cells", color = "mediumvioletred", x_axis_position = "top")
 p_ligand_receptor_network
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ## Other follow-up analyses:
 

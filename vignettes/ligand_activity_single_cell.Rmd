@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-This vignette shows how NicheNet can be used to predict which ligands might be active in single-cells. If a ligand has a high activity in a cell, this means that target genes of that ligand are stronger expressed in that cell than in other cells. In this example, we will use data from Puram et al. to explore intercellular communication in the tumor microenvironment in head and neck squamous cell carcinoma (HNSCC) [See @puram_single-cell_2017]. More specifically, we will assess the activity of fibroblast ligands in malignant cells. The used ligand-target matrix and example expression data of interacting cells can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758).
+This vignette shows how NicheNet can be used to predict which ligands might be active in single-cells. If a ligand has a high activity in a cell, this means that target genes of that ligand are stronger expressed in that cell than in other cells. In this example, we will use data from Puram et al. to explore intercellular communication in the tumor microenvironment in head and neck squamous cell carcinoma (HNSCC) [See @puram_single-cell_2017]. More specifically, we will assess the activity of cancer-associated fibroblast (CAF) ligands in malignant cells. The used ligand-target matrix and example expression data of interacting cells can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758).
 
 In order to prioritize ligands regulating a process of interest, you can perform a regression/correlation analysis between ligand activities in cells, and scores of a cell corresponding to the process of interest. For example, in this case study we were interested in finding ligands regulating p-EMT. Therefore we correlated ligand activities to the p-EMT scores of cells. 
 
@@ -38,7 +38,7 @@ library(tidyverse)
 
 ### Read in expression data of interacting cells
 
-First, we will read in the single-cell data from fibroblast and malignant cells from HNSCC tumors [See @puram_single-cell_2017].
+First, we will read in the single-cell data from CAF and malignant cells from HNSCC tumors [See @puram_single-cell_2017].
 
 ```{r}
 hnscc_expression = readRDS(url("https://zenodo.org/record/3260758/files/hnscc_expression.rds"))
@@ -46,15 +46,15 @@ expression = hnscc_expression$expression
 sample_info = hnscc_expression$sample_info # contains meta-information about the cells
 ```
 
-Secondly, we will determine which genes are expressed in fibroblasts and malignant cells from high quality primary tumors. Therefore, we wil not consider cells from tumor samples of less quality or from lymph node metastases. To determine expressed genes, we use the definition used by of Puram et al.
+Secondly, we will determine which genes are expressed in CAFs and malignant cells from high quality primary tumors. Therefore, we wil not consider cells from tumor samples of less quality or from lymph node metastases. To determine expressed genes, we use the definition used by of Puram et al.
 
 ```{r}
 tumors_remove = c("HN10","HN","HN12", "HN13", "HN24", "HN7", "HN8","HN23")
 
-fibroblast_ids = sample_info %>% filter(`Lymph node` == 0) %>% filter((tumor %in% tumors_remove == FALSE)) %>% filter(`non-cancer cell type` == "Fibroblast") %>% .$cell
+CAF_ids = sample_info %>% filter(`Lymph node` == 0) %>% filter((tumor %in% tumors_remove == FALSE)) %>% filter(`non-cancer cell type` == "CAF") %>% .$cell
 malignant_ids = sample_info %>% filter(`Lymph node` == 0) %>% filter(`classified  as cancer cell` == 1) %>% filter((tumor %in% tumors_remove == FALSE)) %>% .$cell
 
-expressed_genes_fibroblasts = expression[fibroblast_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
+expressed_genes_CAFs = expression[CAF_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 expressed_genes_malignant = expression[malignant_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 
 ```
@@ -68,12 +68,12 @@ ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 
 ### Perform NicheNet's single-cell ligand activity analysis
 
-In a first step, we will define a set of potentially active ligands. As potentially active ligands, we will use ligands that are 1) expressed by fibroblasts and 2) can bind a (putative) receptor expressed by malignant cells. Putative ligand-receptor links were gathered from NicheNet's ligand-receptor data sources.
+In a first step, we will define a set of potentially active ligands. As potentially active ligands, we will use ligands that are 1) expressed by CAFs and 2) can bind a (putative) receptor expressed by malignant cells. Putative ligand-receptor links were gathered from NicheNet's ligand-receptor data sources.
 
 ```{r}
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 ligands = lr_network$from %>% unique()
-expressed_ligands = intersect(ligands,expressed_genes_fibroblasts)
+expressed_ligands = intersect(ligands,expressed_genes_CAFs)
 receptors = lr_network$to %>% unique()
 expressed_receptors = intersect(receptors,expressed_genes_malignant)
 

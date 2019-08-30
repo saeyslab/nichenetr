@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-This vignette shows how NicheNet can be used to predict active ligand-target links between multiple interacting cells and how you can make a circos plot to summarize the top-predicted links (via the circlize package). This vignette starts in the same way as the main, basis, NicheNet vignette [NicheNet's ligand activity analysis on a gene set of interest](ligand_activity_geneset.md):`vignette("ligand_activity_geneset", package="nichenetr")`. Make sure you understand the different steps described in that vignette before proceeding with this vignette. In contrast to the basic vignette, we will look communication between multiple cell types. More specifically, we will predict which ligands expressed by both fibroblasts and endothelial cells can induce the p-EMT program in neighboring malignant cells [See @puram_single-cell_2017].
+This vignette shows how NicheNet can be used to predict active ligand-target links between multiple interacting cells and how you can make a circos plot to summarize the top-predicted links (via the circlize package). This vignette starts in the same way as the main, basis, NicheNet vignette [NicheNet's ligand activity analysis on a gene set of interest: predict active ligands and their target genes](ligand_activity_geneset.md):`vignette("ligand_activity_geneset", package="nichenetr")`. Make sure you understand the different steps described in that vignette before proceeding with this vignette. In contrast to the basic vignette, we will look communication between multiple cell types. More specifically, we will predict which ligands expressed by both CAFs and endothelial cells can induce the p-EMT program in neighboring malignant cells [See @puram_single-cell_2017].
 
 
 ### Load packages required for this vignette
@@ -36,7 +36,7 @@ library(circlize)
 
 ### Read in expression data of interacting cells
 
-First, we will read in the publicly available single-cell data from fibroblasts, endothelial cells and malignant cells from HNSCC tumors.
+First, we will read in the publicly available single-cell data from CAFs, endothelial cells and malignant cells from HNSCC tumors.
 
 ```{r}
 hnscc_expression = readRDS(url("https://zenodo.org/record/3260758/files/hnscc_expression.rds"))
@@ -44,16 +44,16 @@ expression = hnscc_expression$expression
 sample_info = hnscc_expression$sample_info # contains meta-information about the cells
 ```
 
-Secondly, we will determine which genes are expressed in fibroblasts, endothelial and malignant cells from high quality primary tumors. Therefore, we wil not consider cells from tumor samples of less quality or from lymph node metastases. To determine expressed genes, we use the definition used by of Puram et al.
+Secondly, we will determine which genes are expressed in CAFs, endothelial and malignant cells from high quality primary tumors. Therefore, we wil not consider cells from tumor samples of less quality or from lymph node metastases. To determine expressed genes, we use the definition used by of Puram et al.
 
 ```{r}
 tumors_remove = c("HN10","HN","HN12", "HN13", "HN24", "HN7", "HN8","HN23")
 
-fibroblast_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `non-cancer cell type` == "Fibroblast") %>% pull(cell)
+CAF_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `non-cancer cell type` == "CAF") %>% pull(cell)
 endothelial_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `non-cancer cell type` == "Endothelial") %>% pull(cell)
 malignant_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `classified  as cancer cell` == 1) %>% pull(cell)
 
-expressed_genes_fibroblasts = expression[fibroblast_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
+expressed_genes_CAFs = expression[CAF_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 expressed_genes_endothelial = expression[endothelial_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 expressed_genes_malignant = expression[malignant_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 ```
@@ -70,7 +70,7 @@ ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 
 As gene set of interest, we consider the genes of which the expression is possibly affected due to communication with other cells.
 
-Because we here want to investigate how fibroblasts and endothelial cells regulate the expression of p-EMT genes in malignant cells, we will use the p-EMT gene set defined by Puram et al. as gene set of interset and use all genes expressed in malignant cells as background of genes. 
+Because we here want to investigate how CAFs and endothelial cells regulate the expression of p-EMT genes in malignant cells, we will use the p-EMT gene set defined by Puram et al. as gene set of interset and use all genes expressed in malignant cells as background of genes. 
 
 
 ```{r}
@@ -83,17 +83,17 @@ head(background_expressed_genes)
 
 ### Perform NicheNet's ligand activity analysis on the gene set of interest
 
-In a first step, we will define a set of potentially active ligands. As potentially active ligands, we will use ligands that are 1) expressed by fibroblasts and/or endothelial cells and 2) can bind a (putative) receptor expressed by malignant cells. Putative ligand-receptor links were gathered from NicheNet's ligand-receptor data sources.
+In a first step, we will define a set of potentially active ligands. As potentially active ligands, we will use ligands that are 1) expressed by CAFs and/or endothelial cells and 2) can bind a (putative) receptor expressed by malignant cells. Putative ligand-receptor links were gathered from NicheNet's ligand-receptor data sources.
 
-Note that we combine the ligands from fibroblasts and endothelial cells in one ligand activity analysis now. Later on, we will look which of the top-ranked ligands is mainly expressed by which of both cell types.
+Note that we combine the ligands from CAFs and endothelial cells in one ligand activity analysis now. Later on, we will look which of the top-ranked ligands is mainly expressed by which of both cell types.
 
 ```{r}
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 
 ligands = lr_network %>% pull(from) %>% unique()
-expressed_ligands_fibroblasts = intersect(ligands,expressed_genes_fibroblasts)
+expressed_ligands_CAFs = intersect(ligands,expressed_genes_CAFs)
 expressed_ligands_endothelial = intersect(ligands,expressed_genes_endothelial)
-expressed_ligands = union(expressed_ligands_fibroblasts, expressed_genes_endothelial)
+expressed_ligands = union(expressed_ligands_CAFs, expressed_genes_endothelial)
 
 receptors = lr_network %>% pull(to) %>% unique()
 expressed_receptors = intersect(receptors,expressed_genes_malignant)
@@ -118,37 +118,37 @@ head(best_upstream_ligands)
 
 We see here that the top-ranked ligands can predict the p-EMT genes reasonably, this implies that ranking of the ligands might be accurate as shown in our study. However, it is possible that for some gene sets, the target gene prediction performance of the top-ranked ligands would not be much better than random prediction. In that case, prioritization of ligands will be less trustworthy. 
 
-Determine now which prioritized ligands are expressed by fibroblasts and or endothelial cells
+Determine now which prioritized ligands are expressed by CAFs and or endothelial cells
 
 ```{r}
-best_upstream_ligands %>% intersect(expressed_ligands_fibroblasts) 
+best_upstream_ligands %>% intersect(expressed_ligands_CAFs) 
 best_upstream_ligands %>% intersect(expressed_ligands_endothelial)
 
 # lot of overlap between both cell types in terms of expressed ligands
 # therefore, determine which ligands are more strongly expressed in which of the two
 ligand_expression_tbl = tibble(
   ligand = best_upstream_ligands, 
-  fibroblast = expression[fibroblast_ids,best_upstream_ligands] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}),
+  CAF = expression[CAF_ids,best_upstream_ligands] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}),
   endothelial = expression[endothelial_ids,best_upstream_ligands] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}))
 
-fibroblast_specific_ligands = ligand_expression_tbl %>% filter(fibroblast > endothelial + 2) %>% pull(ligand)
-endothelial_specific_ligands = ligand_expression_tbl %>% filter(endothelial > fibroblast + 2) %>% pull(ligand)
-general_ligands = setdiff(best_upstream_ligands,c(fibroblast_specific_ligands,endothelial_specific_ligands))
+CAF_specific_ligands = ligand_expression_tbl %>% filter(CAF > endothelial + 2) %>% pull(ligand)
+endothelial_specific_ligands = ligand_expression_tbl %>% filter(endothelial > CAF + 2) %>% pull(ligand)
+general_ligands = setdiff(best_upstream_ligands,c(CAF_specific_ligands,endothelial_specific_ligands))
 
 ligand_type_indication_df = tibble(
-  ligand_type = c(rep("Fibroblast-specific", times = fibroblast_specific_ligands %>% length()),
+  ligand_type = c(rep("CAF-specific", times = CAF_specific_ligands %>% length()),
                   rep("General", times = general_ligands %>% length()),
                   rep("Endothelial-specific", times = endothelial_specific_ligands %>% length())),
-  ligand = c(fibroblast_specific_ligands, general_ligands, endothelial_specific_ligands))
+  ligand = c(CAF_specific_ligands, general_ligands, endothelial_specific_ligands))
 
 
 ```
 
 ### Infer target genes of top-ranked ligands and visualize in a circos plot
 
-Now we will show how you can look at the regulatory potential scores between ligands and target genes of interest. In this case, we will look at links between top-ranked p-EMT regulating ligands and p-EMT genes. 
+Now we will show how you can look at the regulatory potential scores between ligands and target genes of interest. In this case, we will look at links between top-ranked p-EMT-regulating ligands and p-EMT genes. In this example, inferred target genes should belong to the p-EMT gene set and to the 250 most strongly predicted targets of at least one of the selected top-ranked ligands (the top 250 targets according to the general prior model, so not the top 250 targets for this dataset).
 
-Get first the active ligand-target links by looking which of the p-EMT genes are among the top-predicted target genes for the prioritized ligands
+Get first the active ligand-target links by looking which of the p-EMT genes are among the top-predicted target genes for the prioritized ligands:
 
 ```{r}
 active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = pemt_geneset, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
@@ -174,7 +174,7 @@ Prepare the circos visualization: give each segment of ligands and targets a spe
 
 ```{r}
 grid_col_ligand =c("General" = "lawngreen",
-            "Fibroblast-specific" = "royalblue",
+            "CAF-specific" = "royalblue",
             "Endothelial-specific" = "gold")
 grid_col_target =c(
             "p_emt" = "tomato")
@@ -201,7 +201,7 @@ Prepare the circos visualization: order ligands and targets
 
 ```{r}
 target_order = circos_links$target %>% unique()
-ligand_order = c(fibroblast_specific_ligands,general_ligands,endothelial_specific_ligands) %>% c(paste(.," ")) %>% intersect(circos_links$ligand)
+ligand_order = c(CAF_specific_ligands,general_ligands,endothelial_specific_ligands) %>% c(paste(.," ")) %>% intersect(circos_links$ligand)
 order = c(ligand_order,target_order)
 ```
 
@@ -215,7 +215,7 @@ width_same_cell_same_target_type = 0.5
 
 gaps = c(
   # width_ligand_target,
-  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "Fibroblast-specific") %>% distinct(ligand) %>% nrow() -1)),
+  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "CAF-specific") %>% distinct(ligand) %>% nrow() -1)),
   width_different_cell,
   rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "General") %>% distinct(ligand) %>% nrow() -1)),
   width_different_cell,

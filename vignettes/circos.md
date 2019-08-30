@@ -13,13 +13,13 @@ ligand-target links between multiple interacting cells and how you can
 make a circos plot to summarize the top-predicted links (via the
 circlize package). This vignette starts in the same way as the main,
 basis, NicheNet vignette [NicheNet’s ligand activity analysis on a gene
-set of
-interest](ligand_activity_geneset.md):`vignette("ligand_activity_geneset",
+set of interest: predict active ligands and their target
+genes](ligand_activity_geneset.md):`vignette("ligand_activity_geneset",
 package="nichenetr")`. Make sure you understand the different steps
 described in that vignette before proceeding with this vignette. In
 contrast to the basic vignette, we will look communication between
 multiple cell types. More specifically, we will predict which ligands
-expressed by both fibroblasts and endothelial cells can induce the p-EMT
+expressed by both CAFs and endothelial cells can induce the p-EMT
 program in neighboring malignant cells (See Puram et al. 2017).
 
 ### Load packages required for this vignette
@@ -28,21 +28,777 @@ program in neighboring malignant cells (See Puram et al. 2017).
 library(nichenetr)
 library(tidyverse)
 library(circlize)
+##   [1]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+##   [3]
+## [1]
+## [2]
+## [3]
+##   [4]
+## [1]
+##   [5]
+## [1]
+##   [6]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+##   [7]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+## [8]
+##   [8]
+## names
+## class
+##   [1]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+##   [3]
+## [1]
+## [2]
+## [3]
+##   [4]
+## [1]
+##   [5]
+## [1]
+##   [6]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+##   [7]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+## [8]
+##   [8]
+## names
+## class
+##   [1]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+##   [3]
+## [1]
+## [2]
+## [3]
+##   [4]
+## [1]
+##   [5]
+## [1]
+##   [6]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+##   [7]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+## [8]
+##   [8]
+## names
+## class
+##   [1]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+##   [3]
+##   [4]
+##   [5]
+##   [6]
+##   [7]
+## [1]
+##   [8]
+## names
+## class
+##   [1]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+##   [3]
+## [1]
+## [2]
+## [3]
+##   [4]
+## [1]
+##   [5]
+## [1]
+##   [6]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+##   [7]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+## [8]
+##   [8]
+## names
+## class
+##   [1]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+## [8]
+## [9]
+## [10]
+## [11]
+## [12]
+## [13]
+## [14]
+## [15]
+## [16]
+## [17]
+## [18]
+## [19]
+## [20]
+## [21]
+## [22]
+## [23]
+##   [2]
+##   [3]
+##   [4]
+##   [5]
+##   [6]
+##   [7]
+##   [8]
+##   [9]
+##   [10]
+##   [11]
+## names
+##   [1]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+##   [3]
+## [1]
+## [2]
+## [3]
+##   [4]
+## [1]
+##   [5]
+## [1]
+##   [6]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+##   [7]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+## [8]
+##   [8]
+## names
+## class
+##   [1]
+## names
+##   [1]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+##   [3]
+## [1]
+## [2]
+## [3]
+##   [4]
+## [1]
+##   [5]
+## [1]
+##   [6]
+## [1]
+## [2]
+## [3]
+##   [7]
+## [1]
+##   [8]
+## names
+## class
+##   [1]
+## [1]
+## [2]
+##   [2]
+##   [3]
+##   [4]
+##   [5]
+##   [6]
+##   [7]
+##   [8]
+##   [9]
+##   [10]
+##   [11]
+## names
+##   [1]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+##   [3]
+## [1]
+## [2]
+## [3]
+##   [4]
+## [1]
+##   [5]
+## [1]
+##   [6]
+## [1]
+## [2]
+## [3]
+##   [7]
+## [1]
+##   [8]
+## names
+## class
+##   [1]
+## names
+##   [1]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+## [8]
+## [9]
+## [10]
+## [11]
+## [12]
+## [13]
+## [14]
+## [15]
+## [16]
+## [17]
+## [18]
+## [19]
+## [20]
+## [21]
+## [22]
+## [23]
+## [24]
+## [25]
+## [26]
+## [27]
+## [28]
+## [29]
+## [30]
+## [31]
+## [32]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+## [8]
+## [9]
+## [10]
+## [11]
+## [12]
+## [13]
+## [14]
+## [15]
+## [16]
+## [17]
+## [18]
+## [19]
+##   [3]
+## names
+## fieldClasses
+## fieldPrototypes
+## refMethods
+## refSuperClasses
+## slots
+## contains
+## virtual
+## prototype
+## validity
+## access
+## className
+## package
+## subclasses
+## versionKey
+## sealed
+## class
+##   [1]
+##   [2]
+## package
+##   [1]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+##   [3]
+## [1]
+## [2]
+## [3]
+##   [4]
+## [1]
+##   [5]
+##   [6]
+##   [7]
+## [1]
+## [2]
+## [3]
+##   [8]
+## names
+## class
+##   [1]
+## [1]
+## [2]
+## [3]
+##   [2]
+##   [3]
+##   [4]
+##   [5]
+##   [6]
+##   [7]
+##   [8]
+##   [9]
+##   [10]
+##   [11]
+## names
+##   [1]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+##   [3]
+## [1]
+## [2]
+## [3]
+##   [4]
+## [1]
+##   [5]
+##   [6]
+##   [7]
+## [1]
+## [2]
+## [3]
+##   [8]
+## names
+## class
+##   [1]
+## names
+##   [1]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+## [8]
+## [9]
+## [10]
+## [11]
+## [12]
+## [13]
+## [14]
+## [15]
+## [16]
+## [17]
+## [18]
+## [19]
+## [20]
+## [21]
+## [22]
+## [23]
+## [24]
+## [25]
+## [26]
+## [27]
+## [28]
+## [29]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+##   [3]
+## names
+##   [1]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+## [8]
+## [9]
+## [10]
+## [11]
+## [12]
+## [13]
+## [14]
+## [15]
+## [16]
+## [17]
+## [18]
+## [19]
+## [20]
+## [21]
+## [22]
+## [23]
+## [24]
+## [25]
+## [26]
+## [27]
+## [28]
+## [29]
+## [30]
+## [31]
+## [32]
+## [33]
+## [34]
+## [35]
+## [36]
+## [37]
+## [38]
+## [39]
+## [40]
+## [41]
+## [42]
+## [43]
+## [44]
+## [45]
+## [46]
+## [47]
+## [48]
+## [49]
+## [50]
+## [51]
+## [52]
+## [53]
+## [54]
+## [55]
+## [56]
+## [57]
+## [58]
+## [59]
+## [60]
+## [61]
+## [62]
+## [63]
+## [64]
+## [65]
+## [66]
+## [67]
+## [68]
+## [69]
+## [70]
+## [71]
+## [72]
+## [73]
+## [74]
+## [75]
+## [76]
+## [77]
+## [78]
+## [79]
+## [80]
+## [81]
+## [82]
+## [83]
+## [84]
+## [85]
+## [86]
+## [87]
+## [88]
+## [89]
+## [90]
+## [91]
+## [92]
+## [93]
+## [94]
+## [95]
+## [96]
+## [97]
+## [98]
+## [99]
+## [100]
+## [101]
+## [102]
+## [103]
+## [104]
+## [105]
+## [106]
+## [107]
+## [108]
+## [109]
+## [110]
+## [111]
+## [112]
+## [113]
+## [114]
+## [115]
+## [116]
+## [117]
+## [118]
+## [119]
+## [120]
+## [121]
+## [122]
+## [123]
+## [124]
+## [125]
+## [126]
+## [127]
+## [128]
+## [129]
+## [130]
+## [131]
+## [132]
+## [133]
+## [134]
+## [135]
+## [136]
+## [137]
+## [138]
+## [139]
+## [140]
+## [141]
+## [142]
+## [143]
+## [144]
+## [145]
+## [146]
+## [147]
+## [148]
+## [149]
+## [150]
+## [151]
+## [152]
+## [153]
+## [154]
+## [155]
+## [156]
+## [157]
+## [158]
+## [159]
+## [160]
+## [161]
+## [162]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+## [8]
+## [9]
+## [10]
+## [11]
+## [12]
+## [13]
+## [14]
+## [15]
+## [16]
+## [17]
+## [18]
+## [19]
+## [20]
+## [21]
+## [22]
+## [23]
+## [24]
+## [25]
+## [26]
+## [27]
+## [28]
+## [29]
+## [30]
+## [31]
+## [32]
+## [33]
+## [34]
+## [35]
+## [36]
+## [37]
+## [38]
+## [39]
+## [40]
+## [41]
+## [42]
+## [43]
+## [44]
+## [45]
+## [46]
+## [47]
+## [48]
+## [49]
+## [50]
+## [51]
+## [52]
+## [53]
+## [54]
+## [55]
+## [56]
+## [57]
+## [58]
+## [59]
+## [60]
+## [61]
+## [62]
+## [63]
+## [64]
+## [65]
+## [66]
+##   [3]
+## names
+##   <environment: namespace:circlize>
+## ns
+## class
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+##   <environment: 0x000001dd1f395128>
+## ...
+## RESET
+## READ.ONLY
+## LOCAL
+## ADD
+## [1]
+## [2]
+## [3]
+## [1]
+## [2]
+## [3]
+## [1]
+## [2]
+## [3]
+## [1]
+## [2]
+## [3]
+##   <environment: namespace:methods>
+## object
+## field
+## thisClass
+## env
+## value
+##   <environment: namespace:methods>
+## object
+##   <environment: namespace:circlize>
+## libname
+## pkgname
+##   [1]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+##   [3]
+## [1]
+## [2]
+## [3]
+##   [4]
+## [1]
+##   [5]
+## [1]
+##   [6]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+##   [7]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+## [8]
+##   [8]
+## names
+## class
 ```
 
 ### Read in expression data of interacting cells
 
 First, we will read in the publicly available single-cell data from
-fibroblasts, endothelial cells and malignant cells from HNSCC
+CAFs, endothelial cells and malignant cells from HNSCC
 tumors.
 
 ``` r
 hnscc_expression = readRDS(url("https://zenodo.org/record/3260758/files/hnscc_expression.rds"))
+##   [1]
+##   [2]
+## [1]
+## [2]
+## [3]
+## [4]
+## [5]
+## [6]
+## [7]
+##   [3]
+## names
 expression = hnscc_expression$expression
 sample_info = hnscc_expression$sample_info # contains meta-information about the cells
 ```
 
-Secondly, we will determine which genes are expressed in fibroblasts,
+Secondly, we will determine which genes are expressed in CAFs,
 endothelial and malignant cells from high quality primary tumors.
 Therefore, we wil not consider cells from tumor samples of less quality
 or from lymph node metastases. To determine expressed genes, we use the
@@ -52,11 +808,11 @@ al.
 ``` r
 tumors_remove = c("HN10","HN","HN12", "HN13", "HN24", "HN7", "HN8","HN23")
 
-fibroblast_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `non-cancer cell type` == "Fibroblast") %>% pull(cell)
+CAF_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `non-cancer cell type` == "CAF") %>% pull(cell)
 endothelial_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `non-cancer cell type` == "Endothelial") %>% pull(cell)
 malignant_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `classified  as cancer cell` == 1) %>% pull(cell)
 
-expressed_genes_fibroblasts = expression[fibroblast_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
+expressed_genes_CAFs = expression[CAF_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 expressed_genes_endothelial = expression[endothelial_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 expressed_genes_malignant = expression[malignant_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 ```
@@ -65,6 +821,8 @@ expressed_genes_malignant = expression[malignant_ids,] %>% apply(2,function(x){1
 
 ``` r
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+## dim
+## dimnames
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 ##                 CXCL1        CXCL2        CXCL3        CXCL5         PPBP
 ## A1BG     3.534343e-04 4.041324e-04 3.729920e-04 3.080640e-04 2.628388e-04
@@ -79,10 +837,10 @@ ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 As gene set of interest, we consider the genes of which the expression
 is possibly affected due to communication with other cells.
 
-Because we here want to investigate how fibroblasts and endothelial
-cells regulate the expression of p-EMT genes in malignant cells, we will
-use the p-EMT gene set defined by Puram et al. as gene set of interset
-and use all genes expressed in malignant cells as background of
+Because we here want to investigate how CAFs and endothelial cells
+regulate the expression of p-EMT genes in malignant cells, we will use
+the p-EMT gene set defined by Puram et al. as gene set of interset and
+use all genes expressed in malignant cells as background of
 genes.
 
 ``` r
@@ -99,29 +857,40 @@ head(background_expressed_genes)
 
 In a first step, we will define a set of potentially active ligands. As
 potentially active ligands, we will use ligands that are 1) expressed by
-fibroblasts and/or endothelial cells and 2) can bind a (putative)
-receptor expressed by malignant cells. Putative ligand-receptor links
-were gathered from NicheNet’s ligand-receptor data sources.
+CAFs and/or endothelial cells and 2) can bind a (putative) receptor
+expressed by malignant cells. Putative ligand-receptor links were
+gathered from NicheNet’s ligand-receptor data sources.
 
-Note that we combine the ligands from fibroblasts and endothelial cells
-in one ligand activity analysis now. Later on, we will look which of the
+Note that we combine the ligands from CAFs and endothelial cells in one
+ligand activity analysis now. Later on, we will look which of the
 top-ranked ligands is mainly expressed by which of both cell
 types.
 
 ``` r
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
+##   [1]
+##   [2]
+##   [3]
+##   [4]
+## row.names
+## class
+## names
 
 ligands = lr_network %>% pull(from) %>% unique()
-expressed_ligands_fibroblasts = intersect(ligands,expressed_genes_fibroblasts)
+expressed_ligands_CAFs = intersect(ligands,expressed_genes_CAFs)
 expressed_ligands_endothelial = intersect(ligands,expressed_genes_endothelial)
-expressed_ligands = union(expressed_ligands_fibroblasts, expressed_genes_endothelial)
+expressed_ligands = union(expressed_ligands_CAFs, expressed_genes_endothelial)
+##   <environment: namespace:dplyr>
+## x
+## y
+## ...
 
 receptors = lr_network %>% pull(to) %>% unique()
 expressed_receptors = intersect(receptors,expressed_genes_malignant)
 
 potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
 head(potential_ligands)
-## [1] "IL15"    "HGF"     "TNFSF10" "F11R"    "CD99"    "JAM2"
+## [1] "IL15"    "HGF"     "TNFSF10" "TGFB2"   "TGFB3"   "INHBA"
 ```
 
 Now perform the ligand activity analysis: infer how well NicheNet’s
@@ -141,23 +910,23 @@ we will rank the ligands based on their pearson correlation coefficient.
 
 ``` r
 ligand_activities %>% arrange(-pearson) 
-## # A tibble: 134 x 4
+## # A tibble: 154 x 4
 ##    test_ligand auroc   aupr pearson
 ##    <chr>       <dbl>  <dbl>   <dbl>
-##  1 EDN1        0.682 0.0586   0.126
-##  2 CXCL12      0.680 0.0507   0.123
-##  3 AGT         0.676 0.0581   0.120
-##  4 IL6         0.693 0.0510   0.115
-##  5 ADAM17      0.672 0.0526   0.113
-##  6 TNC         0.700 0.0444   0.109
-##  7 VWF         0.685 0.0490   0.109
-##  8 CTGF        0.680 0.0473   0.108
-##  9 FN1         0.679 0.0505   0.108
-## 10 LEFTY2      0.689 0.0427   0.104
-## # ... with 124 more rows
+##  1 PTHLH       0.667 0.0720   0.128
+##  2 EDN1        0.682 0.0586   0.126
+##  3 CXCL12      0.680 0.0507   0.123
+##  4 AGT         0.676 0.0581   0.120
+##  5 TGFB3       0.689 0.0454   0.117
+##  6 IL6         0.693 0.0510   0.115
+##  7 INHBA       0.695 0.0502   0.113
+##  8 ADAM17      0.672 0.0526   0.113
+##  9 TNC         0.700 0.0444   0.109
+## 10 VWF         0.685 0.0490   0.109
+## # ... with 144 more rows
 best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand)
 head(best_upstream_ligands)
-## [1] "EDN1"   "CXCL12" "AGT"    "IL6"    "ADAM17" "TNC"
+## [1] "PTHLH"  "EDN1"   "CXCL12" "AGT"    "TGFB3"  "IL6"
 ```
 
 We see here that the top-ranked ligands can predict the p-EMT genes
@@ -167,49 +936,57 @@ the target gene prediction performance of the top-ranked ligands would
 not be much better than random prediction. In that case, prioritization
 of ligands will be less trustworthy.
 
-Determine now which prioritized ligands are expressed by fibroblasts and
-or endothelial cells
+Determine now which prioritized ligands are expressed by CAFs and or
+endothelial cells
 
 ``` r
-best_upstream_ligands %>% intersect(expressed_ligands_fibroblasts) 
-##  [1] "CXCL12" "AGT"    "IL6"    "ADAM17" "TNC"    "CTGF"   "FN1"   
-##  [8] "LEFTY2" "COL4A1" "PSEN1"  "VCAM1"  "CXCL2"  "LAMB2"  "NCAM1" 
-## [15] "BMP4"
+best_upstream_ligands %>% intersect(expressed_ligands_CAFs) 
+##  [1] "PTHLH"  "CXCL12" "AGT"    "TGFB3"  "IL6"    "INHBA"  "ADAM17"
+##  [8] "TNC"    "CTGF"   "FN1"    "BMP5"   "IL24"   "CXCL11" "MMP9"  
+## [15] "COL4A1" "PSEN1"  "CXCL9"
 best_upstream_ligands %>% intersect(expressed_ligands_endothelial)
 ##  [1] "EDN1"   "CXCL12" "IL6"    "ADAM17" "VWF"    "CTGF"   "FN1"   
-##  [8] "SPP1"   "CXCL11" "COL4A1" "PSEN1"  "CXCL9"  "VCAM1"  "CXCL2" 
-## [15] "LAMB2"  "BMP4"
+##  [8] "SPP1"   "CXCL11" "COL4A1" "PSEN1"  "CXCL9"
 
 # lot of overlap between both cell types in terms of expressed ligands
 # therefore, determine which ligands are more strongly expressed in which of the two
 ligand_expression_tbl = tibble(
   ligand = best_upstream_ligands, 
-  fibroblast = expression[fibroblast_ids,best_upstream_ligands] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}),
+  CAF = expression[CAF_ids,best_upstream_ligands] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}),
   endothelial = expression[endothelial_ids,best_upstream_ligands] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}))
 
-fibroblast_specific_ligands = ligand_expression_tbl %>% filter(fibroblast > endothelial + 2) %>% pull(ligand)
-endothelial_specific_ligands = ligand_expression_tbl %>% filter(endothelial > fibroblast + 2) %>% pull(ligand)
-general_ligands = setdiff(best_upstream_ligands,c(fibroblast_specific_ligands,endothelial_specific_ligands))
+CAF_specific_ligands = ligand_expression_tbl %>% filter(CAF > endothelial + 2) %>% pull(ligand)
+endothelial_specific_ligands = ligand_expression_tbl %>% filter(endothelial > CAF + 2) %>% pull(ligand)
+general_ligands = setdiff(best_upstream_ligands,c(CAF_specific_ligands,endothelial_specific_ligands))
 
 ligand_type_indication_df = tibble(
-  ligand_type = c(rep("Fibroblast-specific", times = fibroblast_specific_ligands %>% length()),
+  ligand_type = c(rep("CAF-specific", times = CAF_specific_ligands %>% length()),
                   rep("General", times = general_ligands %>% length()),
                   rep("Endothelial-specific", times = endothelial_specific_ligands %>% length())),
-  ligand = c(fibroblast_specific_ligands, general_ligands, endothelial_specific_ligands))
+  ligand = c(CAF_specific_ligands, general_ligands, endothelial_specific_ligands))
 ```
 
 ### Infer target genes of top-ranked ligands and visualize in a circos plot
 
 Now we will show how you can look at the regulatory potential scores
 between ligands and target genes of interest. In this case, we will look
-at links between top-ranked p-EMT regulating ligands and p-EMT genes.
+at links between top-ranked p-EMT-regulating ligands and p-EMT genes. In
+this example, inferred target genes should belong to the p-EMT gene set
+and to the 250 most strongly predicted targets of at least one of the
+selected top-ranked ligands (the top 250 targets according to the
+general prior model, so not the top 250 targets for this dataset).
 
 Get first the active ligand-target links by looking which of the p-EMT
 genes are among the top-predicted target genes for the prioritized
-ligands
+ligands:
 
 ``` r
 active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = pemt_geneset, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
+##   <environment: namespace:nichenetr>
+## ligand
+## geneset
+## ligand_target_matrix
+## n
 
 active_ligand_target_links_df = active_ligand_target_links_df %>% mutate(target_type = "p_emt") %>% inner_join(ligand_type_indication_df) # if you want ot make circos plots for multiple gene sets, combine the different data frames and differentiate which target belongs to which gene set via the target type
 ```
@@ -237,7 +1014,7 @@ targets a specific color and order
 
 ``` r
 grid_col_ligand =c("General" = "lawngreen",
-            "Fibroblast-specific" = "royalblue",
+            "CAF-specific" = "royalblue",
             "Endothelial-specific" = "gold")
 grid_col_target =c(
             "p_emt" = "tomato")
@@ -264,7 +1041,7 @@ Prepare the circos visualization: order ligands and targets
 
 ``` r
 target_order = circos_links$target %>% unique()
-ligand_order = c(fibroblast_specific_ligands,general_ligands,endothelial_specific_ligands) %>% c(paste(.," ")) %>% intersect(circos_links$ligand)
+ligand_order = c(CAF_specific_ligands,general_ligands,endothelial_specific_ligands) %>% c(paste(.," ")) %>% intersect(circos_links$ligand)
 order = c(ligand_order,target_order)
 ```
 
@@ -279,7 +1056,7 @@ width_same_cell_same_target_type = 0.5
 
 gaps = c(
   # width_ligand_target,
-  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "Fibroblast-specific") %>% distinct(ligand) %>% nrow() -1)),
+  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "CAF-specific") %>% distinct(ligand) %>% nrow() -1)),
   width_different_cell,
   rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "General") %>% distinct(ligand) %>% nrow() -1)),
   width_different_cell,
@@ -294,8 +1071,365 @@ Render the circos plot (all links same transparancy)
 
 ``` r
 circos.par(gap.degree = gaps)
+##   <environment: namespace:circlize>
+##   [1]
+## [1]
+## [2]
+## [3]
+## [4]
+##   [2]
+##   [3]
+##   [4]
+##   [5]
+## names
 chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = 0, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid", 
     preAllocateTracks = list(track.height = 0.075))
+##   <environment: namespace:circlize>
+## x
+## grid.col
+## grid.border
+## transparency
+## col
+## row.col
+## column.col
+## order
+## directional
+## xmax
+## symmetric
+## keep.diagonal
+## direction.type
+## diffHeight
+## reduce
+## self.link
+## preAllocateTracks
+## annotationTrack
+## annotationTrackHeight
+## link.border
+## link.lwd
+## link.lty
+## link.sort
+## link.decreasing
+## link.arr.length
+## link.arr.width
+## link.arr.type
+## link.arr.lty
+## link.arr.lwd
+## link.arr.col
+## link.largest.ontop
+## link.visible
+## link.rank
+## scale
+## big.gap
+## small.gap
+## ...
+##   <environment: namespace:circlize>
+## df
+## grid.col
+## grid.border
+## transparency
+## col
+## order
+## directional
+## xmax
+## direction.type
+## diffHeight
+## reduce
+## self.link
+## preAllocateTracks
+## annotationTrack
+## annotationTrackHeight
+## link.border
+## link.lwd
+## link.lty
+## link.sort
+## link.decreasing
+## link.arr.length
+## link.arr.width
+## link.arr.type
+## link.arr.lty
+## link.arr.lwd
+## link.arr.col
+## link.largest.ontop
+## link.visible
+## link.rank
+## scale
+## big.gap
+## small.gap
+## ...
+## [1]
+## [2]
+## [3]
+## [1]
+## [2]
+## [3]
+## [1]
+## [2]
+## [3]
+## [1]
+## [2]
+## [3]
+##   <environment: namespace:base>
+## x
+## y
+##   <environment: namespace:methods>
+## self
+## field
+## thisClass
+## selfEnv
+##   <environment: namespace:methods>
+## def
+## self
+## me
+## selfEnv
+## thisClass
+##   <environment: namespace:circlize>
+## factors
+## x
+## xlim
+## sector.width
+## [1]
+## [2]
+## [3]
+## [1]
+## [2]
+## [3]
+##   <environment: namespace:circlize>
+##   <environment: namespace:GlobalOptions>
+## msg
+##   <environment: namespace:GlobalOptions>
+## env
+##   <environment: namespace:graphics>
+## x
+## y
+## type
+## xlim
+## ylim
+## log
+## main
+## sub
+## xlab
+## ylab
+## ann
+## axes
+## frame.plot
+## panel.first
+## panel.last
+## asp
+## xgap.axis
+## ygap.axis
+## ...
+## [1]
+## [2]
+## [3]
+## [1]
+## [2]
+## [3]
+## [1]
+## [2]
+## [3]
+## [1]
+## [2]
+## [3]
+##   <environment: namespace:grDevices>
+## level
+##   <environment: namespace:graphics>
+##   <environment: namespace:graphics>
+## xlim
+## ylim
+## log
+## asp
+## ...
+##   <environment: namespace:graphics>
+## xy
+## type
+## pch
+## lty
+## col
+## bg
+## cex
+## lwd
+## ...
+##   <environment: namespace:grDevices>
+## level
+##   <environment: namespace:circlize>
+## preAllocateTracks
+##   <environment: namespace:circlize>
+## factors
+## x
+## y
+## ylim
+## force.ylim
+## track.index
+## track.height
+## track.margin
+## cell.padding
+## bg.col
+## bg.border
+## bg.lty
+## bg.lwd
+## panel.fun
+##   <environment: namespace:circlize>
+##   <environment: namespace:circlize>
+##   <environment: namespace:circlize>
+## x
+##   <environment: namespace:circlize>
+##   <environment: namespace:circlize>
+## x
+## levels
+##   <environment: namespace:circlize>
+## track.index
+## track.start
+## track.height
+##   <environment: namespace:circlize>
+## track.start
+## track.height
+## sector.index
+## track.index
+## ylim
+## bg.col
+## bg.border
+## bg.lty
+## bg.lwd
+##   <environment: namespace:circlize>
+## sector.index
+##   <environment: namespace:circlize>
+## sector.index
+## track.index
+## ...
+##   <environment: namespace:circlize>
+## x
+##   <environment: namespace:circlize>
+## xleft
+## ybottom
+## xright
+## ytop
+## sector.index
+## track.index
+## ...
+## [1]
+## [2]
+## [3]
+## [1]
+## [2]
+## [3]
+##   <environment: namespace:circlize>
+## sector.index
+## track.index
+##   <environment: namespace:circlize>
+## x
+## y
+## sector.index
+## track.index
+## ...
+##   <environment: namespace:circlize>
+## x
+## y
+## sector.index
+## track.index
+##   <environment: namespace:circlize>
+## name
+## sector.index
+## track.index
+##   <environment: namespace:circlize>
+## sector.index
+## track.index
+##   <environment: namespace:circlize>
+## x
+## y
+## sector.index
+## track.index
+##   <environment: namespace:circlize>
+## x
+## y
+## sector.index
+## track.index
+##   <environment: namespace:circlize>
+## degree
+##   <environment: namespace:graphics>
+## x
+## y
+## density
+## angle
+## border
+## col
+## lty
+## ...
+## fillOddEven
+## [1]
+## [2]
+## [3]
+## [1]
+## [2]
+## [3]
+##   <environment: namespace:circlize>
+## d
+##   <environment: namespace:circlize>
+##   <environment: namespace:circlize>
+## ...
+##   <environment: namespace:circlize>
+## x
+## unit
+##   <environment: namespace:circlize>
+##   <environment: namespace:circlize>
+## sector.index1
+## point1
+## sector.index2
+## point2
+## rou
+## rou1
+## rou2
+## h
+## h.ratio
+## w
+## h2
+## w2
+## col
+## lwd
+## lty
+## border
+## directional
+## arr.length
+## arr.width
+## arr.type
+## arr.lty
+## arr.lwd
+## arr.col
+##   <environment: namespace:circlize>
+## theta1
+## theta2
+##   <environment: namespace:circlize>
+## theta1
+## theta2
+##   <environment: namespace:circlize>
+## theta1
+## theta2
+## rou1
+## rou2
+## h
+## h.ratio
+## w
+##   <environment: namespace:circlize>
+## p0
+## p1
+## p2
+## w
+##   <environment: namespace:circlize>
+## p0
+## p1
+## p2
+## w
+##   <environment: namespace:circlize>
+## theta1
+## theta2
+## rou
+##   <environment: namespace:circlize>
+## theta1
+## theta2
+## rou
+##   <environment: namespace:circlize>
+## mat
+##   <environment: namespace:circlize>
+## ...
 # we go back to the first track and customize sector labels
 circos.track(track.index = 1, panel.fun = function(x, y) {
     circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index,
@@ -305,9 +1439,49 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 
 ![](circos_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
-``` r
-circos.clear()
-```
+    ##   <environment: namespace:circlize>
+    ## ...
+    ##   <environment: namespace:circlize>
+    ## x
+    ## y
+    ## labels
+    ## sector.index
+    ## track.index
+    ## direction
+    ## facing
+    ## niceFacing
+    ## adj
+    ## cex
+    ## col
+    ## font
+    ## ...
+    ## [1]
+    ## [2]
+    ## [3]
+    ## [1]
+    ## [2]
+    ## [3]
+    ## class
+    ##   <environment: namespace:circlize>
+    ## x
+    ## name
+    ##   <environment: namespace:graphics>
+    ## x
+    ## y
+    ## labels
+    ## adj
+    ## pos
+    ## offset
+    ## vfont
+    ## cex
+    ## col
+    ## font
+    ## ...
+    ##   <environment: namespace:compiler>
+    ## block
+    ## idx
+    circos.clear()
+    ##   <environment: namespace:circlize>
 
 Render the circos plot (degree of transparancy determined by the
 regulatory potential value of a ligand-target interaction)

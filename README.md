@@ -111,8 +111,9 @@ basic NicheNet analysis: prioritizing ligands and predicting target
 genes of prioritized ligands - this demo analysis takes only a few
 minutes to run:
 
--   [NicheNet’s ligand activity analysis on a gene set of
-    interest](vignettes/ligand_activity_geneset.md):
+-   [NicheNet’s ligand activity analysis on a gene set of interest:
+    predict active ligands and their target
+    genes](vignettes/ligand_activity_geneset.md):
     `vignette("ligand_activity_geneset", package="nichenetr")`
 
 Following vignettes contain explanation on how to do some follow-up

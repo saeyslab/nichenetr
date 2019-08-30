@@ -31,7 +31,7 @@ For this analysis, you need to define:
 * one or more ligands of interest
 * one or more target genes of interest
 
-In this vignette, we will demonstrate how to infer signaling paths between a CAF-ligand of interest and some of its top-predicted p-EMT target genes. The output of this analysis can be easily imported into Cytoscape for exploration of the networks.
+In this vignette, we will demonstrate how to infer signaling paths between a CAF-ligand (CAF = cancer-associated fibroblast) of interest and some of its top-predicted p-EMT target genes. The output of this analysis can be easily imported into Cytoscape for exploration of the networks.
 
 
 
@@ -50,7 +50,7 @@ gr_network = readRDS(url("https://zenodo.org/record/3260758/files/gr_network.rds
 
 ```
 
-As example, we will infer signaling paths between TGFB3 and its top-predicted target genes TGFBI, LAMC2 and TNC.
+As example, we will infer signaling paths between the CAF-ligand TGFB3 and its top-predicted p-EMT target genes TGFBI, LAMC2 and TNC.
 
 ```{r}
 ligands_all = "TGFB3" # this can be a list of multiple ligands if required

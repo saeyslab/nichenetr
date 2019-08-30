@@ -1,10 +1,10 @@
 ---
-title: "NicheNet's ligand activity analysis on a gene set of interest"
+title: "NicheNet's ligand activity analysis on a gene set of interest: predict active ligands and their target genes"
 author: "Robin Browaeys"
 date: "2019-01-17"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{NicheNet's ligand activity analysis on a gene set of interest}
+  %\VignetteIndexEntry{NicheNet's ligand activity analysis on a gene set of interest: predict active ligands and their target genes}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 bibliography: library.bib
@@ -31,9 +31,9 @@ In this vignette, you can learn how to perform a basic NicheNet analysis. A Nich
 * 4) Perform NicheNet ligand activity analysis: rank the potential ligands based on the presence of their target genes in the gene set of interest (compared to the background set of genes)
 * 5) Infer top-predicted target genes of ligands that are top-ranked in the ligand activity analysis
 
-This vignette guides you in detail through all these steps. As example expression data of interacting cells, we will use data from Puram et al. to explore intercellular communication in the tumor microenvironment in head and neck squamous cell carcinoma (HNSCC) [See @puram_single-cell_2017]. More specifically, we will look at which ligands expressed by fibroblasts can induce a specific gene program in neighboring malignant cells. This program, a partial epithelial-mesenschymal transition (p-EMT) program, could be linked by Puram et al. to metastasis. 
+This vignette guides you in detail through all these steps. As example expression data of interacting cells, we will use data from Puram et al. to explore intercellular communication in the tumor microenvironment in head and neck squamous cell carcinoma (HNSCC) [See @puram_single-cell_2017]. More specifically, we will look at which ligands expressed by cancer-associated fibroblasts (CAFs) can induce a specific gene program in neighboring malignant cells. This program, a partial epithelial-mesenschymal transition (p-EMT) program, could be linked to metastasis by Puram et al. 
 
-For this analysis, we will assess the ligand activity of each ligand, or in other words, we will assess how well each fibroblast ligand can predict the p-EMT gene set compared to the background of expressed genes. This allows us to prioritize p-EMT-regulating ligands. In a final step, we will then infer target genes of these top ligands. 
+For this analysis, we will assess the ligand activity of each ligand, or in other words, we will assess how well each CAF-ligand can predict the p-EMT gene set compared to the background of expressed genes. This allows us to prioritize p-EMT-regulating ligands. In a final step, we will then infer target genes of these top ligands. 
 
 The used ligand-target matrix and example expression data of interacting cells can be downloaded from Zenodo. [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
 
@@ -53,7 +53,7 @@ ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/liga
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 ```
 
-Expression data of interacting cells: publicly available single-cell data from fibroblast and malignant cells from HNSCC tumors:
+Expression data of interacting cells: publicly available single-cell data from CAF and malignant cells from HNSCC tumors:
 
 ```{r}
 hnscc_expression = readRDS(url("https://zenodo.org/record/3260758/files/hnscc_expression.rds"))
@@ -63,19 +63,19 @@ sample_info = hnscc_expression$sample_info # contains meta-information about the
 
 ## Step 1: Define expressed genes in sender and receiver cell populations
 
-Our research question is to prioritize which ligands expressed by fibroblasts can induce p-EMT in neighboring malignant cells. Therefore, fibroblasts are the sender cells in this example and malignant cells are the receiver cells.
+Our research question is to prioritize which ligands expressed by CAFs can induce p-EMT in neighboring malignant cells. Therefore, CAFs are the sender cells in this example and malignant cells are the receiver cells.
 
-Now, we will determine which genes are expressed in the sender cells (fibroblasts) and receiver cells (malignant cells) from high quality primary tumors. Therefore, we wil not consider cells from tumor samples of less quality or from lymph node metastases. 
+Now, we will determine which genes are expressed in the sender cells (CAFs) and receiver cells (malignant cells) from high quality primary tumors. Therefore, we wil not consider cells from tumor samples of less quality or from lymph node metastases. 
 
-To determine expressed genes in this case study, we use the definition used by Puram et al. (the authors of this dataset). We recommend users to define expressed genes in the way that they consider to be most appropriate for their dataset.
+To determine expressed genes in this case study, we use the definition used by Puram et al. (the authors of this dataset), which is: Ea, the aggregate expression of each gene i across the k cells, calculated as Ea(i) = log2(average(TPM(i)1…k)+1), should be >= 4. We recommend users to define expressed genes in the way that they consider to be most appropriate for their dataset.
 
 ```{r}
 tumors_remove = c("HN10","HN","HN12", "HN13", "HN24", "HN7", "HN8","HN23")
 
-fibroblast_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `non-cancer cell type` == "Fibroblast") %>% pull(cell)
+CAF_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `non-cancer cell type` == "CAF") %>% pull(cell)
 malignant_ids = sample_info %>% filter(`Lymph node` == 0 & !(tumor %in% tumors_remove) & `classified  as cancer cell` == 1) %>% pull(cell)
 
-expressed_genes_sender = expression[fibroblast_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
+expressed_genes_sender = expression[CAF_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 expressed_genes_receiver = expression[malignant_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 ```
 
@@ -83,7 +83,7 @@ expressed_genes_receiver = expression[malignant_ids,] %>% apply(2,function(x){10
 
 As gene set of interest, we consider the genes of which the expression is possibly affected due to communication with other cells. The definition of this gene set depends on your research question and is a crucial step in the use of NicheNet.
 
-Because we here want to investigate how fibroblasts regulate the expression of p-EMT genes in malignant cells, we will use the p-EMT gene set defined by Puram et al. as gene set of interest and use all genes expressed in malignant cells as background of genes. 
+Because we here want to investigate how CAFs regulate the expression of p-EMT genes in malignant cells, we will use the p-EMT gene set defined by Puram et al. as gene set of interest and use all genes expressed in malignant cells as background of genes. 
 
 ```{r}
 geneset_oi = readr::read_tsv(url("https://zenodo.org/record/3260758/files/pemt_signature.txt"), col_names = "gene") %>% pull(gene) %>% .[. %in% rownames(ligand_target_matrix)] # only consider genes also present in the NicheNet model - this excludes genes from the gene list for which the official HGNC symbol was not used by Puram et al.
@@ -95,7 +95,7 @@ head(background_expressed_genes)
 
 ## Step 3: Define a set of potential ligands
 
-As potentially active ligands, we will use ligands that are 1) expressed by fibroblasts and 2) can bind a (putative) receptor expressed by malignant cells. Putative ligand-receptor links were gathered from NicheNet's ligand-receptor data sources.
+As potentially active ligands, we will use ligands that are 1) expressed by CAFs and 2) can bind a (putative) receptor expressed by malignant cells. Putative ligand-receptor links were gathered from NicheNet's ligand-receptor data sources.
 
 ```{r}
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
@@ -159,7 +159,7 @@ active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_d
 The putatively active ligand-target links will be visualized in a heatmap.
 
 ```{r, fig.width=8, fig.height=6}
-p_ligand_target_network = active_ligand_target_links %>% t() %>% make_heatmap_ggplot("Prioritized fibroblast ligands","p-EMT genes in malignant cells", color = "purple",legend_position = "top", x_axis_position = "top") + scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.005,0.01))
+p_ligand_target_network = active_ligand_target_links %>% t() %>% make_heatmap_ggplot("Prioritized CAF-ligands","p-EMT genes in malignant cells", color = "purple",legend_position = "top", x_axis_position = "top") + scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.005,0.01))
 
 p_ligand_target_network
 
@@ -173,7 +173,7 @@ If you would change the quantile cutoff that is used to set scores to 0 (for vis
 
 ## Follow-up analysis 1: Ligand-receptor network inference for top-ranked ligands
 
-One type of follow-up analysis is looking at which receptors of the receiver cell population (here: malignant cells) can potentially bind to the prioritized ligands from the sender cell population (here: fibroblasts).
+One type of follow-up analysis is looking at which receptors of the receiver cell population (here: malignant cells) can potentially bind to the prioritized ligands from the sender cell population (here: CAFs).
 
 So, we will now infer the predicted ligand-receptor interactions of the top-ranked ligands and visualize these in a heatmap.
 
@@ -204,7 +204,7 @@ Show a heatmap of the ligand-receptor interactions
 
 ```{r, fig.width=9, fig.height=6}
 vis_ligand_receptor_network = lr_network_top_matrix[order_receptors, order_ligands_receptor]
-p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap_ggplot("Prioritized fibroblast ligands","Receptors expressed by malignant cells", color = "mediumvioletred", x_axis_position = "top")
+p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap_ggplot("Prioritized CAF-ligands","Receptors expressed by malignant cells", color = "mediumvioletred", x_axis_position = "top")
 p_ligand_receptor_network
 
 ```

@@ -13,8 +13,11 @@
    viewBox="0 0 720 720"
    version="1.1"
    id="svg1339"
-   sodipodi:docname="ligand_target_circos.svg"
-   inkscape:version="0.92.3 (2405546, 2018-03-11)">
+   sodipodi:docname="ligand_target_circos_adapted_caf.svg"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
+   inkscape:export-filename="C:\Users\rbrowaey\Research\StaticNicheNet\nichenetr\vignettes\circos_plot_adapted.png"
+   inkscape:export-xdpi="300"
+   inkscape:export-ydpi="300">
   <metadata
      id="metadata1343">
     <rdf:RDF>
@@ -23,6 +26,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -40,7 +44,7 @@
      id="namedview1341"
      showgrid="false"
      inkscape:zoom="0.70737049"
-     inkscape:cx="480"
+     inkscape:cx="250.27597"
      inkscape:cy="480"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
@@ -3384,49 +3388,52 @@
   <text
      xml:space="preserve"
      style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:1;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#0000ff;fill-opacity:1;stroke:none;stroke-width:0.75"
-     x="752.11713"
-     y="509.3345"
-     id="text2130-0"><tspan
+     x="672.6344"
+     y="627.93701"
+     id="text2130-0"
+     transform="rotate(-0.32026183)"><tspan
        sodipodi:role="line"
        id="tspan2128-4"
-       x="752.11713"
-       y="509.3345"
+       x="672.6344"
+       y="627.93701"
        style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:15.99999905px;line-height:1;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:center;text-anchor:middle;fill:#0000ff;stroke-width:0.75">Fibroblast-specific</tspan><tspan
        sodipodi:role="line"
-       x="752.11713"
-       y="525.33447"
+       x="672.6344"
+       y="643.93701"
        style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:15.99999905px;line-height:1;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:center;text-anchor:middle;fill:#0000ff;stroke-width:0.75"
        id="tspan2190"> ligands</tspan></text>
   <text
      xml:space="preserve"
      style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:1;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#00aa00;fill-opacity:1;stroke:none;stroke-width:0.75"
-     x="354.07486"
-     y="731.59985"
-     id="text2130-0-0"><tspan
+     x="197.90849"
+     y="708.01147"
+     id="text2130-0-0"
+     transform="rotate(0.43266693)"><tspan
        sodipodi:role="line"
        id="tspan2128-4-0"
-       x="356.80923"
-       y="731.59985"
+       x="200.64287"
+       y="708.01147"
        style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:15.99999905px;line-height:1;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:center;text-anchor:middle;fill:#00aa00;stroke-width:0.75">Fibroblast &amp; Endothelial </tspan><tspan
        sodipodi:role="line"
-       x="354.07486"
-       y="747.59985"
+       x="197.90849"
+       y="724.01147"
        style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:15.99999905px;line-height:1;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:center;text-anchor:middle;fill:#00aa00;stroke-width:0.75"
        id="tspan2188">ligands</tspan></text>
   <text
      xml:space="preserve"
      style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:1;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#00aa00;fill-opacity:1;stroke:none;stroke-width:0.75"
-     x="-55.334572"
-     y="495.55106"
-     id="text2130-0-0-6"><tspan
+     x="-31.189831"
+     y="500.30246"
+     id="text2130-0-0-6"
+     transform="rotate(1.0678157)"><tspan
        sodipodi:role="line"
        id="tspan2128-4-0-5"
-       x="-52.600197"
-       y="495.55106"
+       x="-28.45546"
+       y="500.30246"
        style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:15.99999905px;line-height:1;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:center;text-anchor:middle;fill:#ffcc00;stroke-width:0.75">Endothelial-specific </tspan><tspan
        sodipodi:role="line"
-       x="-55.334572"
-       y="511.55106"
+       x="-31.189831"
+       y="516.30249"
        style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:15.99999905px;line-height:1;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:center;text-anchor:middle;fill:#ffcc00;stroke-width:0.75"
        id="tspan2186">ligands</tspan></text>
 </svg>
