@@ -254,6 +254,9 @@ dataset).
 
 ``` r
 active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
+
+nrow(active_ligand_target_links_df)
+## [1] 143
 head(active_ligand_target_links_df)
 ## # A tibble: 6 x 3
 ##   ligand target  weight
@@ -276,6 +279,9 @@ frame).
 
 ``` r
 active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = 0.25)
+
+nrow(active_ligand_target_links_df)
+## [1] 143
 head(active_ligand_target_links_df)
 ## # A tibble: 6 x 3
 ##   ligand target  weight

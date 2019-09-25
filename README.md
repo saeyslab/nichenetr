@@ -18,11 +18,13 @@ perspective. NicheNet uses human or mouse gene expression data of
 interacting cells as input and combines this with a prior model that
 integrates existing knowledge on ligand-to-target signaling paths. This
 allows to predict ligand-receptor interactions that might drive gene
-expression changes in cells of interest. Bonnardel, T’Jonck et al. used
-NicheNet to predict upstream niche signals driving Kupffer cell
-differentiation \[@bonnardel\_2019\].
+expression changes in cells of interest.
 
-nichenetr was tested on both Windows and Linux (R version 3.6.0)
+Bonnardel, T’Jonck et al. used NicheNet to predict upstream niche
+signals driving Kupffer cell differentiation [Stellate Cells,
+Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell Identity on
+Monocytes Colonizing the Liver Macrophage
+Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1).
 
 Introduction to NicheNet
 ------------------------
@@ -104,6 +106,8 @@ nichenetr (and required dependencies) from github with:
     # install.packages("devtools")
     devtools::install_github("saeyslab/nichenetr")
 
+nichenetr was tested on both Windows and Linux (R version 3.6.0)
+
 Learning to use nichenetr
 -------------------------
 
@@ -158,3 +162,8 @@ symbols:
 
 References
 ----------
+
+Bonnardel et al., 2019, Immunity 51, 1–17, [Stellate Cells, Hepatocytes,
+and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes
+Colonizing the Liver Macrophage
+Niche](https://doi.org/10.1016/j.immuni.2019.08.017)
