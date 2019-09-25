@@ -1,19 +1,19 @@
 citHeader("To cite nichenetr in publications use:")
 
 citEntry(entry = "Article",
-  title        = "Linking extracellular protein signals to target genes with {nichenetr}",
+  title        = "NicheNet: Modeling intercellular communication by linking ligands to target genes",
   author       = personList(as.person("Robin Browaeys"),
-                   as.person("Wouter Saelens")),
-  journal      = "Hopefully Nature Methtods",
-  year         = "Hopefully 2018",
-  volume       = "40",
-  number       = "3",
-  pages        = "1--25",
-  url          = "http://superdeporte.es",
+                   as.person("Wouter Saelens"), as.person("Yvan Saeys")),
+  journal      = "(in press)",
+  year         = "2019",
+  volume       = "NA",
+  number       = "NA",
+  pages        = "NA",
+  url          = "NA",
 
   textVersion  =
-  paste("Robin Browaeys, Wouter Saelens (2018)",
-        "Linking extracellular protein signals to target genes with nichenetr",
-        "Hopefully Nature Methods",
-        "URL http://superdeporte.es")
+  paste("Robin Browaeys, Wouter Saelens, Yvan Saeys (2019)",
+        "NicheNet: Modeling intercellular communication by linking ligands to target genes",
+        "(in press)",
+        "NA")
 )

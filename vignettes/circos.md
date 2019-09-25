@@ -5,7 +5,8 @@ Robin Browaeys
 3-7-2019
 
 <!-- github markdown built using 
-&<-->
+rmarkdown::render("vignettes/circos.Rmd", output_format = "github_document")
+-->
 
 This vignette shows how NicheNet can be used to predict active
 ligand-target links between multiple interacting cells and how you can
@@ -305,7 +306,7 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 }, bg.border = NA) #
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
+![](circos_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ``` r
 circos.clear()
@@ -325,7 +326,7 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 }, bg.border = NA) #
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
+![](circos_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 ``` r
 circos.clear()

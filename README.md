@@ -16,7 +16,11 @@ Status](https://codecov.io/gh/saeyslab/nichenetr/branch/master/graph/badge.svg)]
 NicheNet is to study intercellular communication from a computational
 perspective. NicheNet uses human or mouse gene expression data of
 interacting cells as input and combines this with a prior model that
-integrates existing knowledge on ligand-to-target signaling paths.
+integrates existing knowledge on ligand-to-target signaling paths. This
+allows to predict ligand-receptor interactions that might drive gene
+expression changes in cells of interest. Bonnardel, T’Jonck et al. used
+NicheNet to predict upstream niche signals driving Kupffer cell
+differentiation \[@bonnardel\_2019\].
 
 nichenetr was tested on both Windows and Linux (R version 3.6.0)
 
@@ -151,3 +155,6 @@ symbols:
 -   [Converting NicheNet’s model from human to mouse
     symbols](vignettes/symbol_conversion.md):
     `vignette("symbol_conversion", package="nichenetr")`
+
+References
+----------

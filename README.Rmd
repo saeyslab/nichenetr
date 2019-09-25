@@ -16,7 +16,7 @@ rmarkdown::render("README.Rmd",output_format = "md_document")
 [![Coverage Status](https://codecov.io/gh/saeyslab/nichenetr/branch/master/graph/badge.svg)](https://codecov.io/gh/saeyslab/nichenetr)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
 
-**nichenetr: the R implementation of the NicheNet method.** The goal of NicheNet is to study intercellular communication from a computational perspective. NicheNet uses human or mouse gene expression data of interacting cells as input and combines this with a prior model that integrates existing knowledge on ligand-to-target signaling paths. 
+**nichenetr: the R implementation of the NicheNet method.** The goal of NicheNet is to study intercellular communication from a computational perspective. NicheNet uses human or mouse gene expression data of interacting cells as input and combines this with a prior model that integrates existing knowledge on ligand-to-target signaling paths. This allows to predict ligand-receptor interactions that might drive gene expression changes in cells of interest. Bonnardel, T'Jonck et al. used NicheNet to predict upstream niche signals driving Kupffer cell differentiation [@bonnardel_2019].
 
 nichenetr was tested on both Windows and Linux (R version 3.6.0)
 
@@ -88,3 +88,4 @@ People working with mouse data can see in the following vignette how to convert 
 
 * [Converting NicheNet's model from human to mouse symbols](vignettes/symbol_conversion.md): `vignette("symbol_conversion", package="nichenetr")`
 
+## References

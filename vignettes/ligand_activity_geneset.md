@@ -237,7 +237,7 @@ p_hist_lig_activity = ggplot(ligand_activities, aes(x=pearson)) +
 p_hist_lig_activity
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ## Step 5: Infer target genes of top-ranked ligands and visualize in a heatmap
 
@@ -249,21 +249,46 @@ interactions between the 20 top-ranked ligands and following target
 genes: genes that belong to the gene set of interest and to the 250 most
 strongly predicted targets of at least one of the 20 top-ranked ligands
 (the top 250 targets according to the general prior model, so not the
-top 250 targets for this dataset). For visualization purposes, we
-adapted the ligand-target regulatory potential matrix as follows.
-Regulatory potential scores were set as 0 if their score was below a
-predefined threshold, which was here the 0.25 quantile of scores of
-interactions between the 20 top-ranked ligands and each of their
-respective 250 top
-targets.
+top 250 targets for this
+dataset).
 
 ``` r
 active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
-
-active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = 0.25)
+head(active_ligand_target_links_df)
+## # A tibble: 6 x 3
+##   ligand target  weight
+##   <chr>  <chr>    <dbl>
+## 1 PTHLH  COL1A1 0.00399
+## 2 PTHLH  MMP1   0.00425
+## 3 PTHLH  MMP2   0.00210
+## 4 PTHLH  MYH9   0.00116
+## 5 PTHLH  P4HA2  0.00190
+## 6 PTHLH  PLAU   0.00401
 ```
 
-The putatively active ligand-target links will be visualized in a
+For visualization purposes, we adapted the ligand-target regulatory
+potential matrix as follows. Regulatory potential scores were set as 0
+if their score was below a predefined threshold, which was here the 0.25
+quantile of scores of interactions between the 20 top-ranked ligands and
+each of their respective top targets (see the ligand-target network
+defined in the data
+frame).
+
+``` r
+active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = 0.25)
+head(active_ligand_target_links_df)
+## # A tibble: 6 x 3
+##   ligand target  weight
+##   <chr>  <chr>    <dbl>
+## 1 PTHLH  COL1A1 0.00399
+## 2 PTHLH  MMP1   0.00425
+## 3 PTHLH  MMP2   0.00210
+## 4 PTHLH  MYH9   0.00116
+## 5 PTHLH  P4HA2  0.00190
+## 6 PTHLH  PLAU   0.00401
+```
+
+The putatively active ligand-target links will now be visualized in a
 heatmap.
 
 ``` r
@@ -272,7 +297,7 @@ p_ligand_target_network = active_ligand_target_links %>% t() %>% make_heatmap_gg
 p_ligand_target_network
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 Note that the choice of these cutoffs for visualization is quite
 arbitrary. We recommend users to test several cutoff values.
@@ -328,7 +353,7 @@ p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap
 p_ligand_receptor_network
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 ## Other follow-up analyses:
 

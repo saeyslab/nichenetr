@@ -148,15 +148,21 @@ p_hist_lig_activity
 
 ## Step 5: Infer target genes of top-ranked ligands and visualize in a heatmap
 
-Now we will show how you can look at the regulatory potential scores between ligands and target genes of interest. In this case, we will look at links between top-ranked p-EMT regulating ligands and p-EMT genes. In the ligand-target heatmaps, we showed regulatory potential scores for interactions between the 20 top-ranked ligands and following target genes: genes that belong to the gene set of interest and to the 250 most strongly predicted targets of at least one of the 20 top-ranked ligands (the top 250 targets according to the general prior model, so not the top 250 targets for this dataset). For visualization purposes, we adapted the ligand-target regulatory potential matrix as follows. Regulatory potential scores were set as 0 if their score was below a predefined threshold, which was here the 0.25 quantile of scores of interactions between the 20 top-ranked ligands and each of their respective 250 top targets.
+Now we will show how you can look at the regulatory potential scores between ligands and target genes of interest. In this case, we will look at links between top-ranked p-EMT regulating ligands and p-EMT genes. In the ligand-target heatmaps, we showed regulatory potential scores for interactions between the 20 top-ranked ligands and following target genes: genes that belong to the gene set of interest and to the 250 most strongly predicted targets of at least one of the 20 top-ranked ligands (the top 250 targets according to the general prior model, so not the top 250 targets for this dataset). 
 
 ```{r}
 active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
-
-active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = 0.25)
+head(active_ligand_target_links_df)
 ```
 
-The putatively active ligand-target links will be visualized in a heatmap.
+For visualization purposes, we adapted the ligand-target regulatory potential matrix as follows. Regulatory potential scores were set as 0 if their score was below a predefined threshold, which was here the 0.25 quantile of scores of interactions between the 20 top-ranked ligands and each of their respective top targets (see the ligand-target network defined in the data frame).
+
+```{r}
+active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = 0.25)
+head(active_ligand_target_links_df)
+```
+
+The putatively active ligand-target links will now be visualized in a heatmap.
 
 ```{r, fig.width=8, fig.height=6}
 p_ligand_target_network = active_ligand_target_links %>% t() %>% make_heatmap_ggplot("Prioritized CAF-ligands","p-EMT genes in malignant cells", color = "purple",legend_position = "top", x_axis_position = "top") + scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.005,0.01))
