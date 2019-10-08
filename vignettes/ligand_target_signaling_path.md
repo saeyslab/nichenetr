@@ -87,6 +87,12 @@ head(data_source_network)
 ## 6 SMAD2 TNC   regnetwork_source regnetwork     regulatory
 ```
 
+For information of all mentioned data sources in the source column (link
+to the website of the database, etc), see [Data source
+information](data_sources.xlsx)
+
+### Export to Cytoscape
+
 Export the following to e.g. Cytoscape for exploration of the networks
 
 ``` r

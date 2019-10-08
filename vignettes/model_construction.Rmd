@@ -28,7 +28,7 @@ This vignette shows how ligand-target prior regulatory potential scores are infe
 
 The prior model at the basis of NicheNet denotes how strongly existing knowledge supports that a ligand may regulate the expression of a target gene. To calculate this ligand-target regulatory potential, we integrated biological knowledge about ligand-to-target signaling paths as follows.
 
-First, we collected multiple complementary data sources covering ligand-receptor, signal transduction (e.g., protein-protein and kinase-substrate interactions) and gene regulatory interactions (e.g., inferred from ChIP-seq and motifs). 
+First, we collected multiple complementary data sources covering ligand-receptor, signal transduction (e.g., protein-protein and kinase-substrate interactions) and gene regulatory interactions (e.g., inferred from ChIP-seq and motifs). For information of all collected data sources (link to the website of the database, etc), see [Data source information](data_sources.xlsx)
 
 Secondly, we integrated these individual data sources into two weighted networks: 1) a ligand-signaling network, which contains protein-protein interactions covering the signaling paths from ligands to downstream transcriptional regulators; and 2) a gene regulatory network, which contains gene regulatory interactions between transcriptional regulators and target genes. 
 To let informative data sources contribute more to the final model, we weighted each data source during integration. These data source weights were automatically determined via model-based parameter optimization to improve the accuracy of ligand-target predictions (see the vignette [Parameter optimization via mlrMBO](parameter_optimization.md). In this vignette, we will show how to construct models with unoptimized data source weigths as well.
@@ -37,7 +37,7 @@ Finally, we combined the ligand-signaling and gene regulatory network to calcula
 
 A graphical summary of this procedure is visualized here below:
 
-![](vignettes/workflow_model_construction.png)
+![](workflow_model_construction.png)
 
 
 # Construct a ligand-target model from all collected ligand-receptor, signaling and gene regulatory network data sources

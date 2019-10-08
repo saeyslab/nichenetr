@@ -25,7 +25,9 @@ as follows.
 First, we collected multiple complementary data sources covering
 ligand-receptor, signal transduction (e.g., protein-protein and
 kinase-substrate interactions) and gene regulatory interactions (e.g.,
-inferred from ChIP-seq and motifs).
+inferred from ChIP-seq and motifs). For information of all collected
+data sources (link to the website of the database, etc), see [Data
+source information](data_sources.xlsx)
 
 Secondly, we integrated these individual data sources into two weighted
 networks: 1) a ligand-signaling network, which contains protein-protein
@@ -52,7 +54,7 @@ transcriptional regulators, and ultimately ending at target genes.
 A graphical summary of this procedure is visualized here
 below:
 
-![](vignettes/workflow_model_construction.png)
+![](workflow_model_construction.png)
 
 # Construct a ligand-target model from all collected ligand-receptor, signaling and gene regulatory network data sources
 

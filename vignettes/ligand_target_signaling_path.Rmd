@@ -76,6 +76,11 @@ We will now look which of the collected data sources support the interactions in
 data_source_network = infer_supporting_datasources(signaling_graph_list = active_signaling_network,lr_network = lr_network, sig_network = sig_network, gr_network = gr_network)
 head(data_source_network) 
 ```
+
+For information of all mentioned data sources in the source column (link to the website of the database, etc), see [Data source information](data_sources.xlsx)
+
+### Export to Cytoscape
+
 Export the following to e.g. Cytoscape for exploration of the networks
 
 ```{r}
@@ -105,3 +110,4 @@ if(write_output){
 bind_rows(specific_annotation_tbl,non_specific_annotation_tbl) %>% write_tsv(paste0(output_path,"annotation_table.txt"))
 }
 ```
+
