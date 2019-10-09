@@ -53,6 +53,9 @@ which genes are differentially expressed after treatment with a ligand.
 Ideally, target genes with high regulatory potential scores for a
 ligand, should be differentially expressed in response to that ligand.
 
+For information of all collected ligand treatment datasets, see [Dataset
+information](evaluation_datasets.xlsx)
+
 For the sake of simplicity, we exclude in this vignette the
 ligand-treatment datasets profiling the response to multiple ligands. To
 see how to build a ligand-target model with target predictions for

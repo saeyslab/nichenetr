@@ -65,9 +65,11 @@ active_signaling_network_min_max$gr = active_signaling_network_min_max$gr %>% mu
 
 graph_min_max = diagrammer_format_signaling_graph(signaling_graph_list = active_signaling_network_min_max, ligands_all = ligands_all, targets_all = targets_all, sig_color = "indianred", gr_color = "steelblue")
 
-# To render the graph:
+# To render the graph: uncomment following line of code
 # DiagrammeR::render_graph(graph_min_max, layout = "tree")
 ```
+
+![](tgfb3_targets_signaling_path.png)
 
 We will now look which of the collected data sources support the
 interactions in this
