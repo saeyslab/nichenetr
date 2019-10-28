@@ -497,7 +497,9 @@ in Inkscape (with the center of the two circles at the same location and
 the ligand-receptor circos plot bigger than the ligand-target one). To
 generate the combined circos plot as shown ni Fig. 6B, we then manually
 removed all elements of the ligand-receptor circos plot except the outer
-receptor layer.
+receptor layer. In the near future, we will be working on a solution to
+generate this ligand-receptor-target circos plot in a fully automated
+manner.
 
 If you would want to split up target genes and receptors in different
 groups according to signaling pathway (as done in mentioned paper), then
