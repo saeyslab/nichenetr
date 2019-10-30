@@ -386,6 +386,21 @@ circos.clear()
 dev.off()
 ```
 
+Test something out?
+
+```{r}
+circos.par(gap.degree = gaps)
+chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = transparency, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid",
+    preAllocateTracks = list(track.height = 0.075))
+# we go back to the first track and customize sector labels
+circos.track(track.index = 1, panel.fun = function(x, y) {
+    circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index,
+        facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.55), cex = 0.8)
+}, bg.border = NA) #
+chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = transparency, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid",
+    preAllocateTracks = list(track.height = 0.075))circos.clear()
+```
+
 ### Remark on making a ligand-receptor-target circos plot
 
 In the paper of Bonnardel, T'Jonck et al. [Stellate Cells, Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes Colonizing the Liver Macrophage Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1), we showed in Fig. 6B a ligand-receptor-target circos plot to visualize the main NicheNet predictions. This “ligand-receptor-target” circos plot was made by making first two separate circos plots: the ligand-target and ligand-receptor circos plot. Then these circos plots were overlayed in Inkscape (with the center of the two circles at the same location and the ligand-receptor circos plot bigger than the ligand-target one). To generate the combined circos plot as shown ni Fig. 6B, we then manually removed all elements of the ligand-receptor circos plot except the outer receptor layer. In the near future, we will be working on a solution to generate this ligand-receptor-target circos plot in a fully automated manner.
