@@ -26,6 +26,9 @@ Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell Identity on
 Monocytes Colonizing the Liver Macrophage
 Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1).
 
+The methodological NicheNet paper has now officially been accepted and
+planned publication time is december-january.
+
 Introduction to NicheNet
 ------------------------
 

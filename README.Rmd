@@ -20,6 +20,8 @@ rmarkdown::render("README.Rmd",output_format = "md_document")
 
 Bonnardel, T'Jonck et al. used NicheNet to predict upstream niche signals driving Kupffer cell differentiation [Stellate Cells, Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes Colonizing the Liver Macrophage Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1).
 
+The methodological NicheNet paper has now officially been accepted and planned publication time is december-january.
+
 ## Introduction to NicheNet
 
 The figure below shows a graphical representation of the NicheNet workflow. Interactions inferred from several complementary ligand-receptor, signaling and gene regulatory data sources were aggregated in respective integrated networks from which ligand-target regulatory potential scores were calculated. This model of prior information on potential ligand-target links can then be used to infer active ligand-target links between interacting cells. NicheNet prioritizes ligands according to their activity (i.e., how well they predict observed changes in gene expression in the receiver cell) and looks for affected targets with high potential to be regulated by these prioritized ligands. 
