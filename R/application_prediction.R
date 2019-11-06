@@ -697,7 +697,13 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     stop("condition_reference should be in the condition-indicating column")
   if(sum(receiver %in% unique(Idents(seurat_obj))) != length(receiver))
     stop("The defined receiver cell type should be an identity class of your seurat object")
-  if((sender != "all" & sender != "undefined")){
+  if(length(sender) == 1){
+    if(sender != "all" & sender != "undefined"){
+      if(sum(sender %in% unique(Idents(seurat_obj))) != length(sender)){
+        stop("The sender argument should be 'all' or 'undefined' or an identity class of your seurat object")
+      }
+    }
+  } else {
     if(sum(sender %in% unique(Idents(seurat_obj))) != length(sender)){
       stop("The sender argument should be 'all' or 'undefined' or an identity class of your seurat object")
     }
@@ -737,13 +743,15 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   expressed_genes_receiver = list_expressed_genes_receiver %>% unlist() %>% unique()
 
   ## sender
-  if (sender == "all"){
-    list_expressed_genes_sender = Idents(seuratObj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
-    names(list_expressed_genes_sender) = Idents(seuratObj) %>% unique()
-    expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
+  if (length(sender) == 1){
+    if (sender == "all"){
+      list_expressed_genes_sender = Idents(seuratObj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+      names(list_expressed_genes_sender) = Idents(seuratObj) %>% unique()
+      expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
-  } else if (sender == "undefined") {
-    expressed_genes_sender = union(seuratObj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+    } else if (sender == "undefined") {
+      expressed_genes_sender = union(seuratObj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+    }
   } else {
     sender_celltypes = sender
     list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
@@ -983,7 +991,13 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
     stop("The defined receiver_affected cell type should be an identity class of your seurat object")
   if(sum(receiver_reference %in% unique(Idents(seurat_obj))) != length(receiver_reference))
     stop("The defined receiver_reference cell type should be an identity class of your seurat object")
-  if((sender != "all" & sender != "undefined")){
+  if(length(sender) == 1){
+    if(sender != "all" & sender != "undefined"){
+      if(sum(sender %in% unique(Idents(seurat_obj))) != length(sender)){
+        stop("The sender argument should be 'all' or 'undefined' or an identity class of your seurat object")
+      }
+    }
+  } else {
     if(sum(sender %in% unique(Idents(seurat_obj))) != length(sender)){
       stop("The sender argument should be 'all' or 'undefined' or an identity class of your seurat object")
     }
@@ -1027,13 +1041,15 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   expressed_genes_receiver = list_expressed_genes_receiver %>% unlist() %>% unique()
 
   ## sender
-  if (sender == "all"){
-    list_expressed_genes_sender = Idents(seuratObj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
-    names(list_expressed_genes_sender) = Idents(seuratObj) %>% unique()
-    expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
+  if (length(sender) == 1){
+    if (sender == "all"){
+      list_expressed_genes_sender = Idents(seuratObj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+      names(list_expressed_genes_sender) = Idents(seuratObj) %>% unique()
+      expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
-  } else if (sender == "undefined") {
-    expressed_genes_sender = union(seuratObj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+    } else if (sender == "undefined") {
+      expressed_genes_sender = union(seuratObj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+    }
   } else {
     sender_celltypes = sender
     list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
@@ -1246,10 +1262,16 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
     stop("condition_oi should be in the condition-indicating column")
   if(sum(condition_reference %in% c(seurat_obj[[condition_colname]] %>% unlist() %>% unique())) != length(condition_reference))
     stop("condition_reference should be in the condition-indicating column")
-  if((sender != "all" & sender != "undefined")){
-    if(sum(sender %in% unique(Idents(seurat_obj))) != length(sender)){
-      stop("The sender argument should be 'all' or 'undefined' or an identity class of your seurat object")
+  if(length(sender) == 1){
+    if(sender != "all" & sender != "undefined"){
+      if(sum(sender %in% unique(Idents(seurat_obj))) != length(sender)){
+        stop("The sender argument should be 'all' or 'undefined' or an identity class of your seurat object")
+      }
     }
+  } else {
+      if(sum(sender %in% unique(Idents(seurat_obj))) != length(sender)){
+        stop("The sender argument should be 'all' or 'undefined' or an identity class of your seurat object")
+      }
   }
   if(organism != "mouse" & organism != "human")
     stop("Organism should be 'mouse' or 'human'")
@@ -1290,13 +1312,15 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   expressed_genes_receiver = list_expressed_genes_receiver %>% unlist() %>% unique()
 
   ## sender
-  if (sender == "all"){
-    list_expressed_genes_sender = Idents(seuratObj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
-    names(list_expressed_genes_sender) = Idents(seuratObj) %>% unique()
-    expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
+  if (length(sender) == 1){
+    if (sender == "all"){
+      list_expressed_genes_sender = Idents(seuratObj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+      names(list_expressed_genes_sender) = Idents(seuratObj) %>% unique()
+      expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
-  } else if (sender == "undefined") {
-    expressed_genes_sender = union(seuratObj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+    } else if (sender == "undefined") {
+      expressed_genes_sender = union(seuratObj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+    }
   } else {
     sender_celltypes = sender
     list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
