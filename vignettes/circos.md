@@ -483,6 +483,32 @@ dev.off()
 ##   2
 ```
 
+Test something out?
+
+``` r
+circos.par(gap.degree = gaps)
+chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = transparency, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid",
+    preAllocateTracks = list(track.height = 0.075))
+# we go back to the first track and customize sector labels
+circos.track(track.index = 1, panel.fun = function(x, y) {
+    circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index,
+        facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.55), cex = 0.8)
+}, bg.border = NA) #
+```
+
+![](circos_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+
+``` r
+chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = transparency, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid",
+    preAllocateTracks = list(track.height = 0.075))
+```
+
+![](circos_files/figure-gfm/unnamed-chunk-25-2.png)<!-- -->
+
+``` r
+circos.clear()
+```
+
 ### Remark on making a ligand-receptor-target circos plot
 
 In the paper of Bonnardel, T’Jonck et al. [Stellate Cells, Hepatocytes,

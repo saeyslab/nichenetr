@@ -398,7 +398,8 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
         facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.55), cex = 0.8)
 }, bg.border = NA) #
 chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = transparency, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid",
-    preAllocateTracks = list(track.height = 0.075))circos.clear()
+    preAllocateTracks = list(track.height = 0.075))
+circos.clear()
 ```
 
 ### Remark on making a ligand-receptor-target circos plot

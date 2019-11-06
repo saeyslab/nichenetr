@@ -92,7 +92,7 @@ Now we will show how to assess the accuracy of the model in predicting whether c
 
 A graphical summary of this procedure is visualized here below:
 
-![](vignettes/ligand_activity_prediction_workflow_new.png)
+![](ligand_activity_prediction_workflow_new.png)
 
 Step 1: convert expression datasets to the required format to perform ligand activity prediction
 
