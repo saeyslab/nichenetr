@@ -173,17 +173,51 @@ prepare_ligand_target_visualization = function(ligand_target_df, ligand_target_m
 
   # consider only targets belonging to the top250 targets of individual ligands and with at least one ligand-link with score higher than the defined cutoff
   ligand_target_vis = ligand_target_matrix_oi[ligand_target_df$target %>% unique(),ligand_target_df$ligand %>% unique()]
-  ligand_target_vis_filtered = ligand_target_vis[ligand_target_vis %>% apply(1,sum) > 0,ligand_target_vis %>% apply(2,sum) > 0]
+  dim(ligand_target_vis) = c(length(ligand_target_df$target %>% unique()), length(ligand_target_df$ligand %>% unique()))
+  all_targets = ligand_target_df$target %>% unique()
+  all_ligands = ligand_target_df$ligand %>% unique()
+  rownames(ligand_target_vis) = all_targets
+  colnames(ligand_target_vis) = all_ligands
 
-  distoi = dist(1-cor(t(ligand_target_vis_filtered)))
-  hclust_obj = hclust(distoi, method = "ward.D2")
-  order_targets = hclust_obj$labels[hclust_obj$order]
+  keep_targets = all_targets[ligand_target_vis %>% apply(1,sum) > 0]
+  keep_ligands = all_ligands[ligand_target_vis %>% apply(2,sum) > 0]
 
-  distoi_targets = dist(1-cor(ligand_target_vis_filtered))
-  hclust_obj = hclust(distoi_targets, method = "ward.D2")
-  order_ligands = hclust_obj$labels[hclust_obj$order]
+
+  ligand_target_vis_filtered = ligand_target_vis[keep_targets,keep_ligands]
+
+
+  if(is.matrix(ligand_target_vis_filtered)){
+    rownames(ligand_target_vis_filtered) = keep_targets
+    colnames(ligand_target_vis_filtered) = keep_ligands
+
+  } else {
+    dim(ligand_target_vis_filtered) = c(length(keep_targets), length(keep_ligands))
+    rownames(ligand_target_vis_filtered) = keep_targets
+    colnames(ligand_target_vis_filtered) = keep_ligands
+  }
+
+
+  if(nrow(ligand_target_vis_filtered) > 1){
+    distoi = dist(1-cor(t(ligand_target_vis_filtered)))
+    hclust_obj = hclust(distoi, method = "ward.D2")
+    order_targets = hclust_obj$labels[hclust_obj$order]
+  } else {
+    order_targets = rownames(ligand_target_vis_filtered)
+  }
+  if(ncol(ligand_target_vis_filtered) > 1){
+    distoi_targets = dist(1-cor(ligand_target_vis_filtered))
+    hclust_obj = hclust(distoi_targets, method = "ward.D2")
+    order_ligands = hclust_obj$labels[hclust_obj$order]
+  } else {
+    order_ligands = colnames(ligand_target_vis_filtered)
+  }
 
   vis_ligand_target_network = ligand_target_vis_filtered[order_targets,order_ligands]
+  dim(vis_ligand_target_network) = c(length(order_targets), length(order_ligands))
+  rownames(vis_ligand_target_network) = order_targets
+  colnames(vis_ligand_target_network) = order_ligands
+  return(vis_ligand_target_network)
+
 }
 #' @title Assess probability that a target gene belongs to the geneset based on a multi-ligand random forest model
 #'
@@ -670,10 +704,11 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #'
 #' @examples
 #' \dontrun{
+#' seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
 #' ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
 #' lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 #' weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
-#' nichenet_seuratobj_aggregate(receiver = "CD8 T", seurat_obj = seuratObj, condition_colname = "aggregate", condition_oi = "Virus", condition_reference = "StSt", sender = "DC", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
+#' nichenet_seuratobj_aggregate(receiver = "CD8 T", seurat_obj = seuratObj, condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = "Mono", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
 #' }
 #'
 #' @export
@@ -713,9 +748,9 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   if(geneset != "DE" & geneset != "up" & geneset != "down")
     stop("geneset should be 'DE', 'up' or 'down'")
 
-  # load in NicheNet networks, define ligands and receptors
-  # load in NicheNet networks, define ligands and receptors
-  if (verbose == TRUE){print("Load in NicheNet's networks")}
+  # Read in and process NicheNet networks, define ligands and receptors
+  # Read in and process NicheNet networks, define ligands and receptors
+  if (verbose == TRUE){print("Read in and process NicheNet's networks")}
   weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
 
   if (organism == "mouse"){
@@ -745,12 +780,17 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   ## sender
   if (length(sender) == 1){
     if (sender == "all"){
-      list_expressed_genes_sender = Idents(seuratObj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
-      names(list_expressed_genes_sender) = Idents(seuratObj) %>% unique()
+      list_expressed_genes_sender = Idents(seurat_obj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+      names(list_expressed_genes_sender) = Idents(seurat_obj) %>% unique()
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
     } else if (sender == "undefined") {
-      expressed_genes_sender = union(seuratObj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+      expressed_genes_sender = union(seurat_obj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+    } else if (sender != "all" & sender != "undefined") {
+      sender_celltypes = sender
+      list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+      names(list_expressed_genes_sender) = sender_celltypes %>% unique()
+      expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
     }
   } else {
     sender_celltypes = sender
@@ -784,8 +824,17 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   # step3 nichenet analysis: define potential ligands
   expressed_ligands = intersect(ligands,expressed_genes_sender)
   expressed_receptors = intersect(receptors,expressed_genes_receiver)
-
+  if (length(expressed_ligands) == 0){
+    stop("No ligands expressed in sender cell")
+  }
+  if (length(expressed_receptors) == 0){
+    stop("No receptors expressed in receiver cell")
+  }
   potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
+  if (length(potential_ligands) == 0){
+    stop("No potentially active ligands")
+  }
+
 
   if (verbose == TRUE){print("Perform NicheNet ligand activity analysis")}
 
@@ -802,16 +851,23 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
 
   # step5 infer target genes of the top-ranked ligands
   active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = top_n_targets) %>% bind_rows() %>% drop_na()
-  active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = cutoff_visualization)
-  order_ligands = intersect(best_upstream_ligands, colnames(active_ligand_target_links)) %>% rev() %>% make.names()
-  order_targets = active_ligand_target_links_df$target %>% unique() %>% intersect(rownames(active_ligand_target_links)) %>% make.names()
+  if(nrow(active_ligand_target_links_df) > 0){
+    active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = cutoff_visualization)
+    order_ligands = intersect(best_upstream_ligands, colnames(active_ligand_target_links)) %>% rev() %>% make.names()
+    order_targets = active_ligand_target_links_df$target %>% unique() %>% intersect(rownames(active_ligand_target_links)) %>% make.names()
+    rownames(active_ligand_target_links) = rownames(active_ligand_target_links) %>% make.names()
+    colnames(active_ligand_target_links) = colnames(active_ligand_target_links) %>% make.names()
 
-  rownames(active_ligand_target_links) = rownames(active_ligand_target_links) %>% make.names()
-  colnames(active_ligand_target_links) = colnames(active_ligand_target_links) %>% make.names()
+    order_targets = order_targets %>% intersect(rownames(active_ligand_target_links))
+    order_ligands = order_ligands %>% intersect(colnames(active_ligand_target_links))
 
-  vis_ligand_target = active_ligand_target_links[order_targets,order_ligands] %>% t()
-  p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized ligands","Predicted target genes", color = "purple",legend_position = "top", x_axis_position = "top",legend_title = "Regulatory potential")  + theme(axis.text.x = element_text(face = "italic")) #+ scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.006,0.012))
-
+    vis_ligand_target = active_ligand_target_links[order_targets,order_ligands] %>% t()
+    p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized ligands","Predicted target genes", color = "purple",legend_position = "top", x_axis_position = "top",legend_title = "Regulatory potential")  + theme(axis.text.x = element_text(face = "italic")) #+ scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.006,0.012))
+  } else {
+    vis_ligand_target = NULL
+    p_ligand_target_network = NULL
+    print("no highly likely active targets found for top ligands")
+  }
   # combined heatmap: overlay ligand activities
   ligand_pearson_matrix = ligand_activities %>% select(pearson) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
@@ -850,15 +906,26 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   lr_network_top_df = lr_network_top_df_large %>% spread("from","weight",fill = 0)
   lr_network_top_matrix = lr_network_top_df %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df$to)
 
-  dist_receptors = dist(lr_network_top_matrix, method = "binary")
-  hclust_receptors = hclust(dist_receptors, method = "ward.D2")
-  order_receptors = hclust_receptors$labels[hclust_receptors$order]
+  if (nrow(lr_network_top_matrix) > 1){
+    dist_receptors = dist(lr_network_top_matrix, method = "binary")
+    hclust_receptors = hclust(dist_receptors, method = "ward.D2")
+    order_receptors = hclust_receptors$labels[hclust_receptors$order]
+  } else {
+    order_receptors = rownames(lr_network_top_matrix)
+  }
+  if (ncol(lr_network_top_matrix) > 1) {
+    dist_ligands = dist(lr_network_top_matrix %>% t(), method = "binary")
+    hclust_ligands = hclust(dist_ligands, method = "ward.D2")
+    order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
+  } else {
+    order_ligands_receptor = colnames(lr_network_top_matrix)
+  }
 
-  dist_ligands = dist(lr_network_top_matrix %>% t(), method = "binary")
-  hclust_ligands = hclust(dist_ligands, method = "ward.D2")
-  order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
+  order_receptors = order_receptors %>% intersect(rownames(lr_network_top_matrix))
+  order_ligands_receptor = order_ligands_receptor %>% intersect(colnames(lr_network_top_matrix))
 
   vis_ligand_receptor_network = lr_network_top_matrix[order_receptors, order_ligands_receptor]
+  dim(vis_ligand_receptor_network) = c(length(order_receptors), length(order_ligands_receptor))
 
   rownames(vis_ligand_receptor_network) = rownames(vis_ligand_receptor_network) %>% make.names()
   colnames(vis_ligand_receptor_network) = colnames(vis_ligand_receptor_network) %>% make.names()
@@ -872,21 +939,40 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   lr_network_top_df_strict = lr_network_top_df_large_strict %>% spread("from","weight",fill = 0)
   lr_network_top_matrix_strict = lr_network_top_df_strict %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df_strict$to)
 
-  dist_receptors = dist(lr_network_top_matrix_strict, method = "binary")
-  hclust_receptors = hclust(dist_receptors, method = "ward.D2")
-  order_receptors = hclust_receptors$labels[hclust_receptors$order]
+  if (nrow(lr_network_top_df_large_strict) == 0){
+    print("Remark: no bona fide receptors of top ligands")
+    vis_ligand_receptor_network_strict = NULL
+    p_ligand_receptor_network_strict = NULL
+    lr_network_top_df_large_strict =  NULL
 
-  dist_ligands = dist(lr_network_top_matrix_strict %>% t(), method = "binary")
-  hclust_ligands = hclust(dist_ligands, method = "ward.D2")
-  order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
+  } else {
+    if (nrow(lr_network_top_matrix_strict) > 1){
+      dist_receptors = dist(lr_network_top_matrix_strict, method = "binary")
+      hclust_receptors = hclust(dist_receptors, method = "ward.D2")
+      order_receptors = hclust_receptors$labels[hclust_receptors$order]
+    } else {
+      order_receptors = rownames(lr_network_top_matrix)
+    }
+    if (ncol(lr_network_top_matrix_strict) > 1) {
+      dist_ligands = dist(lr_network_top_matrix_strict %>% t(), method = "binary")
+      hclust_ligands = hclust(dist_ligands, method = "ward.D2")
+      order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
+    } else {
+      order_ligands_receptor = colnames(lr_network_top_matrix_strict)
+    }
+    order_receptors = order_receptors %>% intersect(rownames(lr_network_top_matrix_strict))
+    order_ligands_receptor = order_ligands_receptor %>% intersect(colnames(lr_network_top_matrix_strict))
 
-  vis_ligand_receptor_network_strict = lr_network_top_matrix_strict[order_receptors, order_ligands_receptor]
+    vis_ligand_receptor_network_strict = lr_network_top_matrix_strict[order_receptors, order_ligands_receptor]
+    dim(vis_ligand_receptor_network_strict) = c(length(order_receptors), length(order_ligands_receptor))
 
-  rownames(vis_ligand_receptor_network_strict) = rownames(vis_ligand_receptor_network_strict) %>% make.names()
-  colnames(vis_ligand_receptor_network_strict) = colnames(vis_ligand_receptor_network_strict) %>% make.names()
+    rownames(vis_ligand_receptor_network_strict) = rownames(vis_ligand_receptor_network_strict) %>% make.names()
+    colnames(vis_ligand_receptor_network_strict) = colnames(vis_ligand_receptor_network_strict) %>% make.names()
 
-  p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential\n(bona fide)")
+    p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential\n(bona fide)")
 
+    lr_network_top_df_large_strict = lr_network_top_df_large_strict %>% rename(ligand = from, receptor = to)
+  }
 
   return(list(
     ligand_activities = ligand_activities,
@@ -902,7 +988,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     ligand_receptor_df = lr_network_top_df_large %>% rename(ligand = from, receptor = to),
     ligand_receptor_matrix_bonafide = vis_ligand_receptor_network_strict,
     ligand_receptor_heatmap_bonafide = p_ligand_receptor_network_strict,
-    ligand_receptor_df_bonafide = lr_network_top_df_large_strict %>% rename(ligand = from, receptor = to)
+    ligand_receptor_df_bonafide = lr_network_top_df_large_strict
 
   ))
 }
@@ -968,9 +1054,13 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.10){
 #'
 #' @examples
 #' \dontrun{
+#' seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
 #' ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
 #' lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 #' weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
+#' # works, but does not make sense
+#' nichenet_seuratobj_cluster_de(seurat_obj = seuratObj, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = "Mono", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
+#' # type of analysis for which this would make sense
 #' nichenet_seuratobj_cluster_de(seurat_obj = seuratObj, receiver_affected = "p-EMT-pos-cancer", receiver_reference = "p-EMT-neg-cancer", sender = "Fibroblast", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
 #' }
 #'
@@ -1007,8 +1097,8 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   if(geneset != "DE" & geneset != "up" & geneset != "down")
     stop("geneset should be 'DE', 'up' or 'down'")
 
-  # load in NicheNet networks, define ligands and receptors
-  if (verbose == TRUE){print("Load in NicheNet's networks")}
+  # Read in and process NicheNet networks, define ligands and receptors
+  if (verbose == TRUE){print("Read in and process NicheNet's networks")}
   weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
 
   if (organism == "mouse"){
@@ -1043,12 +1133,17 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   ## sender
   if (length(sender) == 1){
     if (sender == "all"){
-      list_expressed_genes_sender = Idents(seuratObj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
-      names(list_expressed_genes_sender) = Idents(seuratObj) %>% unique()
+      list_expressed_genes_sender = Idents(seurat_obj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+      names(list_expressed_genes_sender) = Idents(seurat_obj) %>% unique()
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
     } else if (sender == "undefined") {
-      expressed_genes_sender = union(seuratObj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+      expressed_genes_sender = union(seurat_obj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+    } else if (sender != "all" & sender != "undefined") {
+      sender_celltypes = sender
+      list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+      names(list_expressed_genes_sender) = sender_celltypes %>% unique()
+      expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
     }
   } else {
     sender_celltypes = sender
@@ -1078,9 +1173,17 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 
   # step3 nichenet analysis: define potential ligands
   expressed_ligands = intersect(ligands,expressed_genes_sender)
-  expressed_receptors = intersect(receptors,expressed_genes_receiver_ss)
-
+  expressed_receptors = intersect(receptors,expressed_genes_receiver)
+  if (length(expressed_ligands) == 0){
+    stop("No ligands expressed in sender cell")
+  }
+  if (length(expressed_receptors) == 0){
+    stop("No receptors expressed in receiver cell")
+  }
   potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
+  if (length(potential_ligands) == 0){
+    stop("No potentially active ligands")
+  }
 
   if (verbose == TRUE){print("Perform NicheNet ligand activity analysis")}
 
@@ -1097,15 +1200,24 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 
   # step5 infer target genes of the top-ranked ligands
   active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = top_n_targets) %>% bind_rows() %>% drop_na()
-  active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = cutoff_visualization)
-  order_ligands = intersect(best_upstream_ligands, colnames(active_ligand_target_links)) %>% rev() %>% make.names()
-  order_targets = active_ligand_target_links_df$target %>% unique() %>% intersect(rownames(active_ligand_target_links)) %>% make.names()
 
-  rownames(active_ligand_target_links) = rownames(active_ligand_target_links) %>% make.names()
-  colnames(active_ligand_target_links) = colnames(active_ligand_target_links) %>% make.names()
+  if(nrow(active_ligand_target_links_df) > 0){
+    active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = cutoff_visualization)
+    order_ligands = intersect(best_upstream_ligands, colnames(active_ligand_target_links)) %>% rev() %>% make.names()
+    order_targets = active_ligand_target_links_df$target %>% unique() %>% intersect(rownames(active_ligand_target_links)) %>% make.names()
+    rownames(active_ligand_target_links) = rownames(active_ligand_target_links) %>% make.names()
+    colnames(active_ligand_target_links) = colnames(active_ligand_target_links) %>% make.names()
 
-  vis_ligand_target = active_ligand_target_links[order_targets,order_ligands] %>% t()
-  p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized ligands","Predicted target genes", color = "purple",legend_position = "top", x_axis_position = "top",legend_title = "Regulatory potential")  + theme(axis.text.x = element_text(face = "italic")) #+ scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.006,0.012))
+    order_targets = order_targets %>% intersect(rownames(active_ligand_target_links))
+    order_ligands = order_ligands %>% intersect(colnames(active_ligand_target_links))
+
+    vis_ligand_target = active_ligand_target_links[order_targets,order_ligands] %>% t()
+    p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized ligands","Predicted target genes", color = "purple",legend_position = "top", x_axis_position = "top",legend_title = "Regulatory potential")  + theme(axis.text.x = element_text(face = "italic")) #+ scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.006,0.012))
+  } else {
+    vis_ligand_target = NULL
+    p_ligand_target_network = NULL
+    print("no highly likely active targets found for top ligands")
+  }
 
   # combined heatmap: overlay ligand activities
   ligand_pearson_matrix = ligand_activities %>% select(pearson) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
@@ -1145,15 +1257,26 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   lr_network_top_df = lr_network_top_df_large %>% spread("from","weight",fill = 0)
   lr_network_top_matrix = lr_network_top_df %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df$to)
 
-  dist_receptors = dist(lr_network_top_matrix, method = "binary")
-  hclust_receptors = hclust(dist_receptors, method = "ward.D2")
-  order_receptors = hclust_receptors$labels[hclust_receptors$order]
+  if (nrow(lr_network_top_matrix) > 1){
+    dist_receptors = dist(lr_network_top_matrix, method = "binary")
+    hclust_receptors = hclust(dist_receptors, method = "ward.D2")
+    order_receptors = hclust_receptors$labels[hclust_receptors$order]
+  } else {
+    order_receptors = rownames(lr_network_top_matrix)
+  }
+  if (ncol(lr_network_top_matrix) > 1) {
+    dist_ligands = dist(lr_network_top_matrix %>% t(), method = "binary")
+    hclust_ligands = hclust(dist_ligands, method = "ward.D2")
+    order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
+  } else {
+    order_ligands_receptor = colnames(lr_network_top_matrix)
+  }
 
-  dist_ligands = dist(lr_network_top_matrix %>% t(), method = "binary")
-  hclust_ligands = hclust(dist_ligands, method = "ward.D2")
-  order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
+  order_receptors = order_receptors %>% intersect(rownames(lr_network_top_matrix))
+  order_ligands_receptor = order_ligands_receptor %>% intersect(colnames(lr_network_top_matrix))
 
   vis_ligand_receptor_network = lr_network_top_matrix[order_receptors, order_ligands_receptor]
+  dim(vis_ligand_receptor_network) = c(length(order_receptors), length(order_ligands_receptor))
 
   rownames(vis_ligand_receptor_network) = rownames(vis_ligand_receptor_network) %>% make.names()
   colnames(vis_ligand_receptor_network) = colnames(vis_ligand_receptor_network) %>% make.names()
@@ -1167,21 +1290,43 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   lr_network_top_df_strict = lr_network_top_df_large_strict %>% spread("from","weight",fill = 0)
   lr_network_top_matrix_strict = lr_network_top_df_strict %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df_strict$to)
 
-  dist_receptors = dist(lr_network_top_matrix_strict, method = "binary")
-  hclust_receptors = hclust(dist_receptors, method = "ward.D2")
-  order_receptors = hclust_receptors$labels[hclust_receptors$order]
+  if (nrow(lr_network_top_df_large_strict) == 0){
+    print("Remark: no bona fide receptors of top ligands")
+    vis_ligand_receptor_network_strict = NULL
+    p_ligand_receptor_network_strict = NULL
+    lr_network_top_df_large_strict =  NULL
 
-  dist_ligands = dist(lr_network_top_matrix_strict %>% t(), method = "binary")
-  hclust_ligands = hclust(dist_ligands, method = "ward.D2")
-  order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
+  } else {
 
-  vis_ligand_receptor_network_strict = lr_network_top_matrix_strict[order_receptors, order_ligands_receptor]
+    if (nrow(lr_network_top_matrix_strict) > 1){
+      dist_receptors = dist(lr_network_top_matrix_strict, method = "binary")
+      hclust_receptors = hclust(dist_receptors, method = "ward.D2")
+      order_receptors = hclust_receptors$labels[hclust_receptors$order]
+    } else {
+      order_receptors = rownames(lr_network_top_matrix)
+    }
+    if (ncol(lr_network_top_matrix_strict) > 1) {
+      dist_ligands = dist(lr_network_top_matrix_strict %>% t(), method = "binary")
+      hclust_ligands = hclust(dist_ligands, method = "ward.D2")
+      order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
+    } else {
+      order_ligands_receptor = colnames(lr_network_top_matrix_strict)
+    }
 
-  rownames(vis_ligand_receptor_network_strict) = rownames(vis_ligand_receptor_network_strict) %>% make.names()
-  colnames(vis_ligand_receptor_network_strict) = colnames(vis_ligand_receptor_network_strict) %>% make.names()
+    order_receptors = order_receptors %>% intersect(rownames(lr_network_top_matrix_strict))
+    order_ligands_receptor = order_ligands_receptor %>% intersect(colnames(lr_network_top_matrix_strict))
 
-  p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential\n(bona fide)")
+    vis_ligand_receptor_network_strict = lr_network_top_matrix_strict[order_receptors, order_ligands_receptor]
+    dim(vis_ligand_receptor_network_strict) = c(length(order_receptors), length(order_ligands_receptor))
 
+    rownames(vis_ligand_receptor_network_strict) = rownames(vis_ligand_receptor_network_strict) %>% make.names()
+    colnames(vis_ligand_receptor_network_strict) = colnames(vis_ligand_receptor_network_strict) %>% make.names()
+
+    p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential\n(bona fide)")
+
+    lr_network_top_df_large_strict = lr_network_top_df_large_strict %>% rename(ligand = from, receptor = to)
+
+  }
 
   return(list(
     ligand_activities = ligand_activities,
@@ -1197,7 +1342,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
     ligand_receptor_df = lr_network_top_df_large %>% rename(ligand = from, receptor = to),
     ligand_receptor_matrix_bonafide = vis_ligand_receptor_network_strict,
     ligand_receptor_heatmap_bonafide = p_ligand_receptor_network_strict,
-    ligand_receptor_df_bonafide = lr_network_top_df_large_strict %>% rename(ligand = from, receptor = to)
+    ligand_receptor_df_bonafide = lr_network_top_df_large_strict
 
   ))
 }
@@ -1230,10 +1375,11 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 #'
 #' @examples
 #' \dontrun{
+#' seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
 #' ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
 #' lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 #' weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
-#' nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seuratObj, receiver_affected = "CD8 T (PD1 Hi)", receiver_reference = "CD8 T (PD1 Lo)", condition_colname = "aggregate", condition_oi = "Virus", condition_reference = "steady-state", sender = "DCs", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
+#' nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seuratObj, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = "Mono", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
 #' }
 #'
 #' @export
@@ -1278,8 +1424,8 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   if(geneset != "DE" & geneset != "up" & geneset != "down")
     stop("geneset should be 'DE', 'up' or 'down'")
 
-  # load in NicheNet networks, define ligands and receptors
-  if (verbose == TRUE){print("Load in NicheNet's networks")}
+  # Read in and process NicheNet networks, define ligands and receptors
+  if (verbose == TRUE){print("Read in and process NicheNet's networks")}
   weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
 
   if (organism == "mouse"){
@@ -1314,12 +1460,17 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   ## sender
   if (length(sender) == 1){
     if (sender == "all"){
-      list_expressed_genes_sender = Idents(seuratObj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
-      names(list_expressed_genes_sender) = Idents(seuratObj) %>% unique()
+      list_expressed_genes_sender = Idents(seurat_obj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+      names(list_expressed_genes_sender) = Idents(seurat_obj) %>% unique()
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
     } else if (sender == "undefined") {
-      expressed_genes_sender = union(seuratObj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+      expressed_genes_sender = union(seurat_obj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+    } else if (sender != "all" & sender != "undefined") {
+      sender_celltypes = sender
+      list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+      names(list_expressed_genes_sender) = sender_celltypes %>% unique()
+      expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
     }
   } else {
     sender_celltypes = sender
@@ -1359,9 +1510,17 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 
   # step3 nichenet analysis: define potential ligands
   expressed_ligands = intersect(ligands,expressed_genes_sender)
-  expressed_receptors = intersect(receptors,expressed_genes_receiver_ss)
-
+  expressed_receptors = intersect(receptors,expressed_genes_receiver)
+  if (length(expressed_ligands) == 0){
+    stop("No ligands expressed in sender cell")
+  }
+  if (length(expressed_receptors) == 0){
+    stop("No receptors expressed in receiver cell")
+  }
   potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
+  if (length(potential_ligands) == 0){
+    stop("No potentially active ligands")
+  }
 
   if (verbose == TRUE){print("Perform NicheNet ligand activity analysis")}
 
@@ -1378,16 +1537,24 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 
   # step5 infer target genes of the top-ranked ligands
   active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = top_n_targets) %>% bind_rows() %>% drop_na()
-  active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = cutoff_visualization)
-  order_ligands = intersect(best_upstream_ligands, colnames(active_ligand_target_links)) %>% rev() %>% make.names()
-  order_targets = active_ligand_target_links_df$target %>% unique() %>% intersect(rownames(active_ligand_target_links)) %>% make.names()
 
-  rownames(active_ligand_target_links) = rownames(active_ligand_target_links) %>% make.names()
-  colnames(active_ligand_target_links) = colnames(active_ligand_target_links) %>% make.names()
+  if(nrow(active_ligand_target_links_df) > 0){
+    active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = cutoff_visualization)
+    order_ligands = intersect(best_upstream_ligands, colnames(active_ligand_target_links)) %>% rev() %>% make.names()
+    order_targets = active_ligand_target_links_df$target %>% unique() %>% intersect(rownames(active_ligand_target_links)) %>% make.names()
+    rownames(active_ligand_target_links) = rownames(active_ligand_target_links) %>% make.names()
+    colnames(active_ligand_target_links) = colnames(active_ligand_target_links) %>% make.names()
 
-  vis_ligand_target = active_ligand_target_links[order_targets,order_ligands] %>% t()
-  p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized ligands","Predicted target genes", color = "purple",legend_position = "top", x_axis_position = "top",legend_title = "Regulatory potential")  + theme(axis.text.x = element_text(face = "italic")) #+ scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.006,0.012))
+    order_targets = order_targets %>% intersect(rownames(active_ligand_target_links))
+    order_ligands = order_ligands %>% intersect(colnames(active_ligand_target_links))
 
+    vis_ligand_target = active_ligand_target_links[order_targets,order_ligands] %>% t()
+    p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized ligands","Predicted target genes", color = "purple",legend_position = "top", x_axis_position = "top",legend_title = "Regulatory potential")  + theme(axis.text.x = element_text(face = "italic")) #+ scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.006,0.012))
+  } else {
+    vis_ligand_target = NULL
+    p_ligand_target_network = NULL
+    print("no highly likely active targets found for top ligands")
+  }
   # combined heatmap: overlay ligand activities
   ligand_pearson_matrix = ligand_activities %>% select(pearson) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
@@ -1426,15 +1593,26 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   lr_network_top_df = lr_network_top_df_large %>% spread("from","weight",fill = 0)
   lr_network_top_matrix = lr_network_top_df %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df$to)
 
-  dist_receptors = dist(lr_network_top_matrix, method = "binary")
-  hclust_receptors = hclust(dist_receptors, method = "ward.D2")
-  order_receptors = hclust_receptors$labels[hclust_receptors$order]
+  if (nrow(lr_network_top_matrix) > 1){
+    dist_receptors = dist(lr_network_top_matrix, method = "binary")
+    hclust_receptors = hclust(dist_receptors, method = "ward.D2")
+    order_receptors = hclust_receptors$labels[hclust_receptors$order]
+  } else {
+    order_receptors = rownames(lr_network_top_matrix)
+  }
+  if (ncol(lr_network_top_matrix) > 1) {
+    dist_ligands = dist(lr_network_top_matrix %>% t(), method = "binary")
+    hclust_ligands = hclust(dist_ligands, method = "ward.D2")
+    order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
+  } else {
+    order_ligands_receptor = colnames(lr_network_top_matrix)
+  }
 
-  dist_ligands = dist(lr_network_top_matrix %>% t(), method = "binary")
-  hclust_ligands = hclust(dist_ligands, method = "ward.D2")
-  order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
+  order_receptors = order_receptors %>% intersect(rownames(lr_network_top_matrix))
+  order_ligands_receptor = order_ligands_receptor %>% intersect(colnames(lr_network_top_matrix))
 
   vis_ligand_receptor_network = lr_network_top_matrix[order_receptors, order_ligands_receptor]
+  dim(vis_ligand_receptor_network) = c(length(order_receptors), length(order_ligands_receptor))
 
   rownames(vis_ligand_receptor_network) = rownames(vis_ligand_receptor_network) %>% make.names()
   colnames(vis_ligand_receptor_network) = colnames(vis_ligand_receptor_network) %>% make.names()
@@ -1448,21 +1626,42 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   lr_network_top_df_strict = lr_network_top_df_large_strict %>% spread("from","weight",fill = 0)
   lr_network_top_matrix_strict = lr_network_top_df_strict %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df_strict$to)
 
-  dist_receptors = dist(lr_network_top_matrix_strict, method = "binary")
-  hclust_receptors = hclust(dist_receptors, method = "ward.D2")
-  order_receptors = hclust_receptors$labels[hclust_receptors$order]
+  if (nrow(lr_network_top_df_large_strict) == 0){
+    print("Remark: no bona fide receptors of top ligands")
+    vis_ligand_receptor_network_strict = NULL
+    p_ligand_receptor_network_strict = NULL
+    lr_network_top_df_large_strict =  NULL
 
-  dist_ligands = dist(lr_network_top_matrix_strict %>% t(), method = "binary")
-  hclust_ligands = hclust(dist_ligands, method = "ward.D2")
-  order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
+  } else {
+      if (nrow(lr_network_top_matrix_strict) > 1){
+        dist_receptors = dist(lr_network_top_matrix_strict, method = "binary")
+        hclust_receptors = hclust(dist_receptors, method = "ward.D2")
+        order_receptors = hclust_receptors$labels[hclust_receptors$order]
+      } else {
+        order_receptors = rownames(lr_network_top_matrix)
+      }
+      if (ncol(lr_network_top_matrix_strict) > 1) {
+        dist_ligands = dist(lr_network_top_matrix_strict %>% t(), method = "binary")
+        hclust_ligands = hclust(dist_ligands, method = "ward.D2")
+        order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
+      } else {
+        order_ligands_receptor = colnames(lr_network_top_matrix_strict)
+      }
 
-  vis_ligand_receptor_network_strict = lr_network_top_matrix_strict[order_receptors, order_ligands_receptor]
+    order_receptors = order_receptors %>% intersect(rownames(lr_network_top_matrix_strict))
+    order_ligands_receptor = order_ligands_receptor %>% intersect(colnames(lr_network_top_matrix_strict))
 
-  rownames(vis_ligand_receptor_network_strict) = rownames(vis_ligand_receptor_network_strict) %>% make.names()
-  colnames(vis_ligand_receptor_network_strict) = colnames(vis_ligand_receptor_network_strict) %>% make.names()
+    vis_ligand_receptor_network_strict = lr_network_top_matrix_strict[order_receptors, order_ligands_receptor]
+    dim(vis_ligand_receptor_network_strict) = c(length(order_receptors), length(order_ligands_receptor))
 
-  p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential\n(bona fide)")
+    rownames(vis_ligand_receptor_network_strict) = rownames(vis_ligand_receptor_network_strict) %>% make.names()
+    colnames(vis_ligand_receptor_network_strict) = colnames(vis_ligand_receptor_network_strict) %>% make.names()
 
+    p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential\n(bona fide)")
+
+    lr_network_top_df_large_strict = lr_network_top_df_large_strict %>% rename(ligand = from, receptor = to)
+
+  }
 
   return(list(
     ligand_activities = ligand_activities,
@@ -1478,7 +1677,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
     ligand_receptor_df = lr_network_top_df_large %>% rename(ligand = from, receptor = to),
     ligand_receptor_matrix_bonafide = vis_ligand_receptor_network_strict,
     ligand_receptor_heatmap_bonafide = p_ligand_receptor_network_strict,
-    ligand_receptor_df_bonafide = lr_network_top_df_large_strict %>% rename(ligand = from, receptor = to)
+    ligand_receptor_df_bonafide = lr_network_top_df_large_strict
 
   ))
 }

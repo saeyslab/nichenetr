@@ -45,9 +45,13 @@ A list with the following elements: $ligand_activities: data frame with output l
 }
 \examples{
 \dontrun{
+seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
+# works, but does not make sense
+nichenet_seuratobj_cluster_de(seurat_obj = seuratObj, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = "Mono", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
+# type of analysis for which this would make sense
 nichenet_seuratobj_cluster_de(seurat_obj = seuratObj, receiver_affected = "p-EMT-pos-cancer", receiver_reference = "p-EMT-neg-cancer", sender = "Fibroblast", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
 }
 

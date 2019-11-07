@@ -51,10 +51,11 @@ A list with the following elements: $ligand_activities: data frame with output l
 }
 \examples{
 \dontrun{
+seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
-nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seuratObj, receiver_affected = "CD8 T (PD1 Hi)", receiver_reference = "CD8 T (PD1 Lo)", condition_colname = "aggregate", condition_oi = "Virus", condition_reference = "steady-state", sender = "DCs", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
+nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seuratObj, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = "Mono", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
 }
 
 }
