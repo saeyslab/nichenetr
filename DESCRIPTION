@@ -35,7 +35,9 @@ Imports:
     emoa,
     DiceKriging,
     e1071,
-    Seurat
+    Seurat,
+    cowplot,
+    ggpubr
 Suggests: knitr,
     rmarkdown,
     testthat,
