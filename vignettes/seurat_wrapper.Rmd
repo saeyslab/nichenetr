@@ -114,7 +114,12 @@ To perform the NicheNet analysis with these specifications, run the following:
 # indicated cell types should be cell class identities
 # check via: 
 # seuratObj %>% Idents() %>% table()
-nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seuratObj, receiver = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = c("CD4 T","Treg", "Mono", "NK", "B", "DC"), ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
+nichenet_output = nichenet_seuratobj_aggregate(
+  seurat_obj = seuratObj, 
+  receiver = "CD8 T", 
+  condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", 
+  sender = c("CD4 T","Treg", "Mono", "NK", "B", "DC"), 
+  ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
 ```
 
 ### Interpret the NicheNet analysis output
@@ -139,7 +144,7 @@ nichenet_output$top_ligands
 
 These ligands are expressed by one or more of the input sender cells. To see which cell population expresses which of these top-ranked ligands, you can run the following:
 
-```{r}
+```{r, fig.width=12}
 DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), cols = "RdYlBu") + RotatedAxis()
 ```
 
@@ -147,7 +152,7 @@ As you can see, most op the top-ranked ligands seem to be mainly expressed by de
 
 It could also be interesting to see whether some of these ligands are differentially expressed after LCMV infection.
 
-```{r}
+```{r, fig.width=12}
 DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), split.by = "aggregate") + RotatedAxis()
 ```
 
@@ -323,7 +328,11 @@ seuratObj = SetIdent(seuratObj,value = "celltype")
 Now perform the NicheNet analysis to explain differential expression between the 'affected' cell population 'CD8 T cells after LCMV infection' and the reference cell population 'CD8 T cells in steady-state' by ligands expressed by monocytes and DCs after LCMV infection.
 
 ```{r}
-nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seuratObj, receiver_reference = "CD8 T_SS", receiver_affected = "CD8 T_LCMV", sender = c("DC_LCMV","Mono_LCMV"), ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
+nichenet_output = nichenet_seuratobj_cluster_de(
+  seurat_obj = seuratObj, 
+  receiver_reference = "CD8 T_SS", receiver_affected = "CD8 T_LCMV", 
+  sender = c("DC_LCMV","Mono_LCMV"), 
+  ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
 ```
 
 Check the top-ranked ligands and their target genes
@@ -353,4 +362,4 @@ print(Mono_upregulated_ligands)
 
 # References
 
-
+Bonnardel et al., 2019, Immunity 51, 1–17, [Stellate Cells, Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes Colonizing the Liver Macrophage Niche](https://doi.org/10.1016/j.immuni.2019.08.017)
