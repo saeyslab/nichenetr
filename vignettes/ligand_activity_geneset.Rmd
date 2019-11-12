@@ -39,7 +39,7 @@ This vignette guides you in detail through all these steps. As example expressio
 
 The used ligand-target matrix and example expression data of interacting cells can be downloaded from Zenodo. [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
 
-## Step 0: Load required packages, NicheNet ligand-target prior model and processed expression data of interacting cells
+## Step 0: Load required packages, NicheNet's ligand-target prior model and processed expression data of interacting cells
 
 Packages:
 
@@ -49,6 +49,8 @@ library(tidyverse)
 ```
 
 Ligand-target model:
+
+This model denotes the prior potential that a particular ligand might regulate the expression  of a specific target gene. 
 
 ```{r}
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
@@ -111,7 +113,14 @@ expressed_ligands = intersect(ligands,expressed_genes_sender)
 receptors = lr_network %>% pull(to) %>% unique()
 expressed_receptors = intersect(receptors,expressed_genes_receiver)
 
-potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
+lr_network_expressed = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) 
+head(lr_network_expressed)
+```
+
+This ligand-receptor network contains the expressed ligand-receptor interactions. As potentially active ligands for the NicheNet analysis, we will consider the ligands from this network.
+
+```{r}
+potential_ligands = lr_network_expressed %>% pull(from) %>% unique()
 head(potential_ligands)
 ```
 

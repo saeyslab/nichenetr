@@ -61,7 +61,7 @@ The used ligand-target matrix and example expression data of interacting
 cells can be downloaded from Zenodo.
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
 
-## Step 0: Load required packages, NicheNet ligand-target prior model and processed expression data of interacting cells
+## Step 0: Load required packages, NicheNet’s ligand-target prior model and processed expression data of interacting cells
 
 Packages:
 
@@ -70,8 +70,11 @@ library(nichenetr)
 library(tidyverse)
 ```
 
-Ligand-target
-model:
+Ligand-target model:
+
+This model denotes the prior potential that a particular ligand might
+regulate the expression of a specific target
+gene.
 
 ``` r
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
@@ -166,7 +169,25 @@ expressed_ligands = intersect(ligands,expressed_genes_sender)
 receptors = lr_network %>% pull(to) %>% unique()
 expressed_receptors = intersect(receptors,expressed_genes_receiver)
 
-potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
+lr_network_expressed = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) 
+head(lr_network_expressed)
+## # A tibble: 6 x 4
+##   from    to        source         database
+##   <chr>   <chr>     <chr>          <chr>   
+## 1 HGF     MET       kegg_cytokines kegg    
+## 2 TNFSF10 TNFRSF10A kegg_cytokines kegg    
+## 3 TNFSF10 TNFRSF10B kegg_cytokines kegg    
+## 4 TGFB2   TGFBR1    kegg_cytokines kegg    
+## 5 TGFB3   TGFBR1    kegg_cytokines kegg    
+## 6 INHBA   ACVR2A    kegg_cytokines kegg
+```
+
+This ligand-receptor network contains the expressed ligand-receptor
+interactions. As potentially active ligands for the NicheNet analysis,
+we will consider the ligands from this network.
+
+``` r
+potential_ligands = lr_network_expressed %>% pull(from) %>% unique()
 head(potential_ligands)
 ## [1] "HGF"     "TNFSF10" "TGFB2"   "TGFB3"   "INHBA"   "CD99"
 ```
@@ -242,7 +263,7 @@ p_hist_lig_activity = ggplot(ligand_activities, aes(x=pearson)) +
 p_hist_lig_activity
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ## Step 5: Infer target genes of top-ranked ligands and visualize in a heatmap
 
@@ -314,7 +335,7 @@ p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized
 p_ligand_target_network
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 Note that the choice of these cutoffs for visualization is quite
 arbitrary. We recommend users to test several cutoff values.
@@ -370,7 +391,7 @@ p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap
 p_ligand_receptor_network
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ## Follow-up analysis 2: Visualize expression of top-predicted ligands and their target genes in a combined heatmap
 
@@ -404,7 +425,7 @@ p_ligand_pearson = vis_ligand_pearson %>% make_heatmap_ggplot("Prioritized CAF-l
 p_ligand_pearson
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 #### Prepare expression of ligands in fibroblast per tumor
 
@@ -432,7 +453,7 @@ p_ligand_tumor_expression = vis_ligand_tumor_expression %>% make_heatmap_ggplot(
 p_ligand_tumor_expression
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 #### Prepare expression of target genes in malignant cells per tumor
 
@@ -453,7 +474,7 @@ p_target_tumor_scaled_expression = vis_target_tumor_expression_scaled  %>% make_
 p_target_tumor_scaled_expression
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
 #### Combine the different heatmaps in one overview figure
 
@@ -483,7 +504,7 @@ plot_grid(figures_without_legend,
           rel_heights = c(10,2), nrow = 2, align = "hv")
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 ## Other follow-up analyses:
 

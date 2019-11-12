@@ -926,9 +926,8 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
 
   vis_ligand_receptor_network = lr_network_top_matrix[order_receptors, order_ligands_receptor]
   dim(vis_ligand_receptor_network) = c(length(order_receptors), length(order_ligands_receptor))
-
-  rownames(vis_ligand_receptor_network) = rownames(vis_ligand_receptor_network) %>% make.names()
-  colnames(vis_ligand_receptor_network) = colnames(vis_ligand_receptor_network) %>% make.names()
+  rownames(vis_ligand_receptor_network) = order_receptors %>% make.names()
+  colnames(vis_ligand_receptor_network) = order_ligands_receptor %>% make.names()
 
   p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential")
 
@@ -966,8 +965,8 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     vis_ligand_receptor_network_strict = lr_network_top_matrix_strict[order_receptors, order_ligands_receptor]
     dim(vis_ligand_receptor_network_strict) = c(length(order_receptors), length(order_ligands_receptor))
 
-    rownames(vis_ligand_receptor_network_strict) = rownames(vis_ligand_receptor_network_strict) %>% make.names()
-    colnames(vis_ligand_receptor_network_strict) = colnames(vis_ligand_receptor_network_strict) %>% make.names()
+    rownames(vis_ligand_receptor_network_strict) = order_receptors %>% make.names()
+    colnames(vis_ligand_receptor_network_strict) = order_ligands_receptor %>% make.names()
 
     p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential\n(bona fide)")
 
@@ -1278,8 +1277,8 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   vis_ligand_receptor_network = lr_network_top_matrix[order_receptors, order_ligands_receptor]
   dim(vis_ligand_receptor_network) = c(length(order_receptors), length(order_ligands_receptor))
 
-  rownames(vis_ligand_receptor_network) = rownames(vis_ligand_receptor_network) %>% make.names()
-  colnames(vis_ligand_receptor_network) = colnames(vis_ligand_receptor_network) %>% make.names()
+  rownames(vis_ligand_receptor_network) = order_receptors %>% make.names()
+  colnames(vis_ligand_receptor_network) = order_ligands_receptor %>% make.names()
 
   p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential")
 
@@ -1319,8 +1318,8 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
     vis_ligand_receptor_network_strict = lr_network_top_matrix_strict[order_receptors, order_ligands_receptor]
     dim(vis_ligand_receptor_network_strict) = c(length(order_receptors), length(order_ligands_receptor))
 
-    rownames(vis_ligand_receptor_network_strict) = rownames(vis_ligand_receptor_network_strict) %>% make.names()
-    colnames(vis_ligand_receptor_network_strict) = colnames(vis_ligand_receptor_network_strict) %>% make.names()
+    rownames(vis_ligand_receptor_network_strict) = order_receptors %>% make.names()
+    colnames(vis_ligand_receptor_network_strict) = order_ligands_receptor %>% make.names()
 
     p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential\n(bona fide)")
 
@@ -1614,8 +1613,8 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   vis_ligand_receptor_network = lr_network_top_matrix[order_receptors, order_ligands_receptor]
   dim(vis_ligand_receptor_network) = c(length(order_receptors), length(order_ligands_receptor))
 
-  rownames(vis_ligand_receptor_network) = rownames(vis_ligand_receptor_network) %>% make.names()
-  colnames(vis_ligand_receptor_network) = colnames(vis_ligand_receptor_network) %>% make.names()
+  rownames(vis_ligand_receptor_network) = order_receptors %>% make.names()
+  colnames(vis_ligand_receptor_network) = order_ligands_receptor %>% make.names()
 
   p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential")
 
@@ -1654,8 +1653,8 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
     vis_ligand_receptor_network_strict = lr_network_top_matrix_strict[order_receptors, order_ligands_receptor]
     dim(vis_ligand_receptor_network_strict) = c(length(order_receptors), length(order_ligands_receptor))
 
-    rownames(vis_ligand_receptor_network_strict) = rownames(vis_ligand_receptor_network_strict) %>% make.names()
-    colnames(vis_ligand_receptor_network_strict) = colnames(vis_ligand_receptor_network_strict) %>% make.names()
+    rownames(vis_ligand_receptor_network_strict) = order_receptors %>% make.names()
+    colnames(vis_ligand_receptor_network_strict) = order_ligands_receptor %>% make.names()
 
     p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential\n(bona fide)")
 
