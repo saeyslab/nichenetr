@@ -156,7 +156,6 @@ test_that("Single-cell ligand activity prediction functions work a bit OK", {
   classification_analysis_output = single_ligand_activity_score_classification(normalized_ligand_activities,cell_scores_tbl)
   expect_type(classification_analysis_output,"list")
 
-
 })
 
 
