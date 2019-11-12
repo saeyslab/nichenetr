@@ -149,10 +149,10 @@ demonstrates the use of a single wrapper function, the other
 demonstrates what’s behind the wrapper.
 
 -   [Perform NicheNet analysis starting from a Seurat
-    object](seurat_wrapper.md):`vignette("seurat_wrapper", package="nichenetr")`
+    object](vignettes/seurat_wrapper.md):`vignette("seurat_wrapper", package="nichenetr")`
 -   [Perform NicheNet analysis starting from a Seurat object:
     step-by-step
-    analysis](seurat_steps.md):`vignette("seurat_steps", package="nichenetr")`
+    analysis](vignettes/seurat_steps.md):`vignette("seurat_steps", package="nichenetr")`
 
 People interested in building own models or benchmark own models against
 NicheNet can read one of the following vignettes:

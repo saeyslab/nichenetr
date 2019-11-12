@@ -124,7 +124,7 @@ seuratObj@meta.data$celltype %>% table() # note that the number of cells of some
 DimPlot(seuratObj, reduction = "tsne")
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 Visualize the data to see to which condition cells belong. The metadata
 dataframe column that denotes the condition (steady-state or after LCMV
@@ -138,7 +138,7 @@ seuratObj@meta.data$aggregate %>% table()
 DimPlot(seuratObj, reduction = "tsne", group.by = "aggregate")
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 ### Read in NicheNet’s ligand-target prior model, ligand-receptor network and weighted integrated networks:
 
@@ -211,11 +211,10 @@ most likely to have induced the differential expression in CD8 T cells
 after LCMV infection.
 
 As described in the main vignette, the pipeline of a basic NicheNet
-analysis consist of the following steps:
+analysis consist of the following
+steps:
 
-  - 1.  Define a “sender/niche” cell population and a “receiver/target”
-        cell population present in your expression data and determine
-        which genes are expressed in both populations
+## 1\. Define a “sender/niche” cell population and a “receiver/target” cell population present in your expression data and determine which genes are expressed in both populations
 
 In this case study, the receiver cell population is the ‘CD8 T’ cell
 population, whereas the sender cell populations are ‘CD4 T’, ‘Treg’,
@@ -238,10 +237,7 @@ list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expre
 expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 ```
 
-  - 2.  Define a gene set of interest: these are the genes in the
-        “receiver/target” cell population that are potentially
-        affected by ligands expressed by interacting cells (e.g. genes
-        differentially expressed upon cell-cell interaction)
+## 2\. Define a gene set of interest: these are the genes in the “receiver/target” cell population that are potentially affected by ligands expressed by interacting cells (e.g. genes differentially expressed upon cell-cell interaction)
 
 Here, the gene set of interest are the genes differentially expressed in
 CD8 T cells after LCMV infection. The condition of interest is thus
@@ -264,12 +260,7 @@ geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_logFC) >= 
 geneset_oi = geneset_oi %>% .[. %in% rownames(ligand_target_matrix)]
 ```
 
-  - 3.  Define a set of potential ligands: these are ligands that are
-        expressed by the “sender/niche” cell population and bind a
-        (putative) receptor expressed by the “receiver/target”
-        population
-
-<!-- end list -->
+## 3\. Define a set of potential ligands: these are ligands that are expressed by the “sender/niche” cell population and bind a (putative) receptor expressed by the “receiver/target” population
 
 ``` r
 ligands = lr_network %>% pull(from) %>% unique()
@@ -281,12 +272,7 @@ expressed_receptors = intersect(receptors,expressed_genes_receiver)
 potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
 ```
 
-  - 4)  Perform NicheNet ligand activity analysis: rank the potential
-        ligands based on the presence of their target genes in the gene
-        set of interest (compared to the background set of
-genes)
-
-<!-- end list -->
+## 4\) Perform NicheNet ligand activity analysis: rank the potential ligands based on the presence of their target genes in the gene set of interest (compared to the background set of genes)
 
 ``` r
 ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
@@ -336,19 +322,18 @@ following:
 DotPlot(seuratObj, features = best_upstream_ligands %>% rev(), cols = "RdYlBu") + RotatedAxis()
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-38-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 As you can see, most op the top-ranked ligands seem to be mainly
-expressed by dendritic cells and monocytes.
+expressed by dendritic cells and
+monocytes.
 
-  - 5)  Infer receptors and top-predicted target genes of ligands that
-        are top-ranked in the ligand activity analysis
+## 5\) Infer receptors and top-predicted target genes of ligands that are top-ranked in the ligand activity analysis
 
-Active target gene
-inference
+### Active target gene inference
 
 ``` r
-active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = 100) %>% bind_rows() %>% drop_na()
+active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = 200) %>% bind_rows() %>% drop_na()
 
 active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = 0.33)
 
@@ -365,10 +350,9 @@ p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized
 p_ligand_target_network
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-40-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
-Receptors of top-ranked
-ligands
+### Receptors of top-ranked ligands
 
 ``` r
 lr_network_top = lr_network %>% filter(from %in% best_upstream_ligands & to %in% expressed_receptors) %>% distinct(from,to)
@@ -400,12 +384,9 @@ p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap
 p_ligand_receptor_network
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-42-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
-Receptors of top-ranked ligands, but after considering only bona fide
-ligand-receptor interactions documented in literature and publicly
-available
-databases
+### Receptors of top-ranked ligands, but after considering only bona fide ligand-receptor interactions documented in literature and publicly available databases
 
 ``` r
 lr_network_strict = lr_network %>% filter(database != "ppi_prediction_go" & database != "ppi_prediction")
@@ -439,9 +420,9 @@ p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>
 p_ligand_receptor_network_strict
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-44-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
-  - 6)  Summary visualizations of the NicheNet analysis
+## 6\) Summary visualizations of the NicheNet analysis
 
 For example, you can make a combined heatmap of ligand activities and
 the target genes of the top-ranked ligands
@@ -474,7 +455,7 @@ combined_plot = cowplot::plot_grid(figures_without_legend, legends, rel_heights 
 combined_plot
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-46-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 # Remarks
 

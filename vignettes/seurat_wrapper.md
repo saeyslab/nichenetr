@@ -250,7 +250,12 @@ following:
 # indicated cell types should be cell class identities
 # check via: 
 # seuratObj %>% Idents() %>% table()
-nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seuratObj, receiver = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = c("CD4 T","Treg", "Mono", "NK", "B", "DC"), ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
+nichenet_output = nichenet_seuratobj_aggregate(
+  seurat_obj = seuratObj, 
+  receiver = "CD8 T", 
+  condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", 
+  sender = c("CD4 T","Treg", "Mono", "NK", "B", "DC"), 
+  ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
 ## [1] "Read in and process NicheNet's networks"
 ## [1] "Define expressed ligands and receptors in receiver and sender cells"
 ## [1] "Perform DE analysis in receiver cell"
@@ -769,7 +774,11 @@ steady-state’ by ligands expressed by monocytes and DCs after LCMV
 infection.
 
 ``` r
-nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seuratObj, receiver_reference = "CD8 T_SS", receiver_affected = "CD8 T_LCMV", sender = c("DC_LCMV","Mono_LCMV"), ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
+nichenet_output = nichenet_seuratobj_cluster_de(
+  seurat_obj = seuratObj, 
+  receiver_reference = "CD8 T_SS", receiver_affected = "CD8 T_LCMV", 
+  sender = c("DC_LCMV","Mono_LCMV"), 
+  ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
 ## [1] "Read in and process NicheNet's networks"
 ## [1] "Define expressed ligands and receptors in receiver and sender cells"
 ## [1] "Perform DE analysis between two receiver cell clusters"
@@ -825,6 +834,11 @@ print(Mono_upregulated_ligands)
     <https://github.com/HelenaLC/muscat>).
 
 # References
+
+Bonnardel et al., 2019, Immunity 51, 1–17, [Stellate Cells, Hepatocytes,
+and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes
+Colonizing the Liver Macrophage
+Niche](https://doi.org/10.1016/j.immuni.2019.08.017)
 
 <div id="refs" class="references">
 
