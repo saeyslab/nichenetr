@@ -183,6 +183,6 @@ and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes
 Colonizing the Liver Macrophage
 Niche](https://doi.org/10.1016/j.immuni.2019.08.017)
 
-Browaeys et al., 2019, Nat Methods [NicheNet: modeling intercellular
-communication by linking ligands to target
-genes](https://doi.org/10.1038/s41592-019-0667-5)
+Browaeys, R., Saelens, W. & Saeys, Y. NicheNet: modeling intercellular
+communication by linking ligands to target genes. Nat Methods (2019)
+<a href="doi:10.1038/s41592-019-0667-5" class="uri">doi:10.1038/s41592-019-0667-5</a>
