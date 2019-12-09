@@ -20,14 +20,15 @@ integrates existing knowledge on ligand-to-target signaling paths. This
 allows to predict ligand-receptor interactions that might drive gene
 expression changes in cells of interest.
 
-Bonnardel, T’Jonck et al. used NicheNet to predict upstream niche
-signals driving Kupffer cell differentiation [Stellate Cells,
+The NicheNet paper is now published: [NicheNet: modeling intercellular
+communication by linking ligands to target
+genes](https://www.nature.com/articles/s41592-019-0667-5).
+
+Bonnardel, T’Jonck et al. already used NicheNet to predict upstream
+niche signals driving Kupffer cell differentiation [Stellate Cells,
 Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell Identity on
 Monocytes Colonizing the Liver Macrophage
 Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1).
-
-The methodological NicheNet paper has now officially been accepted and
-planned publication time is december-january.
 
 Introduction to NicheNet
 ------------------------
@@ -181,3 +182,7 @@ Bonnardel et al., 2019, Immunity 51, 1–17, [Stellate Cells, Hepatocytes,
 and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes
 Colonizing the Liver Macrophage
 Niche](https://doi.org/10.1016/j.immuni.2019.08.017)
+
+Browaeys et al., 2019, Nat Methods [NicheNet: modeling intercellular
+communication by linking ligands to target
+genes](https://doi.org/10.1038/s41592-019-0667-5)
