@@ -65,7 +65,7 @@ You can install nichenetr (and required dependencies) from github with:
 devtools::install_github("saeyslab/nichenetr")
 ```
 
-nichenetr was tested on both Windows and Linux (R version 3.6.0)
+nichenetr was tested on both Windows and Linux (R version 3.6.1)
 
 ## Learning to use nichenetr
 

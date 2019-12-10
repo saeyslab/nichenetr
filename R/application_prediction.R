@@ -723,7 +723,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
 
   # input check
   if(!is.numeric(seurat_obj@assays$RNA@scale.data))
-    stop("Seurat object should contained scaled expression data (numeric matrix)")
+    stop("Seurat object should contain scaled expression data (numeric matrix)")
   if(!condition_colname %in% colnames(seurat_obj@meta.data))
     stop("Your column indicating the conditions/samples of interest should be in the metadata dataframe")
   if(sum(condition_oi %in% c(seurat_obj[[condition_colname]] %>% unlist() %>% unique())) != length(condition_oi))
@@ -748,7 +748,6 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   if(geneset != "DE" & geneset != "up" & geneset != "down")
     stop("geneset should be 'DE', 'up' or 'down'")
 
-  # Read in and process NicheNet networks, define ligands and receptors
   # Read in and process NicheNet networks, define ligands and receptors
   if (verbose == TRUE){print("Read in and process NicheNet's networks")}
   weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
@@ -1017,7 +1016,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.10){
 
   # input check
   if(!is.numeric(seurat_obj@assays$RNA@scale.data))
-    stop("Seurat object should contained scaled expression data (numeric matrix)")
+    stop("Seurat object should contain scaled expression data (numeric matrix)")
 
   # checks: seuratObj should have a scale.data/RNA
   cells_oi = Idents(seurat_obj) %>% .[Idents(seurat_obj) == ident] %>% names()
@@ -1075,7 +1074,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 
   # input check
   if(!is.numeric(seurat_obj@assays$RNA@scale.data))
-    stop("Seurat object should contained scaled expression data (numeric matrix)")
+    stop("Seurat object should contain scaled expression data (numeric matrix)")
   if(sum(receiver_affected %in% unique(Idents(seurat_obj))) != length(receiver_affected))
     stop("The defined receiver_affected cell type should be an identity class of your seurat object")
   if(sum(receiver_reference %in% unique(Idents(seurat_obj))) != length(receiver_reference))
@@ -1396,7 +1395,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 
   # input check
   if(!is.numeric(seurat_obj@assays$RNA@scale.data))
-    stop("Seurat object should contained scaled expression data (numeric matrix)")
+    stop("Seurat object should contain scaled expression data (numeric matrix)")
   if(sum(receiver_affected %in% unique(Idents(seurat_obj))) != length(receiver_affected))
     stop("The defined receiver_affected cell type should be an identity class of your seurat object")
   if(sum(receiver_reference %in% unique(Idents(seurat_obj))) != length(receiver_reference))
