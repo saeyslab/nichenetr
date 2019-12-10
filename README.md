@@ -20,8 +20,8 @@ integrates existing knowledge on ligand-to-target signaling paths. This
 allows to predict ligand-receptor interactions that might drive gene
 expression changes in cells of interest.
 
-The NicheNet paper is now published: [NicheNet: modeling intercellular
-communication by linking ligands to target
+We describe the NicheNet algorithm in the following paper: [NicheNet:
+modeling intercellular communication by linking ligands to target
 genes](https://www.nature.com/articles/s41592-019-0667-5).
 
 Bonnardel, T’Jonck et al. already used NicheNet to predict upstream
@@ -178,10 +178,10 @@ symbols:
 References
 ----------
 
-Bonnardel et al., 2019, Immunity 51, 1–17, [Stellate Cells, Hepatocytes,
-and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes
-Colonizing the Liver Macrophage
-Niche](https://doi.org/10.1016/j.immuni.2019.08.017)
+Bonnardel et al. Stellate Cells, Hepatocytes, and Endothelial Cells
+Imprint the Kupffer Cell Identity on Monocytes Colonizing the Liver
+Macrophage Niche. Immunity (2019)
+<a href="doi:10.1016/j.immuni.2019.08.017" class="uri">doi:10.1016/j.immuni.2019.08.017</a>
 
 Browaeys, R., Saelens, W. & Saeys, Y. NicheNet: modeling intercellular
 communication by linking ligands to target genes. Nat Methods (2019)
