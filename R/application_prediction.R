@@ -722,8 +722,18 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   library(dplyr)
 
   # input check
-  if(!is.numeric(seurat_obj@assays$RNA@scale.data))
-    stop("Seurat object should contain scaled expression data (numeric matrix)")
+  if(!is.numeric(seurat_obj@assays$RNA@scale.data)){
+    stop("Seurat object should contain scaled expression data (numeric matrix). Check 'seurat_obj@assays$RNA@scale.data' for default or 'seurat_obj@assays$integrated@scale.data' for integrated data" )
+  }
+
+  if("integrated" %in% names(seurat_obj@assays)){
+    if(sum(dim(seurat_obj@assays$RNA@scale.data)) == 0 & sum(dim(seurat_obj@assays$integrated@scale.data)) == 0)
+      stop("Seurat object should contain scaled expression data (numeric matrix). Check 'seurat_obj@assays$RNA@scale.data' for default or 'seurat_obj@assays$integrated@scale.data' for integrated data" )
+  } else {
+    if(sum(dim(seurat_obj@assays$RNA@scale.data)) == 0){
+      stop("Seurat object should contain scaled expression data (numeric matrix). Check 'seurat_obj@assays$RNA@scale.data'")
+    }
+  }
   if(!condition_colname %in% colnames(seurat_obj@meta.data))
     stop("Your column indicating the conditions/samples of interest should be in the metadata dataframe")
   if(sum(condition_oi %in% c(seurat_obj[[condition_colname]] %>% unlist() %>% unique())) != length(condition_oi))
@@ -747,7 +757,9 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     stop("Organism should be 'mouse' or 'human'")
   if(geneset != "DE" & geneset != "up" & geneset != "down")
     stop("geneset should be 'DE', 'up' or 'down'")
-
+  if("integrated" %in% names(seurat_obj@assays)){
+    warning("Seurat object is result from the Seurat integration workflow. Make sure that the way of defining expressed and differentially expressed genes in this wrapper is appropriate for your integrated data. Be sure that the integrated scaled expression matrix (seurat_obj@assays$integrated@scale.data) is genome-wide and does not contain 2000 genes as is default in the current Seurat integration workflow.")
+  }
   # Read in and process NicheNet networks, define ligands and receptors
   if (verbose == TRUE){print("Read in and process NicheNet's networks")}
   weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
@@ -784,7 +796,11 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
     } else if (sender == "undefined") {
-      expressed_genes_sender = union(seurat_obj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+      if("integrated" %in% names(seurat_obj@assays)){
+        expressed_genes_sender = union(seurat_obj@assays$integrated@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+      } else {
+        expressed_genes_sender = union(seurat_obj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+        }
     } else if (sender != "all" & sender != "undefined") {
       sender_celltypes = sender
       list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
@@ -992,13 +1008,13 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
 }
 #' @title Determine expressed genes of a cell type from a Seurat object single-cell RNA seq dataset
 #'
-#' @description \code{get_expressed_genes} Return the genes that are expressed in a given cell cluster based on the fraction of cells in that cluster that should express the cell
+#' @description \code{get_expressed_genes} Return the genes that are expressed in a given cell cluster based on the fraction of cells in that cluster that should express the cell.
 #' @usage
 #' get_expressed_genes(ident, seurat_obj, pct = 0.10)
 #'
 #' @param ident Name of cluster identity/identities of cells
 #' @param seurat_obj Single-cell expression dataset as Seurat v3 object https://satijalab.org/seurat/. Should contain a column "aggregate" in the metadata. This column indicates the condition/sample where cells came from.
-#' @param pct We consider genes expressed if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10
+#' @param pct We consider genes expressed if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10. Choice of this parameter is important and depends largely on the used sequencing platform. We recommend to require a lower fraction (like the default 0.10) for 10X data than for e.g. Smart-seq2 data.
 #'
 #' @return A character vector with the gene symbols of the expressed genes
 #'
@@ -1015,17 +1031,45 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.10){
   library(dplyr)
 
   # input check
-  if(!is.numeric(seurat_obj@assays$RNA@scale.data))
-    stop("Seurat object should contain scaled expression data (numeric matrix)")
+  # give warning when seurat_obj is result from integration
+  # check: seurat_obj should have a scale.data/RNA
+  if(!is.numeric(seurat_obj@assays$RNA@scale.data)){
+    stop("Seurat object should contain scaled expression data (numeric matrix). Check 'seurat_obj@assays$RNA@scale.data' for default or 'seurat_obj@assays$integrated@scale.data' for integrated data" )
+  }
 
-  # checks: seuratObj should have a scale.data/RNA
-  cells_oi = Idents(seurat_obj) %>% .[Idents(seurat_obj) == ident] %>% names()
-  cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$RNA@scale.data), cells_oi)
-  if(length(cells_oi_in_matrix) != length(cells_oi))
-    stop("Not all cells of interest are in your expression matrix. Please check that the expression matrix contains cells in columns and genes in rows.")
-  genes = seurat_obj@assays$RNA@scale.data %>% .[,cells_oi] %>% apply(1,function(x){sum(x>0)/length(x)}) %>% .[. >= pct] %>% names()
+  if("integrated" %in% names(seurat_obj@assays)){
+    if(sum(dim(seurat_obj@assays$RNA@scale.data)) == 0 & sum(dim(seurat_obj@assays$integrated@scale.data)) == 0)
+      stop("Seurat object should contain scaled expression data (numeric matrix). Check 'seurat_obj@assays$RNA@scale.data' for default or 'seurat_obj@assays$integrated@scale.data' for integrated data" )
+  } else {
+    if(sum(dim(seurat_obj@assays$RNA@scale.data)) == 0){
+      stop("Seurat object should contain scaled expression data (numeric matrix). Check 'seurat_obj@assays$RNA@scale.data'")
+    }
+  }
+
+  # check: provided identities should be present
+  if(sum(ident %in% unique(Idents(seurat_obj))) != length(ident))
+    stop("One or more provided cell clusters is not part of the 'Idents' of your Seurat object")
+
+  cells_oi = Idents(seurat_obj) %>% .[Idents(seurat_obj) %in% ident] %>% names()
+
+
+  if("integrated" %in% names(seurat_obj@assays)){
+    warning("Seurat object is result from the Seurat integration workflow. Make sure that this way of defining expressed genes is appropriate for your integrated data.")
+    cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$integrated@scale.data), cells_oi)
+    if(length(cells_oi_in_matrix) != length(cells_oi))
+      stop("Not all cells of interest are in your expression matrix (seurat_obj@assays$RNA@scale.data). Please check that the expression matrix contains cells in columns and genes in rows.")
+    genes = seurat_obj@assays$integrated@scale.data %>% .[,cells_oi] %>% apply(1,function(x){sum(x>0)/length(x)}) %>% .[. >= pct] %>% names()
+  } else {
+    if(sum(cells_oi %in% colnames(seurat_obj@assays$RNA@scale.data)) == 0)
+      stop("None of the cells are in colnames of 'seurat_obj@assays$RNA@scale.data'. The expression matrix should contain cells in columns and genes in rows.")
+    cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$RNA@scale.data), cells_oi)
+    if(length(cells_oi_in_matrix) != length(cells_oi))
+      stop("Not all cells of interest are in your expression matrix (seurat_obj@assays$RNA@scale.data). Please check that the expression matrix contains cells in columns and genes in rows.")
+    genes = seurat_obj@assays$RNA@scale.data %>% .[,cells_oi] %>% apply(1,function(x){sum(x>0)/length(x)}) %>% .[. >= pct] %>% names()
+  }
   return(genes)
 }
+
 #' @title Perform NicheNet analysis on Seurat object: explain DE between two cell clusters
 #'
 #' @description \code{nichenet_seuratobj_cluster_de} Perform NicheNet analysis on Seurat object: explain differential expression (DE) between two 'receiver' cell clusters by ligands expressed by neighboring cells.
@@ -1073,8 +1117,18 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   library(dplyr)
 
   # input check
-  if(!is.numeric(seurat_obj@assays$RNA@scale.data))
-    stop("Seurat object should contain scaled expression data (numeric matrix)")
+  if(!is.numeric(seurat_obj@assays$RNA@scale.data)){
+    stop("Seurat object should contain scaled expression data (numeric matrix). Check 'seurat_obj@assays$RNA@scale.data' for default or 'seurat_obj@assays$integrated@scale.data' for integrated data" )
+  }
+
+  if("integrated" %in% names(seurat_obj@assays)){
+    if(sum(dim(seurat_obj@assays$RNA@scale.data)) == 0 & sum(dim(seurat_obj@assays$integrated@scale.data)) == 0)
+      stop("Seurat object should contain scaled expression data (numeric matrix). Check 'seurat_obj@assays$RNA@scale.data' for default or 'seurat_obj@assays$integrated@scale.data' for integrated data" )
+  } else {
+    if(sum(dim(seurat_obj@assays$RNA@scale.data)) == 0){
+      stop("Seurat object should contain scaled expression data (numeric matrix). Check 'seurat_obj@assays$RNA@scale.data'")
+    }
+  }
   if(sum(receiver_affected %in% unique(Idents(seurat_obj))) != length(receiver_affected))
     stop("The defined receiver_affected cell type should be an identity class of your seurat object")
   if(sum(receiver_reference %in% unique(Idents(seurat_obj))) != length(receiver_reference))
@@ -1094,6 +1148,10 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
     stop("Organism should be 'mouse' or 'human'")
   if(geneset != "DE" & geneset != "up" & geneset != "down")
     stop("geneset should be 'DE', 'up' or 'down'")
+
+  if("integrated" %in% names(seurat_obj@assays)){
+    warning("Seurat object is result from the Seurat integration workflow. Make sure that the way of defining expressed and differentially expressed genes in this wrapper is appropriate for your integrated data. Be sure that the integrated scaled expression matrix (seurat_obj@assays$integrated@scale.data) is genome-wide and does not contain 2000 genes as is default in the current Seurat integration workflow.")
+  }
 
   # Read in and process NicheNet networks, define ligands and receptors
   if (verbose == TRUE){print("Read in and process NicheNet's networks")}
@@ -1136,7 +1194,11 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
     } else if (sender == "undefined") {
-      expressed_genes_sender = union(seurat_obj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+      if("integrated" %in% names(seurat_obj@assays)){
+        expressed_genes_sender = union(seurat_obj@assays$integrated@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+      } else {
+        expressed_genes_sender = union(seurat_obj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+        }
     } else if (sender != "all" & sender != "undefined") {
       sender_celltypes = sender
       list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
@@ -1394,8 +1456,18 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   library(dplyr)
 
   # input check
-  if(!is.numeric(seurat_obj@assays$RNA@scale.data))
-    stop("Seurat object should contain scaled expression data (numeric matrix)")
+  if(!is.numeric(seurat_obj@assays$RNA@scale.data)){
+    stop("Seurat object should contain scaled expression data (numeric matrix). Check 'seurat_obj@assays$RNA@scale.data' for default or 'seurat_obj@assays$integrated@scale.data' for integrated data" )
+  }
+
+  if("integrated" %in% names(seurat_obj@assays)){
+    if(sum(dim(seurat_obj@assays$RNA@scale.data)) == 0 & sum(dim(seurat_obj@assays$integrated@scale.data)) == 0)
+      stop("Seurat object should contain scaled expression data (numeric matrix). Check 'seurat_obj@assays$RNA@scale.data' for default or 'seurat_obj@assays$integrated@scale.data' for integrated data" )
+  } else {
+    if(sum(dim(seurat_obj@assays$RNA@scale.data)) == 0){
+      stop("Seurat object should contain scaled expression data (numeric matrix). Check 'seurat_obj@assays$RNA@scale.data'")
+    }
+  }
   if(sum(receiver_affected %in% unique(Idents(seurat_obj))) != length(receiver_affected))
     stop("The defined receiver_affected cell type should be an identity class of your seurat object")
   if(sum(receiver_reference %in% unique(Idents(seurat_obj))) != length(receiver_reference))
@@ -1422,6 +1494,9 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   if(geneset != "DE" & geneset != "up" & geneset != "down")
     stop("geneset should be 'DE', 'up' or 'down'")
 
+  if("integrated" %in% names(seurat_obj@assays)){
+    warning("Seurat object is result from the Seurat integration workflow. Make sure that the way of defining expressed and differentially expressed genes in this wrapper is appropriate for your integrated data. Be sure that the integrated scaled expression matrix (seurat_obj@assays$integrated@scale.data) is genome-wide and does not contain 2000 genes as is default in the current Seurat integration workflow.")
+  }
   # Read in and process NicheNet networks, define ligands and receptors
   if (verbose == TRUE){print("Read in and process NicheNet's networks")}
   weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
@@ -1463,7 +1538,13 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
     } else if (sender == "undefined") {
-      expressed_genes_sender = union(seurat_obj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+
+      if("integrated" %in% names(seurat_obj@assays)){
+        expressed_genes_sender = union(seurat_obj@assays$integrated@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+      } else {
+        expressed_genes_sender = union(seurat_obj@assays$RNA@scale.data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+        }
+
     } else if (sender != "all" & sender != "undefined") {
       sender_celltypes = sender
       list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
