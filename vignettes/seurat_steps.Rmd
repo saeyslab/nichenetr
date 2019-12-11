@@ -124,7 +124,7 @@ background_expressed_genes = expressed_genes_receiver %>% .[. %in% rownames(liga
 ## sender
 sender_celltypes = c("CD4 T","Treg", "Mono", "NK", "B", "DC")
 
-list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seuratObj, 0.10)
+list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seuratObj, 0.10) # lapply to get the expressed genes of every sender cell type separately here
 expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 ```
 
@@ -146,6 +146,8 @@ geneset_oi = geneset_oi %>% .[. %in% rownames(ligand_target_matrix)]
 ```
 
 ## 3. Define a set of potential ligands: these are ligands that are expressed by the “sender/niche” cell population and bind a (putative) receptor expressed by the “receiver/target” population
+
+Because we combined the expressed genes of each sender cell type, in this example, we will perform one NicheNet analysis by pooling all ligands from all cell types together. Later on during the interpretation of the output, we will check which sender cell type expresses which ligand.
 
 ```{r}
 ligands = lr_network %>% pull(from) %>% unique()

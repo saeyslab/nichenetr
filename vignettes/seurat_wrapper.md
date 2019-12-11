@@ -38,7 +38,7 @@ analysis](seurat_steps.md):`vignette("seurat_steps",
 package="nichenetr")`, we also show the execution of these steps one for
 one, but in contrast to the main vignette now specifically for a Seurat
 Object. This allows users to adapt specific steps of the pipeline to
-make them more appropriate for their data.
+make them more appropriate for their data (recommended).
 
 As example expression data of interacting cells, we will use mouse
 NICHE-seq data from Medaglia et al. to explore intercellular
@@ -143,20 +143,13 @@ symbol.
 ``` r
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
 seuratObj@meta.data %>% head()
-##         nGene nUMI orig.ident aggregate res.0.6 celltype nCount_RNA
-## W380370   880 1611      LN_SS        SS       1    CD8 T       1607
-## W380372   541  891      LN_SS        SS       0    CD4 T        885
-## W380374   742 1229      LN_SS        SS       0    CD4 T       1223
-## W380378   847 1546      LN_SS        SS       1    CD8 T       1537
-## W380379   839 1606      LN_SS        SS       0    CD4 T       1603
-## W380381   517  844      LN_SS        SS       0    CD4 T        840
-##         nFeature_RNA
-## W380370          876
-## W380372          536
-## W380374          737
-## W380378          838
-## W380379          836
-## W380381          513
+##         nGene nUMI orig.ident aggregate res.0.6 celltype nCount_RNA nFeature_RNA
+## W380370   880 1611      LN_SS        SS       1    CD8 T       1607          876
+## W380372   541  891      LN_SS        SS       0    CD4 T        885          536
+## W380374   742 1229      LN_SS        SS       0    CD4 T       1223          737
+## W380378   847 1546      LN_SS        SS       1    CD8 T       1537          838
+## W380379   839 1606      LN_SS        SS       0    CD4 T       1603          836
+## W380381   517  844      LN_SS        SS       0    CD4 T        840          513
 ```
 
 Visualize which cell populations are present: CD4 T cells (including
@@ -287,7 +280,7 @@ nichenet_output$ligand_activities
 ##  8 Icam1       0.544 0.134  0.0496     8 TRUE            
 ##  9 Cxcl10      0.536 0.134  0.0457     9 TRUE            
 ## 10 Adam17      0.517 0.129  0.0378    10 TRUE            
-## # ... with 34 more rows
+## # … with 34 more rows
 ```
 
 The different ligand activity measures (auroc, aupr, pearson correlation
@@ -310,9 +303,8 @@ To get a list of the 20 top-ranked ligands: run the following command
 
 ``` r
 nichenet_output$top_ligands
-##  [1] "Ebi3"   "Il15"   "Crlf2"  "App"    "Tgfb1"  "Ptprc"  "H2-M3" 
-##  [8] "Icam1"  "Cxcl10" "Adam17" "Cxcl11" "Cxcl9"  "H2-T23" "Ccl5"  
-## [15] "Sema4d" "Cxcl16" "C3"     "Itgb1"  "Anxa1"  "Sell"
+##  [1] "Ebi3"   "Il15"   "Crlf2"  "App"    "Tgfb1"  "Ptprc"  "H2-M3"  "Icam1"  "Cxcl10" "Adam17" "Cxcl11"
+## [12] "Cxcl9"  "H2-T23" "Ccl5"   "Sema4d" "Cxcl16" "C3"     "Itgb1"  "Anxa1"  "Sell"
 ```
 
 These ligands are expressed by one or more of the input sender cells. To
@@ -415,7 +407,7 @@ nichenet_output$ligand_target_df # weight column = regulatory potential
 ##  8 Ebi3   Irf9   0.00543
 ##  9 Ebi3   Parp14 0.00336
 ## 10 Ebi3   Pdcd4  0.00335
-## # ... with 144 more rows
+## # … with 144 more rows
 ```
 
 To get a list of the top-predicted target genes of the 20 top-ranked
@@ -423,11 +415,9 @@ ligands: run the following command
 
 ``` r
 nichenet_output$top_targets
-##  [1] "Cd274"  "Cd53"   "Ddit4"  "Id3"    "Ifit3"  "Irf1"   "Irf7"  
-##  [8] "Irf9"   "Parp14" "Pdcd4"  "Pml"    "Psmb9"  "Rnf213" "Stat1" 
-## [15] "Stat2"  "Tap1"   "Ubc"    "Zbp1"   "Cd69"   "Gbp4"   "Basp1" 
-## [22] "Casp8"  "Cxcl10" "Nlrc5"  "Vim"    "Actb"   "Ifih1"  "Myh9"  
-## [29] "B2m"    "H2-T23" "Cxcr4"
+##  [1] "Cd274"  "Cd53"   "Ddit4"  "Id3"    "Ifit3"  "Irf1"   "Irf7"   "Irf9"   "Parp14" "Pdcd4"  "Pml"   
+## [12] "Psmb9"  "Rnf213" "Stat1"  "Stat2"  "Tap1"   "Ubc"    "Zbp1"   "Cd69"   "Gbp4"   "Basp1"  "Casp8" 
+## [23] "Cxcl10" "Nlrc5"  "Vim"    "Actb"   "Ifih1"  "Myh9"   "B2m"    "H2-T23" "Cxcr4"
 ```
 
 You can visualize the expression of these as well. Because we only focus
@@ -515,7 +505,7 @@ nichenet_output$ligand_receptor_df # weight column accords to number of data sou
 ##  8 App    Cxcr6     0.226
 ##  9 App    Notch1    0.354
 ## 10 App    Tgfbr2    0.441
-## # ... with 51 more rows
+## # … with 51 more rows
 ```
 
 To get a list of the receptors of the 20 top-ranked ligands: run the
@@ -523,10 +513,9 @@ following command
 
 ``` r
 nichenet_output$top_receptors
-##  [1] "Notch1" "Ccr7"   "Ccr9"   "Cxcr6"  "Itga4"  "Tgfbr2" "Itgb2" 
-##  [8] "Gpr18"  "S1pr1"  "Il7r"   "Il27ra" "Cd8a"   "Klrd1"  "Il2rg" 
-## [15] "Itgal"  "Spn"    "Il2rb"  "Cd47"   "Ptk2b"  "Cd2"    "Cd28"  
-## [22] "Selplg" "Ptprc"
+##  [1] "Notch1" "Ccr7"   "Ccr9"   "Cxcr6"  "Itga4"  "Tgfbr2" "Itgb2"  "Gpr18"  "S1pr1"  "Il7r"   "Il27ra"
+## [12] "Cd8a"   "Klrd1"  "Il2rg"  "Itgal"  "Spn"    "Il2rb"  "Cd47"   "Ptk2b"  "Cd2"    "Cd28"   "Selplg"
+## [23] "Ptprc"
 ```
 
 You can visualize the expression of these as well. Because we only focus
@@ -551,22 +540,14 @@ nichenet_output$ligand_receptor_heatmap_bonafide
 
 ``` r
 nichenet_output$ligand_receptor_matrix_bonafide
-##            H2.M3     H2.T23        C3      Icam1     Tgfb1    Cxcl16
-## Il2rb  0.0000000 0.00000000 0.0000000 0.00000000 0.0000000 0.0000000
-## Il2rg  0.0000000 0.00000000 0.0000000 0.00000000 0.0000000 0.0000000
-## Itgal  0.0000000 0.00000000 0.0000000 0.06542904 0.0000000 0.0000000
-## Itgb2  0.0000000 0.00000000 0.2916032 0.06113009 0.0000000 0.0000000
-## Tgfbr2 0.0000000 0.00000000 0.0000000 0.00000000 0.7665905 0.0000000
-## Cxcr6  0.0000000 0.00000000 0.0000000 0.00000000 0.0000000 0.6598705
-## Klrd1  0.8334165 0.05478448 0.0000000 0.00000000 0.0000000 0.0000000
-##             Il15
-## Il2rb  0.8714269
-## Il2rg  0.8587859
-## Itgal  0.0000000
-## Itgb2  0.0000000
-## Tgfbr2 0.0000000
-## Cxcr6  0.0000000
-## Klrd1  0.0000000
+##            H2.M3     H2.T23        C3      Icam1     Tgfb1    Cxcl16      Il15
+## Il2rb  0.0000000 0.00000000 0.0000000 0.00000000 0.0000000 0.0000000 0.8714269
+## Il2rg  0.0000000 0.00000000 0.0000000 0.00000000 0.0000000 0.0000000 0.8587859
+## Itgal  0.0000000 0.00000000 0.0000000 0.06542904 0.0000000 0.0000000 0.0000000
+## Itgb2  0.0000000 0.00000000 0.2916032 0.06113009 0.0000000 0.0000000 0.0000000
+## Tgfbr2 0.0000000 0.00000000 0.0000000 0.00000000 0.7665905 0.0000000 0.0000000
+## Cxcr6  0.0000000 0.00000000 0.0000000 0.00000000 0.0000000 0.6598705 0.0000000
+## Klrd1  0.8334165 0.05478448 0.0000000 0.00000000 0.0000000 0.0000000 0.0000000
 nichenet_output$ligand_receptor_df_bonafide
 ## # A tibble: 9 x 3
 ##   ligand receptor weight
@@ -706,9 +687,8 @@ common_ligands = intersect(nichenet_output$`CD4 T`$top_ligands, nichenet_output$
 print("common ligands are: ")
 ## [1] "common ligands are: "
 print(common_ligands)
-##  [1] "Ebi3"   "Il15"   "Crlf2"  "App"    "H2-M3"  "Ptprc"  "Icam1" 
-##  [8] "Ccl5"   "Cxcl10" "Tgfb1"  "Cxcl11" "Cxcl9"  "Sema4d" "H2-T23"
-## [15] "Cxcl16" "C3"     "Itgb1"
+##  [1] "Ebi3"   "Il15"   "Crlf2"  "App"    "H2-M3"  "Ptprc"  "Icam1"  "Ccl5"   "Cxcl10" "Tgfb1"  "Cxcl11"
+## [12] "Cxcl9"  "Sema4d" "H2-T23" "Cxcl16" "C3"     "Itgb1"
 
 cd4_ligands = nichenet_output$`CD4 T`$top_ligands %>% setdiff(nichenet_output$`CD8 T`$top_ligands)
 cd8_ligands = nichenet_output$`CD8 T`$top_ligands %>% setdiff(nichenet_output$`CD4 T`$top_ligands)
@@ -757,12 +737,10 @@ seuratObj@meta.data$celltype = paste(seuratObj@meta.data$celltype,seuratObj@meta
 
 seuratObj@meta.data$celltype %>% table()
 ## .
-##     B_LCMV       B_SS CD4 T_LCMV   CD4 T_SS CD8 T_LCMV   CD8 T_SS 
-##        344         38       1961        601       1252        393 
-##    DC_LCMV      DC_SS  Mono_LCMV    Mono_SS    NK_LCMV      NK_SS 
-##         14          4         75         15         94         37 
-##  Treg_LCMV    Treg_SS 
-##        146         53
+##     B_LCMV       B_SS CD4 T_LCMV   CD4 T_SS CD8 T_LCMV   CD8 T_SS    DC_LCMV      DC_SS  Mono_LCMV 
+##        344         38       1961        601       1252        393         14          4         75 
+##    Mono_SS    NK_LCMV      NK_SS  Treg_LCMV    Treg_SS 
+##         15         94         37        146         53
 
 seuratObj = SetIdent(seuratObj,value = "celltype")
 ```

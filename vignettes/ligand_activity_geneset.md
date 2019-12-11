@@ -102,6 +102,8 @@ sample_info = hnscc_expression$sample_info # contains meta-information about the
 Our research question is to prioritize which ligands expressed by CAFs
 can induce p-EMT in neighboring malignant cells. Therefore, CAFs are the
 sender cells in this example and malignant cells are the receiver cells.
+This is an example of paracrine signaling. Note that autocrine signaling
+can be considered if sender and receiver cell type are the same.
 
 Now, we will determine which genes are expressed in the sender cells
 (CAFs) and receiver cells (malignant cells) from high quality primary
@@ -228,7 +230,7 @@ ligand_activities %>% arrange(-pearson)
 ##  8 TNC         0.700 0.0444   0.109
 ##  9 CTGF        0.680 0.0473   0.108
 ## 10 FN1         0.679 0.0505   0.108
-## # ... with 121 more rows
+## # … with 121 more rows
 best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand)
 head(best_upstream_ligands)
 ## [1] "PTHLH"  "CXCL12" "AGT"    "TGFB3"  "IL6"    "INHBA"

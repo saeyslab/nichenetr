@@ -95,20 +95,13 @@ symbol.
 ``` r
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
 seuratObj@meta.data %>% head()
-##         nGene nUMI orig.ident aggregate res.0.6 celltype nCount_RNA
-## W380370   880 1611      LN_SS        SS       1    CD8 T       1607
-## W380372   541  891      LN_SS        SS       0    CD4 T        885
-## W380374   742 1229      LN_SS        SS       0    CD4 T       1223
-## W380378   847 1546      LN_SS        SS       1    CD8 T       1537
-## W380379   839 1606      LN_SS        SS       0    CD4 T       1603
-## W380381   517  844      LN_SS        SS       0    CD4 T        840
-##         nFeature_RNA
-## W380370          876
-## W380372          536
-## W380374          737
-## W380378          838
-## W380379          836
-## W380381          513
+##         nGene nUMI orig.ident aggregate res.0.6 celltype nCount_RNA nFeature_RNA
+## W380370   880 1611      LN_SS        SS       1    CD8 T       1607          876
+## W380372   541  891      LN_SS        SS       0    CD4 T        885          536
+## W380374   742 1229      LN_SS        SS       0    CD4 T       1223          737
+## W380378   847 1546      LN_SS        SS       1    CD8 T       1537          838
+## W380379   839 1606      LN_SS        SS       0    CD4 T       1603          836
+## W380381   517  844      LN_SS        SS       0    CD4 T        840          513
 ```
 
 Visualize which cell populations are present: CD4 T cells (including
@@ -233,7 +226,7 @@ background_expressed_genes = expressed_genes_receiver %>% .[. %in% rownames(liga
 ## sender
 sender_celltypes = c("CD4 T","Treg", "Mono", "NK", "B", "DC")
 
-list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seuratObj, 0.10)
+list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seuratObj, 0.10) # lapply to get the expressed genes of every sender cell type separately here
 expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 ```
 
@@ -261,6 +254,12 @@ geneset_oi = geneset_oi %>% .[. %in% rownames(ligand_target_matrix)]
 ```
 
 ## 3\. Define a set of potential ligands: these are ligands that are expressed by the “sender/niche” cell population and bind a (putative) receptor expressed by the “receiver/target” population
+
+Because we combined the expressed genes of each sender cell type, in
+this example, we will perform one NicheNet analysis by pooling all
+ligands from all cell types together. Later on during the interpretation
+of the output, we will check which sender cell type expresses which
+ligand.
 
 ``` r
 ligands = lr_network %>% pull(from) %>% unique()
@@ -292,7 +291,7 @@ ligand_activities
 ##  8 Icam1       0.544 0.134  0.0496     8
 ##  9 Cxcl10      0.536 0.134  0.0457     9
 ## 10 Adam17      0.517 0.129  0.0378    10
-## # ... with 34 more rows
+## # … with 34 more rows
 ```
 
 The different ligand activity measures (auroc, aupr, pearson correlation
