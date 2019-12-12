@@ -118,9 +118,9 @@ Learning to use nichenetr
 To learn using nichenetr, read one of the following vignettes explaining
 several types of analyses:
 
-Following vignette contains the explanation on how to perform the most
-basic NicheNet analysis: prioritizing ligands and predicting target
-genes of prioritized ligands - this demo analysis takes only a few
+Following vignette contains the explanation on how to perform a basic
+NicheNet analysis. This includes prioritizing ligands and predicting
+target genes of prioritized ligands. This demo analysis takes only a few
 minutes to run:
 
 -   [NicheNet’s ligand activity analysis on a gene set of interest:
