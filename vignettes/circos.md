@@ -154,7 +154,7 @@ ligand_activities %>% arrange(-pearson)
 ##  8 ADAM17      0.672 0.0526   0.113
 ##  9 TNC         0.700 0.0444   0.109
 ## 10 VWF         0.685 0.0490   0.109
-## # ... with 144 more rows
+## # … with 144 more rows
 best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand)
 head(best_upstream_ligands)
 ## [1] "PTHLH"  "EDN1"   "CXCL12" "AGT"    "TGFB3"  "IL6"
@@ -172,12 +172,10 @@ endothelial cells
 
 ``` r
 best_upstream_ligands %>% intersect(expressed_ligands_CAFs) 
-##  [1] "PTHLH"  "CXCL12" "AGT"    "TGFB3"  "IL6"    "INHBA"  "ADAM17"
-##  [8] "TNC"    "CTGF"   "FN1"    "BMP5"   "IL24"   "CXCL11" "MMP9"  
-## [15] "COL4A1" "PSEN1"  "CXCL9"
+##  [1] "PTHLH"  "CXCL12" "AGT"    "TGFB3"  "IL6"    "INHBA"  "ADAM17" "TNC"    "CTGF"   "FN1"    "BMP5"   "IL24"  
+## [13] "CXCL11" "MMP9"   "COL4A1" "PSEN1"  "CXCL9"
 best_upstream_ligands %>% intersect(expressed_ligands_endothelial)
-##  [1] "EDN1"   "CXCL12" "IL6"    "ADAM17" "VWF"    "CTGF"   "FN1"   
-##  [8] "SPP1"   "CXCL11" "COL4A1" "PSEN1"  "CXCL9"
+##  [1] "EDN1"   "CXCL12" "IL6"    "ADAM17" "VWF"    "CTGF"   "FN1"    "SPP1"   "CXCL11" "COL4A1" "PSEN1"  "CXCL9"
 
 # lot of overlap between both cell types in terms of expressed ligands
 # therefore, determine which ligands are more strongly expressed in which of the two
@@ -481,32 +479,6 @@ circos.clear()
 dev.off()
 ## png 
 ##   2
-```
-
-Test something out?
-
-``` r
-circos.par(gap.degree = gaps)
-chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = transparency, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid",
-    preAllocateTracks = list(track.height = 0.075))
-# we go back to the first track and customize sector labels
-circos.track(track.index = 1, panel.fun = function(x, y) {
-    circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index,
-        facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.55), cex = 0.8)
-}, bg.border = NA) #
-```
-
-![](circos_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
-
-``` r
-chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = transparency, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid",
-    preAllocateTracks = list(track.height = 0.075))
-```
-
-![](circos_files/figure-gfm/unnamed-chunk-25-2.png)<!-- -->
-
-``` r
-circos.clear()
 ```
 
 ### Remark on making a ligand-receptor-target circos plot
