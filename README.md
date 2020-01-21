@@ -178,11 +178,11 @@ symbols:
 References
 ----------
 
+Browaeys, R., Saelens, W. & Saeys, Y. NicheNet: modeling intercellular
+communication by linking ligands to target genes. Nat Methods (2019)
+<a href="doi:10.1038/s41592-019-0667-5" class="uri">doi:10.1038/s41592-019-0667-5</a>
+
 Bonnardel et al. Stellate Cells, Hepatocytes, and Endothelial Cells
 Imprint the Kupffer Cell Identity on Monocytes Colonizing the Liver
 Macrophage Niche. Immunity (2019)
 <a href="doi:10.1016/j.immuni.2019.08.017" class="uri">doi:10.1016/j.immuni.2019.08.017</a>
-
-Browaeys, R., Saelens, W. & Saeys, Y. NicheNet: modeling intercellular
-communication by linking ligands to target genes. Nat Methods (2019)
-<a href="doi:10.1038/s41592-019-0667-5" class="uri">doi:10.1038/s41592-019-0667-5</a>

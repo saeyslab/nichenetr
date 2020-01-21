@@ -99,6 +99,6 @@ People working with mouse data can see in the following vignette how to convert 
 
 ## References
 
-Bonnardel et al. Stellate Cells, Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes Colonizing the Liver Macrophage Niche. Immunity (2019) doi:10.1016/j.immuni.2019.08.017
-
 Browaeys, R., Saelens, W. & Saeys, Y. NicheNet: modeling intercellular communication by linking ligands to target genes. Nat Methods (2019) doi:10.1038/s41592-019-0667-5
+
+Bonnardel et al. Stellate Cells, Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes Colonizing the Liver Macrophage Niche. Immunity (2019) doi:10.1016/j.immuni.2019.08.017
