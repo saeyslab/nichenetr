@@ -722,7 +722,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   library(dplyr)
 
   # input check
-  if(!is.numeric(seurat_obj@assays$RNA@data)){
+  if(!is.numeric(seurat_obj@assays$RNA@data %>% as.matrix())){
     stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data" )
   }
 
@@ -1033,7 +1033,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.10){
   # input check
   # give warning when seurat_obj is result from integration
   # check: seurat_obj should have a data/RNA
-  if(!is.numeric(seurat_obj@assays$RNA@data)){
+  if(!is.numeric(seurat_obj@assays$RNA@data %>% as.matrix())){
     stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data" )
   }
 
@@ -1117,7 +1117,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   library(dplyr)
 
   # input check
-  if(!is.numeric(seurat_obj@assays$RNA@data)){
+  if(!is.numeric(seurat_obj@assays$RNA@data %>% as.matrix())){
     stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data" )
   }
 
@@ -1456,7 +1456,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   library(dplyr)
 
   # input check
-  if(!is.numeric(seurat_obj@assays$RNA@data)){
+  if(!is.numeric(seurat_obj@assays$RNA@data %>% as.matrix())){
     stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data" )
   }
 
