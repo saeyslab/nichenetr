@@ -1040,7 +1040,10 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.10){
   if("integrated" %in% names(seurat_obj@assays)){
     if(sum(dim(seurat_obj@assays$RNA@data)) == 0 & sum(dim(seurat_obj@assays$integrated@data)) == 0)
       stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data" )
-  } else {
+  } else if ("SCT" %in% names(seurat_obj@assays)) {
+    if(sum(dim(seurat_obj@assays$RNA@data)) == 0 & sum(dim(seurat_obj@assays$SCT@data)) == 0){
+      stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$SCT@data' for data corrected via SCT")
+    }} else {
     if(sum(dim(seurat_obj@assays$RNA@data)) == 0){
       stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data'")
     }
@@ -1057,8 +1060,14 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.10){
     warning("Seurat object is result from the Seurat integration workflow. Make sure that this way of defining expressed genes is appropriate for your integrated data.")
     cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$integrated@data), cells_oi)
     if(length(cells_oi_in_matrix) != length(cells_oi))
-      stop("Not all cells of interest are in your expression matrix (seurat_obj@assays$RNA@data). Please check that the expression matrix contains cells in columns and genes in rows.")
+      stop("Not all cells of interest are in your expression matrix (seurat_obj@assays$integrated@data). Please check that the expression matrix contains cells in columns and genes in rows.")
     genes = seurat_obj@assays$integrated@data %>% .[,cells_oi] %>% apply(1,function(x){sum(x>0)/length(x)}) %>% .[. >= pct] %>% names()
+  } else if ("SCT" %in% names(seurat_obj@assays)) {
+    warning("Seurat object is result from the Seurat single-cell transform workflow. Make sure that this way of defining expressed genes is appropriate for SCT data.")
+    cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$SCT@data), cells_oi)
+    if(length(cells_oi_in_matrix) != length(cells_oi))
+      stop("Not all cells of interest are in your expression matrix (seurat_obj@assays$SCT@data). Please check that the expression matrix contains cells in columns and genes in rows.")
+    genes = seurat_obj@assays$SCT@data %>% .[,cells_oi] %>% apply(1,function(x){sum(x>0)/length(x)}) %>% .[. >= pct] %>% names()
   } else {
     if(sum(cells_oi %in% colnames(seurat_obj@assays$RNA@data)) == 0)
       stop("None of the cells are in colnames of 'seurat_obj@assays$RNA@data'. The expression matrix should contain cells in columns and genes in rows.")
