@@ -736,9 +736,9 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   }
   if(!condition_colname %in% colnames(seurat_obj@meta.data))
     stop("Your column indicating the conditions/samples of interest should be in the metadata dataframe")
-  if(sum(condition_oi %in% c(seurat_obj[[condition_colname]] %>% unlist() %>% unique())) != length(condition_oi))
+  if(sum(condition_oi %in% c(seurat_obj[[condition_colname]] %>% unlist() %>% as.character() %>% unique())) != length(condition_oi))
     stop("condition_oi should be in the condition-indicating column")
-  if(sum(condition_reference %in% c(seurat_obj[[condition_colname]] %>% unlist() %>% unique())) != length(condition_reference))
+  if(sum(condition_reference %in% c(seurat_obj[[condition_colname]] %>% unlist() %>% as.character() %>% unique())) != length(condition_reference))
     stop("condition_reference should be in the condition-indicating column")
   if(sum(receiver %in% unique(Idents(seurat_obj))) != length(receiver))
     stop("The defined receiver cell type should be an identity class of your seurat object")
@@ -1483,9 +1483,9 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
     stop("The defined receiver_reference cell type should be an identity class of your seurat object")
   if(!condition_colname %in% colnames(seurat_obj@meta.data))
     stop("Your column indicating the conditions/samples of interest should be in the metadata dataframe")
-  if(sum(condition_oi %in% c(seurat_obj[[condition_colname]] %>% unlist() %>% unique())) != length(condition_oi))
+  if(sum(condition_oi %in% c(seurat_obj[[condition_colname]] %>% unlist() %>% as.character() %>% unique())) != length(condition_oi))
     stop("condition_oi should be in the condition-indicating column")
-  if(sum(condition_reference %in% c(seurat_obj[[condition_colname]] %>% unlist() %>% unique())) != length(condition_reference))
+  if(sum(condition_reference %in% c(seurat_obj[[condition_colname]] %>% unlist() %>% as.character() %>% unique())) != length(condition_reference))
     stop("condition_reference should be in the condition-indicating column")
   if(length(sender) == 1){
     if(sender != "all" & sender != "undefined"){
