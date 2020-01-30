@@ -82,7 +82,7 @@ Following vignettes contain explanation on how to do some follow-up analyses aft
 * [Single-cell NicheNet's ligand activity analysis](vignettes/ligand_activity_single_cell.md): `vignette("ligand_activity_single_cell", package="nichenetr")`
 * [Circos plot visualization to show active ligand-target links between interacting cells](vignettes/circos.md):`vignette("circos", package="nichenetr")`.
 
-To facilitate the use of NicheNet on single-cell data, we demonstrate the use of NicheNet on a Seurat object in following vignettes. One demonstrates the use of a single wrapper function, the other demonstrates what's behind the wrapper.
+To facilitate the use of NicheNet on single-cell data, we demonstrate the use of NicheNet on a Seurat object in following vignettes. One demonstrates the use of a single wrapper function, the other demonstrates what's behind the wrapper (recommended).
 
 * [Perform NicheNet analysis starting from a Seurat object](vignettes/seurat_wrapper.md):`vignette("seurat_wrapper", package="nichenetr")`
 * [Perform NicheNet analysis starting from a Seurat object: step-by-step analysis](vignettes/seurat_steps.md):`vignette("seurat_steps", package="nichenetr")`

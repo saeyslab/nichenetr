@@ -147,7 +147,7 @@ analyses after performing the most basic analysis:
 To facilitate the use of NicheNet on single-cell data, we demonstrate
 the use of NicheNet on a Seurat object in following vignettes. One
 demonstrates the use of a single wrapper function, the other
-demonstrates what’s behind the wrapper.
+demonstrates what’s behind the wrapper (recommended).
 
 -   [Perform NicheNet analysis starting from a Seurat
     object](vignettes/seurat_wrapper.md):`vignette("seurat_wrapper", package="nichenetr")`
