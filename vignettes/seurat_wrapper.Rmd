@@ -245,6 +245,12 @@ nichenet_output$ligand_receptor_matrix_bonafide
 nichenet_output$ligand_receptor_df_bonafide
 ```
 
+If you are interested in checking which geneset (and background set of genes) was used during the ligand activity analysis: 
+```{r}
+nichenet_output$geneset_oi
+nichenet_output$background_expressed_genes %>% length()
+```
+
 ### Rerun the NicheNet analysis with different sender cell definition
 
 Instead of focusing on multiple sender cell types, it is possible that you are only interested in doing the analyis for one sender cell type, such as dendritic cells in this case.
