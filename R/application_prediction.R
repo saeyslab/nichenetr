@@ -700,7 +700,7 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #' @param weighted_networks The NicheNet weighted networks denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.
 #' @param verbose Print out the current analysis stage. Default: TRUE.
 #'
-#' @return A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI.
+#' @return A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI; geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis; background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 #'
 #' @examples
 #' \dontrun{
@@ -1002,8 +1002,9 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     ligand_receptor_df = lr_network_top_df_large %>% rename(ligand = from, receptor = to),
     ligand_receptor_matrix_bonafide = vis_ligand_receptor_network_strict,
     ligand_receptor_heatmap_bonafide = p_ligand_receptor_network_strict,
-    ligand_receptor_df_bonafide = lr_network_top_df_large_strict
-
+    ligand_receptor_df_bonafide = lr_network_top_df_large_strict,
+    geneset_oi = geneset_oi,
+    background_expressed_genes = background_expressed_genes
   ))
 }
 #' @title Determine expressed genes of a cell type from a Seurat object single-cell RNA seq dataset
@@ -1101,7 +1102,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.10){
 #' @param weighted_networks The NicheNet weighted networks denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.
 #' @param verbose Print out the current analysis stage. Default: TRUE.
 #'
-#' @return A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI.
+#' @return A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI; geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis; background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 #'
 #' @examples
 #' \dontrun{
@@ -1411,7 +1412,9 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
     ligand_receptor_df = lr_network_top_df_large %>% rename(ligand = from, receptor = to),
     ligand_receptor_matrix_bonafide = vis_ligand_receptor_network_strict,
     ligand_receptor_heatmap_bonafide = p_ligand_receptor_network_strict,
-    ligand_receptor_df_bonafide = lr_network_top_df_large_strict
+    ligand_receptor_df_bonafide = lr_network_top_df_large_strict,
+    geneset_oi = geneset_oi,
+    background_expressed_genes = background_expressed_genes
 
   ))
 }
@@ -1440,7 +1443,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 #' @param weighted_networks The NicheNet weighted networks denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.
 #' @param verbose Print out the current analysis stage. Default: TRUE.
 #'
-#' @return A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI.
+#' @return A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI; geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis; background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 #'
 #' @examples
 #' \dontrun{
@@ -1765,7 +1768,8 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
     ligand_receptor_df = lr_network_top_df_large %>% rename(ligand = from, receptor = to),
     ligand_receptor_matrix_bonafide = vis_ligand_receptor_network_strict,
     ligand_receptor_heatmap_bonafide = p_ligand_receptor_network_strict,
-    ligand_receptor_df_bonafide = lr_network_top_df_large_strict
-
+    ligand_receptor_df_bonafide = lr_network_top_df_large_strict,
+    geneset_oi = geneset_oi,
+    background_expressed_genes = background_expressed_genes
   ))
 }
