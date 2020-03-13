@@ -722,8 +722,8 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   library(dplyr)
 
   # input check
-  if(!is.numeric(seurat_obj@assays$RNA@data %>% as.matrix())){
-    stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data" )
+  if(class(seurat_obj@assays$RNA@data) != "matrix" & class(seurat_obj@assays$RNA@data) != "dgCMatrix"){
+    warning("Seurat object should contain a matrix of normalized expression data. Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data or seurat_obj@assays$SCT@data for when the single-cell transform pipeline was applied" )
   }
 
   if("integrated" %in% names(seurat_obj@assays)){
@@ -1033,9 +1033,9 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.10){
 
   # input check
   # give warning when seurat_obj is result from integration
-  # check: seurat_obj should have a data/RNA
-  if(!is.numeric(seurat_obj@assays$RNA@data %>% as.matrix())){
-    stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data" )
+  # check: seurat_obj should have a data/RNA or SCT or integrated slot
+  if(class(seurat_obj@assays$RNA@data) != "matrix" & class(seurat_obj@assays$RNA@data) != "dgCMatrix"){
+    warning("Seurat object should contain a matrix of normalized expression data. Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data or seurat_obj@assays$SCT@data for when the single-cell transform pipeline was applied" )
   }
 
   if("integrated" %in% names(seurat_obj@assays)){
@@ -1045,14 +1045,14 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.10){
     if(sum(dim(seurat_obj@assays$RNA@data)) == 0 & sum(dim(seurat_obj@assays$SCT@data)) == 0){
       stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$SCT@data' for data corrected via SCT")
     }} else {
-    if(sum(dim(seurat_obj@assays$RNA@data)) == 0){
-      stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data'")
+      if(sum(dim(seurat_obj@assays$RNA@data)) == 0){
+        stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data'")
+      }
     }
-  }
 
   # check: provided identities should be present
-  if(sum(ident %in% unique(Idents(seurat_obj))) != length(ident))
-    stop("One or more provided cell clusters is not part of the 'Idents' of your Seurat object")
+  if(sum(ident %in% unique(Idents(seurat_obj))) != length(ident)){
+    stop("One or more provided cell clusters is not part of the 'Idents' of your Seurat object")}
 
   cells_oi = Idents(seurat_obj) %>% .[Idents(seurat_obj) %in% ident] %>% names()
 
@@ -1060,23 +1060,45 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.10){
   if("integrated" %in% names(seurat_obj@assays)){
     warning("Seurat object is result from the Seurat integration workflow. Make sure that this way of defining expressed genes is appropriate for your integrated data.")
     cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$integrated@data), cells_oi)
+
     if(length(cells_oi_in_matrix) != length(cells_oi))
       stop("Not all cells of interest are in your expression matrix (seurat_obj@assays$integrated@data). Please check that the expression matrix contains cells in columns and genes in rows.")
-    genes = seurat_obj@assays$integrated@data %>% .[,cells_oi] %>% apply(1,function(x){sum(x>0)/length(x)}) %>% .[. >= pct] %>% names()
+
+    exprs_mat = seurat_obj@assays$integrated@data %>% .[,cells_oi_in_matrix]
   } else if ("SCT" %in% names(seurat_obj@assays)) {
     warning("Seurat object is result from the Seurat single-cell transform workflow. Make sure that this way of defining expressed genes is appropriate for SCT data.")
+
     cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$SCT@data), cells_oi)
+
     if(length(cells_oi_in_matrix) != length(cells_oi))
       stop("Not all cells of interest are in your expression matrix (seurat_obj@assays$SCT@data). Please check that the expression matrix contains cells in columns and genes in rows.")
-    genes = seurat_obj@assays$SCT@data %>% .[,cells_oi] %>% apply(1,function(x){sum(x>0)/length(x)}) %>% .[. >= pct] %>% names()
+
+    exprs_mat = seurat_obj@assays$SCT@data %>% .[,cells_oi_in_matrix]
   } else {
     if(sum(cells_oi %in% colnames(seurat_obj@assays$RNA@data)) == 0)
       stop("None of the cells are in colnames of 'seurat_obj@assays$RNA@data'. The expression matrix should contain cells in columns and genes in rows.")
+
     cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$RNA@data), cells_oi)
+
     if(length(cells_oi_in_matrix) != length(cells_oi))
       stop("Not all cells of interest are in your expression matrix (seurat_obj@assays$RNA@data). Please check that the expression matrix contains cells in columns and genes in rows.")
-    genes = seurat_obj@assays$RNA@data %>% .[,cells_oi] %>% apply(1,function(x){sum(x>0)/length(x)}) %>% .[. >= pct] %>% names()
+
+    exprs_mat = seurat_obj@assays$RNA@data %>% .[,cells_oi_in_matrix]
   }
+  n_cells_oi_in_matrix = length(cells_oi_in_matrix)
+  if(n_cells_oi_in_matrix < 5000){ # to keep it more efficient when not many cells: arbitrary number, I know...
+    genes = exprs_mat %>% apply(1,function(x){sum(x>0)/n_cells_oi_in_matrix}) %>% .[. >= pct] %>% names()
+  } else {
+    splits = split(1:nrow(exprs_mat), ceiling(seq_along(1:nrow(exprs_mat))/100)) # features: split in 100's: should be able to withstand many situations!
+    genes = splits %>% lapply(function(genes_indices,exprs,pct,n_cells_oi_in_matrix){
+      begin_i = genes_indices[1]
+      end_i = genes_indices[length(genes_indices)]
+      exprs = exprs[begin_i:end_i,]
+      genes = exprs %>% apply(1,function(x){sum(x>0)/n_cells_oi_in_matrix}) %>% .[. >= pct] %>% names()
+    },exprs_mat, pct, n_cells_oi_in_matrix) %>% unlist() %>% unname()
+
+  }
+
   return(genes)
 }
 
@@ -1468,8 +1490,8 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   library(dplyr)
 
   # input check
-  if(!is.numeric(seurat_obj@assays$RNA@data %>% as.matrix())){
-    stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data" )
+  if(class(seurat_obj@assays$RNA@data) != "matrix" & class(seurat_obj@assays$RNA@data) != "dgCMatrix"){
+    warning("Seurat object should contain a matrix of normalized expression data. Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data or seurat_obj@assays$SCT@data for when the single-cell transform pipeline was applied" )
   }
 
   if("integrated" %in% names(seurat_obj@assays)){
