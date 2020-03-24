@@ -4,11 +4,13 @@
 \name{optimized_source_weights_df}
 \alias{optimized_source_weights_df}
 \title{Optimized data source weights}
-\format{A data frame/tibble
+\format{
+A data frame/tibble
 \describe{
   \item{source}{name of data source}
   \item{weight}{weight associated to a data source}
-  }}
+  }
+}
 \usage{
 optimized_source_weights_df
 }

@@ -4,13 +4,15 @@
 \name{lr_network}
 \alias{lr_network}
 \title{Ligand-receptor network}
-\format{A data frame/tibble
+\format{
+A data frame/tibble
 \describe{
   \item{from}{the ligand}
   \item{to}{receptor of the ligand}
   \item{source}{name of data source describing the interaction}
   \item{database}{name of the more comprehensive database the data source is part of}
-  }}
+  }
+}
 \usage{
 lr_network
 }

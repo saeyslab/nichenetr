@@ -4,7 +4,8 @@
 \name{expression_settings_validation}
 \alias{expression_settings_validation}
 \title{Expression datasets for validation}
-\format{A list
+\format{
+A list
 \describe{
   \item{diffexp}{}
   \describe{
@@ -15,7 +16,8 @@
   \item{from}{Gene symbol(s) of ligand(s) by which the cells were treated}
   \item{name}{Name of the expression validation dataset}
   \item{type}{Type of dataset based on response time: "primary", "secondary", "primary + secondary"}
-  }}
+  }
+}
 \usage{
 expression_settings_validation
 }

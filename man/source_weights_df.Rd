@@ -4,11 +4,13 @@
 \name{source_weights_df}
 \alias{source_weights_df}
 \title{Data source weights}
-\format{A data frame/tibble
+\format{
+A data frame/tibble
 \describe{
   \item{source}{name of data source}
   \item{weight}{weight associated to a data source}
-  }}
+  }
+}
 \usage{
 source_weights_df
 }

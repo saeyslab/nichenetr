@@ -4,13 +4,15 @@
 \name{geneinfo_human}
 \alias{geneinfo_human}
 \title{Gene annotation information}
-\format{A data frame/tibble
+\format{
+A data frame/tibble
 \describe{
   \item{symbol}{human gene symbol}
   \item{entrez}{human gene entrez}
   \item{entrez_mouse}{mouse homolog gene entrez}
   \item{symbol_mouse}{mouse homolog gene symbol}
-  }}
+  }
+}
 \usage{
 geneinfo_human
 }

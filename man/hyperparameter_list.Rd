@@ -4,13 +4,15 @@
 \name{hyperparameter_list}
 \alias{hyperparameter_list}
 \title{Optimized hyperparameter values}
-\format{A list
+\format{
+A list
 \describe{
   \item{lr_sig_hub}{ligand-signaling network hub correction factor}
   \item{gr_hub}{gene regulatory network hub correction factor}
   \item{ltf_cutoff}{cutoff on PPR scores}
   \item{damping_factor}{damping factor used in the PPR algorithm}
-  }}
+  }
+}
 \usage{
 hyperparameter_list
 }

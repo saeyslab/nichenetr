@@ -3,7 +3,6 @@
 \docType{package}
 \name{nichenetr}
 \alias{nichenetr}
-\alias{nichenetr-package}
 \title{nichenetr: Linking Extracellular Protein Signals to Target Genes by data-integration.}
 \description{
 This package allows you the investigate intercellular communication from a computational perspective. Functionalities of this package (e.g. including predicting extracellular upstream regulators) build upon a probabilistic model of ligand-target links that was inferred by data-integration.
