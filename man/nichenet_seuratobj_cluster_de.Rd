@@ -4,7 +4,7 @@
 \alias{nichenet_seuratobj_cluster_de}
 \title{Perform NicheNet analysis on Seurat object: explain DE between two cell clusters}
 \usage{
-nichenet_seuratobj_cluster_de(seurat_obj, receiver_affected, receiver_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE)
+nichenet_seuratobj_cluster_de(seurat_obj, receiver_affected, receiver_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE)
 }
 \arguments{
 \item{seurat_obj}{Single-cell expression dataset as Seurat v3 object https://satijalab.org/seurat/.}
@@ -26,6 +26,8 @@ nichenet_seuratobj_cluster_de(seurat_obj, receiver_affected, receiver_reference,
 \item{lfc_cutoff}{Cutoff on log fold change in the wilcoxon differential expression test. Default: 0.25.}
 
 \item{geneset}{Indicate whether to consider all DE genes between condition 1 and 2 ("DE"), or only genes upregulated in condition 1 ("up"), or only genes downregulad in condition 1 ("down").}
+
+\item{filter_top_ligands}{Indicate whether output tables for ligand-target and ligand-receptor networks should be done for a filtered set of top ligands (TRUE) or for all ligands (FALSE). Default: TRUE.}
 
 \item{top_n_ligands}{Indicate how many ligands should be extracted as top-ligands after ligand activity analysis. Only for these ligands, target genes and receptors will be returned. Default: 20.}
 
