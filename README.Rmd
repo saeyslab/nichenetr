@@ -65,7 +65,7 @@ You can install nichenetr (and required dependencies) from github with:
 devtools::install_github("saeyslab/nichenetr")
 ```
 
-nichenetr was tested on both Windows and Linux (most recently tested R version: 4.0.0)
+nichenetr was tested on both Windows and Linux (most recently tested R version: R 4.0.0)
 
 ## Learning to use nichenetr
 
@@ -97,8 +97,10 @@ People working with mouse data can see in the following vignette how to convert 
 
 * [Converting NicheNet's model from human to mouse symbols](vignettes/symbol_conversion.md): `vignette("symbol_conversion", package="nichenetr")`
 
+
 ## References
 
 Browaeys, R., Saelens, W. & Saeys, Y. NicheNet: modeling intercellular communication by linking ligands to target genes. Nat Methods (2019) doi:10.1038/s41592-019-0667-5
 
 Bonnardel et al. Stellate Cells, Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes Colonizing the Liver Macrophage Niche. Immunity (2019) doi:10.1016/j.immuni.2019.08.017
+
