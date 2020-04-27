@@ -110,7 +110,8 @@ nichenetr (and required dependencies) from github with:
     # install.packages("devtools")
     devtools::install_github("saeyslab/nichenetr")
 
-nichenetr was tested on both Windows and Linux (R version 3.6.3)
+nichenetr was tested on both Windows and Linux (most recently tested R
+version: 4.0.0)
 
 Learning to use nichenetr
 -------------------------
