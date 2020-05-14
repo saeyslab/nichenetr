@@ -4,7 +4,7 @@
 \alias{get_expressed_genes}
 \title{Determine expressed genes of a cell type from a Seurat object single-cell RNA seq dataset or Seurat spatial transcriptomics dataset}
 \usage{
-get_expressed_genes(ident, seurat_obj, pct = 0.10)
+get_expressed_genes(ident, seurat_obj, pct = 0.10, assay_oi = NULL)
 }
 \arguments{
 \item{ident}{Name of cluster identity/identities of cells}
@@ -12,6 +12,8 @@ get_expressed_genes(ident, seurat_obj, pct = 0.10)
 \item{seurat_obj}{Single-cell expression dataset as Seurat v3 object https://satijalab.org/seurat/. Should contain a column "aggregate" in the metadata. This column indicates the condition/sample where cells came from.}
 
 \item{pct}{We consider genes expressed if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10. Choice of this parameter is important and depends largely on the used sequencing platform. We recommend to require a lower fraction (like the default 0.10) for 10X data than for e.g. Smart-seq2 data.}
+
+\item{assay_oi}{If wanted: specify yourself which assay to look for. Default this value is NULL and as a consequence the 'most advanced' assay will be used to define expressed genes.}
 }
 \value{
 A character vector with the gene symbols of the expressed genes
