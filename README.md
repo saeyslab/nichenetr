@@ -181,6 +181,12 @@ symbols:
     symbols](vignettes/symbol_conversion.md):
     `vignette("symbol_conversion", package="nichenetr")`
 
+FAQ
+---
+
+Check the recently added FAQ page at [FAQ NicheNet](vignettes/faq.md):
+`vignette("faq", package="nichenetr")`
+
 References
 ----------
 

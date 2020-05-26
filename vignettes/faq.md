@@ -373,14 +373,14 @@ vignette:
 Some adaptations to the basic vignette are needed, though. For example,
 you need another way for defining the set of expressed genes in sender
 and receiver, and another way of doing the DE analysis for defining the
-gene set of interest. Defining which genes are expressed based on
-transcriptomics is not so trivial, but I would recommend checking the
-distribution of expression values and choosing a cutoff based on this
-distribution. If you doubt about choosing the cutoff, I would recommend
-to consider more genes expressed than removing some genes from the
-analysis. The number of expressed genes differs per cell type and
-organism, but should be in the range of 10000-15000 for bulk rna-seq
-data (so not 1000 or 2000 genes).
+gene set of interest. To define which genes are expressed you could use
+`filterByExpr` from the package `edgeR` ; or check the distribution of
+expression values and choosing a cutoff based on this distribution. If
+you doubt about choosing the cutoff, I would recommend to consider more
+genes expressed than removing some genes from the analysis. The number
+of expressed genes differs per cell type and organism, but should be in
+the range of 10000-15000 for bulk rna-seq data (so not 1000 or 2000
+genes).
 
 In the Materials and Methods of this paper, you can see as example what
 we did to determine expressed genes and perform the DE analysis.

@@ -101,6 +101,9 @@ People working with mouse data can see in the following vignette how to convert 
 
 * [Converting NicheNet's model from human to mouse symbols](vignettes/symbol_conversion.md): `vignette("symbol_conversion", package="nichenetr")`
 
+## FAQ
+
+Check the recently added FAQ page at  [FAQ NicheNet](vignettes/faq.md): `vignette("faq", package="nichenetr")`
 
 ## References
 
