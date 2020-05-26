@@ -89,25 +89,30 @@ cells in the T cell area of the inguinal lymph node. The data was
 processed and aggregated by applying the Seurat alignment pipeline. The
 Seurat object contains this aggregated data. Note that this should be a
 Seurat v3 object and that gene should be named by their official
-mouse/human gene
-symbol.
+mouse/human gene symbol.
 
 ``` r
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
 seuratObj@meta.data %>% head()
-##         nGene nUMI orig.ident aggregate res.0.6 celltype nCount_RNA nFeature_RNA
-## W380370   880 1611      LN_SS        SS       1    CD8 T       1607          876
-## W380372   541  891      LN_SS        SS       0    CD4 T        885          536
-## W380374   742 1229      LN_SS        SS       0    CD4 T       1223          737
-## W380378   847 1546      LN_SS        SS       1    CD8 T       1537          838
-## W380379   839 1606      LN_SS        SS       0    CD4 T       1603          836
-## W380381   517  844      LN_SS        SS       0    CD4 T        840          513
+##         nGene nUMI orig.ident aggregate res.0.6 celltype
+## W380370   880 1611      LN_SS        SS       1    CD8 T
+## W380372   541  891      LN_SS        SS       0    CD4 T
+## W380374   742 1229      LN_SS        SS       0    CD4 T
+## W380378   847 1546      LN_SS        SS       1    CD8 T
+## W380379   839 1606      LN_SS        SS       0    CD4 T
+## W380381   517  844      LN_SS        SS       0    CD4 T
+##         nCount_RNA nFeature_RNA
+## W380370       1607          876
+## W380372        885          536
+## W380374       1223          737
+## W380378       1537          838
+## W380379       1603          836
+## W380381        840          513
 ```
 
 Visualize which cell populations are present: CD4 T cells (including
 regulatory T cells), CD8 T cells, B cells, NK cells, dendritic cells
-(DCs) and inflammatory
-monocytes
+(DCs) and inflammatory monocytes
 
 ``` r
 seuratObj@meta.data$celltype %>% table() # note that the number of cells of some cell types is very low and should preferably be higher for a real application
@@ -117,7 +122,7 @@ seuratObj@meta.data$celltype %>% table() # note that the number of cells of some
 DimPlot(seuratObj, reduction = "tsne")
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 Visualize the data to see to which condition cells belong. The metadata
 dataframe column that denotes the condition (steady-state or after LCMV
@@ -131,19 +136,25 @@ seuratObj@meta.data$aggregate %>% table()
 DimPlot(seuratObj, reduction = "tsne", group.by = "aggregate")
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ### Read in NicheNet’s ligand-target prior model, ligand-receptor network and weighted integrated networks:
 
 ``` r
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
-##                 CXCL1        CXCL2        CXCL3        CXCL5         PPBP
-## A1BG     3.534343e-04 4.041324e-04 3.729920e-04 3.080640e-04 2.628388e-04
-## A1BG-AS1 1.650894e-04 1.509213e-04 1.583594e-04 1.317253e-04 1.231819e-04
-## A1CF     5.787175e-04 4.596295e-04 3.895907e-04 3.293275e-04 3.211944e-04
-## A2M      6.027058e-04 5.996617e-04 5.164365e-04 4.517236e-04 4.590521e-04
-## A2M-AS1  8.898724e-05 8.243341e-05 7.484018e-05 4.912514e-05 5.120439e-05
+##                 CXCL1        CXCL2        CXCL3        CXCL5
+## A1BG     3.534343e-04 4.041324e-04 3.729920e-04 3.080640e-04
+## A1BG-AS1 1.650894e-04 1.509213e-04 1.583594e-04 1.317253e-04
+## A1CF     5.787175e-04 4.596295e-04 3.895907e-04 3.293275e-04
+## A2M      6.027058e-04 5.996617e-04 5.164365e-04 4.517236e-04
+## A2M-AS1  8.898724e-05 8.243341e-05 7.484018e-05 4.912514e-05
+##                  PPBP
+## A1BG     2.628388e-04
+## A1BG-AS1 1.231819e-04
+## A1CF     3.211944e-04
+## A2M      4.590521e-04
+## A2M-AS1  5.120439e-05
 
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 head(lr_network)
@@ -204,8 +215,7 @@ most likely to have induced the differential expression in CD8 T cells
 after LCMV infection.
 
 As described in the main vignette, the pipeline of a basic NicheNet
-analysis consist of the following
-steps:
+analysis consist of the following steps:
 
 ## 1\. Define a “sender/niche” cell population and a “receiver/target” cell population present in your expression data and determine which genes are expressed in both populations
 
@@ -291,7 +301,7 @@ ligand_activities
 ##  8 Icam1       0.544 0.134  0.0496     8
 ##  9 Cxcl10      0.536 0.134  0.0457     9
 ## 10 Adam17      0.517 0.129  0.0378    10
-## # … with 34 more rows
+## # ... with 34 more rows
 ```
 
 The different ligand activity measures (auroc, aupr, pearson correlation
@@ -305,8 +315,7 @@ their pearson correlation coefficient. This allows us to prioritize
 ligands inducing the antiviral response in CD8 T cells.
 
 The number of top-ranked ligands that are further used to predict active
-target genes and construct an active ligand-receptor network is here
-20.
+target genes and construct an active ligand-receptor network is here 20.
 
 ``` r
 best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand) %>% unique()
@@ -314,18 +323,16 @@ best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pe
 
 These ligands are expressed by one or more of the input sender cells. To
 see which cell population expresses which of these top-ranked ligands,
-you can run the
-following:
+you can run the following:
 
 ``` r
 DotPlot(seuratObj, features = best_upstream_ligands %>% rev(), cols = "RdYlBu") + RotatedAxis()
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 As you can see, most op the top-ranked ligands seem to be mainly
-expressed by dendritic cells and
-monocytes.
+expressed by dendritic cells and monocytes.
 
 ## 5\) Infer receptors and top-predicted target genes of ligands that are top-ranked in the ligand activity analysis
 
@@ -345,11 +352,17 @@ vis_ligand_target = active_ligand_target_links[order_targets,order_ligands] %>% 
 ```
 
 ``` r
-p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized ligands","Predicted target genes", color = "purple",legend_position = "top", x_axis_position = "top",legend_title = "Regulatory potential")  + theme(axis.text.x = element_text(face = "italic")) + scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.006,0.012))
+p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized ligands","Predicted target genes", color = "purple",legend_position = "top", x_axis_position = "top",legend_title = "Regulatory potential")  + theme(axis.text.x = element_text(face = "italic")) + scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.0045,0.0090))
 p_ligand_target_network
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+Note that not all ligands from the top 20 are present in this
+ligand-target heatmap. The left-out ligands are ligands that don’t have
+target genes with high enough regulatory potential scores. Therefore,
+they did not survive the used cutoffs. To include them, you can be less
+stringent in the used cutoffs.
 
 ### Receptors of top-ranked ligands
 
@@ -383,7 +396,7 @@ p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap
 p_ligand_receptor_network
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 ### Receptors of top-ranked ligands, but after considering only bona fide ligand-receptor interactions documented in literature and publicly available databases
 
@@ -419,15 +432,64 @@ p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>
 p_ligand_receptor_network_strict
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
-## 6\) Summary visualizations of the NicheNet analysis
+## 6\) Add log fold change information of ligands from sender cells
 
-For example, you can make a combined heatmap of ligand activities and
-the target genes of the top-ranked ligands
+In some cases, it might be possible to also check upregulation of
+ligands in sender cells. This can add a useful extra layer of
+information next to the ligand activities defined by NicheNet, because
+you can assume that some of the ligands inducing DE in receiver cells,
+will be DE themselves in the sender cells.
+
+Here this is possible: we will define the log fold change between LCMV
+and steady-state in all sender cell types and visualize this as extra
+information.
 
 ``` r
-# combined heatmap: overlay ligand activities with target genes
+# DE analysis for each sender cell type
+# this uses a new nichenetr function - reinstall nichenetr if necessary!
+DE_table_all = Idents(seuratObj) %>% levels() %>% intersect(sender_celltypes) %>% lapply(get_lfc_celltype, seurat_obj = seuratObj, condition_colname = "aggregate", condition_oi = condition_oi, condition_reference = condition_reference, expression_pct = 0.10) %>% reduce(full_join)
+DE_table_all[is.na(DE_table_all)] = 0
+
+# Combine ligand activities with DE information
+ligand_activities_de = ligand_activities %>% select(test_ligand, pearson) %>% rename(ligand = test_ligand) %>% left_join(DE_table_all %>% rename(ligand = gene))
+ligand_activities_de[is.na(ligand_activities_de)] = 0
+
+# make LFC heatmap
+lfc_matrix = ligand_activities_de  %>% select(-ligand, -pearson) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities_de$ligand)
+rownames(lfc_matrix) = rownames(lfc_matrix) %>% make.names()
+
+order_ligands = order_ligands[order_ligands %in% rownames(lfc_matrix)]
+vis_ligand_lfc = lfc_matrix[order_ligands,]
+
+colnames(vis_ligand_lfc) = vis_ligand_lfc %>% colnames() %>% make.names()
+
+p_ligand_lfc = vis_ligand_lfc %>% make_threecolor_heatmap_ggplot("Prioritized ligands","LFC in Sender", low_color = "midnightblue",mid_color = "white", mid = median(vis_ligand_lfc), high_color = "red",legend_position = "top", x_axis_position = "top", legend_title = "LFC") + theme(axis.text.y = element_text(face = "italic"))
+p_ligand_lfc
+```
+
+![](seurat_steps_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+
+``` r
+
+# change colors a bit to make them more stand out
+p_ligand_lfc = p_ligand_lfc + scale_fill_gradientn(colors = c("midnightblue","blue", "grey95", "grey99","firebrick1","red"),values = c(0,0.1,0.2,0.25, 0.40, 0.7,1), limits = c(vis_ligand_lfc %>% min() - 0.1, vis_ligand_lfc %>% max() + 0.1))
+p_ligand_lfc
+```
+
+![](seurat_steps_files/figure-gfm/unnamed-chunk-21-2.png)<!-- -->
+
+## 7\) Summary visualizations of the NicheNet analysis
+
+For example, you can make a combined heatmap of ligand activities,
+ligand expression, ligand log fold change and the target genes of the
+top-ranked ligands. The plots for the log fold change and target genes
+were already made. Let’s now make the heatmap for ligand activities and
+for expression.
+
+``` r
+# ligand activity heatmap
 ligand_pearson_matrix = ligand_activities %>% select(pearson) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
 rownames(ligand_pearson_matrix) = rownames(ligand_pearson_matrix) %>% make.names()
@@ -435,26 +497,40 @@ colnames(ligand_pearson_matrix) = colnames(ligand_pearson_matrix) %>% make.names
 
 vis_ligand_pearson = ligand_pearson_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("Pearson")
 p_ligand_pearson = vis_ligand_pearson %>% make_heatmap_ggplot("Prioritized ligands","Ligand activity", color = "darkorange",legend_position = "top", x_axis_position = "top", legend_title = "Pearson correlation coefficient\ntarget gene prediction ability)") + theme(legend.text = element_text(size = 9))
-
-figures_without_legend = cowplot::plot_grid(p_ligand_pearson + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
-    p_ligand_target_network + theme(legend.position = "none", axis.ticks = element_blank()) + ylab(""),
-    align = "hv",
-    nrow = 1,
-    rel_widths = c(ncol(vis_ligand_pearson)+10, ncol(vis_ligand_target)))
-
-legends = cowplot::plot_grid(
-    ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_pearson)),
-    ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_target_network)),
-    nrow = 1,
-    align = "h")
 ```
 
 ``` r
-combined_plot = cowplot::plot_grid(figures_without_legend, legends, rel_heights = c(10,2), nrow = 2, align = "hv")
+# ligand expression Seurat dotplot
+order_ligands_adapted = order_ligands
+order_ligands_adapted[order_ligands_adapted == "H2.M3"] = "H2-M3" # cf required use of make.names for heatmap visualization | this is not necessary if these ligands are not in the list of prioritized ligands!
+order_ligands_adapted[order_ligands_adapted == "H2.T23"] = "H2-T23" # cf required use of make.names for heatmap visualization | this is not necessary if these ligands are not in the list of prioritized ligands!
+rotated_dotplot = DotPlot(seuratObj %>% subset(celltype %in% sender_celltypes), features = order_ligands_adapted %>% rev(), cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
+```
+
+``` r
+
+figures_without_legend = cowplot::plot_grid(
+  p_ligand_pearson + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
+  rotated_dotplot + theme(legend.position = "none", axis.ticks = element_blank(), axis.title.x = element_text(size = 12), axis.text.y = element_text(face = "italic", size = 9), axis.text.x = element_text(size = 9,  angle = 90,hjust = 0)) + ylab("Expression in Sender") + xlab("") + scale_y_discrete(position = "right"),
+  p_ligand_lfc + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()) + ylab(""),
+  p_ligand_target_network + theme(legend.position = "none", axis.ticks = element_blank()) + ylab(""),
+  align = "hv",
+  nrow = 1,
+  rel_widths = c(ncol(vis_ligand_pearson)+6, ncol(vis_ligand_lfc) + 7, ncol(vis_ligand_lfc) + 8, ncol(vis_ligand_target)))
+
+legends = cowplot::plot_grid(
+    ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_pearson)),
+    ggpubr::as_ggplot(ggpubr::get_legend(rotated_dotplot)),
+    ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_lfc)),
+    ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_target_network)),
+    nrow = 1,
+    align = "h", rel_widths = c(1.5, 1, 1, 1))
+
+combined_plot = cowplot::plot_grid(figures_without_legend, legends, rel_heights = c(10,5), nrow = 2, align = "hv")
 combined_plot
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 # Remarks
 

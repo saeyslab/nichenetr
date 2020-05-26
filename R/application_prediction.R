@@ -196,19 +196,17 @@ prepare_ligand_target_visualization = function(ligand_target_df, ligand_target_m
     colnames(ligand_target_vis_filtered) = keep_ligands
   }
 
-
-  if(nrow(ligand_target_vis_filtered) > 1){
+  if(nrow(ligand_target_vis_filtered) > 1 & ncol(ligand_target_vis_filtered) > 1){
     distoi = dist(1-cor(t(ligand_target_vis_filtered)))
     hclust_obj = hclust(distoi, method = "ward.D2")
     order_targets = hclust_obj$labels[hclust_obj$order]
-  } else {
-    order_targets = rownames(ligand_target_vis_filtered)
-  }
-  if(ncol(ligand_target_vis_filtered) > 1){
+
     distoi_targets = dist(1-cor(ligand_target_vis_filtered))
     hclust_obj = hclust(distoi_targets, method = "ward.D2")
     order_ligands = hclust_obj$labels[hclust_obj$order]
+
   } else {
+    order_targets = rownames(ligand_target_vis_filtered)
     order_ligands = colnames(ligand_target_vis_filtered)
   }
 
@@ -1935,4 +1933,39 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
     geneset_oi = geneset_oi,
     background_expressed_genes = background_expressed_genes
   ))
+}
+#' @title Get log fold change values of genes in cell type of interest
+#'
+#' @description \code{get_lfc_celltype} Get log fold change of genes between two conditions in cell type of interest when using a Seurat single-cell object.
+#'
+#' @usage
+#' get_lfc_celltype(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, expression_pct = 0.10)
+#' #'
+#' @param seurat_obj Single-cell expression dataset as Seurat v3 object https://satijalab.org/seurat/.
+#' @param celltype_oi Name of celltype of interest. Should be present in the celltype metadata dataframe.
+#' @param condition_colname Name of the column in the meta data dataframe that indicates which condition/sample cells were coming from.
+#' @param condition_oi Condition of interest. Should be a name present in the "condition_colname" column of the metadata.
+#' @param condition_reference The second condition (e.g. reference or steady-state condition). Should be a name present in the "condition_colname" column of the metadata.
+#' @param expression_pct To consider only genes if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10
+#'
+#' @return A tbl with the log fold change values of genes. Positive lfc values: higher in condition_oi compared to condition_reference.
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#' seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
+#' get_lfc_celltype(seurat_obj = seuratObj, celltype_oi = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", expression_pct = 0.10)
+#' }
+#' @export
+#'
+get_lfc_celltype = function(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, expression_pct = 0.10){
+  library(Seurat)
+  library(dplyr)
+  seurat_obj_celltype = SetIdent(seurat_obj, value = seurat_obj[["celltype"]])
+  seuratObj_sender = subset(seurat_obj_celltype, idents = celltype_oi)
+  seuratObj_sender = SetIdent(seuratObj_sender, value = seuratObj_sender[[condition_colname]])
+  DE_table_sender = FindMarkers(object = seuratObj_sender, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct, logfc.threshold = 0.05) %>% rownames_to_column("gene")
+  DE_table_sender = DE_table_sender %>% tbl_df() %>% select(-p_val) %>% select(gene, avg_logFC)
+  colnames(DE_table_sender) = c("gene",celltype_oi)
+  return(DE_table_sender)
 }
