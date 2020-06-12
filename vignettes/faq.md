@@ -582,9 +582,10 @@ control.
 
 ## My question is not in these list? What should I do now?
 
-First, you can the issues (open and closed ones) of this package to see
-whether your question might be addressed in one of these. If not, don’t
-hesitate to open a new issue. If you would prefer to keep the discussion
-private, you can also send me an email (<robin.browaeys@ugent.be>), but
-I prefer that you open an issue so other users can learn from it as
-well\!
+First, you can check the open and closed issues
+(<https://github.com/saeyslab/nichenetr/issues>) of this package on
+github to see whether your question might be addressed in one of these.
+If not, don’t hesitate to open a new issue. If you would prefer to keep
+the discussion private, you can also send me an email
+(<robin.browaeys@ugent.be>), but I prefer that you open an issue so
+other users can learn from it as well\!
