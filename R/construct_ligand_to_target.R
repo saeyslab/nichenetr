@@ -576,10 +576,10 @@ make_discrete_ligand_target_matrix = function(ligand_target_matrix, error_rate =
   ligand_target_matrix_discrete = list_targets %>% bind_rows() %>% as.matrix()
 
   if (ligands_position == "cols"){
-    rownames(ligand_target_matrix_discrete) = targets
+    rownames(ligand_target_matrix_discrete) = targets %>% make.names() # maybe change this again
   } else if (ligands_position == "rows"){
     ligand_target_matrix_discrete = ligand_target_matrix_discrete %>% t()
-    colnames(ligand_target_matrix_discrete) = targets
+    colnames(ligand_target_matrix_discrete) = targets %>% make.names() # maybe change this again
   }
 
   return(ligand_target_matrix_discrete)

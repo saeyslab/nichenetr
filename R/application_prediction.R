@@ -1097,7 +1097,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
   }
 
   if(!is.null(assay_oi)){
-    if(! assay_oi %in% Assays(seurat_obj)){
+    if(! assay_oi %in% Seurat::Assays(seurat_obj)){
       stop("assay_oi should be an assay of your Seurat object")
     }
   }
@@ -1115,7 +1115,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
     exprs_mat = seurat_obj[[assay_oi]]@data %>% .[, cells_oi_in_matrix]
   } else {
     if ("integrated" %in% names(seurat_obj@assays)) {
-      warning("Seurat object is result from the Seurat integration workflow. Make sure that this way of defining expressed genes is appropriate for your integrated data. The expressed genes are defined based on the integrated slot.")
+      warning("Seurat object is result from the Seurat integration workflow. The expressed genes are now defined based on the integrated slot. You can change this via the assay_oi parameter of the get_expressed_genes() functions. Recommended assays: RNA or SCT")
       cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$integrated@data),
                                      cells_oi)
       if (length(cells_oi_in_matrix) != length(cells_oi))
@@ -1125,7 +1125,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
     }
     else if ("SCT" %in% names(seurat_obj@assays) & !"Spatial" %in%
              names(seurat_obj@assays)) {
-      warning("Seurat object is result from the Seurat single-cell transform workflow. Make sure that this way of defining expressed genes is appropriate for SCT data. The expressed genes are defined based on the SCT slot.")
+      warning("Seurat object is result from the Seurat single-cell transform workflow. The expressed genes are defined based on the SCT slot. You can change this via the assay_oi parameter of the get_expressed_genes() functions. Recommended assays: RNA or SCT")
       cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$SCT@data),
                                      cells_oi)
       if (length(cells_oi_in_matrix) != length(cells_oi))
@@ -1134,7 +1134,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
     }
     else if ("Spatial" %in% names(seurat_obj@assays) &
              !"SCT" %in% names(seurat_obj@assays)) {
-      warning("Seurat object is result from the Seurat spatial object. Make sure that this way of defining expressed genes is appropriate for Spatial data.")
+      warning("Seurat object is result from the Seurat spatial object. The expressed genes are defined based on the Spatial slot. If the spatial data is spot-based (mixture of cells) and not single-cell resolution, we recommend against directly using nichenetr on spot-based data (because you want to look at cell-cell interactions, and not at spot-spot interactions! ;-) )")
       cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$Spatial@data),
                                      cells_oi)
       if (length(cells_oi_in_matrix) != length(cells_oi))
@@ -1143,7 +1143,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
     }
     else if ("Spatial" %in% names(seurat_obj@assays) &
              "SCT" %in% names(seurat_obj@assays)) {
-      warning("Seurat object is result from the Seurat spatial object, followed by the SCT workflow. Make sure that this way of defining expressed genes is appropriate for Spatial data. The expressed genes are defined based on the SCT slot.")
+      warning("Seurat object is result from the Seurat spatial object, followed by the SCT workflow. If the spatial data is spot-based (mixture of cells) and not single-cell resolution, we recommend against directly using nichenetr on spot-based data (because you want to look at cell-cell interactions, and not at spot-spot interactions! The expressed genes are defined based on the SCT slot, but this can be changed via the assay_oi parameter.")
       cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$SCT@data),
                                      cells_oi)
       if (length(cells_oi_in_matrix) != length(cells_oi))
