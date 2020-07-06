@@ -27,25 +27,28 @@ test_that("active ligand-target matrix and network can be constructed", {
   weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
   setting = lapply(expression_settings_validation[1:3],convert_expression_settings_evaluation)
   ligands = extract_ligands_from_settings(setting)
-  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands,ligands_as_cols = TRUE)
 
-  # temporary debugging solution:
-  ligands = colnames(ligand_target_matrix)
-  targets = rownames(ligand_target_matrix)
-  error_rate = 0.1
-  cutoff_method = "quantile"
-  fdr_method = "global"
-  ligands_position = "cols"
-  list_targets = lapply(ligands,get_target_genes_ligand_oi,ligand_target_matrix,cutoff_method = cutoff_method, fdr_method = fdr_method,error_rate = error_rate)
-  print(length(list_targets))
-  print(length(list_targets[[1]]))
-  names(list_targets) = ligands
-  ligand_target_matrix_discrete = list_targets %>% bind_rows() %>% as.matrix()
-  print(dim(ligand_target_matrix_discrete))
-  expect_equal(dim(ligand_target_matrix_discrete), dim(ligand_target_matrix))
-
-  rownames(ligand_target_matrix_discrete) = targets %>% make.names() # maybe change this again
-  expect_equal(dim(ligand_target_matrix_discrete), dim(ligand_target_matrix))
+  # # temporary debugging solution:
+  # ligands = colnames(ligand_target_matrix)
+  # targets = rownames(ligand_target_matrix)
+  # error_rate = 0.1
+  # cutoff_method = "quantile"
+  # fdr_method = "global"
+  # ligands_position = "cols"
+  # list_targets = lapply(ligands,get_target_genes_ligand_oi,ligand_target_matrix,cutoff_method = cutoff_method, fdr_method = fdr_method,error_rate = error_rate)
+  # print(length(list_targets))
+  # print(length(list_targets[[1]]))
+  # names(list_targets) = ligands
+  # ligand_target_matrix_discrete = list_targets %>% bind_rows() %>% as.matrix()
+  #
+  # # this means: ligand-target matrix discrete gets 3 rows and n targets columns??? weird
+  #
+  # print(dim(ligand_target_matrix_discrete))
+  # expect_equal(dim(ligand_target_matrix_discrete), dim(ligand_target_matrix))
+  #
+  # rownames(ligand_target_matrix_discrete) = targets %>% make.names() # maybe change this again
+  # expect_equal(dim(ligand_target_matrix_discrete), dim(ligand_target_matrix))
 
   ligand_target_matrix_discrete = make_discrete_ligand_target_matrix(ligand_target_matrix, cutoff_method = "quantile")
   active_lt = get_active_ligand_target_matrix(setting[[1]] %>% .$response, ligand_target_matrix_discrete)
