@@ -50,6 +50,8 @@ library(Seurat)
 library(tidyverse)
 ```
 
+If you would use and load other packages, we recommend to load these 3 packages after the others.
+
 ### Read in NicheNet's ligand-target prior model, ligand-receptor network and weighted integrated networks:
 
 ```{r}

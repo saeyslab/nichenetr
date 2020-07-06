@@ -82,6 +82,9 @@ library(Seurat)
 library(tidyverse)
 ```
 
+If you would use and load other packages, we recommend to load these 3
+packages after the others.
+
 ### Read in the expression data of interacting cells:
 
 The dataset used here is publicly available single-cell data from immune
@@ -94,20 +97,13 @@ mouse/human gene symbol.
 ``` r
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
 seuratObj@meta.data %>% head()
-##         nGene nUMI orig.ident aggregate res.0.6 celltype
-## W380370   880 1611      LN_SS        SS       1    CD8 T
-## W380372   541  891      LN_SS        SS       0    CD4 T
-## W380374   742 1229      LN_SS        SS       0    CD4 T
-## W380378   847 1546      LN_SS        SS       1    CD8 T
-## W380379   839 1606      LN_SS        SS       0    CD4 T
-## W380381   517  844      LN_SS        SS       0    CD4 T
-##         nCount_RNA nFeature_RNA
-## W380370       1607          876
-## W380372        885          536
-## W380374       1223          737
-## W380378       1537          838
-## W380379       1603          836
-## W380381        840          513
+##         nGene nUMI orig.ident aggregate res.0.6 celltype nCount_RNA nFeature_RNA
+## W380370   880 1611      LN_SS        SS       1    CD8 T       1607          876
+## W380372   541  891      LN_SS        SS       0    CD4 T        885          536
+## W380374   742 1229      LN_SS        SS       0    CD4 T       1223          737
+## W380378   847 1546      LN_SS        SS       1    CD8 T       1537          838
+## W380379   839 1606      LN_SS        SS       0    CD4 T       1603          836
+## W380381   517  844      LN_SS        SS       0    CD4 T        840          513
 ```
 
 Visualize which cell populations are present: CD4 T cells (including
@@ -122,7 +118,7 @@ seuratObj@meta.data$celltype %>% table() # note that the number of cells of some
 DimPlot(seuratObj, reduction = "tsne")
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 Visualize the data to see to which condition cells belong. The metadata
 dataframe column that denotes the condition (steady-state or after LCMV
@@ -136,25 +132,19 @@ seuratObj@meta.data$aggregate %>% table()
 DimPlot(seuratObj, reduction = "tsne", group.by = "aggregate")
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 ### Read in NicheNet’s ligand-target prior model, ligand-receptor network and weighted integrated networks:
 
 ``` r
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
-##                 CXCL1        CXCL2        CXCL3        CXCL5
-## A1BG     3.534343e-04 4.041324e-04 3.729920e-04 3.080640e-04
-## A1BG-AS1 1.650894e-04 1.509213e-04 1.583594e-04 1.317253e-04
-## A1CF     5.787175e-04 4.596295e-04 3.895907e-04 3.293275e-04
-## A2M      6.027058e-04 5.996617e-04 5.164365e-04 4.517236e-04
-## A2M-AS1  8.898724e-05 8.243341e-05 7.484018e-05 4.912514e-05
-##                  PPBP
-## A1BG     2.628388e-04
-## A1BG-AS1 1.231819e-04
-## A1CF     3.211944e-04
-## A2M      4.590521e-04
-## A2M-AS1  5.120439e-05
+##                 CXCL1        CXCL2        CXCL3        CXCL5         PPBP
+## A1BG     3.534343e-04 4.041324e-04 3.729920e-04 3.080640e-04 2.628388e-04
+## A1BG-AS1 1.650894e-04 1.509213e-04 1.583594e-04 1.317253e-04 1.231819e-04
+## A1CF     5.787175e-04 4.596295e-04 3.895907e-04 3.293275e-04 3.211944e-04
+## A2M      6.027058e-04 5.996617e-04 5.164365e-04 4.517236e-04 4.590521e-04
+## A2M-AS1  8.898724e-05 8.243341e-05 7.484018e-05 4.912514e-05 5.120439e-05
 
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 head(lr_network)
@@ -329,7 +319,7 @@ you can run the following:
 DotPlot(seuratObj, features = best_upstream_ligands %>% rev(), cols = "RdYlBu") + RotatedAxis()
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 As you can see, most op the top-ranked ligands seem to be mainly
 expressed by dendritic cells and monocytes.
@@ -356,7 +346,7 @@ p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized
 p_ligand_target_network
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 Note that not all ligands from the top 20 are present in this
 ligand-target heatmap. The left-out ligands are ligands that don’t have
@@ -396,7 +386,7 @@ p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap
 p_ligand_receptor_network
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 ### Receptors of top-ranked ligands, but after considering only bona fide ligand-receptor interactions documented in literature and publicly available databases
 
@@ -432,7 +422,7 @@ p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>
 p_ligand_receptor_network_strict
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 ## 6\) Add log fold change information of ligands from sender cells
 
@@ -469,7 +459,7 @@ p_ligand_lfc = vis_ligand_lfc %>% make_threecolor_heatmap_ggplot("Prioritized li
 p_ligand_lfc
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 ``` r
 
@@ -478,7 +468,7 @@ p_ligand_lfc = p_ligand_lfc + scale_fill_gradientn(colors = c("midnightblue","bl
 p_ligand_lfc
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-21-2.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-20-2.png)<!-- -->
 
 ## 7\) Summary visualizations of the NicheNet analysis
 
@@ -530,7 +520,7 @@ combined_plot = cowplot::plot_grid(figures_without_legend, legends, rel_heights 
 combined_plot
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 # Remarks
 

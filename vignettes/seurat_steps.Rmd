@@ -50,6 +50,8 @@ library(Seurat)
 library(tidyverse)
 ```
 
+If you would use and load other packages, we recommend to load these 3 packages after the others.
+
 ### Read in the expression data of interacting cells: 
 
 The dataset used here is publicly available single-cell data from immune cells in the T cell area of the inguinal lymph node. The data was processed and aggregated by applying the Seurat alignment pipeline. The Seurat object contains this aggregated data. Note that this should be a Seurat v3 object and that gene should be named by their official mouse/human gene symbol.
