@@ -1,5 +1,7 @@
 language: r
-r: bioc-release
+r:
+  - release
+  - bioc-devel
 sudo: required
 dist: trusty
 cache: packages
@@ -7,11 +9,14 @@ addons:
   apt:
     packages:
       - libusb-1.0-0-dev
+      - libxml2-dev
 bioc_required: true
 warnings_are_errors: false
 r_check_args: "--no-build-vignettes --no-vignettes"
 r_build_args: "--no-build-vignettes"
 r_packages:
   - covr
+  - shiny
+  - testthat
 after_success:
   - Rscript -e 'library(covr); codecov()'
