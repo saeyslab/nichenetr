@@ -1,7 +1,7 @@
 language: r
 r: bioc-release
 sudo: required
-dist: bionic
+dist: trusty
 cache: packages
 addons:
   apt:
