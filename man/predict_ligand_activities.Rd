@@ -16,6 +16,8 @@ predict_ligand_activities(geneset, background_expressed_genes,ligand_target_matr
 \item{potential_ligands}{Character vector giving the gene symbols of the potentially active ligands you want to define ligand activities for.}
 
 \item{single}{TRUE if you want to calculate ligand activity scores by considering every ligand individually (recommended). FALSE if you want to calculate ligand activity scores as variable importances of a multi-ligand classification model.}
+
+\item{...}{Additional parameters for get_multi_ligand_importances if single = FALSE.}
 }
 \value{
 A tibble giving several ligand activity scores. Following columns in the tibble: $test_ligand, $auroc, $aupr and $pearson.

@@ -705,6 +705,7 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #'
 #' @import Seurat
 #' @import dplyr
+#' @import magrittr
 #'
 #' @examples
 #' \dontrun{
@@ -1221,6 +1222,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
 #'
 #' @import Seurat
 #' @import dplyr
+#' @import magrittr
 #'
 #' @examples
 #' \dontrun{
@@ -1593,6 +1595,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 #'
 #' @import Seurat
 #' @import dplyr
+#' @import magrittr
 #'
 #' @examples
 #' \dontrun{

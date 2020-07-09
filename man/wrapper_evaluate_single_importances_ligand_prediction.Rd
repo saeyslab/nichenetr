@@ -9,7 +9,7 @@ wrapper_evaluate_single_importances_ligand_prediction(group,ligand_importances)
 \arguments{
 \item{group}{Name of the dataset (setting) you want to calculate ligand activity performance for.}
 
-\item{importances}{A data frame containing at least folowing variables: $setting, $test_ligand, $ligand and one or more feature importance scores. $test_ligand denotes the name of a possibly active ligand, $ligand the name of the truely active ligand.}
+\item{ligand_importances}{A data frame containing at least folowing variables: $setting, $test_ligand, $ligand and one or more feature importance scores. $test_ligand denotes the name of a possibly active ligand, $ligand the name of the truely active ligand.}
 }
 \value{
 A data frame containing classification evaluation measures for the ligand activity state prediction single, individual feature importance measures.

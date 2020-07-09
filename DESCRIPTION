@@ -37,7 +37,8 @@ Imports:
     e1071,
     Seurat,
     cowplot,
-    ggpubr
+    ggpubr,
+    magrittr
 Suggests: knitr,
     rmarkdown,
     testthat,

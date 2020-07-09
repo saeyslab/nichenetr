@@ -800,7 +800,7 @@ convert_settings_topn_ligand_prediction = function(setting, importances, model, 
 #' wrapper_evaluate_single_importances_ligand_prediction(group,ligand_importances)
 #'
 #' @param group Name of the dataset (setting) you want to calculate ligand activity performance for.
-#' @param importances A data frame containing at least folowing variables: $setting, $test_ligand, $ligand and one or more feature importance scores. $test_ligand denotes the name of a possibly active ligand, $ligand the name of the truely active ligand.
+#' @param ligand_importances A data frame containing at least folowing variables: $setting, $test_ligand, $ligand and one or more feature importance scores. $test_ligand denotes the name of a possibly active ligand, $ligand the name of the truely active ligand.
 #'
 #' @return A data frame containing classification evaluation measures for the ligand activity state prediction single, individual feature importance measures.
 #'

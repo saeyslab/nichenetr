@@ -16,6 +16,8 @@ predict_single_cell_ligand_activities(cell_ids, expression_scaled,ligand_target_
 \item{potential_ligands}{Character vector giving the gene symbols of the potentially active ligands you want to define ligand activities for.}
 
 \item{single}{TRUE if you want to calculate ligand activity scores by considering every ligand individually (recommended). FALSE if you want to calculate ligand activity scores as variable importances of a multi-ligand classification model.}
+
+\item{...}{Additional parameters for get_multi_ligand_importances if single = FALSE.}
 }
 \value{
 A tibble giving several ligand activity scores for single cells. Following columns in the tibble: $setting, $test_ligand, $auroc, $aupr and $pearson.

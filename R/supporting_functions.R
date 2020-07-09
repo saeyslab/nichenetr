@@ -884,7 +884,7 @@ get_network_df = function(ligand_to_vis,target_to_vis,k,weighted_networks,ligand
 
   colnames(ligand_tf_matrix_visualization) = "V1"
 
-  ligand_tf_matrix_visualization_df = tbl_df(ligand_tf_matrix_visualization) %>% rename(weight = V1) %>% mutate(TF = rownames(ligand_tf_matrix)) %>% select(TF,weight)
+  ligand_tf_matrix_visualization_df = as_tibble(ligand_tf_matrix_visualization) %>% rename(weight = V1) %>% mutate(TF = rownames(ligand_tf_matrix)) %>% select(TF,weight)
   ligand_tf_matrix_visualization_df_filtered = ligand_tf_matrix_visualization_df %>% filter(weight > 0) %>% mutate(ligand = ligand_to_vis)
 
   ## prepare TFs upstream of target
@@ -1048,8 +1048,9 @@ train_rf = function(setting,ligand_target_matrix, ligands_position = "cols", ntr
 
   )
 }
+#' @import e1071
 test_rf = function(setting,rf_model, ligand_target_matrix, ligands_position = "cols"){
-  library(e1071)
+  requireNamespace("e1071")
   setting_name = setting$name
   ligands_oi = setting$from
 
