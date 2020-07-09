@@ -73,8 +73,7 @@ library(tidyverse)
 Ligand-target model:
 
 This model denotes the prior potential that a particular ligand might
-regulate the expression of a specific target
-gene.
+regulate the expression of a specific target gene.
 
 ``` r
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
@@ -88,8 +87,7 @@ ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 ```
 
 Expression data of interacting cells: publicly available single-cell
-data from CAF and malignant cells from HNSCC
-tumors:
+data from CAF and malignant cells from HNSCC tumors:
 
 ``` r
 hnscc_expression = readRDS(url("https://zenodo.org/record/3260758/files/hnscc_expression.rds"))
@@ -150,8 +148,7 @@ crucial step in the use of NicheNet.
 Because we here want to investigate how CAFs regulate the expression of
 p-EMT genes in malignant cells, we will use the p-EMT gene set defined
 by Puram et al. as gene set of interest and use all genes expressed in
-malignant cells as background of
-genes.
+malignant cells as background of genes.
 
 ``` r
 geneset_oi = readr::read_tsv(url("https://zenodo.org/record/3260758/files/pemt_signature.txt"), col_names = "gene") %>% pull(gene) %>% .[. %in% rownames(ligand_target_matrix)] # only consider genes also present in the NicheNet model - this excludes genes from the gene list for which the official HGNC symbol was not used by Puram et al.
@@ -168,8 +165,7 @@ head(background_expressed_genes)
 As potentially active ligands, we will use ligands that are 1) expressed
 by CAFs and 2) can bind a (putative) receptor expressed by malignant
 cells. Putative ligand-receptor links were gathered from NicheNet’s
-ligand-receptor data
-sources.
+ligand-receptor data sources.
 
 ``` r
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
@@ -212,8 +208,7 @@ Now perform the ligand activity analysis: in this analysis, we will
 calculate the ligand activity of each ligand, or in other words, we will
 assess how well each CAF-ligand can predict the p-EMT gene set compared
 to the background of expressed genes (predict whether a gene belongs to
-the p-EMT program or
-not).
+the p-EMT program or not).
 
 ``` r
 ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
@@ -242,7 +237,7 @@ ligand_activities %>% arrange(-pearson)
 ##  8 TNC         0.700 0.0444   0.109
 ##  9 CTGF        0.680 0.0473   0.108
 ## 10 FN1         0.679 0.0505   0.108
-## # … with 121 more rows
+## # ... with 121 more rows
 best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand)
 head(best_upstream_ligands)
 ## [1] "PTHLH"  "CXCL12" "AGT"    "TGFB3"  "IL6"    "INHBA"
@@ -291,8 +286,7 @@ strongly predicted targets of at least one of the 20 top-ranked ligands
 (the top 250 targets according to the general prior model, so not the
 top 250 targets for this dataset). Consequently, genes of your gene set
 that are not a top target gene of one of the prioritized ligands, will
-not be shown on the
-heatmap.
+not be shown on the heatmap.
 
 ``` r
 active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
@@ -316,8 +310,7 @@ potential matrix as follows. Regulatory potential scores were set as 0
 if their score was below a predefined threshold, which was here the 0.25
 quantile of scores of interactions between the 20 top-ranked ligands and
 each of their respective top targets (see the ligand-target network
-defined in the data
-frame).
+defined in the data frame).
 
 ``` r
 active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = 0.25)
@@ -338,8 +331,7 @@ head(active_ligand_target_links_df)
 
 The putatively active ligand-target links will now be visualized in a
 heatmap. The order of the ligands accord to the ranking according to the
-ligand activity
-prediction.
+ligand activity prediction.
 
 ``` r
 order_ligands = intersect(best_upstream_ligands, colnames(active_ligand_target_links)) %>% rev()
@@ -363,8 +355,7 @@ links; by considering less than 250 targets, you will be more stringent.
 If you would change the quantile cutoff that is used to set scores to 0
 (for visualization purposes), lowering this cutoff will result in a more
 dense heatmap, whereas highering this cutoff will result in a more
-sparse
-heatmap.
+sparse heatmap.
 
 ## Follow-up analysis 1: Ligand-receptor network inference for top-ranked ligands
 
@@ -398,8 +389,7 @@ hclust_ligands = hclust(dist_ligands, method = "ward.D2")
 order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
 ```
 
-Show a heatmap of the ligand-receptor
-interactions
+Show a heatmap of the ligand-receptor interactions
 
 ``` r
 vis_ligand_receptor_network = lr_network_top_matrix[order_receptors, order_ligands_receptor]
@@ -446,15 +436,14 @@ p_ligand_pearson
 #### Prepare expression of ligands in fibroblast per tumor
 
 Because the single-cell data was collected from multiple tumors, we will
-show here the average expression of the ligands per
-tumor.
+show here the average expression of the ligands per tumor.
 
 ``` r
-expression_df_CAF = expression[CAF_ids,order_ligands] %>% data.frame() %>% rownames_to_column("cell") %>% tbl_df() %>% inner_join(sample_info %>% select(cell,tumor), by =  "cell")
+expression_df_CAF = expression[CAF_ids,order_ligands] %>% data.frame() %>% rownames_to_column("cell") %>% as_tibble() %>% inner_join(sample_info %>% select(cell,tumor), by =  "cell")
 
 aggregated_expression_CAF = expression_df_CAF %>% group_by(tumor) %>% select(-cell) %>% summarise_all(mean)
 
-aggregated_expression_df_CAF = aggregated_expression_CAF %>% select(-tumor) %>% t() %>% magrittr::set_colnames(aggregated_expression_CAF$tumor) %>% data.frame() %>% rownames_to_column("ligand") %>% tbl_df() 
+aggregated_expression_df_CAF = aggregated_expression_CAF %>% select(-tumor) %>% t() %>% magrittr::set_colnames(aggregated_expression_CAF$tumor) %>% data.frame() %>% rownames_to_column("ligand") %>% as_tibble() 
 
 aggregated_expression_matrix_CAF = aggregated_expression_df_CAF %>% select(-ligand) %>% as.matrix() %>% magrittr::set_rownames(aggregated_expression_df_CAF$ligand)
 
@@ -474,11 +463,11 @@ p_ligand_tumor_expression
 #### Prepare expression of target genes in malignant cells per tumor
 
 ``` r
-expression_df_target = expression[malignant_ids,geneset_oi] %>% data.frame() %>% rownames_to_column("cell") %>% tbl_df() %>% inner_join(sample_info %>% select(cell,tumor), by =  "cell") 
+expression_df_target = expression[malignant_ids,geneset_oi] %>% data.frame() %>% rownames_to_column("cell") %>% as_tibble() %>% inner_join(sample_info %>% select(cell,tumor), by =  "cell") 
 
 aggregated_expression_target = expression_df_target %>% group_by(tumor) %>% select(-cell) %>% summarise_all(mean)
 
-aggregated_expression_df_target = aggregated_expression_target %>% select(-tumor) %>% t() %>% magrittr::set_colnames(aggregated_expression_target$tumor) %>% data.frame() %>% rownames_to_column("target") %>% tbl_df() 
+aggregated_expression_df_target = aggregated_expression_target %>% select(-tumor) %>% t() %>% magrittr::set_colnames(aggregated_expression_target$tumor) %>% data.frame() %>% rownames_to_column("target") %>% as_tibble() 
 
 aggregated_expression_matrix_target = aggregated_expression_df_target %>% select(-target) %>% as.matrix() %>% magrittr::set_rownames(aggregated_expression_df_target$target)
 

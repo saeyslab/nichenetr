@@ -378,8 +378,8 @@ model_based_ligand_activity_prediction = function(importances, model, normalizat
   }
 
   final_model_predictions = predict(model,newdata = normalized_importances, type = "prob")
-  final_model_predictions = final_model_predictions %>% tbl_df() %>% mutate(active = TRUE. > FALSE.) %>% select(-FALSE.) %>% rename(model = TRUE.)
-  return(bind_cols(importances,final_model_predictions) %>% tbl_df())
+  final_model_predictions = final_model_predictions %>% as_tibble() %>% mutate(active = TRUE. > FALSE.) %>% select(-FALSE.) %>% rename(model = TRUE.)
+  return(bind_cols(importances,final_model_predictions) %>% as_tibble())
 
 }
 #' @title Get ligand importances from a multi-ligand trained random forest model.
@@ -451,7 +451,7 @@ get_multi_ligand_rf_importances = function(setting,ligand_target_matrix, ligands
   response_vector = setting$response
   response_df = tibble(gene = names(response_vector), response = response_vector %>% make.names() %>% as.factor())
 
-  prediction_df = prediction_matrix %>% data.frame() %>% tbl_df()
+  prediction_df = prediction_matrix %>% data.frame() %>% as_tibble()
 
   if(is.double(prediction_matrix) == FALSE){
     convert_categorical_factor = function(x){
@@ -471,7 +471,7 @@ get_multi_ligand_rf_importances = function(setting,ligand_target_matrix, ligands
                                         importance = TRUE
   )
 
-  metrics = randomForest::importance(rf_model) %>% data.frame() %>% tibble::rownames_to_column("test_ligand") %>% tbl_df() %>% mutate(setting = setting_name)
+  metrics = randomForest::importance(rf_model) %>% data.frame() %>% tibble::rownames_to_column("test_ligand") %>% as_tibble() %>% mutate(setting = setting_name)
 
   if (known == TRUE){
     true_ligand = setting$ligand
@@ -657,7 +657,7 @@ get_multi_ligand_rf_importances_regression = function(setting,ligand_target_matr
   response_vector = setting$response
   response_df = tibble(gene = names(response_vector), response = response_vector)
 
-  prediction_df = prediction_matrix %>% data.frame() %>% tbl_df()
+  prediction_df = prediction_matrix %>% data.frame() %>% as_tibble()
 
   prediction_df = tibble(gene = target_genes) %>% bind_cols(prediction_df)
   combined = inner_join(response_df,prediction_df, by = "gene")
@@ -670,7 +670,7 @@ get_multi_ligand_rf_importances_regression = function(setting,ligand_target_matr
                                         importance = TRUE
   )
 
-  metrics = randomForest::importance(rf_model) %>% data.frame() %>% tibble::rownames_to_column("test_ligand") %>% tbl_df() %>% mutate(setting = setting_name)
+  metrics = randomForest::importance(rf_model) %>% data.frame() %>% tibble::rownames_to_column("test_ligand") %>% as_tibble() %>% mutate(setting = setting_name)
 
   if (known == TRUE){
     true_ligand = setting$ligand

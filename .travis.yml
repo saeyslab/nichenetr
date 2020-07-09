@@ -1,9 +1,9 @@
 language: r
 r:
-  - release
   - bioc-devel
 sudo: required
-dist: trusty
+os: linux
+dist: bionic
 cache: packages
 addons:
   apt:

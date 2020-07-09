@@ -28,7 +28,7 @@ randomize_network = function(network, output_weighted = FALSE){
 
   allgenes = unique(c(network$from, network$to)) %>% sort()
   allgenes_integer = allgenes %>% factor() %>% as.numeric()
-  allgenes_entrez_tbl = data.frame(allgenes,allgenes_integer) %>% tbl_df()
+  allgenes_entrez_tbl = data.frame(allgenes,allgenes_integer) %>% as_tibble()
   entrez2allgenes = mapper(allgenes_entrez_tbl,"allgenes_integer","allgenes")
   allgenes2entrez = mapper(allgenes_entrez_tbl,"allgenes","allgenes_integer")
 
@@ -37,7 +37,7 @@ randomize_network = function(network, output_weighted = FALSE){
   network_matrix = Matrix::sparseMatrix(network$from_allgenes %>% as.integer, network$to_allgenes %>% as.integer, x=1 %>% as.numeric, dims = c(length(allgenes), length(allgenes))) # cast to sparse matrix
   network_igraph = igraph::graph_from_adjacency_matrix(network_matrix, mode="directed")
   network_random_graph = igraph::sample_degseq(igraph::degree(network_igraph,mode = "out"), igraph::degree(network_igraph,mode = "in"))
-  network_random_df = igraph::get.data.frame(network_random_graph) %>% tbl_df() %>% mutate(from = as.character(allgenes2entrez[from]), to = as.character(allgenes2entrez[to]))
+  network_random_df = igraph::get.data.frame(network_random_graph) %>% as_tibble() %>% mutate(from = as.character(allgenes2entrez[from]), to = as.character(allgenes2entrez[to]))
 
   if (output_weighted == TRUE){
     network_random_df = network_random_df %>% mutate(weight = 1)
@@ -74,7 +74,7 @@ randomize_datasource_network = function(datasource,network){
 
   allgenes = unique(c(network$from, network$to)) %>% sort()
   allgenes_integer = allgenes %>% factor() %>% as.numeric()
-  allgenes_entrez_tbl = data.frame(allgenes,allgenes_integer) %>% tbl_df()
+  allgenes_entrez_tbl = data.frame(allgenes,allgenes_integer) %>% as_tibble()
   entrez2allgenes = mapper(allgenes_entrez_tbl,"allgenes_integer","allgenes")
   allgenes2entrez = mapper(allgenes_entrez_tbl,"allgenes","allgenes_integer")
 
@@ -83,7 +83,7 @@ randomize_datasource_network = function(datasource,network){
   network_matrix = Matrix::sparseMatrix(network$from_allgenes %>% as.integer, network$to_allgenes %>% as.integer, x=1 %>% as.numeric, dims = c(length(allgenes), length(allgenes))) # cast to sparse matrix
   network_igraph = igraph::graph_from_adjacency_matrix(network_matrix, mode="directed")
   network_random_graph = igraph::sample_degseq(igraph::degree(network_igraph,mode = "out"), igraph::degree(network_igraph,mode = "in"))
-  network_random_df = igraph::get.data.frame(network_random_graph) %>% tbl_df() %>% mutate(from = as.character(allgenes2entrez[from]), to = as.character(allgenes2entrez[to])) %>% mutate(source = datasource)
+  network_random_df = igraph::get.data.frame(network_random_graph) %>% as_tibble() %>% mutate(from = as.character(allgenes2entrez[from]), to = as.character(allgenes2entrez[to])) %>% mutate(source = datasource)
 
 }
 #' @title Randomize an integrated network by shuffling its source networks

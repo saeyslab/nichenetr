@@ -671,7 +671,7 @@ prepare_settings_one_vs_one_characterization = function(lr_network, sig_network,
     lr_sig_sources = c(lr_network$source, sig_network$source) %>% unique()
     gr_sources = unique(gr_network$source)
 
-    source_possibilities_df = expand.grid(lr_sig_sources, gr_sources) %>% tbl_df() %>% rename(lr_sig_source = Var1, gr_source = Var2) %>% mutate(lr_sig_source = as.character(lr_sig_source), gr_source = as.character(gr_source))
+    source_possibilities_df = expand.grid(lr_sig_sources, gr_sources) %>% as_tibble() %>% rename(lr_sig_source = Var1, gr_source = Var2) %>% mutate(lr_sig_source = as.character(lr_sig_source), gr_source = as.character(gr_source))
 
     source_weight_settings_list = lapply(seq(nrow(source_possibilities_df)), function(i, source_possibilities_df){
       row_oi = source_possibilities_df[i,]
@@ -689,7 +689,7 @@ prepare_settings_one_vs_one_characterization = function(lr_network, sig_network,
     sig_sources = unique(sig_network$source)
     gr_sources = unique(gr_network$source)
 
-    source_possibilities_df = expand.grid(lr_sources,sig_sources, gr_sources) %>% tbl_df() %>% rename(lr_source = Var1, sig_source = Var2, gr_source = Var3) %>% mutate(lr_source = as.character(lr_source), sig_source = as.character(sig_source), gr_source = as.character(gr_source))
+    source_possibilities_df = expand.grid(lr_sources,sig_sources, gr_sources) %>% as_tibble() %>% rename(lr_source = Var1, sig_source = Var2, gr_source = Var3) %>% mutate(lr_source = as.character(lr_source), sig_source = as.character(sig_source), gr_source = as.character(gr_source))
 
     source_weight_settings_list = lapply(seq(nrow(source_possibilities_df)), function(i, source_possibilities_df){
       row_oi = source_possibilities_df[i,]

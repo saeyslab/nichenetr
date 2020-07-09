@@ -65,6 +65,7 @@ convert_cluster_to_settings = function(i, cluster_vector, setting_name, setting_
 #' @param ligand_target_matrix The NicheNet ligand-target matrix denoting regulatory potential scores between ligands and targets (ligands in columns).
 #' @param potential_ligands Character vector giving the gene symbols of the potentially active ligands you want to define ligand activities for.
 #' @param single TRUE if you want to calculate ligand activity scores by considering every ligand individually (recommended). FALSE if you want to calculate ligand activity scores as variable importances of a multi-ligand classification model.
+#' @param ... Additional parameters for get_multi_ligand_importances if single = FALSE.
 #'
 #' @return A tibble giving several ligand activity scores. Following columns in the tibble: $test_ligand, $auroc, $aupr and $pearson.
 #'
@@ -360,7 +361,7 @@ calculate_fraction_top_predicted = function(affected_gene_predictions, quantile_
 #' @description \code{calculate_fraction_top_predicted_fisher} Performs a Fisher's exact test to determine whether genes belonging to the gene set of interest are more likely to be part of the top-predicted targets.
 #'
 #' @usage
-#' calculate_fraction_top_predicted_fisher(affected_gene_predictions, quantile_cutoff = 0.95,output = "p-value")
+#' calculate_fraction_top_predicted_fisher(affected_gene_predictions, quantile_cutoff = 0.95, p_value_output = TRUE)
 #'
 #' @param p_value_output Should total summary or p-value be returned as output? Default: TRUE.
 #' @inheritParams calculate_fraction_top_predicted
@@ -497,6 +498,7 @@ convert_single_cell_expression_to_settings = function(cell_id, expression_matrix
 #' @param ligand_target_matrix The NicheNet ligand-target matrix denoting regulatory potential scores between ligands and targets (ligands in columns).
 #' @param potential_ligands Character vector giving the gene symbols of the potentially active ligands you want to define ligand activities for.
 #' @param single TRUE if you want to calculate ligand activity scores by considering every ligand individually (recommended). FALSE if you want to calculate ligand activity scores as variable importances of a multi-ligand classification model.
+#' @param ... Additional parameters for get_multi_ligand_importances if single = FALSE.
 #'
 #' @return A tibble giving several ligand activity scores for single cells. Following columns in the tibble: $setting, $test_ligand, $auroc, $aupr and $pearson.
 #'
@@ -577,7 +579,7 @@ normalize_single_cell_ligand_activities = function(ligand_activities){
   single_cell_ligand_activities_pearson_norm_df = single_ligand_activities_pearson_norm_matrix %>%
     data.frame() %>%
     rownames_to_column("cell") %>%
-    tbl_df()
+    as_tibble()
 }
 #' @title Perform a correlation and regression analysis between cells' ligand activities and property scores of interest
 #'
@@ -701,6 +703,9 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #'
 #' @return A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI; geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis; background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 #'
+#' @import Seurat
+#' @import dplyr
+#'
 #' @examples
 #' \dontrun{
 #' seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
@@ -717,8 +722,8 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
                                         top_n_targets = 200, cutoff_visualization = 0.33,
                                         organism = "human",verbose = TRUE)
 {
-  library(Seurat)
-  library(dplyr)
+  requireNamespace("Seurat")
+  requireNamespace("dplyr")
 
   # input check
   if(! "RNA" %in% names(seurat_obj@assays)){
@@ -1045,6 +1050,9 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
 #'
 #' @return A character vector with the gene symbols of the expressed genes
 #'
+#' @import Seurat
+#' @import dplyr
+#'
 #' @examples
 #' \dontrun{
 #' get_expressed_genes(ident = "CD8 T", seurat_obj = seuratObj, pct = 0.10)
@@ -1053,8 +1061,8 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
 #' @export
 #'
 get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
-  library(Seurat)
-  library(dplyr)
+  requireNamespace("Seurat")
+  requireNamespace("dplyr")
 
   # input check
 
@@ -1211,6 +1219,9 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
 #'
 #' @return A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI; geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis; background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 #'
+#' @import Seurat
+#' @import dplyr
+#'
 #' @examples
 #' \dontrun{
 #' seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
@@ -1230,8 +1241,8 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
                                         top_n_targets = 200, cutoff_visualization = 0.33,
                                         organism = "human",verbose = TRUE)
 {
-  library(Seurat)
-  library(dplyr)
+  requireNamespace("Seurat")
+  requireNamespace("dplyr")
 
   # input check
   # input check
@@ -1580,6 +1591,9 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 #'
 #' @return A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI; geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis; background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 #'
+#' @import Seurat
+#' @import dplyr
+#'
 #' @examples
 #' \dontrun{
 #' seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
@@ -1599,8 +1613,8 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
                                          organism = "human",verbose = TRUE)
 {
 
-  library(Seurat)
-  library(dplyr)
+  requireNamespace("Seurat")
+  requireNamespace("dplyr")
 
   # input check
   if(! "RNA" %in% names(seurat_obj@assays)){
@@ -1950,22 +1964,25 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 #'
 #' @return A tbl with the log fold change values of genes. Positive lfc values: higher in condition_oi compared to condition_reference.
 #'
+#' @import Seurat
+#' @import dplyr
+#'
 #' @examples
 #' \dontrun{
-#' library(dplyr)
+#' requireNamespace("dplyr")
 #' seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
 #' get_lfc_celltype(seurat_obj = seuratObj, celltype_oi = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", expression_pct = 0.10)
 #' }
 #' @export
 #'
 get_lfc_celltype = function(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, expression_pct = 0.10){
-  library(Seurat)
-  library(dplyr)
+  requireNamespace("Seurat")
+  requireNamespace("dplyr")
   seurat_obj_celltype = SetIdent(seurat_obj, value = seurat_obj[["celltype"]])
   seuratObj_sender = subset(seurat_obj_celltype, idents = celltype_oi)
   seuratObj_sender = SetIdent(seuratObj_sender, value = seuratObj_sender[[condition_colname]])
   DE_table_sender = FindMarkers(object = seuratObj_sender, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct, logfc.threshold = 0.05) %>% rownames_to_column("gene")
-  DE_table_sender = DE_table_sender %>% tbl_df() %>% select(-p_val) %>% select(gene, avg_logFC)
+  DE_table_sender = DE_table_sender %>% as_tibble() %>% select(-p_val) %>% select(gene, avg_logFC)
   colnames(DE_table_sender) = c("gene",celltype_oi)
   return(DE_table_sender)
 }

@@ -198,7 +198,7 @@ get_pagerank_target = function(weighted_networks, secondary_targets = FALSE) {
   # convert ids to numeric for making Matrix::sparseMatrix later on
   allgenes = c(ligand_signaling_network$from, ligand_signaling_network$to, regulatory_network$from, regulatory_network$to) %>% unique() %>% sort()
   allgenes_integer = allgenes %>% factor() %>% as.numeric()
-  allgenes_id_tbl = data.frame(allgenes,allgenes_integer) %>% tbl_df()
+  allgenes_id_tbl = data.frame(allgenes,allgenes_integer) %>% as_tibble()
   id2allgenes = mapper(allgenes_id_tbl,"allgenes_integer","allgenes")
 
   ligand_signaling_network = ligand_signaling_network %>% mutate(from_allgenes = id2allgenes[from], to_allgenes = id2allgenes[to]) %>% arrange(from_allgenes) %>% dplyr::select(from_allgenes,to_allgenes,weight)
@@ -617,18 +617,18 @@ wrapper_caret_classification = function(train_data, algorithm, continuous = TRUE
 
   if (var_imps == TRUE) {
     imps =  caret::varImp(model, scale = FALSE)
-    var_imps_df = imps$importance  %>% tibble::rownames_to_column("feature") %>% tbl_df() %>% .[,1:2]
+    var_imps_df = imps$importance  %>% tibble::rownames_to_column("feature") %>% as_tibble() %>% .[,1:2]
     colnames(var_imps_df) = c("feature","importance")
     if(!is.null(prediction_response_df)){
-      output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous ,var_imps = var_imps_df, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions))
+      output_list = list(performances = performances %>% as_tibble(), performances_training = performances_training, performances_training_continuous = performances_training_continuous ,var_imps = var_imps_df, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions))
     } else {
-    output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous, var_imps = var_imps_df)}
+    output_list = list(performances = performances %>% as_tibble(), performances_training = performances_training, performances_training_continuous = performances_training_continuous, var_imps = var_imps_df)}
 
   } else {
     if(!is.null(prediction_response_df)){
-      output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, performances_training_continuous = performances_training_continuous, var_imps = NULL, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions))
+      output_list = list(performances = performances %>% as_tibble(), performances_training = performances_training, performances_training_continuous = performances_training_continuous, var_imps = NULL, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions))
     } else {
-    output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training,performances_training_continuous = performances_training_continuous, var_imps = NULL)}
+    output_list = list(performances = performances %>% as_tibble(), performances_training = performances_training,performances_training_continuous = performances_training_continuous, var_imps = NULL)}
   }
 
   if (return_model == TRUE){
@@ -827,18 +827,18 @@ wrapper_caret_regression = function(train_data, algorithm, var_imps = TRUE, cv =
 
   if (var_imps == TRUE) {
     imps =  caret::varImp(model, scale = FALSE)
-    var_imps_df = imps$importance  %>% tibble::rownames_to_column("feature") %>% tbl_df() %>% .[,1:2]
+    var_imps_df = imps$importance  %>% tibble::rownames_to_column("feature") %>% as_tibble() %>% .[,1:2]
     colnames(var_imps_df) = c("feature","importance")
     if(!is.null(prediction_response_df)){
-      output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, var_imps = var_imps_df, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions))
+      output_list = list(performances = performances %>% as_tibble(), performances_training = performances_training, var_imps = var_imps_df, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions))
     }
-    output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, var_imps = var_imps_df)
+    output_list = list(performances = performances %>% as_tibble(), performances_training = performances_training, var_imps = var_imps_df)
 
   } else {
     if(!is.null(prediction_response_df)){
-      output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, var_imps = NULL, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions))
+      output_list = list(performances = performances %>% as_tibble(), performances_training = performances_training, var_imps = NULL, prediction_response_df = prediction_response_df %>% mutate(model = final_model_predictions))
     }
-    output_list = list(performances = performances %>% tbl_df(), performances_training = performances_training, var_imps = NULL)
+    output_list = list(performances = performances %>% as_tibble(), performances_training = performances_training, var_imps = NULL)
   }
 
   if (return_model == TRUE){
@@ -921,11 +921,16 @@ evaluate_ligand_prediction_bins_direct = function(bin_id,settings,ligand_target_
     ligand_target_matrix = ligand_target_matrix %>% t()
   }
   ligand_target_matrix_discrete = ligand_target_matrix %>% make_discrete_ligand_target_matrix(...)
+  ligand_target_matrix_discrete = ligand_target_matrix %>% make_discrete_ligand_target_matrix()
 
 
   # performances = bind_rows(lapply(settings, evaluate_target_prediction, ligand_target_matrix,ligands_position)) ##### checking!!
   all_ligands = unlist(extract_ligands_from_settings(settings, combination = FALSE))
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = TRUE)
+
+  # print(all_ligands)
+  # print(colnames(ligand_target_matrix_discrete))
+  # print(colnames(ligand_target_matrix))
 
   ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix[, all_ligands]))
   ligand_importances_discrete = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix_discrete[, all_ligands]))
@@ -1015,7 +1020,7 @@ train_rf = function(setting,ligand_target_matrix, ligands_position = "cols", ntr
   response_vector = setting$response
   response_df = tibble(gene = names(response_vector), response = response_vector %>% make.names() %>% as.factor())
 
-  prediction_df = prediction_matrix %>% data.frame() %>% tbl_df()
+  prediction_df = prediction_matrix %>% data.frame() %>% as_tibble()
 
   prediction_df = tibble(gene = target_genes) %>% bind_cols(prediction_df)
   combined = inner_join(response_df,prediction_df, by = "gene")
@@ -1054,7 +1059,7 @@ test_rf = function(setting,rf_model, ligand_target_matrix, ligands_position = "c
   response_vector = setting$response
   response_df = tibble(gene = names(response_vector), response = response_vector %>% make.names() %>% as.factor())
 
-  prediction_df = prediction_matrix %>% data.frame() %>% tbl_df()
+  prediction_df = prediction_matrix %>% data.frame() %>% as_tibble()
 
   prediction_df = tibble(gene = target_genes) %>% bind_cols(prediction_df)
   combined = inner_join(response_df,prediction_df, by = "gene")

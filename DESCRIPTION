@@ -1,7 +1,7 @@
 Package: nichenetr
 Type: Package
 Title: NicheNet: Modeling Intercellular Communication by Linking Ligands to Target Genes
-Version: 0.1.0
+Version: 1.0.0
 Authors@R: person("Robin", "Browaeys", email = "robin.browaeys@ugent.be",
   role = c("aut", "cre"))
 Description: This package allows you the investigate intercellular communication from a computational perspective. More specifically, it allows to investigate how interacting cells influence each other's gene expression. Functionalities of this package (e.g. including predicting extracellular upstream regulators and their affected target genes) build upon a probabilistic model of ligand-target links that was inferred by data-integration.
@@ -10,7 +10,7 @@ Encoding: UTF-8
 LazyData: true
 URL: https://github.com/saeyslab/nichenetr
 BugReports: https://github.com/saeyslab/nichenetr/issues
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 Depends: R (>= 3.0.0)
 Imports: 
     dplyr,

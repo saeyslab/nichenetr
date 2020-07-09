@@ -28,7 +28,7 @@ A tbl with the log fold change values of genes. Positive lfc values: higher in c
 }
 \examples{
 \dontrun{
-library(dplyr)
+requireNamespace("dplyr")
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
 get_lfc_celltype(seurat_obj = seuratObj, celltype_oi = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", expression_pct = 0.10)
 }

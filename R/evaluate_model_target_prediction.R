@@ -262,7 +262,7 @@ evaluate_multi_ligand_target_prediction = function(setting,ligand_target_matrix,
     stop("all genes have same response")
   response_df = tibble(gene = names(response_vector), response = response_vector %>% make.names() %>% as.factor())
 
-  prediction_df = prediction_matrix %>% data.frame() %>% tbl_df()
+  prediction_df = prediction_matrix %>% data.frame() %>% as_tibble()
 
   if(is.double(prediction_matrix) == FALSE){
     convert_categorical_factor = function(x){
@@ -605,7 +605,7 @@ evaluate_multi_ligand_target_prediction_regression = function(setting, ligand_ta
     stop("all genes have same response")
   response_df = tibble(gene = names(response_vector), response = response_vector)
 
-  prediction_df = prediction_matrix %>% data.frame() %>% tbl_df()
+  prediction_df = prediction_matrix %>% data.frame() %>% as_tibble()
 
   prediction_df = tibble(gene = target_genes) %>% bind_cols(prediction_df)
   combined = inner_join(response_df,prediction_df, by = "gene")

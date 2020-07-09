@@ -227,7 +227,7 @@ construct_ligand_tf_matrix = function(weighted_networks, ligands, ltf_cutoff = 0
   # convert ids to numeric for making Matrix::sparseMatrix later on
   allgenes = c(ligand_signaling_network$from, ligand_signaling_network$to, regulatory_network$from, regulatory_network$to) %>% unique() %>% sort()
   allgenes_integer = allgenes %>% factor() %>% as.numeric()
-  allgenes_id_tbl = data.frame(allgenes,allgenes_integer) %>% tbl_df()
+  allgenes_id_tbl = data.frame(allgenes,allgenes_integer) %>% as_tibble()
   mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
   id2allgenes = mapper(allgenes_id_tbl,"allgenes_integer","allgenes")
 
@@ -319,7 +319,7 @@ construct_tf_target_matrix = function(weighted_networks, tfs_as_cols = FALSE, st
   # convert ids to numeric for making Matrix::sparseMatrix later on
   allgenes = c(ligand_signaling_network$from, ligand_signaling_network$to, regulatory_network$from, regulatory_network$to) %>% unique() %>% sort()
   allgenes_integer = allgenes %>% factor() %>% as.numeric()
-  allgenes_id_tbl = data.frame(allgenes,allgenes_integer) %>% tbl_df()
+  allgenes_id_tbl = data.frame(allgenes,allgenes_integer) %>% as_tibble()
   mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_col]])
   id2allgenes = mapper(allgenes_id_tbl,"allgenes_integer","allgenes")
 
@@ -573,6 +573,7 @@ make_discrete_ligand_target_matrix = function(ligand_target_matrix, error_rate =
 
   list_targets = lapply(ligands,get_target_genes_ligand_oi,ligand_target_matrix,cutoff_method = cutoff_method, fdr_method = fdr_method,error_rate = error_rate)
   names(list_targets) = ligands
+
   ligand_target_matrix_discrete = list_targets %>% bind_rows() %>% as.matrix()
 
   if(nrow(ligand_target_matrix_discrete) == length(targets) & ncol(ligand_target_matrix_discrete) == length(ligands)){
@@ -581,11 +582,14 @@ make_discrete_ligand_target_matrix = function(ligand_target_matrix, error_rate =
     ligand_target_matrix_discrete = ligand_target_matrix_discrete %>% t()
   }
 
+
   if (ligands_position == "cols"){
-    rownames(ligand_target_matrix_discrete) = targets %>% make.names() # maybe change this again
+    rownames(ligand_target_matrix_discrete) = targets
+    colnames(ligand_target_matrix_discrete) = ligands
   } else if (ligands_position == "rows"){
     ligand_target_matrix_discrete = ligand_target_matrix_discrete %>% t()
-    colnames(ligand_target_matrix_discrete) = targets %>% make.names() # maybe change this again
+    colnames(ligand_target_matrix_discrete) = targets
+    rownames(ligand_target_matrix_discrete) = ligands
   }
 
   return(ligand_target_matrix_discrete)

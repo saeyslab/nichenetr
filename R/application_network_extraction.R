@@ -212,7 +212,7 @@ get_active_ligand_target_df = function(response,ligand_target_matrix, ligands_po
   requireNamespace("dplyr")
 
   active_ligand_target = get_active_ligand_target_matrix(response, ligand_target_matrix, ligands_position)
-  ligand_target_network = active_ligand_target %>% data.frame() %>% rownames_to_column("target") %>%  gather("ligand","score",-target) %>% tbl_df() %>% select(ligand,target,score) %>% filter(score > cutoff)
+  ligand_target_network = active_ligand_target %>% data.frame() %>% rownames_to_column("target") %>%  gather("ligand","score",-target) %>% as_tibble() %>% select(ligand,target,score) %>% filter(score > cutoff)
   return(ligand_target_network)
 }
 

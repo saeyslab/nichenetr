@@ -355,8 +355,8 @@ process_mlrmbo_nichenet_optimization = function(optimization_results,source_name
 
   # winning parameter set
   if(is.null(parameter_set_index)){
-    # parameter_set_index = optimization_results$pareto.front %>% tbl_df() %>% mutate(average = apply(.,1,mean), index = seq(nrow(.))) %>% filter(average == max(average)) %>% .$index
-    parameter_set_index = optimization_results$pareto.front %>% tbl_df() %>% mutate(average = apply(.,1,function(x){exp(mean(log(x)))}), index = seq(nrow(.))) %>% filter(average == max(average)) %>% .$index # take the best parameter setting considering the geometric mean of the objective function results
+    # parameter_set_index = optimization_results$pareto.front %>% as_tibble() %>% mutate(average = apply(.,1,mean), index = seq(nrow(.))) %>% filter(average == max(average)) %>% .$index
+    parameter_set_index = optimization_results$pareto.front %>% as_tibble() %>% mutate(average = apply(.,1,function(x){exp(mean(log(x)))}), index = seq(nrow(.))) %>% filter(average == max(average)) %>% .$index # take the best parameter setting considering the geometric mean of the objective function results
   }
   if(parameter_set_index > nrow(optimization_results$pareto.front))
     stop("parameter_set_index may not be a number higher than the total number of proposed solutions")
