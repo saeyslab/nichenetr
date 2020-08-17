@@ -6,11 +6,14 @@ rmarkdown::render("README.Rmd",output_format = "md_document")
 nichenetr
 =========
 
-[![Build
-Status](https://travis-ci.org/saeyslab/nichenetr.svg?branch=master)](https://travis-ci.org/saeyslab/nichenetr)
+<!-- badges: start -->
+
+[![R build
+status](https://github.com/saeyslab/nichenetr/workflows/R-CMD-check-bioc/badge.svg)](https://github.com/saeyslab/nichenetr/actions)
 [![Coverage
 Status](https://codecov.io/gh/saeyslab/nichenetr/branch/master/graph/badge.svg)](https://codecov.io/gh/saeyslab/nichenetr)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
+<!-- badges: end -->
 
 **nichenetr: the R implementation of the NicheNet method.** The goal of
 NicheNet is to study intercellular communication from a computational
