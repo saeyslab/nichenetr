@@ -44,5 +44,6 @@ Suggests: knitr,
     testthat,
     doMC,
     parallel,
-    covr
+    covr,
+    tidyverse
 VignetteBuilder: knitr

@@ -203,7 +203,7 @@ jobs:
           ## For running the checks
           message(paste('****', Sys.time(), 'installing rcmdcheck and BiocCheck ****'))
           remotes::install_cran("rcmdcheck")
-          BiocManager::install("BiocCheck")
+          # BiocManager::install("BiocCheck")
         shell: Rscript {0}
 
       - name: Session info
@@ -237,17 +237,6 @@ jobs:
           BiocGenerics:::testPackage()
         shell: Rscript {0}
 
-      - name: BiocCheck
-        run: |
-          ## This syntax works on Windows as well as other OS
-          ## plus it doesn't break the GHA workflow in case BiocCheck finds
-          ## an error (for example, the package is bigger than the maximum
-          ## allowed size). We want the rest of the GHA to proceed even if
-          ## there is a BiocCheck error in order to see the full output and
-          ## run the tests on all operating systems.
-          ## BiocCheck::BiocCheck(dir('check', 'tar.gz$', full.names = TRUE), `no-check-R-ver` = TRUE, `no-check-bioc-help` = TRUE)
-          ## For more options check http://bioconductor.org/packages/release/bioc/vignettes/BiocCheck/inst/doc/BiocCheck.html
-        shell: Rscript {0}
 
       - name: Install covr
         if: github.ref == 'refs/heads/master' && env.run_covr == 'true'
@@ -270,18 +259,6 @@ jobs:
       - name: Install package
         if: github.ref == 'refs/heads/master' && env.run_pkgdown == 'true'
         run: R CMD INSTALL .
-
-      - name: Deploy package
-        if: github.ref == 'refs/heads/master' && env.run_pkgdown == 'true'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          Rscript -e "pkgdown::deploy_to_branch(new_process = FALSE)"
-        shell: bash {0}
-        ## Note that you need to run pkgdown::deploy_to_branch(new_process = FALSE)
-        ## at least one locally before this will work. This creates the gh-pages
-        ## branch (erasing anything you haven't version controlled!) and
-        ## makes the git history recognizable by pkgdown.
 
       - name: Upload check results
         if: failure()
@@ -402,7 +379,7 @@ jobs:
           ## For running the checks
           message(paste('****', Sys.time(), 'installing rcmdcheck and BiocCheck ****'))
           remotes::install_cran("rcmdcheck")
-          BiocManager::install("BiocCheck")
+          # BiocManager::install("BiocCheck")
         shell: Rscript {0}
 
       - name: Session info
@@ -434,18 +411,6 @@ jobs:
           ## Install BiocGenerics
           BiocManager::install("BiocGenerics")
           BiocGenerics:::testPackage()
-        shell: Rscript {0}
-
-      - name: BiocCheck
-        run: |
-          ## This syntax works on Windows as well as other OS
-          ## plus it doesn't break the GHA workflow in case BiocCheck finds
-          ## an error (for example, the package is bigger than the maximum
-          ## allowed size). We want the rest of the GHA to proceed even if
-          ## there is a BiocCheck error in order to see the full output and
-          ## run the tests on all operating systems.
-          ## BiocCheck::BiocCheck(dir('check', 'tar.gz$', full.names = TRUE), `no-check-R-ver` = TRUE, `no-check-bioc-help` = TRUE)
-          ## For more options check http://bioconductor.org/packages/release/bioc/vignettes/BiocCheck/inst/doc/BiocCheck.html
         shell: Rscript {0}
 
       - name: Upload check results
