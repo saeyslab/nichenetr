@@ -219,7 +219,7 @@ jobs:
         run: |
           rcmdcheck::rcmdcheck(
               args = c("--no-build-vignettes", "--no-manual", "--timings"),
-              build_args = c("--no-manual", "--no-resave-data"),
+              build_args = c("--no-manual", "--no-resave-data", "--no-build-vignettes"),
               error_on = "warning",
               check_dir = "check"
           )
@@ -418,7 +418,7 @@ jobs:
         run: |
           rcmdcheck::rcmdcheck(
               args = c("--no-build-vignettes", "--no-manual", "--timings"),
-              build_args = c("--no-manual", "--no-resave-data"),
+              build_args = c("--no-manual", "--no-resave-data", "--no-build-vignettes"),
               error_on = "warning",
               check_dir = "check"
           )
