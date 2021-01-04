@@ -679,7 +679,7 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #'
 #' @description \code{nichenet_seuratobj_aggregate} Perform NicheNet analysis on Seurat object: explain differential expression (DE) in a receiver celltype between two different conditions by ligands expressed by sender cells
 #' @usage
-#' nichenet_seuratobj_aggregate(receiver, seurat_obj, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE)
+#' nichenet_seuratobj_aggregate(receiver, seurat_obj, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE, assay_oi = NULL)
 #'
 #' @param receiver Name of cluster identity/identities of cells that are presumably affected by intercellular communication with other cells
 #' @param seurat_obj Single-cell expression dataset as Seurat v3 object https://satijalab.org/seurat/.
@@ -699,6 +699,7 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #' @param lr_network The ligand-receptor network (columns that should be present: $from, $to).
 #' @param weighted_networks The NicheNet weighted networks denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.
 #' @param verbose Print out the current analysis stage. Default: TRUE.
+#' @inheritParams get_expressed_genes
 #'
 #' @return A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI; geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis; background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 #'
@@ -720,7 +721,7 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,
                                         expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE ,top_n_ligands = 20,
                                         top_n_targets = 200, cutoff_visualization = 0.33,
-                                        organism = "human",verbose = TRUE)
+                                        organism = "human",verbose = TRUE, assay_oi = NULL)
 {
   requireNamespace("Seurat")
   requireNamespace("dplyr")
@@ -810,14 +811,14 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   # step1 nichenet analysis: get expressed genes in sender and receiver cells
 
   ## receiver
-  list_expressed_genes_receiver = receiver %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+  list_expressed_genes_receiver = receiver %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
   names(list_expressed_genes_receiver) = receiver %>% unique()
   expressed_genes_receiver = list_expressed_genes_receiver %>% unlist() %>% unique()
 
   ## sender
   if (length(sender) == 1){
     if (sender == "all"){
-      list_expressed_genes_sender = Idents(seurat_obj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+      list_expressed_genes_sender = Idents(seurat_obj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
       names(list_expressed_genes_sender) = Idents(seurat_obj) %>% unique()
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
@@ -829,13 +830,13 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
         }
     } else if (sender != "all" & sender != "undefined") {
       sender_celltypes = sender
-      list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+      list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
       names(list_expressed_genes_sender) = sender_celltypes %>% unique()
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
     }
   } else {
     sender_celltypes = sender
-    list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+    list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
     names(list_expressed_genes_sender) = sender_celltypes %>% unique()
     expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
   }
@@ -1198,7 +1199,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
 #'
 #' @description \code{nichenet_seuratobj_cluster_de} Perform NicheNet analysis on Seurat object: explain differential expression (DE) between two 'receiver' cell clusters by ligands expressed by neighboring cells.
 #' @usage
-#' nichenet_seuratobj_cluster_de(seurat_obj, receiver_affected, receiver_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE)
+#' nichenet_seuratobj_cluster_de(seurat_obj, receiver_affected, receiver_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE, assay_oi = NULL)
 #'
 #' @param seurat_obj Single-cell expression dataset as Seurat v3 object https://satijalab.org/seurat/.
 #' @param receiver_reference Name of cluster identity/identities of "steady-state" cells, before they are affected by intercellular communication with other cells
@@ -1216,6 +1217,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
 #' @param lr_network The ligand-receptor network (columns that should be present: $from, $to).
 #' @param weighted_networks The NicheNet weighted networks denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.
 #' @param verbose Print out the current analysis stage. Default: TRUE.
+#' @inheritParams get_expressed_genes
 #'
 #' @return A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI; geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis; background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 #'
@@ -1240,7 +1242,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
 nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,
                                         expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,
                                         top_n_targets = 200, cutoff_visualization = 0.33,
-                                        organism = "human",verbose = TRUE)
+                                        organism = "human",verbose = TRUE, assay_oi = NULL)
 {
   requireNamespace("Seurat")
   requireNamespace("dplyr")
@@ -1330,19 +1332,19 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 
   ## receiver
   # expressed genes: only in steady state population (for determining receptors)
-  list_expressed_genes_receiver_ss = c(receiver_reference) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+  list_expressed_genes_receiver_ss = c(receiver_reference) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
   names(list_expressed_genes_receiver_ss) = c(receiver_reference) %>% unique()
   expressed_genes_receiver_ss = list_expressed_genes_receiver_ss %>% unlist() %>% unique()
 
   # expressed genes: both in steady state and affected population (for determining background of expressed genes)
-  list_expressed_genes_receiver = c(receiver_reference,receiver_affected) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+  list_expressed_genes_receiver = c(receiver_reference,receiver_affected) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
   names(list_expressed_genes_receiver) = c(receiver_reference,receiver_affected) %>% unique()
   expressed_genes_receiver = list_expressed_genes_receiver %>% unlist() %>% unique()
 
   ## sender
   if (length(sender) == 1){
     if (sender == "all"){
-      list_expressed_genes_sender = Idents(seurat_obj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+      list_expressed_genes_sender = Idents(seurat_obj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
       names(list_expressed_genes_sender) = Idents(seurat_obj) %>% unique()
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
@@ -1354,13 +1356,13 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
         }
     } else if (sender != "all" & sender != "undefined") {
       sender_celltypes = sender
-      list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+      list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
       names(list_expressed_genes_sender) = sender_celltypes %>% unique()
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
     }
   } else {
     sender_celltypes = sender
-    list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+    list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
     names(list_expressed_genes_sender) = sender_celltypes %>% unique()
     expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
   }
@@ -1568,7 +1570,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 #'
 #' @description \code{nichenet_seuratobj_aggregate_cluster_de} Perform NicheNet analysis on Seurat object: explain differential expression (DE) between two 'receiver' cell clusters coming from different conditions, by ligands expressed by neighboring cells.
 #' @usage
-#' nichenet_seuratobj_aggregate_cluster_de(seurat_obj, receiver_affected, receiver_reference, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE)
+#' nichenet_seuratobj_aggregate_cluster_de(seurat_obj, receiver_affected, receiver_reference, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE, assay_oi = NULL)
 #'
 #' @param seurat_obj Single-cell expression dataset as Seurat v3 object https://satijalab.org/seurat/.
 #' @param receiver_reference Name of cluster identity/identities of "steady-state" cells, before they are affected by intercellular communication with other cells
@@ -1589,6 +1591,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 #' @param lr_network The ligand-receptor network (columns that should be present: $from, $to).
 #' @param weighted_networks The NicheNet weighted networks denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.
 #' @param verbose Print out the current analysis stage. Default: TRUE.
+#' @inheritParams get_expressed_genes
 #'
 #' @return A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI; geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis; background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 #'
@@ -1612,7 +1615,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
                                          ligand_target_matrix,lr_network,weighted_networks,
                                          expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,
                                          top_n_targets = 200, cutoff_visualization = 0.33,
-                                         organism = "human",verbose = TRUE)
+                                         organism = "human",verbose = TRUE, assay_oi = NULL)
 {
 
   requireNamespace("Seurat")
@@ -1707,19 +1710,19 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 
   ## receiver
   # expressed genes: only in steady state population (for determining receptors)
-  list_expressed_genes_receiver_ss = c(receiver_reference) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+  list_expressed_genes_receiver_ss = c(receiver_reference) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
   names(list_expressed_genes_receiver_ss) = c(receiver_reference) %>% unique()
   expressed_genes_receiver_ss = list_expressed_genes_receiver_ss %>% unlist() %>% unique()
 
   # expressed genes: both in steady state and affected population (for determining background of expressed genes)
-  list_expressed_genes_receiver = c(receiver_reference,receiver_affected) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+  list_expressed_genes_receiver = c(receiver_reference,receiver_affected) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
   names(list_expressed_genes_receiver) = c(receiver_reference,receiver_affected) %>% unique()
   expressed_genes_receiver = list_expressed_genes_receiver %>% unlist() %>% unique()
 
   ## sender
   if (length(sender) == 1){
     if (sender == "all"){
-      list_expressed_genes_sender = Idents(seurat_obj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+      list_expressed_genes_sender = Idents(seurat_obj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
       names(list_expressed_genes_sender) = Idents(seurat_obj) %>% unique()
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
@@ -1733,13 +1736,13 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 
     } else if (sender != "all" & sender != "undefined") {
       sender_celltypes = sender
-      list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+      list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
       names(list_expressed_genes_sender) = sender_celltypes %>% unique()
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
     }
   } else {
     sender_celltypes = sender
-    list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct)
+    list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
     names(list_expressed_genes_sender) = sender_celltypes %>% unique()
     expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
   }

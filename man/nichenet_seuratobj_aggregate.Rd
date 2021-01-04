@@ -4,7 +4,7 @@
 \alias{nichenet_seuratobj_aggregate}
 \title{Perform NicheNet analysis on Seurat object: explain DE between conditions}
 \usage{
-nichenet_seuratobj_aggregate(receiver, seurat_obj, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE)
+nichenet_seuratobj_aggregate(receiver, seurat_obj, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE, assay_oi = NULL)
 }
 \arguments{
 \item{receiver}{Name of cluster identity/identities of cells that are presumably affected by intercellular communication with other cells}
@@ -42,6 +42,8 @@ nichenet_seuratobj_aggregate(receiver, seurat_obj, condition_colname, condition_
 \item{organism}{Organism from which cells originate."human" (default) or "mouse".}
 
 \item{verbose}{Print out the current analysis stage. Default: TRUE.}
+
+\item{assay_oi}{If wanted: specify yourself which assay to look for. Default this value is NULL and as a consequence the 'most advanced' assay will be used to define expressed genes.}
 }
 \value{
 A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI; geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis; background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
