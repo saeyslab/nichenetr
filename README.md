@@ -137,6 +137,17 @@ minutes to run:
     genes](vignettes/ligand_activity_geneset.md):
     `vignette("ligand_activity_geneset", package="nichenetr")`
 
+To facilitate the use of NicheNet on single-cell data, we demonstrate
+the use of NicheNet on a Seurat object in following vignettes. One
+demonstrates the use of a single wrapper function, the other
+demonstrates what’s behind the wrapper (recommended).
+
+-   [Perform NicheNet analysis starting from a Seurat
+    object](vignettes/seurat_wrapper.md):`vignette("seurat_wrapper", package="nichenetr")`
+-   [Perform NicheNet analysis starting from a Seurat object:
+    step-by-step
+    analysis](vignettes/seurat_steps.md):`vignette("seurat_steps", package="nichenetr")`
+
 Following vignettes contain explanation on how to do some follow-up
 analyses after performing the most basic analysis:
 
@@ -149,20 +160,15 @@ analyses after performing the most basic analysis:
 -   [Single-cell NicheNet’s ligand activity
     analysis](vignettes/ligand_activity_single_cell.md):
     `vignette("ligand_activity_single_cell", package="nichenetr")`
+
+If you want to make a circos plot visualization of the NicheNet output,
+you can check following vignettes:
+
 -   [Circos plot visualization to show active ligand-target links
     between interacting
     cells](vignettes/circos.md):`vignette("circos", package="nichenetr")`.
-
-To facilitate the use of NicheNet on single-cell data, we demonstrate
-the use of NicheNet on a Seurat object in following vignettes. One
-demonstrates the use of a single wrapper function, the other
-demonstrates what’s behind the wrapper (recommended).
-
--   [Perform NicheNet analysis starting from a Seurat
-    object](vignettes/seurat_wrapper.md):`vignette("seurat_wrapper", package="nichenetr")`
--   [Perform NicheNet analysis starting from a Seurat object:
-    step-by-step
-    analysis](vignettes/seurat_steps.md):`vignette("seurat_steps", package="nichenetr")`
+-   [Seurat Wrapper + Circos
+    visualization](vignettes/seurat_wrapper_circos.md):`vignette("seurat_wrapper_circos", package="nichenetr")`.
 
 People interested in building own models or benchmark own models against
 NicheNet can read one of the following vignettes:
