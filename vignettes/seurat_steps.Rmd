@@ -46,7 +46,7 @@ The NicheNet ligand-receptor network and weighted networks are necessary to defi
 
 ```{r}
 library(nichenetr)
-library(Seurat)
+library(Seurat) # please update to Seurat V4
 library(tidyverse)
 ```
 
@@ -143,7 +143,7 @@ condition_reference = "SS"
   
 DE_table_receiver = FindMarkers(object = seurat_obj_receiver, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = 0.10) %>% rownames_to_column("gene")
 
-geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_logFC) >= 0.25) %>% pull(gene)
+geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= 0.25) %>% pull(gene)
 geneset_oi = geneset_oi %>% .[. %in% rownames(ligand_target_matrix)]
 ```
 

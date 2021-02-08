@@ -11,20 +11,20 @@ In this vignette, you can learn how to perform a basic NicheNet analysis
 on a Seurat v3 object - and how to visualize the output in a circos
 plot. This vignette demonstrates the same workflow as shown in [Perform
 NicheNet analysis starting from a Seurat
-object](seurat_wrapper.md):`vignette("seurat_wrapper",
-package="nichenetr")`, but adds a circos plot visualization as shown in
-[Circos plot visualization to show active ligand-target links between
-interacting cells](circos.md):`vignette("circos", package="nichenetr")`.
-For more detailed information about the NicheNet workflow, check those
-vignettes. This vignette was made upon popular request to demonstrate
-how those two vignettes can be combined into one analysis workflow. Note
-that we as developers of NicheNet generally recommend a visualization of
-the output by combining several heatmaps (ligand activity, ligand-target
-links, ligand-receptor links, ligand expression, ligand LFC,…) over
-using a circos plot visualization. Certainly for cases with many sender
-cell types and ligands that are expressed by more than one sender cell
-type. Because in those cases, the circos plot is much less informative
-and could lead to wrong interpretation of the results.
+object](seurat_wrapper.md):`vignette("seurat_wrapper", package="nichenetr")`,
+but adds a circos plot visualization as shown in [Circos plot
+visualization to show active ligand-target links between interacting
+cells](circos.md):`vignette("circos", package="nichenetr")`. For more
+detailed information about the NicheNet workflow, check those vignettes.
+This vignette was made upon popular request to demonstrate how those two
+vignettes can be combined into one analysis workflow. Note that we as
+developers of NicheNet generally recommend a visualization of the output
+by combining several heatmaps (ligand activity, ligand-target links,
+ligand-receptor links, ligand expression, ligand LFC,…) over using a
+circos plot visualization. Certainly for cases with many sender cell
+types and ligands that are expressed by more than one sender cell type.
+Because in those cases, the circos plot is much less informative and
+could lead to wrong interpretation of the results.
 
 As example expression data of interacting cells, we will use mouse
 NICHE-seq data from Medaglia et al. to explore intercellular
@@ -56,7 +56,7 @@ and the Seurat object of the processed NICHE-seq single-cell data at
 
 ``` r
 library(nichenetr)
-library(Seurat)
+library(Seurat) # Please update to Seurat v4
 library(tidyverse)
 library(circlize)
 ```
@@ -155,9 +155,9 @@ DimPlot(seuratObj, reduction = "tsne", group.by = "aggregate")
 
 In this case study, the receiver cell population is the ‘CD8 T’ cell
 population, whereas the sender cell populations are ‘CD4 T’, ‘Treg’,
-‘Mono’, ‘NK’, ‘B’ and ‘DC’. The above described functions will
-consider a gene to be expressed when it is expressed in at least a
-predefined fraction of cells in one cluster (default: 10%).
+‘Mono’, ‘NK’, ‘B’ and ‘DC’. The above described functions will consider
+a gene to be expressed when it is expressed in at least a predefined
+fraction of cells in one cluster (default: 10%).
 
 The gene set of interest are the genes differentially expressed in CD8 T
 cells after LCMV infection. The condition of interest is thus ‘LCMV’,
@@ -205,16 +205,16 @@ nichenet_output$ligand_activities
 ## # A tibble: 44 x 6
 ##    test_ligand auroc  aupr pearson  rank bona_fide_ligand
 ##    <chr>       <dbl> <dbl>   <dbl> <dbl> <lgl>           
-##  1 Ebi3        0.662 0.238  0.219      1 FALSE           
-##  2 Il15        0.596 0.160  0.109      2 TRUE            
-##  3 Crlf2       0.560 0.160  0.0890     3 FALSE           
-##  4 App         0.499 0.134  0.0750     4 TRUE            
-##  5 Tgfb1       0.498 0.134  0.0631     5 TRUE            
-##  6 Ptprc       0.539 0.142  0.0602     6 TRUE            
-##  7 H2-M3       0.526 0.149  0.0533     7 TRUE            
-##  8 Icam1       0.544 0.134  0.0496     8 TRUE            
-##  9 Cxcl10      0.536 0.134  0.0457     9 TRUE            
-## 10 Adam17      0.517 0.129  0.0378    10 TRUE            
+##  1 Ebi3        0.638 0.234  0.197      1 FALSE           
+##  2 Il15        0.582 0.163  0.0961     2 TRUE            
+##  3 Crlf2       0.549 0.163  0.0758     3 FALSE           
+##  4 App         0.499 0.141  0.0655     4 TRUE            
+##  5 Tgfb1       0.494 0.140  0.0558     5 TRUE            
+##  6 Ptprc       0.536 0.149  0.0554     6 TRUE            
+##  7 H2-M3       0.525 0.157  0.0528     7 TRUE            
+##  8 Icam1       0.543 0.142  0.0486     8 TRUE            
+##  9 Cxcl10      0.531 0.141  0.0408     9 TRUE            
+## 10 Adam17      0.517 0.137  0.0359    10 TRUE            
 ## # ... with 34 more rows
 ```
 
@@ -300,15 +300,14 @@ names(sender_ligand_assignment)
 
 The top ligands seem to be most strongly expressed by B cells, NK cells,
 monocytes and DCs. We will know also look at which ligands are common
-across multiple cell types (= those that are specific to \> 1 cell type,
-or those that were not assigned to a cell type in the previous block of
-code)
+across multiple cell types (= those that are specific to &gt; 1 cell
+type, or those that were not assigned to a cell type in the previous
+block of code)
 
 Determine now which prioritized ligands are expressed by CAFs and or
 endothelial cells
 
 ``` r
-
 all_assigned_ligands = sender_ligand_assignment %>% lapply(function(x){names(x)}) %>% unlist()
 unique_ligands = all_assigned_ligands %>% table() %>% .[. == 1] %>% names()
 general_ligands = nichenet_output$top_ligands %>% setdiff(unique_ligands)

@@ -844,18 +844,30 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   # step2 nichenet analysis: define background and gene list of interest: here differential expression between two conditions of cell type of interest
   if (verbose == TRUE){print("Perform DE analysis in receiver cell")}
 
-
   seurat_obj_receiver= subset(seurat_obj, idents = receiver)
   seurat_obj_receiver = SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[[condition_colname]])
   DE_table_receiver = FindMarkers(object = seurat_obj_receiver, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct) %>% rownames_to_column("gene")
 
-  if (geneset == "DE"){
-    geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_logFC) >= lfc_cutoff) %>% pull(gene)
-  } else if (geneset == "up") {
-    geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC >= lfc_cutoff) %>% pull(gene)
-  } else if (geneset == "down") {
-    geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC <= lfc_cutoff) %>% pull(gene)
+  SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_receiver)
+
+  if(SeuratV4 == TRUE){
+    if (geneset == "DE"){
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= lfc_cutoff) %>% pull(gene)
+    } else if (geneset == "up") {
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC >= lfc_cutoff) %>% pull(gene)
+    } else if (geneset == "down") {
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC <= lfc_cutoff) %>% pull(gene)
+    }
+  } else {
+    if (geneset == "DE"){
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_logFC) >= lfc_cutoff) %>% pull(gene)
+    } else if (geneset == "up") {
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC >= lfc_cutoff) %>% pull(gene)
+    } else if (geneset == "down") {
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC <= lfc_cutoff) %>% pull(gene)
+    }
   }
+
 
   geneset_oi = geneset_oi %>% .[. %in% rownames(ligand_target_matrix)]
   if (length(geneset_oi) == 0){
@@ -1372,13 +1384,27 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 
   DE_table_receiver = FindMarkers(object = seurat_obj, ident.1 = receiver_affected, ident.2 = receiver_reference, min.pct = expression_pct) %>% rownames_to_column("gene")
 
-  if (geneset == "DE"){
-    geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_logFC) >= lfc_cutoff) %>% pull(gene)
-  } else if (geneset == "up") {
-    geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC >= lfc_cutoff) %>% pull(gene)
-  } else if (geneset == "down") {
-    geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC <= lfc_cutoff) %>% pull(gene)
+  SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_receiver)
+
+  if(SeuratV4 == TRUE){
+    if (geneset == "DE"){
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= lfc_cutoff) %>% pull(gene)
+    } else if (geneset == "up") {
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC >= lfc_cutoff) %>% pull(gene)
+    } else if (geneset == "down") {
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC <= lfc_cutoff) %>% pull(gene)
+    }
+  } else {
+    if (geneset == "DE"){
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_logFC) >= lfc_cutoff) %>% pull(gene)
+    } else if (geneset == "up") {
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC >= lfc_cutoff) %>% pull(gene)
+    } else if (geneset == "down") {
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC <= lfc_cutoff) %>% pull(gene)
+    }
   }
+
+
 
   geneset_oi = geneset_oi %>% .[. %in% rownames(ligand_target_matrix)]
   if (length(geneset_oi) == 0){
@@ -1762,12 +1788,25 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 
   DE_table_receiver = FindMarkers(object = seurat_obj_receiver, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct) %>% rownames_to_column("gene")
 
-  if (geneset == "DE"){
-    geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_logFC) >= lfc_cutoff) %>% pull(gene)
-  } else if (geneset == "up") {
-    geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC >= lfc_cutoff) %>% pull(gene)
-  } else if (geneset == "down") {
-    geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC <= lfc_cutoff) %>% pull(gene)
+
+  SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_receiver)
+
+  if(SeuratV4 == TRUE){
+    if (geneset == "DE"){
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= lfc_cutoff) %>% pull(gene)
+    } else if (geneset == "up") {
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC >= lfc_cutoff) %>% pull(gene)
+    } else if (geneset == "down") {
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC <= lfc_cutoff) %>% pull(gene)
+    }
+  } else {
+    if (geneset == "DE"){
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_logFC) >= lfc_cutoff) %>% pull(gene)
+    } else if (geneset == "up") {
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC >= lfc_cutoff) %>% pull(gene)
+    } else if (geneset == "down") {
+      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC <= lfc_cutoff) %>% pull(gene)
+    }
   }
 
   geneset_oi = geneset_oi %>% .[. %in% rownames(ligand_target_matrix)]
@@ -1987,7 +2026,15 @@ get_lfc_celltype = function(celltype_oi, seurat_obj, condition_colname, conditio
   seuratObj_sender = subset(seurat_obj_celltype, idents = celltype_oi)
   seuratObj_sender = SetIdent(seuratObj_sender, value = seuratObj_sender[[condition_colname]])
   DE_table_sender = FindMarkers(object = seuratObj_sender, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct, logfc.threshold = 0.05) %>% rownames_to_column("gene")
-  DE_table_sender = DE_table_sender %>% as_tibble() %>% select(-p_val) %>% select(gene, avg_logFC)
+
+  SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_sender)
+
+  if(SeuratV4 == TRUE){
+    DE_table_sender = DE_table_sender %>% as_tibble() %>% select(-p_val) %>% select(gene, avg_log2FC)
+  } else {
+    DE_table_sender = DE_table_sender %>% as_tibble() %>% select(-p_val) %>% select(gene, avg_logFC)
+  }
+
   colnames(DE_table_sender) = c("gene",celltype_oi)
   return(DE_table_sender)
 }

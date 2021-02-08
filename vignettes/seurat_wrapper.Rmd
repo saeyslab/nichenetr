@@ -46,7 +46,7 @@ The NicheNet ligand-receptor network and weighted networks are necessary to defi
 
 ```{r}
 library(nichenetr)
-library(Seurat)
+library(Seurat) # please update to Seurat V4
 library(tidyverse)
 ```
 
@@ -341,6 +341,7 @@ nichenet_output = nichenet_seuratobj_cluster_de(
   receiver_reference = "CD8 T_SS", receiver_affected = "CD8 T_LCMV", 
   sender = c("DC_LCMV","Mono_LCMV"), 
   ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
+
 ```
 
 Check the top-ranked ligands and their target genes
@@ -357,7 +358,7 @@ DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), cols = "RdY
 
 It could be interested to check which top-ranked ligands are differentially expressed in monocytes after LCMV infection
 ```{r}
-Mono_upregulated_ligands = FindMarkers(seuratObj, ident.1 = "Mono_LCMV", ident.2 = "Mono_SS") %>% rownames_to_column("gene") %>% filter(avg_logFC > 0.25 & p_val_adj <= 0.05) %>% pull(gene) %>% intersect(nichenet_output$top_ligands)
+Mono_upregulated_ligands = FindMarkers(seuratObj, ident.1 = "Mono_LCMV", ident.2 = "Mono_SS") %>% rownames_to_column("gene") %>% filter(avg_log2FC > 0.25 & p_val_adj <= 0.05) %>% pull(gene) %>% intersect(nichenet_output$top_ligands)
 
 print("Monocyte ligands upregulated after LCMV infection and explaining DE between CD8T-StSt and CD8T-LCMV are: ")
 print(Mono_upregulated_ligands)

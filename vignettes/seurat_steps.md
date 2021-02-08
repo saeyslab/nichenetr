@@ -28,16 +28,16 @@ In this vignette, we demonstrate the use of NicheNet on a Seurat Object.
 The steps of the analysis we show here are also discussed in detail in
 the main, basis, NicheNet vignette [NicheNet’s ligand activity analysis
 on a gene set of interest: predict active ligands and their target
-genes](ligand_activity_geneset.md):`vignette("ligand_activity_geneset",
-package="nichenetr")`. Make sure you understand the different steps in a
-NicheNet analysis that are described in that vignette before proceeding
-with this vignette and performing a real NicheNet analysis on your data.
-This vignette describes the different steps behind the wrapper functions
-that are shown in [Perform NicheNet analysis starting from a Seurat
-object](seurat_wrapper.md):`vignette("seurat_wrapper",
-package="nichenetr")`. Following this vignette has the advantage that it
-allows users to adapt specific steps of the pipeline to make them more
-appropriate for their data.
+genes](ligand_activity_geneset.md):`vignette("ligand_activity_geneset", package="nichenetr")`.
+Make sure you understand the different steps in a NicheNet analysis that
+are described in that vignette before proceeding with this vignette and
+performing a real NicheNet analysis on your data. This vignette
+describes the different steps behind the wrapper functions that are
+shown in [Perform NicheNet analysis starting from a Seurat
+object](seurat_wrapper.md):`vignette("seurat_wrapper", package="nichenetr")`.
+Following this vignette has the advantage that it allows users to adapt
+specific steps of the pipeline to make them more appropriate for their
+data.
 
 As example expression data of interacting cells, we will use mouse
 NICHE-seq data from Medaglia et al. to explore intercellular
@@ -78,7 +78,7 @@ genes of these prioritized ligands.
 
 ``` r
 library(nichenetr)
-library(Seurat)
+library(Seurat) # please update to Seurat V4
 library(tidyverse)
 ```
 
@@ -122,7 +122,7 @@ DimPlot(seuratObj, reduction = "tsne")
 
 Visualize the data to see to which condition cells belong. The metadata
 dataframe column that denotes the condition (steady-state or after LCMV
-infection) is here called ‘aggregate’.
+infection) is here called ‘aggregate.’
 
 ``` r
 seuratObj@meta.data$aggregate %>% table()
@@ -207,12 +207,12 @@ after LCMV infection.
 As described in the main vignette, the pipeline of a basic NicheNet
 analysis consist of the following steps:
 
-## 1\. Define a “sender/niche” cell population and a “receiver/target” cell population present in your expression data and determine which genes are expressed in both populations
+## 1. Define a “sender/niche” cell population and a “receiver/target” cell population present in your expression data and determine which genes are expressed in both populations
 
 In this case study, the receiver cell population is the ‘CD8 T’ cell
-population, whereas the sender cell populations are ‘CD4 T’, ‘Treg’,
-‘Mono’, ‘NK’, ‘B’ and ‘DC’. We will consider a gene to be expressed
-when it is expressed in at least 10% of cells in one cluster.
+population, whereas the sender cell populations are ‘CD4 T,’ ‘Treg,’
+‘Mono,’ ‘NK,’ ‘B’ and ‘DC.’ We will consider a gene to be expressed when
+it is expressed in at least 10% of cells in one cluster.
 
 ``` r
 ## receiver
@@ -230,15 +230,14 @@ list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expre
 expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 ```
 
-## 2\. Define a gene set of interest: these are the genes in the “receiver/target” cell population that are potentially affected by ligands expressed by interacting cells (e.g. genes differentially expressed upon cell-cell interaction)
+## 2. Define a gene set of interest: these are the genes in the “receiver/target” cell population that are potentially affected by ligands expressed by interacting cells (e.g. genes differentially expressed upon cell-cell interaction)
 
 Here, the gene set of interest are the genes differentially expressed in
 CD8 T cells after LCMV infection. The condition of interest is thus
-‘LCMV’, whereas the reference/steady-state condition is ‘SS’. The
-notion of conditions can be extracted from the metadata column
-‘aggregate’. The method to calculate the differential expression is
-here the standard Seurat Wilcoxon test, but this can be changed if
-necessary.
+‘LCMV,’ whereas the reference/steady-state condition is ‘SS.’ The notion
+of conditions can be extracted from the metadata column ‘aggregate.’ The
+method to calculate the differential expression is here the standard
+Seurat Wilcoxon test, but this can be changed if necessary.
 
 ``` r
 seurat_obj_receiver= subset(seuratObj, idents = receiver)
@@ -249,11 +248,11 @@ condition_reference = "SS"
   
 DE_table_receiver = FindMarkers(object = seurat_obj_receiver, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = 0.10) %>% rownames_to_column("gene")
 
-geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_logFC) >= 0.25) %>% pull(gene)
+geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= 0.25) %>% pull(gene)
 geneset_oi = geneset_oi %>% .[. %in% rownames(ligand_target_matrix)]
 ```
 
-## 3\. Define a set of potential ligands: these are ligands that are expressed by the “sender/niche” cell population and bind a (putative) receptor expressed by the “receiver/target” population
+## 3. Define a set of potential ligands: these are ligands that are expressed by the “sender/niche” cell population and bind a (putative) receptor expressed by the “receiver/target” population
 
 Because we combined the expressed genes of each sender cell type, in
 this example, we will perform one NicheNet analysis by pooling all
@@ -271,7 +270,7 @@ expressed_receptors = intersect(receptors,expressed_genes_receiver)
 potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
 ```
 
-## 4\) Perform NicheNet ligand activity analysis: rank the potential ligands based on the presence of their target genes in the gene set of interest (compared to the background set of genes)
+## 4) Perform NicheNet ligand activity analysis: rank the potential ligands based on the presence of their target genes in the gene set of interest (compared to the background set of genes)
 
 ``` r
 ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
@@ -281,16 +280,16 @@ ligand_activities
 ## # A tibble: 44 x 5
 ##    test_ligand auroc  aupr pearson  rank
 ##    <chr>       <dbl> <dbl>   <dbl> <dbl>
-##  1 Ebi3        0.662 0.238  0.219      1
-##  2 Il15        0.596 0.160  0.109      2
-##  3 Crlf2       0.560 0.160  0.0890     3
-##  4 App         0.499 0.134  0.0750     4
-##  5 Tgfb1       0.498 0.134  0.0631     5
-##  6 Ptprc       0.539 0.142  0.0602     6
-##  7 H2-M3       0.526 0.149  0.0533     7
-##  8 Icam1       0.544 0.134  0.0496     8
-##  9 Cxcl10      0.536 0.134  0.0457     9
-## 10 Adam17      0.517 0.129  0.0378    10
+##  1 Ebi3        0.638 0.234  0.197      1
+##  2 Il15        0.582 0.163  0.0961     2
+##  3 Crlf2       0.549 0.163  0.0758     3
+##  4 App         0.499 0.141  0.0655     4
+##  5 Tgfb1       0.494 0.140  0.0558     5
+##  6 Ptprc       0.536 0.149  0.0554     6
+##  7 H2-M3       0.525 0.157  0.0528     7
+##  8 Icam1       0.543 0.142  0.0486     8
+##  9 Cxcl10      0.531 0.141  0.0408     9
+## 10 Adam17      0.517 0.137  0.0359    10
 ## # ... with 34 more rows
 ```
 
@@ -324,7 +323,7 @@ DotPlot(seuratObj, features = best_upstream_ligands %>% rev(), cols = "RdYlBu") 
 As you can see, most op the top-ranked ligands seem to be mainly
 expressed by dendritic cells and monocytes.
 
-## 5\) Infer receptors and top-predicted target genes of ligands that are top-ranked in the ligand activity analysis
+## 5) Infer receptors and top-predicted target genes of ligands that are top-ranked in the ligand activity analysis
 
 ### Active target gene inference
 
@@ -424,7 +423,7 @@ p_ligand_receptor_network_strict
 
 ![](seurat_steps_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
-## 6\) Add log fold change information of ligands from sender cells
+## 6) Add log fold change information of ligands from sender cells
 
 In some cases, it might be possible to also check upregulation of
 ligands in sender cells. This can add a useful extra layer of
@@ -462,7 +461,6 @@ p_ligand_lfc
 ![](seurat_steps_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 ``` r
-
 # change colors a bit to make them more stand out
 p_ligand_lfc = p_ligand_lfc + scale_fill_gradientn(colors = c("midnightblue","blue", "grey95", "grey99","firebrick1","red"),values = c(0,0.1,0.2,0.25, 0.40, 0.7,1), limits = c(vis_ligand_lfc %>% min() - 0.1, vis_ligand_lfc %>% max() + 0.1))
 p_ligand_lfc
@@ -470,7 +468,7 @@ p_ligand_lfc
 
 ![](seurat_steps_files/figure-gfm/unnamed-chunk-20-2.png)<!-- -->
 
-## 7\) Summary visualizations of the NicheNet analysis
+## 7) Summary visualizations of the NicheNet analysis
 
 For example, you can make a combined heatmap of ligand activities,
 ligand expression, ligand log fold change and the target genes of the
@@ -498,7 +496,6 @@ rotated_dotplot = DotPlot(seuratObj %>% subset(celltype %in% sender_celltypes), 
 ```
 
 ``` r
-
 figures_without_legend = cowplot::plot_grid(
   p_ligand_pearson + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
   rotated_dotplot + theme(legend.position = "none", axis.ticks = element_blank(), axis.title.x = element_text(size = 12), axis.text.y = element_text(face = "italic", size = 9), axis.text.x = element_text(size = 9,  angle = 90,hjust = 0)) + ylab("Expression in Sender") + xlab("") + scale_y_discrete(position = "right"),
@@ -530,15 +527,15 @@ combined_plot
 
 # References
 
-<div id="refs" class="references">
+<div id="refs" class="references csl-bib-body hanging-indent">
 
-<div id="ref-medaglia_spatial_2017">
+<div id="ref-medaglia_spatial_2017" class="csl-entry">
 
 Medaglia, Chiara, Amir Giladi, Liat Stoler-Barak, Marco De Giovanni,
 Tomer Meir Salame, Adi Biram, Eyal David, et al. 2017. “Spatial
 Reconstruction of Immune Niches by Combining Photoactivatable Reporters
-and scRNA-Seq.” *Science*, December, eaao4277.
-<https://doi.org/10.1126/science.aao4277>.
+and <span class="nocase">scRNA</span>-Seq.” *Science*, December,
+eaao4277. <https://doi.org/10.1126/science.aao4277>.
 
 </div>
 

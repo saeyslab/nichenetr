@@ -37,7 +37,7 @@ The used NicheNet networks, ligand-target matrix and example expression data of 
 
 ```{r}
 library(nichenetr)
-library(Seurat)
+library(Seurat) # Please update to Seurat v4
 library(tidyverse)
 library(circlize)
 ```

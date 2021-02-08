@@ -28,17 +28,16 @@ The wrapper function we will show consists of the same different steps
 that are discussed in detail in the main, basis, NicheNet vignette
 [NicheNet’s ligand activity analysis on a gene set of interest: predict
 active ligands and their target
-genes](ligand_activity_geneset.md):`vignette("ligand_activity_geneset",
-package="nichenetr")`. Make sure you understand the different steps in a
-NicheNet analysis that are described in that vignette before proceeding
-with this vignette and performing a real NicheNet analysis on your data.
-In another vignette [Perform NicheNet analysis starting from a Seurat
-object: step-by-step
-analysis](seurat_steps.md):`vignette("seurat_steps",
-package="nichenetr")`, we also show the execution of these steps one for
-one, but in contrast to the main vignette now specifically for a Seurat
-Object. This allows users to adapt specific steps of the pipeline to
-make them more appropriate for their data (recommended).
+genes](ligand_activity_geneset.md):`vignette("ligand_activity_geneset", package="nichenetr")`.
+Make sure you understand the different steps in a NicheNet analysis that
+are described in that vignette before proceeding with this vignette and
+performing a real NicheNet analysis on your data. In another vignette
+[Perform NicheNet analysis starting from a Seurat object: step-by-step
+analysis](seurat_steps.md):`vignette("seurat_steps", package="nichenetr")`,
+we also show the execution of these steps one for one, but in contrast
+to the main vignette now specifically for a Seurat Object. This allows
+users to adapt specific steps of the pipeline to make them more
+appropriate for their data (recommended).
 
 As example expression data of interacting cells, we will use mouse
 NICHE-seq data from Medaglia et al. to explore intercellular
@@ -79,7 +78,7 @@ genes of these prioritized ligands.
 
 ``` r
 library(nichenetr)
-library(Seurat)
+library(Seurat) # please update to Seurat V4
 library(tidyverse)
 ```
 
@@ -170,7 +169,7 @@ DimPlot(seuratObj, reduction = "tsne")
 
 Visualize the data to see to which condition cells belong. The metadata
 dataframe column that denotes the condition (steady-state or after LCMV
-infection) is here called ‘aggregate’.
+infection) is here called ‘aggregate.’
 
 ``` r
 seuratObj@meta.data$aggregate %>% table()
@@ -192,25 +191,25 @@ after LCMV infection.
 As described in the main vignette, the pipeline of a basic NicheNet
 analysis consist of the following steps:
 
-  - 1.  Define a “sender/niche” cell population and a “receiver/target”
+-   1.  Define a “sender/niche” cell population and a “receiver/target”
         cell population present in your expression data and determine
         which genes are expressed in both populations
 
-  - 2.  Define a gene set of interest: these are the genes in the
-        “receiver/target” cell population that are potentially
-        affected by ligands expressed by interacting cells (e.g. genes
+-   1.  Define a gene set of interest: these are the genes in the
+        “receiver/target” cell population that are potentially affected
+        by ligands expressed by interacting cells (e.g. genes
         differentially expressed upon cell-cell interaction)
 
-  - 3.  Define a set of potential ligands: these are ligands that are
+-   1.  Define a set of potential ligands: these are ligands that are
         expressed by the “sender/niche” cell population and bind a
         (putative) receptor expressed by the “receiver/target”
         population
 
-  - 4)  Perform NicheNet ligand activity analysis: rank the potential
+-   1.  Perform NicheNet ligand activity analysis: rank the potential
         ligands based on the presence of their target genes in the gene
         set of interest (compared to the background set of genes)
 
-  - 5)  Infer receptors and top-predicted target genes of ligands that
+-   1.  Infer receptors and top-predicted target genes of ligands that
         are top-ranked in the ligand activity analysis
 
 All these steps are contained in one of three following similar single
@@ -221,15 +220,15 @@ functions: `nichenet_seuratobj_aggregate`,
 ## NicheNet analysis on Seurat object: explain differential expression between two conditions
 
 In this case study, the receiver cell population is the ‘CD8 T’ cell
-population, whereas the sender cell populations are ‘CD4 T’, ‘Treg’,
-‘Mono’, ‘NK’, ‘B’ and ‘DC’. The above described functions will
-consider a gene to be expressed when it is expressed in at least a
-predefined fraction of cells in one cluster (default: 10%).
+population, whereas the sender cell populations are ‘CD4 T,’ ‘Treg,’
+‘Mono,’ ‘NK,’ ‘B’ and ‘DC.’ The above described functions will consider
+a gene to be expressed when it is expressed in at least a predefined
+fraction of cells in one cluster (default: 10%).
 
 The gene set of interest are the genes differentially expressed in CD8 T
-cells after LCMV infection. The condition of interest is thus ‘LCMV’,
-whereas the reference/steady-state condition is ‘SS’. The notion of
-conditions can be extracted from the metadata column ‘aggregate’, the
+cells after LCMV infection. The condition of interest is thus ‘LCMV,’
+whereas the reference/steady-state condition is ‘SS.’ The notion of
+conditions can be extracted from the metadata column ‘aggregate,’ the
 method to calculate the differential expression is the standard Seurat
 Wilcoxon test.
 
@@ -271,16 +270,16 @@ nichenet_output$ligand_activities
 ## # A tibble: 44 x 6
 ##    test_ligand auroc  aupr pearson  rank bona_fide_ligand
 ##    <chr>       <dbl> <dbl>   <dbl> <dbl> <lgl>           
-##  1 Ebi3        0.662 0.238  0.219      1 FALSE           
-##  2 Il15        0.596 0.160  0.109      2 TRUE            
-##  3 Crlf2       0.560 0.160  0.0890     3 FALSE           
-##  4 App         0.499 0.134  0.0750     4 TRUE            
-##  5 Tgfb1       0.498 0.134  0.0631     5 TRUE            
-##  6 Ptprc       0.539 0.142  0.0602     6 TRUE            
-##  7 H2-M3       0.526 0.149  0.0533     7 TRUE            
-##  8 Icam1       0.544 0.134  0.0496     8 TRUE            
-##  9 Cxcl10      0.536 0.134  0.0457     9 TRUE            
-## 10 Adam17      0.517 0.129  0.0378    10 TRUE            
+##  1 Ebi3        0.638 0.234  0.197      1 FALSE           
+##  2 Il15        0.582 0.163  0.0961     2 TRUE            
+##  3 Crlf2       0.549 0.163  0.0758     3 FALSE           
+##  4 App         0.499 0.141  0.0655     4 TRUE            
+##  5 Tgfb1       0.494 0.140  0.0558     5 TRUE            
+##  6 Ptprc       0.536 0.149  0.0554     6 TRUE            
+##  7 H2-M3       0.525 0.157  0.0528     7 TRUE            
+##  8 Icam1       0.543 0.142  0.0486     8 TRUE            
+##  9 Cxcl10      0.531 0.141  0.0408     9 TRUE            
+## 10 Adam17      0.517 0.137  0.0359    10 TRUE            
 ## # ... with 34 more rows
 ```
 
@@ -304,8 +303,8 @@ To get a list of the 20 top-ranked ligands: run the following command
 
 ``` r
 nichenet_output$top_ligands
-##  [1] "Ebi3"   "Il15"   "Crlf2"  "App"    "Tgfb1"  "Ptprc"  "H2-M3"  "Icam1"  "Cxcl10" "Adam17" "Cxcl11" "Cxcl9" 
-## [13] "H2-T23" "Ccl5"   "Sema4d" "Cxcl16" "C3"     "Itgb1"  "Anxa1"  "Sell"
+##  [1] "Ebi3"   "Il15"   "Crlf2"  "App"    "Tgfb1"  "Ptprc"  "H2-M3"  "Icam1"  "Cxcl10" "Adam17"
+## [11] "Cxcl11" "Cxcl9"  "H2-T23" "Sema4d" "Ccl5"   "C3"     "Cxcl16" "Itgb1"  "Anxa1"  "Sell"
 ```
 
 These ligands are expressed by one or more of the input sender cells. To
@@ -381,8 +380,8 @@ nichenet_output$ligand_target_matrix %>% .[1:10,1:6]
 ## Sell   0.000000000    0 0.001290863 0.001222706     0 0.001095100
 ## Itgb1  0.000000000    0 0.001162142 0.001214922     0 0.001069406
 ## C3     0.000000000    0 0.001105490 0.000000000     0 0.000000000
-## Sema4d 0.000000000    0 0.001103465 0.001179496     0 0.000000000
 ## Ccl5   0.000000000    0 0.001281096 0.001228147     0 0.001155790
+## Sema4d 0.000000000    0 0.001103465 0.001179496     0 0.000000000
 ## H2.T23 0.000000000    0 0.001112018 0.001110184     0 0.000000000
 ## Adam17 0.002280965    0 0.001760241 0.001546186     0 0.001637201
 ## Cxcl10 0.000000000    0 0.001354334 0.001372142     0 0.001393116
@@ -392,7 +391,7 @@ nichenet_output$ligand_target_matrix %>% .[1:10,1:6]
 
 ``` r
 nichenet_output$ligand_target_df # weight column = regulatory potential
-## # A tibble: 154 x 3
+## # A tibble: 155 x 3
 ##    ligand target  weight
 ##    <chr>  <chr>    <dbl>
 ##  1 Ebi3   Cd274  0.00325
@@ -405,7 +404,7 @@ nichenet_output$ligand_target_df # weight column = regulatory potential
 ##  8 Ebi3   Irf9   0.00543
 ##  9 Ebi3   Parp14 0.00336
 ## 10 Ebi3   Pdcd4  0.00335
-## # ... with 144 more rows
+## # ... with 145 more rows
 ```
 
 To get a list of the top-predicted target genes of the 20 top-ranked
@@ -413,9 +412,10 @@ ligands: run the following command
 
 ``` r
 nichenet_output$top_targets
-##  [1] "Cd274"  "Cd53"   "Ddit4"  "Id3"    "Ifit3"  "Irf1"   "Irf7"   "Irf9"   "Parp14" "Pdcd4"  "Pml"    "Psmb9" 
-## [13] "Rnf213" "Stat1"  "Stat2"  "Tap1"   "Ubc"    "Zbp1"   "Cd69"   "Gbp4"   "Basp1"  "Casp8"  "Cxcl10" "Nlrc5" 
-## [25] "Vim"    "Actb"   "Ifih1"  "Myh9"   "B2m"    "H2-T23" "Cxcr4"
+##  [1] "Cd274"  "Cd53"   "Ddit4"  "Id3"    "Ifit3"  "Irf1"   "Irf7"   "Irf9"   "Parp14" "Pdcd4" 
+## [11] "Pml"    "Psmb9"  "Rnf213" "Stat1"  "Stat2"  "Tap1"   "Ubc"    "Zbp1"   "Cd69"   "Gbp4"  
+## [21] "Basp1"  "Casp8"  "Cxcl10" "Nlrc5"  "Vim"    "Actb"   "Ifih1"  "Myh9"   "B2m"    "H2-T23"
+## [31] "Rpl13a" "Cxcr4"
 ```
 
 You can visualize the expression of these as well. Because we only focus
@@ -510,8 +510,9 @@ following command
 
 ``` r
 nichenet_output$top_receptors
-##  [1] "Notch1" "Ccr7"   "Ccr9"   "Cxcr6"  "Itga4"  "Tgfbr2" "Itgb2"  "Gpr18"  "S1pr1"  "Il7r"   "Il27ra" "Cd8a"  
-## [13] "Klrd1"  "Il2rg"  "Itgal"  "Spn"    "Il2rb"  "Cd47"   "Ptk2b"  "Cd2"    "Cd28"   "Selplg" "Ptprc"
+##  [1] "Notch1" "Ccr7"   "Ccr9"   "Cxcr6"  "Itga4"  "Tgfbr2" "Itgb2"  "Gpr18"  "S1pr1"  "Il7r"  
+## [11] "Il27ra" "Cd8a"   "Klrd1"  "Il2rg"  "Itgal"  "Spn"    "Il2rb"  "Cd47"   "Ptk2b"  "Cd2"   
+## [21] "Cd28"   "Selplg" "Ptprc"
 ```
 
 You can visualize the expression of these as well. Because we only focus
@@ -564,35 +565,43 @@ genes) was used during the ligand activity analysis:
 
 ``` r
 nichenet_output$geneset_oi
-##   [1] "Irf7"          "Stat1"         "Ifit3"         "Ifit1"         "Bst2"          "B2m"          
-##   [7] "Rnf213"        "Plac8"         "Isg15"         "Shisa5"        "Zbp1"          "Isg20"        
-##  [13] "Samhd1"        "Usp18"         "H2-T23"        "Gbp2"          "Ifi203"        "Tmsb4x"       
-##  [19] "Rsad2"         "Ly6e"          "Rtp4"          "Ifit2"         "Xaf1"          "Smchd1"       
-##  [25] "Daxx"          "Alb"           "Samd9l"        "Actb"          "Parp9"         "Gbp4"         
-##  [31] "Lgals3bp"      "Mx1"           "Gbp7"          "Cmpk2"         "Dtx3l"         "Slfn5"        
-##  [37] "Oasl1"         "Herc6"         "Ifih1"         "Rpsa"          "P2ry13"        "Irgm2"        
-##  [43] "Tapbp"         "Rps8"          "Stat2"         "Ifi44"         "Rpl8"          "Psmb8"        
-##  [49] "Igfbp4"        "Ddx58"         "Rac2"          "Trafd1"        "Pml"           "Oas2"         
-##  [55] "Psme1"         "Apoe"          "Basp1"         "Rps27a"        "Znfx1"         "Rpl13"        
-##  [61] "Oas3"          "Nt5c3"         "Rnf114"        "Tap1"          "Rps28"         "Rplp0"        
-##  [67] "Ddx60"         "Vim"           "Ifi35"         "Itm2b"         "Ctss"          "Pabpc1"       
-##  [73] "Parp14"        "Hspa8"         "Tor3a"         "Tmbim6"        "Thy1"          "Ncoa7"        
-##  [79] "Dhx58"         "Psmb9"         "Il2rg"         "Etnk1"         "Irf9"          "1600014C10Rik"
-##  [85] "Parp12"        "Eif2ak2"       "Eef2"          "Npc2"          "Rps2"          "Sp110"        
-##  [91] "Ube2l6"        "Nmi"           "Uba7"          "Psmb10"        "Cxcl10"        "Nhp2"         
-##  [97] "Tbrg1"         "Usp25"         "Tor1aip2"      "Adar"          "Gzma"          "Cd53"         
-## [103] "Hspa5"         "Cfl1"          "Crip1"         "Slco3a1"       "Tlr7"          "Trim21"       
-## [109] "Rpl10"         "Mycbp2"        "Rps16"         "Nlrc5"         "Acadl"         "Trim12c"      
-## [115] "Irf1"          "Psma2"         "Nme2"          "Zcchc11"       "Snord12"       "Phip"         
-## [121] "Ifitm3"        "Sp140"         "Dusp2"         "Mrpl30"        "H2-M3"         "Gbp3"         
-## [127] "Dtx1"          "Eef1g"         "Rbl1"          "Xpo1"          "Gm9844"        "Cxcr4"        
-## [133] "Eif3m"         "Treml2"        "Pdcd4"         "Arrb2"         "Ubc"           "Clic4"        
-## [139] "Rpl10a"        "Lcp1"          "Cd274"         "Ddit4"         "Cnn2"          "Nampt"        
-## [145] "Ascc3"         "Cd47"          "Snord49b"      "D17Wsu92e"     "Fam26f"        "Hcst"         
-## [151] "Myh9"          "Rps27"         "Mov10"         "Arf4"          "Arhgdib"       "Ppib"         
-## [157] "Trim25"        "Tspo"          "Id3"           "Rnf8"          "Casp8"         "Ptpn7"        
-## [163] "Itk"           "Cd69"          "Nop10"         "Anxa6"         "Hk1"           "Prkcb"        
-## [169] "Iqgap1"        "Keap1"         "Parp10"
+##   [1] "Irf7"          "Stat1"         "Ifit3"         "Ifit1"         "Bst2"         
+##   [6] "B2m"           "Rnf213"        "Plac8"         "Isg15"         "Shisa5"       
+##  [11] "Zbp1"          "Isg20"         "Samhd1"        "Usp18"         "H2-T23"       
+##  [16] "Gbp2"          "Ifi203"        "Tmsb4x"        "Rsad2"         "Ly6e"         
+##  [21] "Rtp4"          "Ifit2"         "Xaf1"          "Smchd1"        "Daxx"         
+##  [26] "Alb"           "Samd9l"        "Actb"          "Parp9"         "Gbp4"         
+##  [31] "Lgals3bp"      "Mx1"           "Gbp7"          "Cmpk2"         "Dtx3l"        
+##  [36] "Slfn5"         "Oasl1"         "Herc6"         "Ifih1"         "Rpsa"         
+##  [41] "P2ry13"        "Irgm2"         "Tapbp"         "Rps8"          "Stat2"        
+##  [46] "Ifi44"         "Rpl8"          "Psmb8"         "Igfbp4"        "Ddx58"        
+##  [51] "Rac2"          "Trafd1"        "Pml"           "Oas2"          "Psme1"        
+##  [56] "Apoe"          "Basp1"         "Rps27a"        "Znfx1"         "Rpl13"        
+##  [61] "Oas3"          "Nt5c3"         "Rnf114"        "Tap1"          "Rps28"        
+##  [66] "Rplp0"         "Ddx60"         "Vim"           "Ifi35"         "Itm2b"        
+##  [71] "Ctss"          "Pabpc1"        "Parp14"        "Hspa8"         "Tor3a"        
+##  [76] "Rpl23"         "Tmbim6"        "Thy1"          "Ncoa7"         "Dhx58"        
+##  [81] "Rps10"         "Rps19"         "Psmb9"         "Il2rg"         "Etnk1"        
+##  [86] "Irf9"          "1600014C10Rik" "Parp12"        "Eif2ak2"       "Eef1b2"       
+##  [91] "Eef2"          "Npc2"          "Rps2"          "Rps3"          "Sp110"        
+##  [96] "Ube2l6"        "Nmi"           "Uba7"          "Psmb10"        "Cxcl10"       
+## [101] "Rpl13a"        "Nhp2"          "Tbrg1"         "Usp25"         "Tor1aip2"     
+## [106] "Adar"          "Gzma"          "Cd53"          "Hspa5"         "Cfl1"         
+## [111] "Crip1"         "Slco3a1"       "Tlr7"          "Trim21"        "Rpl10"        
+## [116] "Mycbp2"        "Rps16"         "Nlrc5"         "Rplp2"         "Acadl"        
+## [121] "Trim12c"       "Rps4x"         "Irf1"          "Psma2"         "Nme2"         
+## [126] "Zcchc11"       "Snord12"       "Phip"          "Ifitm3"        "Sp140"        
+## [131] "Dusp2"         "Mrpl30"        "H2-M3"         "Gbp3"          "Dtx1"         
+## [136] "Eef1g"         "Rbl1"          "Xpo1"          "Gm9844"        "Rpl35"        
+## [141] "Rps26"         "Cxcr4"         "Eif3m"         "Treml2"        "Rpl35a"       
+## [146] "Pdcd4"         "Arrb2"         "Ubc"           "Clic4"         "Rpl10a"       
+## [151] "Lcp1"          "Cd274"         "Ddit4"         "Cnn2"          "Nampt"        
+## [156] "Ascc3"         "Cd47"          "Snord49b"      "D17Wsu92e"     "Fam26f"       
+## [161] "Hcst"          "Myh9"          "Rps27"         "Mov10"         "Arf4"         
+## [166] "Arhgdib"       "Ppib"          "Trim25"        "Tspo"          "Id3"          
+## [171] "Snord35a"      "Rnf8"          "Casp8"         "Ptpn7"         "Itk"          
+## [176] "Cd69"          "Nop10"         "Anxa6"         "Hk1"           "Prkcb"        
+## [181] "Iqgap1"        "Keap1"         "Rpl7"          "Parp10"
 nichenet_output$background_expressed_genes %>% length()
 ## [1] 1487
 ```
@@ -716,8 +725,8 @@ common_ligands = intersect(nichenet_output$`CD4 T`$top_ligands, nichenet_output$
 print("common ligands are: ")
 ## [1] "common ligands are: "
 print(common_ligands)
-##  [1] "Ebi3"   "Il15"   "Crlf2"  "App"    "H2-M3"  "Ptprc"  "Icam1"  "Ccl5"   "Cxcl10" "Tgfb1"  "Cxcl11" "Cxcl9" 
-## [13] "Sema4d" "H2-T23" "Cxcl16" "C3"     "Itgb1"
+##  [1] "Ebi3"   "Il15"   "Crlf2"  "H2-M3"  "App"    "Ptprc"  "Icam1"  "Ccl5"   "Cxcl10" "Tgfb1" 
+## [11] "Cxcl11" "Sema4d" "Cxcl9"  "H2-T23" "Cxcl16" "C3"     "Itgb1"
 
 cd4_ligands = nichenet_output$`CD4 T`$top_ligands %>% setdiff(nichenet_output$`CD8 T`$top_ligands)
 cd8_ligands = nichenet_output$`CD8 T`$top_ligands %>% setdiff(nichenet_output$`CD4 T`$top_ligands)
@@ -725,7 +734,7 @@ cd8_ligands = nichenet_output$`CD8 T`$top_ligands %>% setdiff(nichenet_output$`C
 print("Ligands specifically regulating DE in CD4T: ")
 ## [1] "Ligands specifically regulating DE in CD4T: "
 print(cd4_ligands)
-## [1] "Cd274" "Cd28"  "Nampt"
+## [1] "Cd274" "Hmgb1" "Cd28"
 
 print("Ligands specifically regulating DE in CD8T: ")
 ## [1] "Ligands specifically regulating DE in CD8T: "
@@ -744,7 +753,7 @@ progenitor cell to the differentiated cell might be induced by niche
 cells. A concrete example is discussed in this paper: [Stellate Cells,
 Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell Identity on
 Monocytes Colonizing the Liver Macrophage
-Niche](https://www.cell.com/immunity/fulltext/S1074-7613\(19\)30368-1).
+Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1).
 
 Therefore, we will now also demonstrate the use of another Seurat
 wrapper function that can be used in the case of explaining differential
@@ -765,10 +774,10 @@ seuratObj@meta.data$celltype = paste(seuratObj@meta.data$celltype,seuratObj@meta
 
 seuratObj@meta.data$celltype %>% table()
 ## .
-##     B_LCMV       B_SS CD4 T_LCMV   CD4 T_SS CD8 T_LCMV   CD8 T_SS    DC_LCMV      DC_SS  Mono_LCMV    Mono_SS 
-##        344         38       1961        601       1252        393         14          4         75         15 
-##    NK_LCMV      NK_SS  Treg_LCMV    Treg_SS 
-##         94         37        146         53
+##     B_LCMV       B_SS CD4 T_LCMV   CD4 T_SS CD8 T_LCMV   CD8 T_SS    DC_LCMV      DC_SS 
+##        344         38       1961        601       1252        393         14          4 
+##  Mono_LCMV    Mono_SS    NK_LCMV      NK_SS  Treg_LCMV    Treg_SS 
+##         75         15         94         37        146         53
 
 seuratObj = SetIdent(seuratObj,value = "celltype")
 ```
@@ -813,7 +822,7 @@ It could be interested to check which top-ranked ligands are
 differentially expressed in monocytes after LCMV infection
 
 ``` r
-Mono_upregulated_ligands = FindMarkers(seuratObj, ident.1 = "Mono_LCMV", ident.2 = "Mono_SS") %>% rownames_to_column("gene") %>% filter(avg_logFC > 0.25 & p_val_adj <= 0.05) %>% pull(gene) %>% intersect(nichenet_output$top_ligands)
+Mono_upregulated_ligands = FindMarkers(seuratObj, ident.1 = "Mono_LCMV", ident.2 = "Mono_SS") %>% rownames_to_column("gene") %>% filter(avg_log2FC > 0.25 & p_val_adj <= 0.05) %>% pull(gene) %>% intersect(nichenet_output$top_ligands)
 
 print("Monocyte ligands upregulated after LCMV infection and explaining DE between CD8T-StSt and CD8T-LCMV are: ")
 ## [1] "Monocyte ligands upregulated after LCMV infection and explaining DE between CD8T-StSt and CD8T-LCMV are: "
@@ -832,10 +841,9 @@ print(Mono_upregulated_ligands)
     samples for your conditions. In such a case, we recommend to follow
     the vignette [Perform NicheNet analysis starting from a Seurat
     object: step-by-step
-    analysis](seurat_steps.md):`vignette("seurat_steps",
-    package="nichenetr")` and tweak the differential expression step
-    there (and perform the analysis e.g. as discussed in
-    <https://github.com/HelenaLC/muscat>).
+    analysis](seurat_steps.md):`vignette("seurat_steps", package="nichenetr")`
+    and tweak the differential expression step there (and perform the
+    analysis e.g. as discussed in <https://github.com/HelenaLC/muscat>).
 
 # References
 
@@ -844,15 +852,15 @@ and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes
 Colonizing the Liver Macrophage
 Niche](https://doi.org/10.1016/j.immuni.2019.08.017)
 
-<div id="refs" class="references">
+<div id="refs" class="references csl-bib-body hanging-indent">
 
-<div id="ref-medaglia_spatial_2017">
+<div id="ref-medaglia_spatial_2017" class="csl-entry">
 
 Medaglia, Chiara, Amir Giladi, Liat Stoler-Barak, Marco De Giovanni,
 Tomer Meir Salame, Adi Biram, Eyal David, et al. 2017. “Spatial
 Reconstruction of Immune Niches by Combining Photoactivatable Reporters
-and scRNA-Seq.” *Science*, December, eaao4277.
-<https://doi.org/10.1126/science.aao4277>.
+and <span class="nocase">scRNA</span>-Seq.” *Science*, December,
+eaao4277. <https://doi.org/10.1126/science.aao4277>.
 
 </div>
 
