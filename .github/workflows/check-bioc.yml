@@ -115,10 +115,12 @@ jobs:
       - name: Install Linux system dependencies
         if: runner.os == 'Linux'
         run: |
+
+          sudo apt-get install libmysqlclient-dev
+          # sudo dpkg -i --force-overwrite /var/cache/apt/archives/libmysqlclient-dev_5.7.22-0ubuntu0.16.04.1_amd64.deb
           sysreqs=$(Rscript -e 'cat("apt-get update -y && apt-get install -y", paste(gsub("apt-get install -y ", "", remotes::system_requirements("ubuntu", "20.04")), collapse = " "))')
           echo $sysreqs
           sudo -s eval "$sysreqs"
-
       - name: Install macOS system dependencies
         if: matrix.config.os == 'macOS-latest'
         run: |
