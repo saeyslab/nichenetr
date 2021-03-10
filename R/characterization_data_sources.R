@@ -348,10 +348,15 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
 
   # settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands, validation = TRUE, single = FALSE)
   # ligand_importances_glm = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances, ligand_target_matrix[,all_ligands], algorithm = "glm", cv = FALSE)) %>% rename(glm_imp = importance)
+
   ligand_importances$pearson[is.na(ligand_importances$pearson)] = 0
   ligand_importances$spearman[is.na(ligand_importances$spearman)] = 0
   ligand_importances$pearson_log_pval[is.na(ligand_importances$pearson_log_pval)] = 0
   ligand_importances$spearman_log_pval[is.na(ligand_importances$spearman_log_pval)] = 0
+  ligand_importances$mean_rank_GST_log_pval[is.na(ligand_importances$mean_rank_GST_log_pval)] = 0
+  ligand_importances$pearson_log_pval[is.infinite(ligand_importances$pearson_log_pval)] = 10000
+  ligand_importances$spearman_log_pval[is.infinite(ligand_importances$spearman_log_pval)] = 10000
+  ligand_importances$mean_rank_GST_log_pval[is.infinite(ligand_importances$mean_rank_GST_log_pval)] = 10000
 
   all_importances = ligand_importances %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
   # all_importances = full_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand")) %>% full_join(ligand_importances_discrete, by = c("setting","test_ligand", "ligand"))
