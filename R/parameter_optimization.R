@@ -668,7 +668,7 @@ evaluate_model_cv = function(parameters_setting, lr_network, sig_network, gr_net
   ligand_importances$pearson_log_pval[is.infinite(ligand_importances$pearson_log_pval)] = 10000
   ligand_importances$spearman_log_pval[is.infinite(ligand_importances$spearman_log_pval)] = 10000
   ligand_importances$mean_rank_GST_log_pval[is.infinite(ligand_importances$mean_rank_GST_log_pval)] = 10000
-
+#
   all_importances = ligand_importances %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
 
   performances_ligand_prediction_single = all_importances$setting %>% unique() %>% lapply(function(x){x}) %>%
