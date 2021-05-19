@@ -42,9 +42,9 @@ data.
 As example expression data of interacting cells, we will use mouse
 NICHE-seq data from Medaglia et al. to explore intercellular
 communication in the T cell area in the inguinal lymph node before and
-72 hours after lymphocytic choriomeningitis virus (LCMV) infection (See
-Medaglia et al. 2017). We will NicheNet to explore immune cell crosstalk
-in response to this LCMV infection.
+72 hours after lymphocytic choriomeningitis virus (LCMV) infection
+(Medaglia et al. 2017). We will NicheNet to explore immune cell
+crosstalk in response to this LCMV infection.
 
 In this dataset, differential expression is observed between CD8 T cells
 in steady-state and CD8 T cells after LCMV infection. NicheNet can be
@@ -118,7 +118,7 @@ seuratObj@meta.data$celltype %>% table() # note that the number of cells of some
 DimPlot(seuratObj, reduction = "tsne")
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-113-1.png)<!-- -->
 
 Visualize the data to see to which condition cells belong. The metadata
 dataframe column that denotes the condition (steady-state or after LCMV
@@ -132,7 +132,7 @@ seuratObj@meta.data$aggregate %>% table()
 DimPlot(seuratObj, reduction = "tsne", group.by = "aggregate")
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-114-1.png)<!-- -->
 
 ### Read in NicheNet’s ligand-target prior model, ligand-receptor network and weighted integrated networks:
 
@@ -148,39 +148,39 @@ ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 
 lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 head(lr_network)
-## # A tibble: 6 x 4
+## [38;5;246m# A tibble: 6 x 4[39m
 ##   from  to    source         database
-##   <chr> <chr> <chr>          <chr>   
-## 1 CXCL1 CXCR2 kegg_cytokines kegg    
-## 2 CXCL2 CXCR2 kegg_cytokines kegg    
-## 3 CXCL3 CXCR2 kegg_cytokines kegg    
-## 4 CXCL5 CXCR2 kegg_cytokines kegg    
-## 5 PPBP  CXCR2 kegg_cytokines kegg    
-## 6 CXCL6 CXCR2 kegg_cytokines kegg
+##   [3m[38;5;246m<chr>[39m[23m [3m[38;5;246m<chr>[39m[23m [3m[38;5;246m<chr>[39m[23m          [3m[38;5;246m<chr>[39m[23m   
+## [38;5;250m1[39m CXCL1 CXCR2 kegg_cytokines kegg    
+## [38;5;250m2[39m CXCL2 CXCR2 kegg_cytokines kegg    
+## [38;5;250m3[39m CXCL3 CXCR2 kegg_cytokines kegg    
+## [38;5;250m4[39m CXCL5 CXCR2 kegg_cytokines kegg    
+## [38;5;250m5[39m PPBP  CXCR2 kegg_cytokines kegg    
+## [38;5;250m6[39m CXCL6 CXCR2 kegg_cytokines kegg
 
 weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
 weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
 
 head(weighted_networks$lr_sig) # interactions and their weights in the ligand-receptor + signaling network
-## # A tibble: 6 x 3
+## [38;5;246m# A tibble: 6 x 3[39m
 ##   from  to     weight
-##   <chr> <chr>   <dbl>
-## 1 A1BG  ABCC6  0.422 
-## 2 A1BG  ACE2   0.101 
-## 3 A1BG  ADAM10 0.0970
-## 4 A1BG  AGO1   0.0525
-## 5 A1BG  AKT1   0.0855
-## 6 A1BG  ANXA7  0.457
+##   [3m[38;5;246m<chr>[39m[23m [3m[38;5;246m<chr>[39m[23m   [3m[38;5;246m<dbl>[39m[23m
+## [38;5;250m1[39m A1BG  ABCC6  0.422 
+## [38;5;250m2[39m A1BG  ACE2   0.101 
+## [38;5;250m3[39m A1BG  ADAM10 0.097[4m0[24m
+## [38;5;250m4[39m A1BG  AGO1   0.052[4m5[24m
+## [38;5;250m5[39m A1BG  AKT1   0.085[4m5[24m
+## [38;5;250m6[39m A1BG  ANXA7  0.457
 head(weighted_networks$gr) # interactions and their weights in the gene regulatory network
-## # A tibble: 6 x 3
+## [38;5;246m# A tibble: 6 x 3[39m
 ##   from  to     weight
-##   <chr> <chr>   <dbl>
-## 1 A1BG  A2M    0.0294
-## 2 AAAS  GFAP   0.0290
-## 3 AADAC CYP3A4 0.0422
-## 4 AADAC IRF8   0.0275
-## 5 AATF  ATM    0.0330
-## 6 AATF  ATR    0.0355
+##   [3m[38;5;246m<chr>[39m[23m [3m[38;5;246m<chr>[39m[23m   [3m[38;5;246m<dbl>[39m[23m
+## [38;5;250m1[39m A1BG  A2M    0.029[4m4[24m
+## [38;5;250m2[39m AAAS  GFAP   0.029[4m0[24m
+## [38;5;250m3[39m AADAC CYP3A4 0.042[4m2[24m
+## [38;5;250m4[39m AADAC IRF8   0.027[4m5[24m
+## [38;5;250m5[39m AATF  ATM    0.033[4m0[24m
+## [38;5;250m6[39m AATF  ATR    0.035[4m5[24m
 ```
 
 Because the expression data is of mouse origin, we will convert the
@@ -277,20 +277,20 @@ ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_e
 
 ligand_activities = ligand_activities %>% arrange(-pearson) %>% mutate(rank = rank(desc(pearson)))
 ligand_activities
-## # A tibble: 44 x 5
+## [38;5;246m# A tibble: 44 x 5[39m
 ##    test_ligand auroc  aupr pearson  rank
-##    <chr>       <dbl> <dbl>   <dbl> <dbl>
-##  1 Ebi3        0.638 0.234  0.197      1
-##  2 Il15        0.582 0.163  0.0961     2
-##  3 Crlf2       0.549 0.163  0.0758     3
-##  4 App         0.499 0.141  0.0655     4
-##  5 Tgfb1       0.494 0.140  0.0558     5
-##  6 Ptprc       0.536 0.149  0.0554     6
-##  7 H2-M3       0.525 0.157  0.0528     7
-##  8 Icam1       0.543 0.142  0.0486     8
-##  9 Cxcl10      0.531 0.141  0.0408     9
-## 10 Adam17      0.517 0.137  0.0359    10
-## # ... with 34 more rows
+##    [3m[38;5;246m<chr>[39m[23m       [3m[38;5;246m<dbl>[39m[23m [3m[38;5;246m<dbl>[39m[23m   [3m[38;5;246m<dbl>[39m[23m [3m[38;5;246m<dbl>[39m[23m
+## [38;5;250m 1[39m Ebi3        0.638 0.234  0.197      1
+## [38;5;250m 2[39m Il15        0.582 0.163  0.096[4m1[24m     2
+## [38;5;250m 3[39m Crlf2       0.549 0.163  0.075[4m8[24m     3
+## [38;5;250m 4[39m App         0.499 0.141  0.065[4m5[24m     4
+## [38;5;250m 5[39m Tgfb1       0.494 0.140  0.055[4m8[24m     5
+## [38;5;250m 6[39m Ptprc       0.536 0.149  0.055[4m4[24m     6
+## [38;5;250m 7[39m H2-M3       0.525 0.157  0.052[4m8[24m     7
+## [38;5;250m 8[39m Icam1       0.543 0.142  0.048[4m6[24m     8
+## [38;5;250m 9[39m Cxcl10      0.531 0.141  0.040[4m8[24m     9
+## [38;5;250m10[39m Adam17      0.517 0.137  0.035[4m9[24m    10
+## [38;5;246m# ... with 34 more rows[39m
 ```
 
 The different ligand activity measures (auroc, aupr, pearson correlation
@@ -318,7 +318,7 @@ you can run the following:
 DotPlot(seuratObj, features = best_upstream_ligands %>% rev(), cols = "RdYlBu") + RotatedAxis()
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-123-1.png)<!-- -->
 
 As you can see, most op the top-ranked ligands seem to be mainly
 expressed by dendritic cells and monocytes.
@@ -345,7 +345,7 @@ p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized
 p_ligand_target_network
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-125-1.png)<!-- -->
 
 Note that not all ligands from the top 20 are present in this
 ligand-target heatmap. The left-out ligands are ligands that don’t have
@@ -385,7 +385,7 @@ p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap
 p_ligand_receptor_network
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-127-1.png)<!-- -->
 
 ### Receptors of top-ranked ligands, but after considering only bona fide ligand-receptor interactions documented in literature and publicly available databases
 
@@ -421,7 +421,7 @@ p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>
 p_ligand_receptor_network_strict
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-129-1.png)<!-- -->
 
 ## 6) Add log fold change information of ligands from sender cells
 
@@ -458,7 +458,7 @@ p_ligand_lfc = vis_ligand_lfc %>% make_threecolor_heatmap_ggplot("Prioritized li
 p_ligand_lfc
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-130-1.png)<!-- -->
 
 ``` r
 # change colors a bit to make them more stand out
@@ -466,7 +466,7 @@ p_ligand_lfc = p_ligand_lfc + scale_fill_gradientn(colors = c("midnightblue","bl
 p_ligand_lfc
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-20-2.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-130-2.png)<!-- -->
 
 ## 7) Summary visualizations of the NicheNet analysis
 
@@ -492,7 +492,7 @@ p_ligand_pearson = vis_ligand_pearson %>% make_heatmap_ggplot("Prioritized ligan
 order_ligands_adapted = order_ligands
 order_ligands_adapted[order_ligands_adapted == "H2.M3"] = "H2-M3" # cf required use of make.names for heatmap visualization | this is not necessary if these ligands are not in the list of prioritized ligands!
 order_ligands_adapted[order_ligands_adapted == "H2.T23"] = "H2-T23" # cf required use of make.names for heatmap visualization | this is not necessary if these ligands are not in the list of prioritized ligands!
-rotated_dotplot = DotPlot(seuratObj %>% subset(celltype %in% sender_celltypes), features = order_ligands_adapted %>% rev(), cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
+rotated_dotplot = DotPlot(seuratObj %>% subset(celltype %in% sender_celltypes), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
 ```
 
 ``` r
@@ -517,7 +517,7 @@ combined_plot = cowplot::plot_grid(figures_without_legend, legends, rel_heights 
 combined_plot
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/unnamed-chunk-133-1.png)<!-- -->
 
 # Remarks
 

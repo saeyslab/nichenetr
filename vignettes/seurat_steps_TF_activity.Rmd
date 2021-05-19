@@ -1,0 +1,238 @@
+---
+title: "Perform NicheNet-TF activity analysis starting from a Seurat object: step-by-step analysis"
+author: "Robin Browaeys"
+date: "2021-03-31"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Perform NicheNet-TF activity analysis starting from a Seurat object: step-by-step analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: library.bib
+---
+
+<!-- github markdown built using 
+rmarkdown::render("vignettes/seurat_steps.Rmd", output_format = "github_document")
+-->
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  # comment = "#>",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+In this vignette, you can learn how to perform a TF activity analysis within the NicheNet framework on a Seurat object. 
+This is very similar to NicheNet's ligand activity, except that we will now predict activities of TFs in the receiver cell type of interest itself. This is very similar because we can just use the NicheNet TF-target matrix instead of the ligand-target matrix.
+
+It is very important to know that the TFs within the TF-target model of NicheNet are not only 'strict sense bona fide' TFs - they should more be considered as regulators than as TFs (eg in this matrix some signaling molecules are also considered as regulators even though they are not bona fide TFs).
+
+In this vignette, we demonstrate the use of NicheNet for TF activity analysis on a Seurat Object. 
+
+As example expression data, we will use mouse NICHE-seq data from Medaglia et al. to explore intercellular communication in the T cell area in the inguinal lymph node before and 72 hours after lymphocytic choriomeningitis virus (LCMV) infection [See @medaglia_spatial_2017]. We will use NicheNet to predict TF activity in response to this LCMV infection - based on differential expression between CD8 T cells in steady-state and CD8 T cells after LCMV infection.
+
+The used NicheNet networks, tf-target matrix and example expression data of interacting cells can be downloaded from Zenodo. The NicheNet networks and tf-target matrix at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758) and the Seurat object of the processed NICHE-seq single-cell data at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3531889.svg)](https://doi.org/10.5281/zenodo.3531889).
+
+# Prepare NicheNet analysis
+
+## Load required packages, read in the Seurat object with processed expression data and NicheNet's and TF-target prior model.
+
+The NicheNet TF-target matrix denotes the prior potential that particular tfs might regulate the expression of particular target genes. This matrix is necessary to prioritize possible TFs based on observed gene expression effects (i.e. NicheNet's TF activity analysis) and infer affected target genes of these prioritized TFs.
+
+### Load Packages:
+
+```{r}
+library(nichenetr)
+library(Seurat) # please update to Seurat V4
+library(tidyverse)
+```
+
+If you would use and load other packages, we recommend to load these 3 packages after the others.
+
+### Read in the expression data of interacting cells: 
+
+The dataset used here is publicly available single-cell data from immune cells in the T cell area of the inguinal lymph node. The data was processed and aggregated by applying the Seurat alignment pipeline. The Seurat object contains this aggregated data. Note that this should be a Seurat v3 object and that gene should be named by their official mouse/human gene symbol.
+
+```{r}
+seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
+seuratObj@meta.data %>% head()
+```
+
+Visualize which cell populations are present: CD4 T cells (including regulatory T cells), CD8 T cells, B cells, NK cells, dendritic cells (DCs) and  inflammatory monocytes
+```{r}
+seuratObj@meta.data$celltype %>% table() # note that the number of cells of some cell types is very low and should preferably be higher for a real application
+DimPlot(seuratObj, reduction = "tsne")
+```
+
+Visualize the data to see to which condition cells belong. The metadata dataframe column that denotes the condition (steady-state or after LCMV infection) is here called 'aggregate'.
+
+```{r}
+seuratObj@meta.data$aggregate %>% table()
+DimPlot(seuratObj, reduction = "tsne", group.by = "aggregate")
+```
+
+### Read in NicheNet's tf-target prior model:
+
+```{r}
+tf_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/tf_target_matrix.rds"))
+
+tf_target_matrix[1:5,1:5] # target genes in rows, tfs in columns
+```
+
+Because the expression data is of mouse origin, we will convert the NicheNet network gene symbols from human to mouse based on one-to-one orthology:
+
+```{r}
+colnames(tf_target_matrix) = tf_target_matrix %>% colnames() %>% convert_human_to_mouse_symbols()
+rownames(tf_target_matrix) = tf_target_matrix %>% rownames() %>% convert_human_to_mouse_symbols()
+
+tf_target_matrix = tf_target_matrix %>% .[!is.na(rownames(tf_target_matrix)), !is.na(colnames(tf_target_matrix))]
+
+```
+
+You can check top target genes of TFs (based on prior information) as follows:
+
+eg 25 top targets of Srebf2:
+
+```{r}
+
+extract_top_n_targets("Srebf2", 25, tf_target_matrix)
+
+```
+
+# Perform the NicheNet analysis
+
+In this case study, we want to apply NicheNet to predict which TFs could have induced the differential expression in CD8 T cells after LCMV infection (and are thus active).
+
+The pipeline of a TF activity analysis consist of the following steps:
+
+## 1. Define a “receiver/target” cell population present in your expression data and determine which genes are expressed in this population
+
+In this case study, the receiver cell population is the 'CD8 T' cell population
+We will consider a gene to be expressed when it is expressed in at least 10% of cells in one cluster. This can also be lower, such as 5%.
+
+```{r}
+## receiver
+receiver = "CD8 T"
+expressed_genes_receiver = get_expressed_genes(receiver, seuratObj, pct = 0.10) # can be changed to 0.05
+
+background_expressed_genes = expressed_genes_receiver %>% .[. %in% rownames(tf_target_matrix)]
+```
+
+## 2. Define a gene set of interest: these are the genes in the “receiver/target” cell population that are regulated by differentially active TFs 
+
+Here, the gene set of interest are the genes differentially expressed in CD8 T cells after LCMV infection. The condition of interest is thus 'LCMV', whereas the reference/steady-state condition is 'SS'. The notion of conditions can be extracted from the metadata column 'aggregate'. The method to calculate the differential expression is here the standard Seurat Wilcoxon test, but this can be changed if necessary. 
+
+```{r}
+seurat_obj_receiver= subset(seuratObj, idents = receiver)
+seurat_obj_receiver = SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[["aggregate"]])
+
+condition_oi = "LCMV"
+condition_reference = "SS" 
+  
+DE_table_receiver = FindMarkers(object = seurat_obj_receiver, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = 0.10) %>% rownames_to_column("gene")
+
+geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= 0.25) %>% pull(gene)
+geneset_oi = geneset_oi %>% .[. %in% rownames(tf_target_matrix)]
+```
+
+## 3. Define a set of potential tfs: these are tfs that are expressed by by the “receiver/target” population
+
+Note: expression levels of some TFs is very low, so it might be interesting to rerun the analysis with all TFs in the database, and not only with the expressed ones! 
+
+```{r}
+tfs = colnames(tf_target_matrix)
+
+expressed_tfs = intersect(tfs,expressed_genes_receiver)
+
+potential_tfs = expressed_tfs
+```
+
+## 4) Perform NicheNet tf activity analysis: rank the potential tfs based on the presence of their target genes in the gene set of interest (compared to the background set of genes)
+
+We just use the `predict_ligand_activities` as for classic NicheNet analyses, but now with the TF-target matrix as input.
+
+```{r}
+tf_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = tf_target_matrix, potential_ligands = potential_tfs)
+
+tf_activities = tf_activities %>% arrange(-pearson) %>% mutate(rank = rank(desc(pearson)))
+tf_activities
+```
+
+The different tf activity measures (auroc, aupr, pearson correlation coefficient) are a measure for how well a tf can predict the observed differentially expressed genes compared to the background of expressed genes. In our validation study, we showed that the pearson correlation coefficient between a tf's target predictions and the observed transcriptional response was the most informative measure to define tf activity. Therefore, NicheNet ranks the tfs based on their pearson correlation coefficient. This allows us to prioritize tfs inducing the antiviral response in CD8 T cells. 
+
+The number of top-ranked tfs that are further used to predict active target genes and construct an active tf-receptor network is here 20.
+
+We can also include some additional top TFs based on the ranking of the AUPR and the AUROC.
+For important TFs, the number of 20 might also be a bit too low, and considering more TFs might be useful.
+
+```{r}
+best_upstream_tfs = c(tf_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand) %>% unique(),  tf_activities %>% top_n(20, auroc) %>% arrange(-auroc) %>% pull(test_ligand) %>% unique(), tf_activities %>% top_n(20, aupr) %>% arrange(-aupr) %>% pull(test_ligand) %>% unique()) %>% unique()
+```
+
+
+## 5) Infer top-predicted target genes of tfs that are top-ranked in the tf activity analysis
+
+### Active target gene inference
+
+n = 200 --> set to 100 to become more stringent
+
+```{r}
+active_tf_target_links_df = best_upstream_tfs %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = tf_target_matrix, n = 200) %>% bind_rows() %>% drop_na()
+
+active_tf_target_links = prepare_ligand_target_visualization(ligand_target_df = active_tf_target_links_df, ligand_target_matrix = tf_target_matrix, cutoff = 0.33)
+
+order_tfs = intersect(best_upstream_tfs, colnames(active_tf_target_links)) %>% rev() %>% make.names()
+order_targets = active_tf_target_links_df$target %>% unique() %>% intersect(rownames(active_tf_target_links)) %>% make.names()
+rownames(active_tf_target_links) = rownames(active_tf_target_links) %>% make.names() # make.names() for heatmap visualization of genes like H2-T23
+colnames(active_tf_target_links) = colnames(active_tf_target_links) %>% make.names() # make.names() for heatmap visualization of genes like H2-T23
+
+vis_tf_target = active_tf_target_links[order_targets,order_tfs] %>% t()
+```
+
+```{r, fig.height = 11, fig.width=21}
+p_tf_target_network = vis_tf_target %>% make_heatmap_ggplot("Prioritized tfs","Predicted target genes", color = "purple",legend_position = "top", x_axis_position = "top",legend_title = "Regulatory potential")  + theme(axis.text.x = element_text(face = "italic")) + scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.0045,0.0090))
+p_tf_target_network
+```
+
+
+
+## 6) Add log fold change information of tfs from receiver cells
+
+In some cases, it might be possible to also check upregulation of tfs in receiver cells. 
+Here this is possible: we will define the log fold change between LCMV and steady-state in all sender cell types and visualize this as extra information.
+
+In other case studies, it could be possible to plot expression of the TF across different cell types / sub cell types
+
+```{r, fig.width=10}
+# DE analysis for each sender cell type
+# this uses a new nichenetr function - reinstall nichenetr if necessary!
+DE_table_all = Idents(seuratObj) %>% levels() %>% intersect(receiver) %>% lapply(get_lfc_celltype, seurat_obj = seuratObj, condition_colname = "aggregate", condition_oi = condition_oi, condition_reference = condition_reference, expression_pct = 0.10) %>% reduce(full_join)
+DE_table_all[is.na(DE_table_all)] = 0
+
+# Combine tf activities with DE information
+tf_activities_de = tf_activities %>% select(test_ligand, pearson) %>% rename(tf = test_ligand) %>% left_join(DE_table_all %>% rename(tf = gene))
+tf_activities_de[is.na(tf_activities_de)] = 0
+
+# make LFC heatmap
+lfc_matrix = tf_activities_de  %>% select(-tf, -pearson) %>% as.matrix() %>% magrittr::set_rownames(tf_activities_de$tf)
+rownames(lfc_matrix) = rownames(lfc_matrix) %>% make.names()
+
+order_tfs = order_tfs[order_tfs %in% rownames(lfc_matrix)]
+vis_tf_lfc = lfc_matrix[order_tfs,]
+
+vis_tf_lfc = matrix(vis_tf_lfc, ncol = 1)
+rownames(vis_tf_lfc) = order_tfs
+colnames(vis_tf_lfc) = receiver
+
+p_tf_lfc = vis_tf_lfc %>% make_threecolor_heatmap_ggplot("Prioritized tfs","LFC in receiver", low_color = "midnightblue",mid_color = "white", mid = median(vis_tf_lfc), high_color = "red",legend_position = "top", x_axis_position = "top", legend_title = "LFC") + theme(axis.text.y = element_text(face = "italic"))
+p_tf_lfc
+
+# change colors a bit to make them more stand out
+p_tf_lfc = p_tf_lfc + scale_fill_gradientn(colors = c("midnightblue","blue", "grey95", "grey99","firebrick1","red"),values = c(0,0.1,0.2,0.25, 0.40, 0.7,1), limits = c(vis_tf_lfc %>% min() - 0.1, vis_tf_lfc %>% max() + 0.1))
+p_tf_lfc
+```
+
+Interestingly, the top active TFs with many target genes among DE genes are DE as well (but know this should not be the case necessarily)
+
+
