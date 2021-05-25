@@ -305,7 +305,6 @@ get_prioritization_tables = function(output_nichenet_analysis, prioritizing_weig
                        (prioritizing_weights["scaled_ligand_expression_scaled"] * scaled_ligand_expression_scaled) +
                        (prioritizing_weights["scaled_receptor_score"] * scaled_receptor_score) +
                        (prioritizing_weights["scaled_receptor_expression_scaled"] * scaled_receptor_expression_scaled) +
-                       (prioritizing_weights["scaled_avg_score_ligand_receptor"] * scaled_avg_score_ligand_receptor) +
                        (prioritizing_weights["scaled_ligand_score_zonation"] * scaled_ligand_score_zonation) +
                        (prioritizing_weights["scaled_receptor_score_zonation"] * scaled_receptor_score_zonation) +
                        (prioritizing_weights["ligand_scaled_receptor_expression_fraction"] * ligand_scaled_receptor_expression_fraction) +

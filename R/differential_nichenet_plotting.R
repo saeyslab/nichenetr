@@ -985,7 +985,10 @@ make_ligand_receptor_lfc_zonation_plot = function(receiver_oi, prioritized_tbl_o
   # p_lig_lfc
 
   # ligand zonation
-  p1 = plot_data %>%
+
+  senders_zonated = plot_data %>% filter(ligand_score_zonation != 0) %>% pull(sender) %>% unique()
+
+  p1 = plot_data %>% filter(sender %in% senders_zonated) %>%
     # ggplot(aes(ligand_ordered, sender , color = ligand_expression_scaled_myeloid, size = ligand_fraction )) +
     ggplot(aes(sender,ligand_receptor_ordered , fill = ligand_score_zonation)) +
     # geom_point() +
