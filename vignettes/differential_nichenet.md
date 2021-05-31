@@ -59,13 +59,13 @@ seurat_obj = readRDS(url("https://zenodo.org/record/4675430/files/seurat_obj_hns
 DimPlot(seurat_obj, group.by = "celltype") # user adaptation required on own dataset
 ```
 
-![](differential_nichenet_files/figure-gfm/unnamed-chunk-55-1.png)<!-- -->
+![](differential_nichenet_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
 ``` r
 DimPlot(seurat_obj, group.by = "pEMT") # user adaptation required on own dataset
 ```
 
-![](differential_nichenet_files/figure-gfm/unnamed-chunk-55-2.png)<!-- -->
+![](differential_nichenet_files/figure-gfm/unnamed-chunk-2-2.png)<!-- -->
 
 We will now also check the number of cells per cell type condition
 combination
@@ -92,7 +92,7 @@ seurat_obj@meta.data$celltype_aggregate = paste(seurat_obj@meta.data$celltype, s
 DimPlot(seurat_obj, group.by = "celltype_aggregate")
 ```
 
-![](differential_nichenet_files/figure-gfm/unnamed-chunk-57-1.png)<!-- -->
+![](differential_nichenet_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 ``` r
 seurat_obj@meta.data$celltype_aggregate %>% table() %>% sort(decreasing = TRUE)
@@ -125,15 +125,15 @@ lr_network = lr_network %>% mutate(bonafide = ! database %in% c("ppi_prediction"
 lr_network = lr_network %>% dplyr::rename(ligand = from, receptor = to) %>% distinct(ligand, receptor, bonafide)
 
 head(lr_network)
-## [38;5;246m# A tibble: 6 x 3[39m
+## # A tibble: 6 x 3
 ##   ligand receptor bonafide
-##   [3m[38;5;246m<chr>[39m[23m  [3m[38;5;246m<chr>[39m[23m    [3m[38;5;246m<lgl>[39m[23m   
-## [38;5;250m1[39m CXCL1  CXCR2    TRUE    
-## [38;5;250m2[39m CXCL2  CXCR2    TRUE    
-## [38;5;250m3[39m CXCL3  CXCR2    TRUE    
-## [38;5;250m4[39m CXCL5  CXCR2    TRUE    
-## [38;5;250m5[39m PPBP   CXCR2    TRUE    
-## [38;5;250m6[39m CXCL6  CXCR2    TRUE
+##   <chr>  <chr>    <lgl>   
+## 1 CXCL1  CXCR2    TRUE    
+## 2 CXCL2  CXCR2    TRUE    
+## 3 CXCL3  CXCR2    TRUE    
+## 4 CXCL5  CXCR2    TRUE    
+## 5 PPBP   CXCR2    TRUE    
+## 6 CXCL6  CXCR2    TRUE
 ```
 
 Note: if your data is of mouse origin: convert human gene symbols to
@@ -145,7 +145,7 @@ organism = "human" # user adaptation required on own dataset
 
 ``` r
 if(organism == "mouse"){
-  lr_network = lr_network %>% mutate(from = convert_human_to_mouse_symbols(from), to = convert_human_to_mouse_symbols(to)) %>% drop_na()
+  lr_network = lr_network %>% mutate(ligand = convert_human_to_mouse_symbols(ligand), receptor = convert_human_to_mouse_symbols(receptor)) %>% drop_na()
 
   colnames(ligand_target_matrix) = ligand_target_matrix %>% colnames() %>% convert_human_to_mouse_symbols()
   rownames(ligand_target_matrix) = ligand_target_matrix %>% rownames() %>% convert_human_to_mouse_symbols()
@@ -652,66 +652,66 @@ output = list(DE_sender_receiver = DE_sender_receiver, ligand_scaled_receptor_ex
 prioritization_tables = get_prioritization_tables(output, prioritizing_weights)
 
 prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(receiver == niches[[1]]$receiver) %>% head(10)
-## [38;5;246m# A tibble: 10 x 37[39m
-##    niche   receiver  sender  ligand_receptor ligand  receptor bonafide ligand_score ligand_significa~ ligand_present ligand_expressi~ ligand_expressi~ ligand_fraction ligand_score_zo~ receptor_score receptor_signif~ receptor_present receptor_expres~ receptor_express~ receptor_fracti~ receptor_score_~
-##    [3m[38;5;246m<chr>[39m[23m   [3m[38;5;246m<chr>[39m[23m     [3m[38;5;246m<chr>[39m[23m   [3m[38;5;246m<chr>[39m[23m           [3m[38;5;246m<chr>[39m[23m   [3m[38;5;246m<chr>[39m[23m    [3m[38;5;246m<lgl>[39m[23m           [3m[38;5;246m<dbl>[39m[23m             [3m[38;5;246m<dbl>[39m[23m          [3m[38;5;246m<dbl>[39m[23m            [3m[38;5;246m<dbl>[39m[23m            [3m[38;5;246m<dbl>[39m[23m           [3m[38;5;246m<dbl>[39m[23m            [3m[38;5;246m<dbl>[39m[23m          [3m[38;5;246m<dbl>[39m[23m            [3m[38;5;246m<dbl>[39m[23m            [3m[38;5;246m<dbl>[39m[23m            [3m[38;5;246m<dbl>[39m[23m             [3m[38;5;246m<dbl>[39m[23m            [3m[38;5;246m<dbl>[39m[23m            [3m[38;5;246m<dbl>[39m[23m
-## [38;5;250m 1[39m pEMT_H~ Malignan~ T.cell~ PTPRC--MET      PTPRC   MET      FALSE            3.22                 1              1             9.32             2.5            0.939                0         0.463                 1                1            1.02              1.76             0.526                0
-## [38;5;250m 2[39m pEMT_H~ Malignan~ T.cell~ PTPRC--EGFR     PTPRC   EGFR     FALSE            3.22                 1              1             9.32             2.5            0.939                0         0.454                 1                1            1.21              1.21             0.581                0
-## [38;5;250m 3[39m pEMT_H~ Malignan~ T.cell~ PTPRC--CD44     PTPRC   CD44     FALSE            3.22                 1              1             9.32             2.5            0.939                0         0.104                 1                1            3.27              0.327            0.905                0
-## [38;5;250m 4[39m pEMT_H~ Malignan~ T.cell~ PTPRC--ERBB2    PTPRC   ERBB2    FALSE            3.22                 1              1             9.32             2.5            0.939                0        -[31m0[39m[31m.[39m[31m0[39m[31m28[4m6[24m[39m                0                1            0.629             1.16             0.345                0
-## [38;5;250m 5[39m pEMT_H~ Malignan~ T.cell~ PTPRC--IFNAR1   PTPRC   IFNAR1   FALSE            3.22                 1              1             9.32             2.5            0.939                0         0.248                 0                1            0.765            -[31m0[39m[31m.[39m[31m658[39m            0.446                0
-## [38;5;250m 6[39m pEMT_H~ Malignan~ T.cell~ TNF--TNFRSF21   TNF     TNFRSF21 TRUE             1.74                 1              1             2.34             2.35           0.251                0         1.14                  1                1            2.51              2.14             0.759                0
-## [38;5;250m 7[39m pEMT_H~ Malignan~ Myeloi~ SERPINA1--LRP1  SERPIN~ LRP1     TRUE             2.52                 1              1             4.83             2.5            0.761                0        -[31m0[39m[31m.[39m[31m159[39m                 1                1            0.312            -[31m0[39m[31m.[39m[31m526[39m            0.234                0
-## [38;5;250m 8[39m pEMT_H~ Malignan~ Myeloi~ IL1B--IL1RAP    IL1B    IL1RAP   TRUE             1.50                 1              1             1.93             2.5            0.272                0         0.582                 1                1            1.01              2.46             0.494                0
-## [38;5;250m 9[39m pEMT_H~ Malignan~ Myeloi~ IL1RN--IL1R2    IL1RN   IL1R2    TRUE             1.62                 1              1             2.07             2.35           0.380                0         0.259                 0                1            0.476             0.436            0.120                0
-## [38;5;250m10[39m pEMT_H~ Malignan~ T.cell~ PTPRC--INSR     PTPRC   INSR     FALSE            3.22                 1              1             9.32             2.5            0.939                0        -[31m0[39m[31m.[39m[31m0[39m[31m72[4m2[24m[39m                0                1            0.582            -[31m0[39m[31m.[39m[31m719[39m            0.252                0
-## [38;5;246m# ... with 16 more variables: ligand_scaled_receptor_expression_fraction <dbl>, avg_score_ligand_receptor <dbl>, activity <dbl>, activity_normalized <dbl>, scaled_ligand_score <dbl>, scaled_ligand_expression_scaled <dbl>, scaled_receptor_score <dbl>, scaled_receptor_expression_scaled <dbl>,[39m
-## [38;5;246m#   scaled_avg_score_ligand_receptor <dbl>, scaled_ligand_score_zonation <dbl>, scaled_receptor_score_zonation <dbl>, scaled_ligand_fraction_adapted <dbl>, scaled_receptor_fraction_adapted <dbl>, scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>[39m
+## # A tibble: 10 x 37
+##    niche receiver sender ligand_receptor ligand receptor bonafide ligand_score ligand_signific~ ligand_present ligand_expressi~ ligand_expressi~ ligand_fraction ligand_score_zo~ receptor_score receptor_signif~ receptor_present receptor_expres~ receptor_expres~ receptor_fracti~ receptor_score_~
+##    <chr> <chr>    <chr>  <chr>           <chr>  <chr>    <lgl>           <dbl>            <dbl>          <dbl>            <dbl>            <dbl>           <dbl>            <dbl>          <dbl>            <dbl>            <dbl>            <dbl>            <dbl>            <dbl>            <dbl>
+##  1 pEMT~ Maligna~ T.cel~ PTPRC--MET      PTPRC  MET      FALSE            3.22                1              1             9.32             2.5            0.939                0         0.463                 1                1            1.02             1.76             0.526                0
+##  2 pEMT~ Maligna~ T.cel~ PTPRC--EGFR     PTPRC  EGFR     FALSE            3.22                1              1             9.32             2.5            0.939                0         0.454                 1                1            1.21             1.21             0.581                0
+##  3 pEMT~ Maligna~ T.cel~ PTPRC--CD44     PTPRC  CD44     FALSE            3.22                1              1             9.32             2.5            0.939                0         0.104                 1                1            3.27             0.327            0.905                0
+##  4 pEMT~ Maligna~ T.cel~ PTPRC--ERBB2    PTPRC  ERBB2    FALSE            3.22                1              1             9.32             2.5            0.939                0        -0.0286                0                1            0.629            1.16             0.345                0
+##  5 pEMT~ Maligna~ T.cel~ PTPRC--IFNAR1   PTPRC  IFNAR1   FALSE            3.22                1              1             9.32             2.5            0.939                0         0.248                 0                1            0.765           -0.658            0.446                0
+##  6 pEMT~ Maligna~ T.cel~ TNF--TNFRSF21   TNF    TNFRSF21 TRUE             1.74                1              1             2.34             2.35           0.251                0         1.14                  1                1            2.51             2.14             0.759                0
+##  7 pEMT~ Maligna~ Myelo~ SERPINA1--LRP1  SERPI~ LRP1     TRUE             2.52                1              1             4.83             2.5            0.761                0        -0.159                 1                1            0.312           -0.526            0.234                0
+##  8 pEMT~ Maligna~ Myelo~ IL1B--IL1RAP    IL1B   IL1RAP   TRUE             1.50                1              1             1.93             2.5            0.272                0         0.582                 1                1            1.01             2.46             0.494                0
+##  9 pEMT~ Maligna~ Myelo~ IL1RN--IL1R2    IL1RN  IL1R2    TRUE             1.62                1              1             2.07             2.35           0.380                0         0.259                 0                1            0.476            0.436            0.120                0
+## 10 pEMT~ Maligna~ T.cel~ PTPRC--INSR     PTPRC  INSR     FALSE            3.22                1              1             9.32             2.5            0.939                0        -0.0722                0                1            0.582           -0.719            0.252                0
+## # ... with 16 more variables: ligand_scaled_receptor_expression_fraction <dbl>, avg_score_ligand_receptor <dbl>, activity <dbl>, activity_normalized <dbl>, scaled_ligand_score <dbl>, scaled_ligand_expression_scaled <dbl>, scaled_receptor_score <dbl>, scaled_receptor_expression_scaled <dbl>,
+## #   scaled_avg_score_ligand_receptor <dbl>, scaled_ligand_score_zonation <dbl>, scaled_receptor_score_zonation <dbl>, scaled_ligand_fraction_adapted <dbl>, scaled_receptor_fraction_adapted <dbl>, scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>
 prioritization_tables$prioritization_tbl_ligand_target %>% filter(receiver == niches[[1]]$receiver) %>% head(10)
-## [38;5;246m# A tibble: 10 x 20[39m
-##    niche         receiver      sender     ligand_receptor ligand receptor bonafide target   target_score target_significant target_present target_expression target_expression_sca~ target_fraction ligand_target_wei~ activity activity_normaliz~ scaled_activity scaled_activity_normal~ prioritization_sc~
-##    [3m[38;5;246m<chr>[39m[23m         [3m[38;5;246m<chr>[39m[23m         [3m[38;5;246m<chr>[39m[23m      [3m[38;5;246m<chr>[39m[23m           [3m[38;5;246m<chr>[39m[23m  [3m[38;5;246m<chr>[39m[23m    [3m[38;5;246m<lgl>[39m[23m    [3m[38;5;246m<chr>[39m[23m           [3m[38;5;246m<dbl>[39m[23m              [3m[38;5;246m<dbl>[39m[23m          [3m[38;5;246m<dbl>[39m[23m             [3m[38;5;246m<dbl>[39m[23m                  [3m[38;5;246m<dbl>[39m[23m           [3m[38;5;246m<dbl>[39m[23m              [3m[38;5;246m<dbl>[39m[23m    [3m[38;5;246m<dbl>[39m[23m              [3m[38;5;246m<dbl>[39m[23m           [3m[38;5;246m<dbl>[39m[23m                   [3m[38;5;246m<dbl>[39m[23m              [3m[38;5;246m<dbl>[39m[23m
-## [38;5;250m 1[39m pEMT_High_ni~ Malignant_Hi~ T.cell_Hi~ PTPRC--MET      PTPRC  MET      FALSE    EHF             1.04                   1              1              1.88                  2.5             0.678            0.001[4m2[24m[4m6[24m   0.059[4m5[24m            -[31m0[39m[31m.[39m[31m0[39m[31m57[4m1[24m[39m           0.543                   0.413              0.957
-## [38;5;250m 2[39m pEMT_High_ni~ Malignant_Hi~ T.cell_Hi~ PTPRC--MET      PTPRC  MET      FALSE    GADD45B         0.836                  1              1              2.42                 -[31m0[39m[31m.[39m[31m971[39m           0.638            0.001[4m5[24m[4m4[24m   0.059[4m5[24m            -[31m0[39m[31m.[39m[31m0[39m[31m57[4m1[24m[39m           0.543                   0.413              0.957
-## [38;5;250m 3[39m pEMT_High_ni~ Malignant_Hi~ T.cell_Hi~ PTPRC--MET      PTPRC  MET      FALSE    SERPINE1        0.889                  1              1              1.79                  0.290           0.603            0.001[4m3[24m[4m3[24m   0.059[4m5[24m            -[31m0[39m[31m.[39m[31m0[39m[31m57[4m1[24m[39m           0.543                   0.413              0.957
-## [38;5;250m 4[39m pEMT_High_ni~ Malignant_Hi~ T.cell_Hi~ PTPRC--EGFR     PTPRC  EGFR     FALSE    EHF             1.04                   1              1              1.88                  2.5             0.678            0.001[4m2[24m[4m6[24m   0.059[4m5[24m            -[31m0[39m[31m.[39m[31m0[39m[31m57[4m1[24m[39m           0.543                   0.413              0.956
-## [38;5;250m 5[39m pEMT_High_ni~ Malignant_Hi~ T.cell_Hi~ PTPRC--EGFR     PTPRC  EGFR     FALSE    GADD45B         0.836                  1              1              2.42                 -[31m0[39m[31m.[39m[31m971[39m           0.638            0.001[4m5[24m[4m4[24m   0.059[4m5[24m            -[31m0[39m[31m.[39m[31m0[39m[31m57[4m1[24m[39m           0.543                   0.413              0.956
-## [38;5;250m 6[39m pEMT_High_ni~ Malignant_Hi~ T.cell_Hi~ PTPRC--EGFR     PTPRC  EGFR     FALSE    SERPINE1        0.889                  1              1              1.79                  0.290           0.603            0.001[4m3[24m[4m3[24m   0.059[4m5[24m            -[31m0[39m[31m.[39m[31m0[39m[31m57[4m1[24m[39m           0.543                   0.413              0.956
-## [38;5;250m 7[39m pEMT_High_ni~ Malignant_Hi~ T.cell_Hi~ PTPRC--CD44     PTPRC  CD44     FALSE    EHF             1.04                   1              1              1.88                  2.5             0.678            0.001[4m2[24m[4m6[24m   0.059[4m5[24m            -[31m0[39m[31m.[39m[31m0[39m[31m57[4m1[24m[39m           0.543                   0.413              0.948
-## [38;5;250m 8[39m pEMT_High_ni~ Malignant_Hi~ T.cell_Hi~ PTPRC--CD44     PTPRC  CD44     FALSE    GADD45B         0.836                  1              1              2.42                 -[31m0[39m[31m.[39m[31m971[39m           0.638            0.001[4m5[24m[4m4[24m   0.059[4m5[24m            -[31m0[39m[31m.[39m[31m0[39m[31m57[4m1[24m[39m           0.543                   0.413              0.948
-## [38;5;250m 9[39m pEMT_High_ni~ Malignant_Hi~ T.cell_Hi~ PTPRC--CD44     PTPRC  CD44     FALSE    SERPINE1        0.889                  1              1              1.79                  0.290           0.603            0.001[4m3[24m[4m3[24m   0.059[4m5[24m            -[31m0[39m[31m.[39m[31m0[39m[31m57[4m1[24m[39m           0.543                   0.413              0.948
-## [38;5;250m10[39m pEMT_High_ni~ Malignant_Hi~ T.cell_Hi~ PTPRC--ERBB2    PTPRC  ERBB2    FALSE    EHF             1.04                   1              1              1.88                  2.5             0.678            0.001[4m2[24m[4m6[24m   0.059[4m5[24m            -[31m0[39m[31m.[39m[31m0[39m[31m57[4m1[24m[39m           0.543                   0.413              0.937
+## # A tibble: 10 x 20
+##    niche        receiver     sender     ligand_receptor ligand receptor bonafide target   target_score target_significant target_present target_expressi~ target_expression_s~ target_fraction ligand_target_wei~ activity activity_normali~ scaled_activity scaled_activity_norma~ prioritization_sc~
+##    <chr>        <chr>        <chr>      <chr>           <chr>  <chr>    <lgl>    <chr>           <dbl>              <dbl>          <dbl>            <dbl>                <dbl>           <dbl>              <dbl>    <dbl>             <dbl>           <dbl>                  <dbl>              <dbl>
+##  1 pEMT_High_n~ Malignant_H~ T.cell_Hi~ PTPRC--MET      PTPRC  MET      FALSE    EHF             1.04                   1              1             1.88                2.5             0.678            0.00126   0.0595           -0.0571           0.543                  0.413              0.957
+##  2 pEMT_High_n~ Malignant_H~ T.cell_Hi~ PTPRC--MET      PTPRC  MET      FALSE    GADD45B         0.836                  1              1             2.42               -0.971           0.638            0.00154   0.0595           -0.0571           0.543                  0.413              0.957
+##  3 pEMT_High_n~ Malignant_H~ T.cell_Hi~ PTPRC--MET      PTPRC  MET      FALSE    SERPINE1        0.889                  1              1             1.79                0.290           0.603            0.00133   0.0595           -0.0571           0.543                  0.413              0.957
+##  4 pEMT_High_n~ Malignant_H~ T.cell_Hi~ PTPRC--EGFR     PTPRC  EGFR     FALSE    EHF             1.04                   1              1             1.88                2.5             0.678            0.00126   0.0595           -0.0571           0.543                  0.413              0.956
+##  5 pEMT_High_n~ Malignant_H~ T.cell_Hi~ PTPRC--EGFR     PTPRC  EGFR     FALSE    GADD45B         0.836                  1              1             2.42               -0.971           0.638            0.00154   0.0595           -0.0571           0.543                  0.413              0.956
+##  6 pEMT_High_n~ Malignant_H~ T.cell_Hi~ PTPRC--EGFR     PTPRC  EGFR     FALSE    SERPINE1        0.889                  1              1             1.79                0.290           0.603            0.00133   0.0595           -0.0571           0.543                  0.413              0.956
+##  7 pEMT_High_n~ Malignant_H~ T.cell_Hi~ PTPRC--CD44     PTPRC  CD44     FALSE    EHF             1.04                   1              1             1.88                2.5             0.678            0.00126   0.0595           -0.0571           0.543                  0.413              0.948
+##  8 pEMT_High_n~ Malignant_H~ T.cell_Hi~ PTPRC--CD44     PTPRC  CD44     FALSE    GADD45B         0.836                  1              1             2.42               -0.971           0.638            0.00154   0.0595           -0.0571           0.543                  0.413              0.948
+##  9 pEMT_High_n~ Malignant_H~ T.cell_Hi~ PTPRC--CD44     PTPRC  CD44     FALSE    SERPINE1        0.889                  1              1             1.79                0.290           0.603            0.00133   0.0595           -0.0571           0.543                  0.413              0.948
+## 10 pEMT_High_n~ Malignant_H~ T.cell_Hi~ PTPRC--ERBB2    PTPRC  ERBB2    FALSE    EHF             1.04                   1              1             1.88                2.5             0.678            0.00126   0.0595           -0.0571           0.543                  0.413              0.937
 
 prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(receiver == niches[[2]]$receiver) %>% head(10)
-## [38;5;246m# A tibble: 10 x 37[39m
-##    niche  receiver  sender  ligand_receptor ligand receptor bonafide ligand_score ligand_significa~ ligand_present ligand_expression ligand_expressio~ ligand_fraction ligand_score_zo~ receptor_score receptor_signif~ receptor_present receptor_expres~ receptor_express~ receptor_fracti~ receptor_score_~
-##    [3m[38;5;246m<chr>[39m[23m  [3m[38;5;246m<chr>[39m[23m     [3m[38;5;246m<chr>[39m[23m   [3m[38;5;246m<chr>[39m[23m           [3m[38;5;246m<chr>[39m[23m  [3m[38;5;246m<chr>[39m[23m    [3m[38;5;246m<lgl>[39m[23m           [3m[38;5;246m<dbl>[39m[23m             [3m[38;5;246m<dbl>[39m[23m          [3m[38;5;246m<dbl>[39m[23m             [3m[38;5;246m<dbl>[39m[23m             [3m[38;5;246m<dbl>[39m[23m           [3m[38;5;246m<dbl>[39m[23m            [3m[38;5;246m<dbl>[39m[23m          [3m[38;5;246m<dbl>[39m[23m            [3m[38;5;246m<dbl>[39m[23m            [3m[38;5;246m<dbl>[39m[23m            [3m[38;5;246m<dbl>[39m[23m             [3m[38;5;246m<dbl>[39m[23m            [3m[38;5;246m<dbl>[39m[23m            [3m[38;5;246m<dbl>[39m[23m
-## [38;5;250m 1[39m pEMT_~ Malignan~ Endoth~ F8--LRP1        F8     LRP1     TRUE            0.952               1                1             2.17               2.5            0.528                0         0.159                 1                1            0.464           -[31m0[39m[31m.[39m[31m404[39m             0.346                0
-## [38;5;250m 2[39m pEMT_~ Malignan~ Endoth~ PLAT--LRP1      PLAT   LRP1     TRUE            0.913               1                1             2.70               2.12           0.509                0         0.159                 1                1            0.464           -[31m0[39m[31m.[39m[31m404[39m             0.346                0
-## [38;5;250m 3[39m pEMT_~ Malignan~ CAF_Low FGF10--FGFR2    FGF10  FGFR2    TRUE            0.385               0.8              1             1.07               2.46           0.25                 0         0.154                 1                1            0.585            2.22              0.328                0
-## [38;5;250m 4[39m pEMT_~ Malignan~ CAF_Low NLGN2--NRXN3    NLGN2  NRXN3    TRUE            0.140               0.2              1             0.269              2.20           0.163                0         0.361                 1                1            0.297            2.5               0.230                0
-## [38;5;250m 5[39m pEMT_~ Malignan~ CAF_Low RSPO3--LGR6     RSPO3  LGR6     TRUE            0.557               0.8              1             1.27               2.5            0.240                0         0.435                 1                1            0.384            2.39              0.164                0
-## [38;5;250m 6[39m pEMT_~ Malignan~ CAF_Low COMP--SDC1      COMP   SDC1     TRUE            0.290               0.8              1             1.27               2.31           0.202                0         0.049[4m8[24m                0                1            3.47             1.92              0.918                0
-## [38;5;250m 7[39m pEMT_~ Malignan~ CAF_Low SEMA3C--NRP2    SEMA3C NRP2     TRUE            0.652               1                1             1.73               2.07           0.423                0        -[31m0[39m[31m.[39m[31m0[39m[31m63[4m4[24m[39m                0                1            0.565           -[31m0[39m[31m.[39m[31m0[39m[31m95[4m8[24m[39m            0.293                0
-## [38;5;250m 8[39m pEMT_~ Malignan~ CAF_Low SLIT2--SDC1     SLIT2  SDC1     TRUE            0.494               1                1             0.846              2.5            0.288                0         0.049[4m8[24m                0                1            3.47             1.92              0.918                0
-## [38;5;250m 9[39m pEMT_~ Malignan~ Endoth~ IL33--IL1RAP    IL33   IL1RAP   FALSE           1.34                1                1             2.75               2.5            0.585                0        -[31m0[39m[31m.[39m[31m582[39m                 1                1            0.341            0.178             0.195                0
-## [38;5;250m10[39m pEMT_~ Malignan~ CAF_Low C3--LRP1        C3     LRP1     TRUE            0.480               1                1             4.79               2.32           0.721                0         0.159                 1                1            0.464           -[31m0[39m[31m.[39m[31m404[39m             0.346                0
-## [38;5;246m# ... with 16 more variables: ligand_scaled_receptor_expression_fraction <dbl>, avg_score_ligand_receptor <dbl>, activity <dbl>, activity_normalized <dbl>, scaled_ligand_score <dbl>, scaled_ligand_expression_scaled <dbl>, scaled_receptor_score <dbl>, scaled_receptor_expression_scaled <dbl>,[39m
-## [38;5;246m#   scaled_avg_score_ligand_receptor <dbl>, scaled_ligand_score_zonation <dbl>, scaled_receptor_score_zonation <dbl>, scaled_ligand_fraction_adapted <dbl>, scaled_receptor_fraction_adapted <dbl>, scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>[39m
+## # A tibble: 10 x 37
+##    niche receiver sender ligand_receptor ligand receptor bonafide ligand_score ligand_signific~ ligand_present ligand_expressi~ ligand_expressi~ ligand_fraction ligand_score_zo~ receptor_score receptor_signif~ receptor_present receptor_expres~ receptor_expres~ receptor_fracti~ receptor_score_~
+##    <chr> <chr>    <chr>  <chr>           <chr>  <chr>    <lgl>           <dbl>            <dbl>          <dbl>            <dbl>            <dbl>           <dbl>            <dbl>          <dbl>            <dbl>            <dbl>            <dbl>            <dbl>            <dbl>            <dbl>
+##  1 pEMT~ Maligna~ Endot~ F8--LRP1        F8     LRP1     TRUE            0.952              1                1            2.17              2.5            0.528                0         0.159                 1                1            0.464          -0.404             0.346                0
+##  2 pEMT~ Maligna~ Endot~ PLAT--LRP1      PLAT   LRP1     TRUE            0.913              1                1            2.70              2.12           0.509                0         0.159                 1                1            0.464          -0.404             0.346                0
+##  3 pEMT~ Maligna~ CAF_L~ FGF10--FGFR2    FGF10  FGFR2    TRUE            0.385              0.8              1            1.07              2.46           0.25                 0         0.154                 1                1            0.585           2.22              0.328                0
+##  4 pEMT~ Maligna~ CAF_L~ NLGN2--NRXN3    NLGN2  NRXN3    TRUE            0.140              0.2              1            0.269             2.20           0.163                0         0.361                 1                1            0.297           2.5               0.230                0
+##  5 pEMT~ Maligna~ CAF_L~ RSPO3--LGR6     RSPO3  LGR6     TRUE            0.557              0.8              1            1.27              2.5            0.240                0         0.435                 1                1            0.384           2.39              0.164                0
+##  6 pEMT~ Maligna~ CAF_L~ COMP--SDC1      COMP   SDC1     TRUE            0.290              0.8              1            1.27              2.31           0.202                0         0.0498                0                1            3.47            1.92              0.918                0
+##  7 pEMT~ Maligna~ CAF_L~ SEMA3C--NRP2    SEMA3C NRP2     TRUE            0.652              1                1            1.73              2.07           0.423                0        -0.0634                0                1            0.565          -0.0958            0.293                0
+##  8 pEMT~ Maligna~ CAF_L~ SLIT2--SDC1     SLIT2  SDC1     TRUE            0.494              1                1            0.846             2.5            0.288                0         0.0498                0                1            3.47            1.92              0.918                0
+##  9 pEMT~ Maligna~ Endot~ IL33--IL1RAP    IL33   IL1RAP   FALSE           1.34               1                1            2.75              2.5            0.585                0        -0.582                 1                1            0.341           0.178             0.195                0
+## 10 pEMT~ Maligna~ CAF_L~ C3--LRP1        C3     LRP1     TRUE            0.480              1                1            4.79              2.32           0.721                0         0.159                 1                1            0.464          -0.404             0.346                0
+## # ... with 16 more variables: ligand_scaled_receptor_expression_fraction <dbl>, avg_score_ligand_receptor <dbl>, activity <dbl>, activity_normalized <dbl>, scaled_ligand_score <dbl>, scaled_ligand_expression_scaled <dbl>, scaled_receptor_score <dbl>, scaled_receptor_expression_scaled <dbl>,
+## #   scaled_avg_score_ligand_receptor <dbl>, scaled_ligand_score_zonation <dbl>, scaled_receptor_score_zonation <dbl>, scaled_ligand_fraction_adapted <dbl>, scaled_receptor_fraction_adapted <dbl>, scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>
 prioritization_tables$prioritization_tbl_ligand_target %>% filter(receiver == niches[[2]]$receiver) %>% head(10)
-## [38;5;246m# A tibble: 10 x 20[39m
-##    niche        receiver     sender        ligand_receptor ligand receptor bonafide target target_score target_significant target_present target_expression target_expression_sca~ target_fraction ligand_target_weig~ activity activity_normaliz~ scaled_activity scaled_activity_normal~ prioritization_sc~
-##    [3m[38;5;246m<chr>[39m[23m        [3m[38;5;246m<chr>[39m[23m        [3m[38;5;246m<chr>[39m[23m         [3m[38;5;246m<chr>[39m[23m           [3m[38;5;246m<chr>[39m[23m  [3m[38;5;246m<chr>[39m[23m    [3m[38;5;246m<lgl>[39m[23m    [3m[38;5;246m<chr>[39m[23m         [3m[38;5;246m<dbl>[39m[23m              [3m[38;5;246m<dbl>[39m[23m          [3m[38;5;246m<dbl>[39m[23m             [3m[38;5;246m<dbl>[39m[23m                  [3m[38;5;246m<dbl>[39m[23m           [3m[38;5;246m<dbl>[39m[23m               [3m[38;5;246m<dbl>[39m[23m    [3m[38;5;246m<dbl>[39m[23m              [3m[38;5;246m<dbl>[39m[23m           [3m[38;5;246m<dbl>[39m[23m                   [3m[38;5;246m<dbl>[39m[23m              [3m[38;5;246m<dbl>[39m[23m
-## [38;5;250m 1[39m pEMT_Low_ni~ Malignant_L~ Endothelial_~ F8--LRP1        F8     LRP1     TRUE     ETV4          0.771                  1              1             1.00                  2.5              0.421            0.000[4m8[24m[4m1[24m[4m6[24m   0.020[4m9[24m             0.083[4m9[24m           0.236                   0.430              0.841
-## [38;5;250m 2[39m pEMT_Low_ni~ Malignant_L~ Endothelial_~ PLAT--LRP1      PLAT   LRP1     TRUE     CLDN7         0.835                  1              1             2.30                  2.5              0.743            0.001[4m2[24m[4m1[24m    0.019[4m2[24m            -[31m0[39m[31m.[39m[31m0[39m[31m74[4m5[24m[39m           0.223                   0.411              0.831
-## [38;5;250m 3[39m pEMT_Low_ni~ Malignant_L~ Endothelial_~ PLAT--LRP1      PLAT   LRP1     TRUE     ETV4          0.771                  1              1             1.00                  2.5              0.421            0.001[4m2[24m[4m4[24m    0.019[4m2[24m            -[31m0[39m[31m.[39m[31m0[39m[31m74[4m5[24m[39m           0.223                   0.411              0.831
-## [38;5;250m 4[39m pEMT_Low_ni~ Malignant_L~ CAF_Low       FGF10--FGFR2    FGF10  FGFR2    TRUE     ETV4          0.771                  1              1             1.00                  2.5              0.421            0.002[4m3[24m[4m0[24m    0.021[4m1[24m             0.104            0.238                   0.433              0.827
-## [38;5;250m 5[39m pEMT_Low_ni~ Malignant_L~ CAF_Low       FGF10--FGFR2    FGF10  FGFR2    TRUE     WNT5A         1.40                   1              1             2.01                  2.17             0.803            0.000[4m8[24m[4m7[24m[4m6[24m   0.021[4m1[24m             0.104            0.238                   0.433              0.827
-## [38;5;250m 6[39m pEMT_Low_ni~ Malignant_L~ CAF_Low       NLGN2--NRXN3    NLGN2  NRXN3    TRUE     CLDN5         0.979                  1              1             0.991                -[31m0[39m[31m.[39m[31m0[39m[31m20[4m1[24m[39m           0.273            0.000[4m8[24m[4m5[24m[4m6[24m   0.025[4m9[24m             0.574            0.276                   0.491              0.817
-## [38;5;250m 7[39m pEMT_Low_ni~ Malignant_L~ CAF_Low       NLGN2--NRXN3    NLGN2  NRXN3    TRUE     ETV4          0.771                  1              1             1.00                  2.5              0.421            0.000[4m8[24m[4m5[24m[4m4[24m   0.025[4m9[24m             0.574            0.276                   0.491              0.817
-## [38;5;250m 8[39m pEMT_Low_ni~ Malignant_L~ CAF_Low       RSPO3--LGR6     RSPO3  LGR6     TRUE     DDC           0.832                  1              1             0.785                 2.5              0.304            0.001[4m1[24m[4m8[24m    0.014[4m5[24m            -[31m0[39m[31m.[39m[31m527[39m            0.186                   0.354              0.816
-## [38;5;250m 9[39m pEMT_Low_ni~ Malignant_L~ CAF_Low       RSPO3--LGR6     RSPO3  LGR6     TRUE     EGFL7         0.763                  1              1             1.09                  0.116            0.472            0.001[4m3[24m[4m3[24m    0.014[4m5[24m            -[31m0[39m[31m.[39m[31m527[39m            0.186                   0.354              0.816
-## [38;5;250m10[39m pEMT_Low_ni~ Malignant_L~ CAF_Low       COMP--SDC1      COMP   SDC1     TRUE     CLDN7         0.835                  1              1             2.30                  2.5              0.743            0.000[4m9[24m[4m8[24m[4m9[24m   0.021[4m1[24m             0.109            0.238                   0.434              0.814
+## # A tibble: 10 x 20
+##    niche       receiver     sender       ligand_receptor ligand receptor bonafide target target_score target_significant target_present target_expression target_expression_s~ target_fraction ligand_target_wei~ activity activity_normali~ scaled_activity scaled_activity_norma~ prioritization_sc~
+##    <chr>       <chr>        <chr>        <chr>           <chr>  <chr>    <lgl>    <chr>         <dbl>              <dbl>          <dbl>             <dbl>                <dbl>           <dbl>              <dbl>    <dbl>             <dbl>           <dbl>                  <dbl>              <dbl>
+##  1 pEMT_Low_n~ Malignant_L~ Endothelial~ F8--LRP1        F8     LRP1     TRUE     ETV4          0.771                  1              1             1.00                2.5              0.421           0.000816   0.0209            0.0839           0.236                  0.430              0.841
+##  2 pEMT_Low_n~ Malignant_L~ Endothelial~ PLAT--LRP1      PLAT   LRP1     TRUE     CLDN7         0.835                  1              1             2.30                2.5              0.743           0.00121    0.0192           -0.0745           0.223                  0.411              0.831
+##  3 pEMT_Low_n~ Malignant_L~ Endothelial~ PLAT--LRP1      PLAT   LRP1     TRUE     ETV4          0.771                  1              1             1.00                2.5              0.421           0.00124    0.0192           -0.0745           0.223                  0.411              0.831
+##  4 pEMT_Low_n~ Malignant_L~ CAF_Low      FGF10--FGFR2    FGF10  FGFR2    TRUE     ETV4          0.771                  1              1             1.00                2.5              0.421           0.00230    0.0211            0.104            0.238                  0.433              0.827
+##  5 pEMT_Low_n~ Malignant_L~ CAF_Low      FGF10--FGFR2    FGF10  FGFR2    TRUE     WNT5A         1.40                   1              1             2.01                2.17             0.803           0.000876   0.0211            0.104            0.238                  0.433              0.827
+##  6 pEMT_Low_n~ Malignant_L~ CAF_Low      NLGN2--NRXN3    NLGN2  NRXN3    TRUE     CLDN5         0.979                  1              1             0.991              -0.0201           0.273           0.000856   0.0259            0.574            0.276                  0.491              0.817
+##  7 pEMT_Low_n~ Malignant_L~ CAF_Low      NLGN2--NRXN3    NLGN2  NRXN3    TRUE     ETV4          0.771                  1              1             1.00                2.5              0.421           0.000854   0.0259            0.574            0.276                  0.491              0.817
+##  8 pEMT_Low_n~ Malignant_L~ CAF_Low      RSPO3--LGR6     RSPO3  LGR6     TRUE     DDC           0.832                  1              1             0.785               2.5              0.304           0.00118    0.0145           -0.527            0.186                  0.354              0.816
+##  9 pEMT_Low_n~ Malignant_L~ CAF_Low      RSPO3--LGR6     RSPO3  LGR6     TRUE     EGFL7         0.763                  1              1             1.09                0.116            0.472           0.00133    0.0145           -0.527            0.186                  0.354              0.816
+## 10 pEMT_Low_n~ Malignant_L~ CAF_Low      COMP--SDC1      COMP   SDC1     TRUE     CLDN7         0.835                  1              1             2.30                2.5              0.743           0.000989   0.0211            0.109            0.238                  0.434              0.814
 ```
 
 # 8. Visualization of the Differential NicheNet output
@@ -735,7 +735,7 @@ lfc_plot = make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, priori
 lfc_plot
 ```
 
-![](differential_nichenet_files/figure-gfm/unnamed-chunk-80-1.png)<!-- -->
+![](differential_nichenet_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 Show the spatialDE as additional information
 
@@ -744,7 +744,7 @@ lfc_plot = make_ligand_receptor_lfc_zonation_plot(receiver_oi, prioritized_tbl_o
 lfc_plot
 ```
 
-![](differential_nichenet_files/figure-gfm/unnamed-chunk-81-1.png)<!-- -->
+![](differential_nichenet_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 ## Ligand expression, activity and target genes
 
@@ -761,7 +761,7 @@ exprs_plot = make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl
 exprs_plot$combined_plot
 ```
 
-![](differential_nichenet_files/figure-gfm/unnamed-chunk-82-1.png)<!-- -->
+![](differential_nichenet_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 Based on this plot, we can infer many hypotheses such as the following:
 “Interestingly, IL1 family ligands seem to have activity in inducing the
 DE genes between high pEMT and low pEMT malignant cells; and they are
@@ -783,13 +783,11 @@ colors_receiver = c("lavender")  %>% magrittr::set_names(prioritized_tbl_oi$rece
 circos_output = make_circos_lr(prioritized_tbl_oi, colors_sender, colors_receiver, cutoff = 0, scale = FALSE, transparency = NULL, circos_type = "normal", border = TRUE)
 ```
 
-![](differential_nichenet_files/figure-gfm/unnamed-chunk-83-1.png)<!-- -->![](differential_nichenet_files/figure-gfm/unnamed-chunk-83-2.png)<!-- -->
+![](differential_nichenet_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->![](differential_nichenet_files/figure-gfm/unnamed-chunk-30-2.png)<!-- -->
 
 ``` r
-circos_output$p_circos
+# circos_output$p_circos
 ```
-
-![](differential_nichenet_files/figure-gfm/unnamed-chunk-83-3.png)<!-- -->
 
 ## Interpretation of these results
 

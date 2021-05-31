@@ -99,7 +99,7 @@ organism = "human" # user adaptation required on own dataset
 
 ```{r}
 if(organism == "mouse"){
-  lr_network = lr_network %>% mutate(from = convert_human_to_mouse_symbols(from), to = convert_human_to_mouse_symbols(to)) %>% drop_na()
+  lr_network = lr_network %>% mutate(ligand = convert_human_to_mouse_symbols(ligand), receptor = convert_human_to_mouse_symbols(receptor)) %>% drop_na()
 
   colnames(ligand_target_matrix) = ligand_target_matrix %>% colnames() %>% convert_human_to_mouse_symbols()
   rownames(ligand_target_matrix) = ligand_target_matrix %>% rownames() %>% convert_human_to_mouse_symbols()
@@ -460,7 +460,7 @@ colors_sender = brewer.pal(n = prioritized_tbl_oi$sender %>% unique() %>% sort()
 colors_receiver = c("lavender")  %>% magrittr::set_names(prioritized_tbl_oi$receiver %>% unique() %>% sort())
 
 circos_output = make_circos_lr(prioritized_tbl_oi, colors_sender, colors_receiver, cutoff = 0, scale = FALSE, transparency = NULL, circos_type = "normal", border = TRUE)
-circos_output$p_circos
+# circos_output$p_circos
 
 ```
 
