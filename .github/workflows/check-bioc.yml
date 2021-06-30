@@ -116,6 +116,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           apt-get update
+          apt-get upgrade
+          apt autoremove
           apt-get install libmariadb-dev-compat
           apt-get install libmariadb-dev
           sysreqs=$(Rscript -e 'cat("apt-get update -y && apt-get install -y", paste(gsub("apt-get install -y ", "", remotes::system_requirements("ubuntu", "20.04")), collapse = " "))')
