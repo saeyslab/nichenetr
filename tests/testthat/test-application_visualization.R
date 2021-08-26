@@ -17,6 +17,11 @@ test_that("ligand-target signaling paths can be visualized", {
   expect_type(data_source_info_network,"list")
   expect_type(graph,"list")
   expect_equal(length(ligand_target_signaling_list),2)
+
+  all_receptors = "TGFBR1"
+  ligand_target_signaling_list = get_ligand_signaling_path_with_receptor(ligand_tf_matrix,all_ligands,all_receptors, all_targets,k,weighted_networks)
+  expect_type(ligand_target_signaling_list,"list")
+
 })
 test_that("heatmaps can be shown", {
 

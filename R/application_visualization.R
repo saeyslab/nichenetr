@@ -72,6 +72,84 @@ get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all,
 
   return(list(sig = tf_signaling, gr = tf_regulatory))
 }
+#' @title Get ligand-target signaling paths between ligand(s), receptors, and target gene(s) of interest
+#'
+#' @description \code{get_ligand_signaling_path_with_receptor} Extract possible signaling paths between a ligand(s), receptor(s) and target gene(s) of interest. The most highly weighted path(s) will be extracted.
+#'
+#' @usage
+#' get_ligand_signaling_path_with_receptor(ligand_tf_matrix, ligands_all, receptors_all, targets_all, top_n_regulators = 4, weighted_networks, ligands_position = "cols")
+#'
+#' @inheritParams get_ligand_signaling_path
+#' @param receptors_all A character vector of one or more receptors of interest
+#'
+#' @return A list containing 2 elements (sig and gr): the integrated weighted ligand-signaling and gene regulatory networks data frame / tibble format with columns: from, to, weight
+#'
+#'
+#' @examples
+#' \dontrun{
+#' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+#' ligands = list("TNF","BMP2",c("IL4","IL13"))
+#' ligand_tf_matrix = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
+#' all_ligands = c("BMP2")
+#' all_receptors = c("BMPR2")
+#' all_targets = c("HEY1")
+#' top_n_regulators = 2
+#' ligand_target_signaling_list = get_ligand_signaling_path_with_receptor(ligand_tf_matrix,all_ligands,all_receptors, all_targets,top_n_regulators,weighted_networks)
+#' }
+#'
+#' @export
+#'
+get_ligand_signaling_path_with_receptor = function (ligand_tf_matrix, ligands_all, receptors_all, targets_all, top_n_regulators = 3, weighted_networks, ligands_position = "cols") {
+  if (!is.list(weighted_networks))
+    stop("weighted_networks must be a list object")
+  if (!is.data.frame(weighted_networks$lr_sig))
+    stop("lr_sig must be a data frame or tibble object")
+  if (!is.data.frame(weighted_networks$gr))
+    stop("gr must be a data frame or tibble object")
+  if (!is.numeric(weighted_networks$lr_sig$weight))
+    stop("lr_sig must contain a column named data source weights")
+  if (!is.numeric(weighted_networks$gr$weight))
+    stop("gr must contain a column named data source weights")
+  if (!is.matrix(ligand_tf_matrix))
+    stop("ligand_tf_matrix should be a matrix")
+  if (ligands_position == "cols") {
+    if (sum((ligands_all %in% colnames(ligand_tf_matrix)) ==
+            FALSE) > 0)
+      stop("ligands should be in ligand_tf_matrix")
+  }
+  else if (ligands_position == "rows") {
+    if (sum((ligands_all %in% rownames(ligand_tf_matrix)) ==
+            FALSE) > 0)
+      stop("ligands should be in ligand_tf_matrix")
+  }
+  if (sum((targets_all %in% unique(c(weighted_networks$gr$to))) ==
+          FALSE) > 0)
+    stop("target genes should be in gene regulatory network")
+  if (!is.numeric(top_n_regulators) | length(top_n_regulators) !=
+      1 | top_n_regulators <= 0)
+    stop("top_n_regulators should be a number higher than 0")
+  if (ligands_position != "cols" & ligands_position !=
+      "rows")
+    stop("ligands_position must be 'cols' or 'rows'")
+  requireNamespace("dplyr")
+  final_combined_df = construct_ligand_signaling_df(ligands_all,
+                                                    targets_all, top_n_regulators, weighted_networks, ligand_tf_matrix)
+  signaling_network_all = weighted_networks$lr_sig %>% mutate(weight = 1/weight)
+  signaling_igraph = igraph::graph_from_data_frame(signaling_network_all,
+                                                   directed = TRUE)
+  tf_nodes = lapply(ligands_all, get_shortest_path_signaling,
+                    final_combined_df, signaling_igraph) %>% unlist() %>%
+    unique()
+  tf_signaling = weighted_networks$lr_sig %>% filter(from %in% c(ligands_all, receptors_all, tf_nodes) & to %in% tf_nodes) %>% group_by(from, to) %>% mutate(weight = sum(weight)) %>% ungroup() %>%
+    distinct() %>% bind_rows(weighted_networks$lr_sig %>% filter(from %in% ligands_all & to %in% receptors_all) %>% group_by(from, to) %>% mutate(weight = sum(weight)) %>% ungroup() %>%
+                               distinct()) %>%
+    distinct()
+  tf_regulatory = weighted_networks$gr %>% filter(from %in%
+                                                    final_combined_df$TF & to %in% targets_all) %>% ungroup() %>%
+    distinct()
+  return(list(sig = tf_signaling, gr = tf_regulatory))
+}
+
 #' @title Prepare extracted ligand-target signaling network for visualization with DiagrammeR.
 #'
 #' @description \code{diagrammer_format_signaling_graph} Prepare extracted ligand-target signaling network for visualization with DiagrammeR.

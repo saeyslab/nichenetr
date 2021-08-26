@@ -4,7 +4,7 @@
 \alias{get_lfc_celltype}
 \title{Get log fold change values of genes in cell type of interest}
 \usage{
-get_lfc_celltype(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, expression_pct = 0.10)
+get_lfc_celltype(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, celltype_col = "celltype", expression_pct = 0.10)
 #'
 }
 \arguments{
@@ -18,6 +18,8 @@ get_lfc_celltype(celltype_oi, seurat_obj, condition_colname, condition_oi, condi
 
 \item{condition_reference}{The second condition (e.g. reference or steady-state condition). Should be a name present in the "condition_colname" column of the metadata.}
 
+\item{celltype_col}{Metadata colum name where the cell type identifier is stored. Default: "celltype". If this is NULL, the Idents() of the seurat object will be considered as your cell type identifier.}
+
 \item{expression_pct}{To consider only genes if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10}
 }
 \value{
@@ -30,6 +32,6 @@ A tbl with the log fold change values of genes. Positive lfc values: higher in c
 \dontrun{
 requireNamespace("dplyr")
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
-get_lfc_celltype(seurat_obj = seuratObj, celltype_oi = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", expression_pct = 0.10)
+get_lfc_celltype(seurat_obj = seuratObj, celltype_oi = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", celltype_col = "celltype", expression_pct = 0.10)
 }
 }
