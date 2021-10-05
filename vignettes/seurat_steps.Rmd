@@ -287,7 +287,7 @@ Here this is possible: we will define the log fold change between LCMV and stead
 ```{r, fig.width=10}
 # DE analysis for each sender cell type
 # this uses a new nichenetr function - reinstall nichenetr if necessary!
-DE_table_all = Idents(seuratObj) %>% levels() %>% intersect(sender_celltypes) %>% lapply(get_lfc_celltype, seurat_obj = seuratObj, condition_colname = "aggregate", condition_oi = condition_oi, condition_reference = condition_reference, expression_pct = 0.10) %>% reduce(full_join)
+DE_table_all = Idents(seuratObj) %>% levels() %>% intersect(sender_celltypes) %>% lapply(get_lfc_celltype, seurat_obj = seuratObj, condition_colname = "aggregate", condition_oi = condition_oi, condition_reference = condition_reference, expression_pct = 0.10, celltype_col = NULL) %>% reduce(full_join) # use this if cell type labels are the identities of your Seurat object -- if not: indicate the celltype_col properly
 DE_table_all[is.na(DE_table_all)] = 0
 
 # Combine ligand activities with DE information
