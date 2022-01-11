@@ -102,6 +102,8 @@ As described in the main vignette, the pipeline of a basic NicheNet analysis con
 
 All these steps are contained in one of three following similar single functions: `nichenet_seuratobj_aggregate`, `nichenet_seuratobj_cluster_de` and `nichenet_seuratobj_aggregate_cluster_de`.
 
+In addition to these steps, the function `nichenet_seuratobj_aggregate` that is used for the analysis when having two conditions will also calculate differential expression of the ligands in the sender cell type. Note that this ligand differential expression is not used for prioritization and ranking of the ligands!
+
 ## NicheNet analysis on Seurat object: explain differential expression between two conditions
 
 In this case study, the receiver cell population is the 'CD8 T' cell population, whereas the sender cell populations are 'CD4 T', 'Treg', 'Mono', 'NK', 'B' and 'DC'. The above described functions will consider a gene to be expressed when it is expressed in at least a predefined fraction of cells in one cluster (default: 10%). 
@@ -146,21 +148,19 @@ nichenet_output$top_ligands
 
 These ligands are expressed by one or more of the input sender cells. To see which cell population expresses which of these top-ranked ligands, you can run the following:
 
-```{r, fig.width=12}
-DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), cols = "RdYlBu") + RotatedAxis()
+```{r, fig.width=8}
+nichenet_output$ligand_expression_dotplot
 ```
 
 As you can see, most op the top-ranked ligands seem to be mainly expressed by dendritic cells and monocytes.
 
 It could also be interesting to see whether some of these ligands are differentially expressed after LCMV infection.
 
-```{r, fig.width=12}
-DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), split.by = "aggregate") + RotatedAxis()
+```{r, fig.width=4, fig.height=8}
+nichenet_output$ligand_differential_expression_heatmap
 ```
 
-```{r}
-VlnPlot(seuratObj, features = c("Il15", "Cxcl10","Cxcl16"), split.by = "aggregate",    pt.size = 0, combine = FALSE)
-```
+As you can see, most op the top-ranked ligands seem also to be upregulated themselves in monocytes after viral infection. This is not a prerequisite to be top-ranked (cf: ranking only determined based on enrichment of target genes among DE genes in the receiver, CD8T cells), but is nice additional "evidence" that these ligands might indeed be important.
 
 
 #### Inferred active ligand-target links
@@ -203,9 +203,9 @@ DotPlot(seuratObj %>% subset(idents = "CD8 T"), features = nichenet_output$top_t
 VlnPlot(seuratObj %>% subset(idents = "CD8 T"), features = c("Zbp1","Ifit3","Irf7"), split.by = "aggregate",    pt.size = 0, combine = FALSE)
 ```
 
-To visualize both ligand activities and target genes of ligands, run the following command
+To visualize ligand activities, expression, differentil expression and target genes of ligands, run the following command
 
-```{r, fig.width = 12}
+```{r, fig.width = 16}
 nichenet_output$ligand_activity_target_heatmap
 ```
 
@@ -257,21 +257,18 @@ nichenet_output$background_expressed_genes %>% length()
 
 Instead of focusing on multiple sender cell types, it is possible that you are only interested in doing the analyis for one sender cell type, such as dendritic cells in this case.
 
-```{r}
+```{r, fig.width=14}
 nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seuratObj, receiver = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = "DC", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
 
 nichenet_output$ligand_activity_target_heatmap
-DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), cols = "RdYlBu") + RotatedAxis()
-
 ```
 
 Instead of focusing on one or multiple predefined sender cell types, it is also possible that you want to consider all cell types present as possible sender cell. This also includes the receiver cell type, making that you can look at autocrine signaling as well.
 
-```{r, fig.width=8}
+```{r, fig.width=14}
 nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seuratObj, receiver = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = "all", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
 
 nichenet_output$ligand_activity_target_heatmap
-DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), cols = "RdYlBu") + RotatedAxis()
 ```
 
 In some cases, it could be possible that you don't have data of potential sender cells. If you still want to predict possible upstream ligands that could have been responsible for the observed differential expression in your cell type, you can do this by following command. This will consider all possible ligands in the NicheNet databases for which a receptor is expressed by the receiver cell of interest.

@@ -195,27 +195,33 @@ analysis consist of the following steps:
         cell population present in your expression data and determine
         which genes are expressed in both populations
 
--   1.  Define a gene set of interest: these are the genes in the
+-   2.  Define a gene set of interest: these are the genes in the
         “receiver/target” cell population that are potentially affected
         by ligands expressed by interacting cells (e.g. genes
         differentially expressed upon cell-cell interaction)
 
--   1.  Define a set of potential ligands: these are ligands that are
+-   3.  Define a set of potential ligands: these are ligands that are
         expressed by the “sender/niche” cell population and bind a
         (putative) receptor expressed by the “receiver/target”
         population
 
--   1.  Perform NicheNet ligand activity analysis: rank the potential
+-   4.  Perform NicheNet ligand activity analysis: rank the potential
         ligands based on the presence of their target genes in the gene
         set of interest (compared to the background set of genes)
 
--   1.  Infer receptors and top-predicted target genes of ligands that
+-   5.  Infer receptors and top-predicted target genes of ligands that
         are top-ranked in the ligand activity analysis
 
 All these steps are contained in one of three following similar single
 functions: `nichenet_seuratobj_aggregate`,
 `nichenet_seuratobj_cluster_de` and
 `nichenet_seuratobj_aggregate_cluster_de`.
+
+In addition to these steps, the function `nichenet_seuratobj_aggregate`
+that is used for the analysis when having two conditions will also
+calculate differential expression of the ligands in the sender cell
+type. Note that this ligand differential expression is not used for
+prioritization and ranking of the ligands!
 
 ## NicheNet analysis on Seurat object: explain differential expression between two conditions
 
@@ -303,8 +309,7 @@ To get a list of the 20 top-ranked ligands: run the following command
 
 ``` r
 nichenet_output$top_ligands
-##  [1] "Ebi3"   "Il15"   "Crlf2"  "App"    "Tgfb1"  "Ptprc"  "H2-M3"  "Icam1"  "Cxcl10" "Adam17"
-## [11] "Cxcl11" "Cxcl9"  "H2-T23" "Sema4d" "Ccl5"   "C3"     "Cxcl16" "Itgb1"  "Anxa1"  "Sell"
+##  [1] "Ebi3"   "Il15"   "Crlf2"  "App"    "Tgfb1"  "Ptprc"  "H2-M3"  "Icam1"  "Cxcl10" "Adam17" "Cxcl11" "Cxcl9"  "H2-T23" "Sema4d" "Ccl5"   "C3"     "Cxcl16" "Itgb1"  "Anxa1"  "Sell"
 ```
 
 These ligands are expressed by one or more of the input sender cells. To
@@ -312,7 +317,7 @@ see which cell population expresses which of these top-ranked ligands,
 you can run the following:
 
 ``` r
-DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), cols = "RdYlBu") + RotatedAxis()
+nichenet_output$ligand_expression_dotplot
 ```
 
 ![](seurat_wrapper_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
@@ -324,27 +329,17 @@ It could also be interesting to see whether some of these ligands are
 differentially expressed after LCMV infection.
 
 ``` r
-DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), split.by = "aggregate") + RotatedAxis()
+nichenet_output$ligand_differential_expression_heatmap
 ```
 
 ![](seurat_wrapper_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
-``` r
-VlnPlot(seuratObj, features = c("Il15", "Cxcl10","Cxcl16"), split.by = "aggregate",    pt.size = 0, combine = FALSE)
-## [[1]]
-```
-
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
-
-    ## 
-    ## [[2]]
-
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-11-2.png)<!-- -->
-
-    ## 
-    ## [[3]]
-
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-11-3.png)<!-- -->
+As you can see, most op the top-ranked ligands seem also to be
+upregulated themselves in monocytes after viral infection. This is not a
+prerequisite to be top-ranked (cf: ranking only determined based on
+enrichment of target genes among DE genes in the receiver, CD8T cells),
+but is nice additional “evidence” that these ligands might indeed be
+important.
 
 #### Inferred active ligand-target links
 
@@ -357,7 +352,7 @@ following command for a heatmap visualization:
 nichenet_output$ligand_target_heatmap
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 This is a normal ggplot object that can be adapted likewise. For example
 if you want to change the color code to blue instead of purple, change
@@ -368,7 +363,7 @@ you can do the following:
 nichenet_output$ligand_target_heatmap + scale_fill_gradient2(low = "whitesmoke",  high = "royalblue", breaks = c(0,0.0045,0.009)) + xlab("anti-LCMV response genes in CD8 T cells") + ylab("Prioritized immmune cell ligands")
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 If you want, you can also extract the ligand-target links and their
 regulatory potential scores in matrix or data frame format (e.g. for
@@ -412,10 +407,8 @@ ligands: run the following command
 
 ``` r
 nichenet_output$top_targets
-##  [1] "Cd274"  "Cd53"   "Ddit4"  "Id3"    "Ifit3"  "Irf1"   "Irf7"   "Irf9"   "Parp14" "Pdcd4" 
-## [11] "Pml"    "Psmb9"  "Rnf213" "Stat1"  "Stat2"  "Tap1"   "Ubc"    "Zbp1"   "Cd69"   "Gbp4"  
-## [21] "Basp1"  "Casp8"  "Cxcl10" "Nlrc5"  "Vim"    "Actb"   "Ifih1"  "Myh9"   "B2m"    "H2-T23"
-## [31] "Rpl13a" "Cxcr4"
+##  [1] "Cd274"  "Cd53"   "Ddit4"  "Id3"    "Ifit3"  "Irf1"   "Irf7"   "Irf9"   "Parp14" "Pdcd4"  "Pml"    "Psmb9"  "Rnf213" "Stat1"  "Stat2"  "Tap1"   "Ubc"    "Zbp1"   "Cd69"   "Gbp4"   "Basp1"  "Casp8"  "Cxcl10"
+## [24] "Nlrc5"  "Vim"    "Actb"   "Ifih1"  "Myh9"   "B2m"    "H2-T23" "Rpl13a" "Cxcr4"
 ```
 
 You can visualize the expression of these as well. Because we only focus
@@ -428,33 +421,33 @@ response to LCMV infection.
 DotPlot(seuratObj %>% subset(idents = "CD8 T"), features = nichenet_output$top_targets %>% rev(), split.by = "aggregate") + RotatedAxis()
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 ``` r
 VlnPlot(seuratObj %>% subset(idents = "CD8 T"), features = c("Zbp1","Ifit3","Irf7"), split.by = "aggregate",    pt.size = 0, combine = FALSE)
 ## [[1]]
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
     ## 
     ## [[2]]
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-18-2.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-17-2.png)<!-- -->
 
     ## 
     ## [[3]]
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-18-3.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-17-3.png)<!-- -->
 
-To visualize both ligand activities and target genes of ligands, run the
-following command
+To visualize ligand activities, expression, differentil expression and
+target genes of ligands, run the following command
 
 ``` r
 nichenet_output$ligand_activity_target_heatmap
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 #### Inferred ligand-receptor interactions for top-ranked ligands
 
@@ -466,7 +459,7 @@ the ligand-receptor links:
 nichenet_output$ligand_receptor_heatmap
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 If you want, you can also extract the ligand-receptor links and their
 interaction confidence scores in matrix or data frame format (e.g. for
@@ -510,9 +503,7 @@ following command
 
 ``` r
 nichenet_output$top_receptors
-##  [1] "Notch1" "Ccr7"   "Ccr9"   "Cxcr6"  "Itga4"  "Tgfbr2" "Itgb2"  "Gpr18"  "S1pr1"  "Il7r"  
-## [11] "Il27ra" "Cd8a"   "Klrd1"  "Il2rg"  "Itgal"  "Spn"    "Il2rb"  "Cd47"   "Ptk2b"  "Cd2"   
-## [21] "Cd28"   "Selplg" "Ptprc"
+##  [1] "Notch1" "Ccr7"   "Ccr9"   "Cxcr6"  "Itga4"  "Tgfbr2" "Itgb2"  "Gpr18"  "S1pr1"  "Il7r"   "Il27ra" "Cd8a"   "Klrd1"  "Il2rg"  "Itgal"  "Spn"    "Il2rb"  "Cd47"   "Ptk2b"  "Cd2"    "Cd28"   "Selplg" "Ptprc"
 ```
 
 You can visualize the expression of these as well. Because we only focus
@@ -523,7 +514,7 @@ cells.
 DotPlot(seuratObj %>% subset(idents = "CD8 T"), features = nichenet_output$top_receptors %>% rev(), split.by = "aggregate") + RotatedAxis()
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 You also can just show ‘bona fide’ ligand-receptor links that are
 described in the literature and not predicted based on protein-protein
@@ -533,7 +524,7 @@ interactions:
 nichenet_output$ligand_receptor_heatmap_bonafide
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 ``` r
 nichenet_output$ligand_receptor_matrix_bonafide
@@ -565,43 +556,21 @@ genes) was used during the ligand activity analysis:
 
 ``` r
 nichenet_output$geneset_oi
-##   [1] "Irf7"          "Stat1"         "Ifit3"         "Ifit1"         "Bst2"         
-##   [6] "B2m"           "Rnf213"        "Plac8"         "Isg15"         "Shisa5"       
-##  [11] "Zbp1"          "Isg20"         "Samhd1"        "Usp18"         "H2-T23"       
-##  [16] "Gbp2"          "Ifi203"        "Tmsb4x"        "Rsad2"         "Ly6e"         
-##  [21] "Rtp4"          "Ifit2"         "Xaf1"          "Smchd1"        "Daxx"         
-##  [26] "Alb"           "Samd9l"        "Actb"          "Parp9"         "Gbp4"         
-##  [31] "Lgals3bp"      "Mx1"           "Gbp7"          "Cmpk2"         "Dtx3l"        
-##  [36] "Slfn5"         "Oasl1"         "Herc6"         "Ifih1"         "Rpsa"         
-##  [41] "P2ry13"        "Irgm2"         "Tapbp"         "Rps8"          "Stat2"        
-##  [46] "Ifi44"         "Rpl8"          "Psmb8"         "Igfbp4"        "Ddx58"        
-##  [51] "Rac2"          "Trafd1"        "Pml"           "Oas2"          "Psme1"        
-##  [56] "Apoe"          "Basp1"         "Rps27a"        "Znfx1"         "Rpl13"        
-##  [61] "Oas3"          "Nt5c3"         "Rnf114"        "Tap1"          "Rps28"        
-##  [66] "Rplp0"         "Ddx60"         "Vim"           "Ifi35"         "Itm2b"        
-##  [71] "Ctss"          "Pabpc1"        "Parp14"        "Hspa8"         "Tor3a"        
-##  [76] "Rpl23"         "Tmbim6"        "Thy1"          "Ncoa7"         "Dhx58"        
-##  [81] "Rps10"         "Rps19"         "Psmb9"         "Il2rg"         "Etnk1"        
-##  [86] "Irf9"          "1600014C10Rik" "Parp12"        "Eif2ak2"       "Eef1b2"       
-##  [91] "Eef2"          "Npc2"          "Rps2"          "Rps3"          "Sp110"        
-##  [96] "Ube2l6"        "Nmi"           "Uba7"          "Psmb10"        "Cxcl10"       
-## [101] "Rpl13a"        "Nhp2"          "Tbrg1"         "Usp25"         "Tor1aip2"     
-## [106] "Adar"          "Gzma"          "Cd53"          "Hspa5"         "Cfl1"         
-## [111] "Crip1"         "Slco3a1"       "Tlr7"          "Trim21"        "Rpl10"        
-## [116] "Mycbp2"        "Rps16"         "Nlrc5"         "Rplp2"         "Acadl"        
-## [121] "Trim12c"       "Rps4x"         "Irf1"          "Psma2"         "Nme2"         
-## [126] "Zcchc11"       "Snord12"       "Phip"          "Ifitm3"        "Sp140"        
-## [131] "Dusp2"         "Mrpl30"        "H2-M3"         "Gbp3"          "Dtx1"         
-## [136] "Eef1g"         "Rbl1"          "Xpo1"          "Gm9844"        "Rpl35"        
-## [141] "Rps26"         "Cxcr4"         "Eif3m"         "Treml2"        "Rpl35a"       
-## [146] "Pdcd4"         "Arrb2"         "Ubc"           "Clic4"         "Rpl10a"       
-## [151] "Lcp1"          "Cd274"         "Ddit4"         "Cnn2"          "Nampt"        
-## [156] "Ascc3"         "Cd47"          "Snord49b"      "D17Wsu92e"     "Fam26f"       
-## [161] "Hcst"          "Myh9"          "Rps27"         "Mov10"         "Arf4"         
-## [166] "Arhgdib"       "Ppib"          "Trim25"        "Tspo"          "Id3"          
-## [171] "Snord35a"      "Rnf8"          "Casp8"         "Ptpn7"         "Itk"          
-## [176] "Cd69"          "Nop10"         "Anxa6"         "Hk1"           "Prkcb"        
-## [181] "Iqgap1"        "Keap1"         "Rpl7"          "Parp10"
+##   [1] "Irf7"          "Stat1"         "Ifit3"         "Ifit1"         "Bst2"          "B2m"           "Rnf213"        "Plac8"         "Isg15"         "Shisa5"        "Zbp1"          "Isg20"         "Samhd1"       
+##  [14] "Usp18"         "H2-T23"        "Gbp2"          "Ifi203"        "Tmsb4x"        "Rsad2"         "Ly6e"          "Rtp4"          "Ifit2"         "Xaf1"          "Smchd1"        "Daxx"          "Alb"          
+##  [27] "Samd9l"        "Actb"          "Parp9"         "Gbp4"          "Lgals3bp"      "Mx1"           "Gbp7"          "Cmpk2"         "Dtx3l"         "Slfn5"         "Oasl1"         "Herc6"         "Ifih1"        
+##  [40] "Rpsa"          "P2ry13"        "Irgm2"         "Tapbp"         "Rps8"          "Stat2"         "Ifi44"         "Rpl8"          "Psmb8"         "Igfbp4"        "Ddx58"         "Rac2"          "Trafd1"       
+##  [53] "Pml"           "Oas2"          "Psme1"         "Apoe"          "Basp1"         "Rps27a"        "Znfx1"         "Rpl13"         "Oas3"          "Nt5c3"         "Rnf114"        "Tap1"          "Rps28"        
+##  [66] "Rplp0"         "Ddx60"         "Vim"           "Ifi35"         "Itm2b"         "Ctss"          "Pabpc1"        "Parp14"        "Hspa8"         "Tor3a"         "Rpl23"         "Tmbim6"        "Thy1"         
+##  [79] "Ncoa7"         "Dhx58"         "Rps10"         "Rps19"         "Psmb9"         "Il2rg"         "Etnk1"         "Irf9"          "1600014C10Rik" "Parp12"        "Eif2ak2"       "Eef1b2"        "Eef2"         
+##  [92] "Npc2"          "Rps2"          "Rps3"          "Sp110"         "Ube2l6"        "Nmi"           "Uba7"          "Psmb10"        "Cxcl10"        "Rpl13a"        "Nhp2"          "Tbrg1"         "Usp25"        
+## [105] "Tor1aip2"      "Adar"          "Gzma"          "Cd53"          "Hspa5"         "Cfl1"          "Crip1"         "Slco3a1"       "Tlr7"          "Trim21"        "Rpl10"         "Mycbp2"        "Rps16"        
+## [118] "Nlrc5"         "Rplp2"         "Acadl"         "Trim12c"       "Rps4x"         "Irf1"          "Psma2"         "Nme2"          "Zcchc11"       "Snord12"       "Phip"          "Ifitm3"        "Sp140"        
+## [131] "Dusp2"         "Mrpl30"        "H2-M3"         "Gbp3"          "Dtx1"          "Eef1g"         "Rbl1"          "Xpo1"          "Gm9844"        "Rpl35"         "Rps26"         "Cxcr4"         "Eif3m"        
+## [144] "Treml2"        "Rpl35a"        "Pdcd4"         "Arrb2"         "Ubc"           "Clic4"         "Rpl10a"        "Lcp1"          "Cd274"         "Ddit4"         "Cnn2"          "Nampt"         "Ascc3"        
+## [157] "Cd47"          "Snord49b"      "D17Wsu92e"     "Fam26f"        "Hcst"          "Myh9"          "Rps27"         "Mov10"         "Arf4"          "Arhgdib"       "Ppib"          "Trim25"        "Tspo"         
+## [170] "Id3"           "Snord35a"      "Rnf8"          "Casp8"         "Ptpn7"         "Itk"           "Cd69"          "Nop10"         "Anxa6"         "Hk1"           "Prkcb"         "Iqgap1"        "Keap1"        
+## [183] "Rpl7"          "Parp10"
 nichenet_output$background_expressed_genes %>% length()
 ## [1] 1487
 ```
@@ -624,13 +593,7 @@ nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seuratObj, receiver 
 nichenet_output$ligand_activity_target_heatmap
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
-
-``` r
-DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), cols = "RdYlBu") + RotatedAxis()
-```
-
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-27-2.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 Instead of focusing on one or multiple predefined sender cell types, it
 is also possible that you want to consider all cell types present as
@@ -649,13 +612,7 @@ nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seuratObj, receiver 
 nichenet_output$ligand_activity_target_heatmap
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
-
-``` r
-DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), cols = "RdYlBu") + RotatedAxis()
-```
-
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-28-2.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 In some cases, it could be possible that you don’t have data of
 potential sender cells. If you still want to predict possible upstream
@@ -676,7 +633,7 @@ nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seuratObj, receiver 
 nichenet_output$ligand_activity_target_heatmap
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
 As you can see in this analysis result, many genes DE in CD8 T cells
 after LCMV infection are strongly predicted type I interferon targets.
@@ -725,8 +682,7 @@ common_ligands = intersect(nichenet_output$`CD4 T`$top_ligands, nichenet_output$
 print("common ligands are: ")
 ## [1] "common ligands are: "
 print(common_ligands)
-##  [1] "Ebi3"   "Il15"   "Crlf2"  "H2-M3"  "App"    "Ptprc"  "Icam1"  "Ccl5"   "Cxcl10" "Tgfb1" 
-## [11] "Cxcl11" "Sema4d" "Cxcl9"  "H2-T23" "Cxcl16" "C3"     "Itgb1"
+##  [1] "Ebi3"   "Il15"   "Crlf2"  "H2-M3"  "App"    "Ptprc"  "Icam1"  "Ccl5"   "Cxcl10" "Tgfb1"  "Cxcl11" "Sema4d" "Cxcl9"  "H2-T23" "Cxcl16" "C3"     "Itgb1"
 
 cd4_ligands = nichenet_output$`CD4 T`$top_ligands %>% setdiff(nichenet_output$`CD8 T`$top_ligands)
 cd8_ligands = nichenet_output$`CD8 T`$top_ligands %>% setdiff(nichenet_output$`CD4 T`$top_ligands)
@@ -774,10 +730,8 @@ seuratObj@meta.data$celltype = paste(seuratObj@meta.data$celltype,seuratObj@meta
 
 seuratObj@meta.data$celltype %>% table()
 ## .
-##     B_LCMV       B_SS CD4 T_LCMV   CD4 T_SS CD8 T_LCMV   CD8 T_SS    DC_LCMV      DC_SS 
-##        344         38       1961        601       1252        393         14          4 
-##  Mono_LCMV    Mono_SS    NK_LCMV      NK_SS  Treg_LCMV    Treg_SS 
-##         75         15         94         37        146         53
+##     B_LCMV       B_SS CD4 T_LCMV   CD4 T_SS CD8 T_LCMV   CD8 T_SS    DC_LCMV      DC_SS  Mono_LCMV    Mono_SS    NK_LCMV      NK_SS  Treg_LCMV    Treg_SS 
+##        344         38       1961        601       1252        393         14          4         75         15         94         37        146         53
 
 seuratObj = SetIdent(seuratObj,value = "celltype")
 ```
@@ -808,7 +762,7 @@ Check the top-ranked ligands and their target genes
 nichenet_output$ligand_activity_target_heatmap
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
 
 Check the expression of the top-ranked ligands
 
@@ -816,7 +770,7 @@ Check the expression of the top-ranked ligands
 DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), cols = "RdYlBu") + RotatedAxis()
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
 
 It could be interested to check which top-ranked ligands are
 differentially expressed in monocytes after LCMV infection

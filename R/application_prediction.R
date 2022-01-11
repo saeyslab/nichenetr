@@ -818,8 +818,9 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   ## sender
   if (length(sender) == 1){
     if (sender == "all"){
-      list_expressed_genes_sender = Idents(seurat_obj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
-      names(list_expressed_genes_sender) = Idents(seurat_obj) %>% unique()
+      sender_celltypes = Idents(seurat_obj) %>% levels()
+      list_expressed_genes_sender = sender_celltypes %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+      names(list_expressed_genes_sender) = sender_celltypes
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
     } else if (sender == "undefined") {
@@ -1031,6 +1032,64 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     lr_network_top_df_large_strict = lr_network_top_df_large_strict %>% rename(ligand = from, receptor = to)
   }
 
+  # DE analysis for each sender cell type -- of course only possible when having sender cell types
+  if (length(sender) > 1 | (length(sender) == 1 & sender != "undefined")){
+    DE_table_all = Idents(seurat_obj) %>% levels() %>% intersect(sender_celltypes) %>% lapply(get_lfc_celltype, seurat_obj = seurat_obj, condition_colname = condition_colname, condition_oi = condition_oi, condition_reference = condition_reference, expression_pct = expression_pct, celltype_col = NULL) %>% reduce(full_join, by = "gene") # use this if cell type labels are the identities of your Seurat object -- if not: indicate the celltype_col properly
+    DE_table_all[is.na(DE_table_all)] = 0
+
+    # Combine ligand activities with DE information
+    ligand_activities_de = ligand_activities %>% select(test_ligand, pearson) %>% rename(ligand = test_ligand) %>% left_join(DE_table_all %>% rename(ligand = gene), by = "ligand")
+    ligand_activities_de[is.na(ligand_activities_de)] = 0
+
+    # make LFC heatmap
+    lfc_matrix = ligand_activities_de  %>% select(-ligand, -pearson) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities_de$ligand)
+    rownames(lfc_matrix) = rownames(lfc_matrix) %>% make.names()
+
+    order_ligands = order_ligands[order_ligands %in% rownames(lfc_matrix)]
+    vis_ligand_lfc = lfc_matrix[order_ligands,]
+    vis_ligand_lfc = vis_ligand_lfc %>% as.matrix(ncol = length(Idents(seurat_obj) %>% levels() %>% intersect(sender_celltypes)))
+    colnames(vis_ligand_lfc) = vis_ligand_lfc %>% colnames() %>% make.names()
+
+    p_ligand_lfc = vis_ligand_lfc %>% make_threecolor_heatmap_ggplot("Prioritized ligands","LFC in Sender", low_color = "midnightblue",mid_color = "white", mid = median(vis_ligand_lfc), high_color = "red",legend_position = "top", x_axis_position = "top", legend_title = "LFC") + theme(axis.text.y = element_text(face = "italic"))
+    p_ligand_lfc
+
+    # change colors a bit to make them more stand out
+    p_ligand_lfc = p_ligand_lfc + scale_fill_gradientn(colors = c("midnightblue","blue", "grey95", "grey99","firebrick1","red"),values = c(0,0.1,0.2,0.25, 0.40, 0.7,1), limits = c(vis_ligand_lfc %>% min() - 0.1, vis_ligand_lfc %>% max() + 0.1))
+    p_ligand_lfc
+
+
+    # ligand expression Seurat dotplot
+    real_makenames_conversion = lr_network$from %>% unique() %>% magrittr::set_names(lr_network$from %>% unique() %>% make.names())
+    order_ligands_adapted = real_makenames_conversion[order_ligands]
+    names(order_ligands_adapted) = NULL
+    rotated_dotplot = DotPlot(seurat_obj %>% subset(idents = sender_celltypes), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
+
+    # combined plot
+    figures_without_legend = cowplot::plot_grid(
+      p_ligand_pearson + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
+      rotated_dotplot + theme(legend.position = "none", axis.ticks = element_blank(), axis.title.x = element_text(size = 12), axis.text.y = element_text(face = "italic", size = 9), axis.text.x = element_text(size = 9,  angle = 90,hjust = 0)) + ylab("Expression in Sender") + xlab("") + scale_y_discrete(position = "right"),
+      p_ligand_lfc + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()) + ylab(""),
+      p_ligand_target_network + theme(legend.position = "none", axis.ticks = element_blank()) + ylab(""),
+      align = "hv",
+      nrow = 1,
+      rel_widths = c(ncol(vis_ligand_pearson)+6, ncol(vis_ligand_lfc) + 7, ncol(vis_ligand_lfc) + 8, ncol(vis_ligand_target)))
+
+    legends = cowplot::plot_grid(
+      ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_pearson)),
+      ggpubr::as_ggplot(ggpubr::get_legend(rotated_dotplot)),
+      ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_lfc)),
+      ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_target_network)),
+      nrow = 1,
+      align = "h", rel_widths = c(1.5, 1, 1, 1))
+
+    combined_plot = cowplot::plot_grid(figures_without_legend, legends, rel_heights = c(10,5), nrow = 2, align = "hv")
+    combined_plot
+
+  } else {
+    rotated_dotplot = NULL
+    p_ligand_lfc = NULL
+  }
+
   return(list(
     ligand_activities = ligand_activities,
     top_ligands = best_upstream_ligands,
@@ -1039,6 +1098,8 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     ligand_target_matrix = vis_ligand_target,
     ligand_target_heatmap = p_ligand_target_network,
     ligand_target_df = active_ligand_target_links_df,
+    ligand_expression_dotplot = rotated_dotplot,
+    ligand_differential_expression_heatmap = p_ligand_lfc,
     ligand_activity_target_heatmap = combined_plot,
     ligand_receptor_matrix = vis_ligand_receptor_network,
     ligand_receptor_heatmap = p_ligand_receptor_network,
@@ -1356,8 +1417,9 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   ## sender
   if (length(sender) == 1){
     if (sender == "all"){
-      list_expressed_genes_sender = Idents(seurat_obj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
-      names(list_expressed_genes_sender) = Idents(seurat_obj) %>% unique()
+      sender_celltypes = Idents(seurat_obj) %>% levels()
+      list_expressed_genes_sender = sender_celltypes %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+      names(list_expressed_genes_sender) = sender_celltypes
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
     } else if (sender == "undefined") {
@@ -1572,6 +1634,18 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 
   }
 
+  # ligand expression Seurat dotplot
+  if (length(sender) > 1 | (length(sender) == 1 & sender != "undefined")){
+    real_makenames_conversion = lr_network$from %>% unique() %>% magrittr::set_names(lr_network$from %>% unique() %>% make.names())
+    order_ligands_adapted = real_makenames_conversion[order_ligands]
+    names(order_ligands_adapted) = NULL
+    rotated_dotplot = DotPlot(seurat_obj %>% subset(idents = sender_celltypes), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
+
+  } else {
+    rotated_dotplot = NULL
+  }
+
+
   return(list(
     ligand_activities = ligand_activities,
     top_ligands = best_upstream_ligands,
@@ -1580,6 +1654,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
     ligand_target_matrix = vis_ligand_target,
     ligand_target_heatmap = p_ligand_target_network,
     ligand_target_df = active_ligand_target_links_df,
+    ligand_expression_dotplot = rotated_dotplot,
     ligand_activity_target_heatmap = combined_plot,
     ligand_receptor_matrix = vis_ligand_receptor_network,
     ligand_receptor_heatmap = p_ligand_receptor_network,
@@ -1748,8 +1823,9 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   ## sender
   if (length(sender) == 1){
     if (sender == "all"){
-      list_expressed_genes_sender = Idents(seurat_obj) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
-      names(list_expressed_genes_sender) = Idents(seurat_obj) %>% unique()
+      sender_celltypes = Idents(seurat_obj) %>% levels()
+      list_expressed_genes_sender = sender_celltypes %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+      names(list_expressed_genes_sender) = sender_celltypes
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
     } else if (sender == "undefined") {
@@ -1973,6 +2049,16 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 
   }
 
+  # ligand expression Seurat dotplot
+  if (length(sender) > 1 | (length(sender) == 1 & sender != "undefined")){
+    real_makenames_conversion = lr_network$from %>% unique() %>% magrittr::set_names(lr_network$from %>% unique() %>% make.names())
+    order_ligands_adapted = real_makenames_conversion[order_ligands]
+    names(order_ligands_adapted) = NULL
+    rotated_dotplot = DotPlot(seurat_obj %>% subset(idents = sender_celltypes), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
+
+  } else {
+    rotated_dotplot = NULL
+  }
   return(list(
     ligand_activities = ligand_activities,
     top_ligands = best_upstream_ligands,
@@ -1981,6 +2067,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
     ligand_target_matrix = vis_ligand_target,
     ligand_target_heatmap = p_ligand_target_network,
     ligand_target_df = active_ligand_target_links_df,
+    ligand_expression_dotplot = rotated_dotplot,
     ligand_activity_target_heatmap = combined_plot,
     ligand_receptor_matrix = vis_ligand_receptor_network,
     ligand_receptor_heatmap = p_ligand_receptor_network,
