@@ -77,7 +77,7 @@ get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all,
 #' @description \code{get_ligand_signaling_path_with_receptor} Extract possible signaling paths between a ligand(s), receptor(s) and target gene(s) of interest. The most highly weighted path(s) will be extracted.
 #'
 #' @usage
-#' get_ligand_signaling_path_with_receptor(ligand_tf_matrix, ligands_all, receptors_all, targets_all, top_n_regulators = 4, weighted_networks, ligands_position = "cols")
+#' get_ligand_signaling_path_with_receptor(ligand_tf_matrix, ligands_all, receptors_all, targets_all, top_n_regulators = 3, weighted_networks, ligands_position = "cols")
 #'
 #' @inheritParams get_ligand_signaling_path
 #' @param receptors_all A character vector of one or more receptors of interest

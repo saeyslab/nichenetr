@@ -3,8 +3,7 @@
 rmarkdown::render("README.Rmd",output_format = "md_document")
 -->
 
-nichenetr
-=========
+# nichenetr
 
 <!-- badges: start -->
 
@@ -35,11 +34,24 @@ Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1).
 
 ### Important update!
 
-Check the recently added FAQ page at [FAQ NicheNet](vignettes/faq.md):
-`vignette("faq", package="nichenetr")`
+12-01-2022: In the Liver Atlas paper from Guilliams et al.: [Spatial
+proteogenomics reveals distinct and evolutionarily conserved hepatic
+macrophage
+niches](https://www.sciencedirect.com/science/article/pii/S0092867421014811),
+we used Differential NicheNet, an extension to the default NicheNet
+algorithm. **Differential NicheNet** can be used to compare cell-cell
+interactions between different niches and better predict niche-specific
+ligand-receptor (L-R) pairs. It was used in that paper to predict
+ligand-receptor pairs specific for the Kupffer cell niche in mouse and
+human.
 
-Introduction to NicheNet
-------------------------
+At the bottom of this page, you can find the links to two vignettes
+illustrating a Differential NicheNet analysis. We recommend these
+vignettes if you want to apply Differential NicheNet on your own data.
+If you want to see the code used for the analyses used in the Guilliams
+et al. paper, see <https://github.com/saeyslab/NicheNet_LiverCellAtlas>.
+
+## Introduction to NicheNet
 
 The figure below shows a graphical representation of the NicheNet
 workflow. Interactions inferred from several complementary
@@ -57,7 +69,7 @@ We offer the option to use the prebuilt prior model (such that the
 network integration steps should not be repeated), or to create and use
 your own prior model (see reference to detailed vignette below).
 
-<br><br> ![](vignettes/workflow_nichenet.png) <br><br>
+<br><br> ![](vignettes/workflow_nichenet.jpg) <br><br>
 
 NicheNet strongly differs from most current computational approaches to
 study intercellular communication. Current approaches study
@@ -83,11 +95,10 @@ prioritizing ligand-receptor interactions based on gene expression
 effects.
 
 <br><br>
-<img src="vignettes/comparison_other_approaches_2.png" width="450" />
+<img src="vignettes/comparison_other_approaches_2.jpg" width="450" />
 <br><br>
 
-Main functionalities of nichenetr
----------------------------------
+## Main functionalities of nichenetr
 
 Specific functionalities of this package include:
 
@@ -106,10 +117,9 @@ Moreover, we provide instructions on how to make intuitive
 visualizations of the main predictions (e.g., via circos plots as shown
 here below).
 
-<br><br> ![](vignettes/circos_plot_adapted.png)
+<br><br> ![](vignettes/circos_plot_adapted.jpg)
 
-Installation of nichenetr
--------------------------
+## Installation of nichenetr
 
 Installation typically takes a few minutes, depending on the number of
 dependencies that has already been installed on your pc. You can install
@@ -121,8 +131,7 @@ nichenetr (and required dependencies) from github with:
 nichenetr was tested on both Windows and Linux (most recently tested R
 version: R 4.0.0)
 
-Learning to use nichenetr
--------------------------
+## Learning to use nichenetr
 
 To learn using nichenetr, read one of the following vignettes explaining
 several types of analyses:
@@ -190,20 +199,28 @@ symbols:
     symbols](vignettes/symbol_conversion.md):
     `vignette("symbol_conversion", package="nichenetr")`
 
-FAQ
----
+Differential NicheNet vignettes:
 
-Check the recently added FAQ page at [FAQ NicheNet](vignettes/faq.md):
+-   [Differential NicheNet analysis between niches of
+    interest](vignettes/differential_nichenet.md):`vignette("differential_nichenet", package="nichenetr")`
+-   [Differential NicheNet analysis between conditions of
+    interest](vignettes/differential_nichenet_pEMT.md):`vignette("differential_nichenet_pEMT", package="nichenetr")`
+
+## FAQ
+
+Check the FAQ page at [FAQ NicheNet](vignettes/faq.md):
 `vignette("faq", package="nichenetr")`
 
-References
-----------
+## References
 
 Browaeys, R., Saelens, W. & Saeys, Y. NicheNet: modeling intercellular
 communication by linking ligands to target genes. Nat Methods (2019)
-<a href="doi:10.1038/s41592-019-0667-5" class="uri">doi:10.1038/s41592-019-0667-5</a>
+<doi:10.1038/s41592-019-0667-5>
 
 Bonnardel et al. Stellate Cells, Hepatocytes, and Endothelial Cells
 Imprint the Kupffer Cell Identity on Monocytes Colonizing the Liver
-Macrophage Niche. Immunity (2019)
-<a href="doi:10.1016/j.immuni.2019.08.017" class="uri">doi:10.1016/j.immuni.2019.08.017</a>
+Macrophage Niche. Immunity (2019) <doi:10.1016/j.immuni.2019.08.017>
+
+Guilliams et al. Spatial proteogenomics reveals distinct and
+evolutionarily conserved hepatic macrophage niches. Cell (2022)
+<doi:10.1016/j.cell.2021.12.018>

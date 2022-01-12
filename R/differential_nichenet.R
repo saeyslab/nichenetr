@@ -1,19 +1,85 @@
+#' @title Normalize values in a vector by quantile scaling and add a pseudovalue of 0.001
+#'
+#' @description \code{scale_quantile_adapted} Normalize values in a vector by quantile scaling. Add a pseudovalue of 0.001 to avoid having a score of 0 for the lowest value.
+#'
+#' @usage
+#' scale_quantile_adapted(x)
+#'
+#' @param x A numeric vector.
+#'
+#' @return A quantile-scaled numeric vector.
+#'
+#' @examples
+#' \dontrun{
+#' scale_quantile_adapted(rnorm(5))
+#' }
+#'
+#' @export
+#'
 scale_quantile_adapted = function(x){
-  y = nichenetr::scale_quantile(x,outlier_cutoff = 0)
+  y = scale_quantile(x,outlier_cutoff = 0)
   y = y + 0.001
   return(y)
 }
+#' @title Change values in a tibble if some condition is fulfilled.
+#'
+#' @description \code{mutate_cond} Change values in a tibble if some condition is fulfilled. Credits: https://stackoverflow.com/questions/34096162/dplyr-mutate-replace-several-columns-on-a-subset-of-rows.
+#'
+#' @usage
+#' mutate_cond(.data, condition, ..., envir = parent.frame())
+#'
+#' @param .data Data frame / tibble
+#' @param condition A condition that need to be fulfilled.
+#' @param ... The change that need to happen if condition fulfilled -- through the use of `dplyr::mutate()`
+#' @param envir parent.frame() by default
+#'
+#' @return A tibble
+#'
+#' @examples
+#' \dontrun{
+#' mutate_cond(df, a == 3, b = 4)
+#' }
+#'
+#' @export
+#'
 mutate_cond <- function(.data, condition, ..., envir = parent.frame()) {
   condition <- eval(substitute(condition), .data, envir)
-  .data[condition, ] <- .data[condition, ] %>% mutate(...)
+  .data[condition, ] <- .data[condition, ] %>% dplyr::mutate(...)
   .data
 }
-
-# scale_quantile_adapted = function(x){
-#   y = nichenetr::scale_quantile(x,outlier_cutoff = 0)
-#   y = y + 0.001
-#   return(y)
-# }
+#' @title Calculate differential expression of cell types in one niche versus all other niches of interest.
+#'
+#' @description \code{calculate_niche_de} Calculate differential expression of cell types in one niche versus all other niches of interest. This is possible for sender cell types and receiver cell types.
+#'
+#' @usage
+#' calculate_niche_de(seurat_obj, niches, type, assay_oi = "SCT")
+#'
+#' @param seurat_obj Seurat object
+#' @param niches a list of lists/niches giving the name, senders and receiver celltypes for each nice. Sender and receiver cell types should be part of Idents(seurat_obj).
+#' @param type For what type of cellype is the DE analysis: "sender" or "receiver"?
+#' @param assay_oi Which assay need to be used for DE calculation via `FindMarkers`. Default SCT, alternatives: RNA.
+#'
+#' @return A tibble containing the DE results of the niches versus each other.
+#'
+#' @examples
+#' \dontrun{
+#' seurat_obj = readRDS(url("https://zenodo.org/record/5840787/files/seurat_obj_subset_integrated_zonation.rds"))
+#' niches = list(
+#' "KC_niche" = list(
+#'   "sender" = c("LSECs_portal","Hepatocytes_portal","Stellate cells_portal"),
+#'   "receiver" = c("KCs")),
+#' "MoMac2_niche" = list(
+#'   "sender" = c("Cholangiocytes","Fibroblast 2"),
+#'   "receiver" = c("MoMac2")),
+#' "MoMac1_niche" = list(
+#'   "sender" = c("Capsule fibroblasts","Mesothelial cells"),
+#'  "receiver" = c("MoMac1"))
+#' )
+#' calculate_niche_de(seurat_obj, niches, "sender")
+#' }
+#'
+#' @export
+#'
 calculate_niche_de = function(seurat_obj, niches, type, assay_oi = "SCT"){
 
   if (type == "sender"){
@@ -64,26 +130,39 @@ calculate_niche_de = function(seurat_obj, niches, type, assay_oi = "SCT"){
 
 
 }
-
-calculate_receiver_de_targets  = function(seurat_obj, niches, assay_oi = "SCT", lfc_cutoff, expression_pct){
-  all_receivers = niches %>% purrr::map("receiver") %>% unlist() %>% unique()
-  #
-  DE_receiver = all_receivers %>% lapply(function(receiver_oi, seurat_obj) {
-
-    receivers_other = setdiff(all_receivers,receiver_oi)
-
-    print(paste0("Calculate Receiver DE between: ",receiver_oi, " and ", receivers_other))
-
-    DE_subtable = receivers_other %>% lapply(function(receiver_other_niche, seurat_obj, receiver_oi) {
-
-      DE_receiver_oi = FindMarkers(object = seurat_obj, ident.1 = receiver_oi, ident.2 = receiver_other_niche, min.pct = expression_pct, logfc.threshold = lfc_cutoff, only.pos = TRUE, assay = assay_oi) %>% rownames_to_column("gene") %>% as_tibble()
-      DE_receiver_oi = DE_receiver_oi %>% mutate(receiver = receiver_oi, receiver_other_niche = receiver_other_niche) %>% arrange(-avg_log2FC)
-
-    }, seurat_obj, receiver_oi) %>% bind_rows()
-  }, seurat_obj) %>% bind_rows()
-
-}
-
+#' @title Process the DE output of `calculate_niche_de`
+#'
+#' @description \code{process_niche_de} Process the DE output of `calculate_niche_de`: define what the average and minimum logFC value is after comparing a celltype vs all the celltypes of the other niches.
+#'
+#' @usage
+#' process_niche_de(DE_table, niches, type, expression_pct)
+#'
+#' @param DE_table Output of `calculate_niche_de`
+#' @param expression_pct Percentage of cells of a cell type having a non-zero expression value for a gene such that a gene can be considered expressed by that cell type.
+#' @inheritParams calculate_niche_de
+#'
+#' @return A tibble containing processed DE information
+#'
+#' @examples
+#' \dontrun{
+#' seurat_obj = readRDS(url("https://zenodo.org/record/5840787/files/seurat_obj_subset_integrated_zonation.rds"))
+#' niches = list(
+#' "KC_niche" = list(
+#'   "sender" = c("LSECs_portal","Hepatocytes_portal","Stellate cells_portal"),
+#'   "receiver" = c("KCs")),
+#' "MoMac2_niche" = list(
+#'   "sender" = c("Cholangiocytes","Fibroblast 2"),
+#'   "receiver" = c("MoMac2")),
+#' "MoMac1_niche" = list(
+#'   "sender" = c("Capsule fibroblasts","Mesothelial cells"),
+#'  "receiver" = c("MoMac1"))
+#' )
+#' DE_table = calculate_niche_de(seurat_obj, niches, "sender")
+#' process_niche_de(DE_table, niches, "sender",expression_pct = 0.10)
+#' }
+#'
+#' @export
+#'
 process_niche_de = function(DE_table, niches, type, expression_pct){
   ### process the DE_tables of senders and receiver
 
@@ -107,7 +186,48 @@ process_niche_de = function(DE_table, niches, type, expression_pct){
   }
 
 }
-
+#' @title Combine the differential expression information of ligands in the sender celltypes with the differential expression information of their cognate receptors in the receiver cell types
+#'
+#' @description \code{combine_sender_receiver_de} Combine the differential expression information of ligands in the sender celltypes with the differential expression information of their cognate receptors in the receiver cell types.
+#'
+#' @usage
+#' combine_sender_receiver_de(DE_sender_processed, DE_receiver_processed, lr_network, specificity_score = "min_lfc")
+#'
+#' @param DE_sender_processed Output of `process_niche_de` with `type = receiver`
+#' @param DE_receiver_processed Output of `process_niche_de` with `type = receiver`
+#' @param lr_network Ligand-Receptor Network in tibble format: ligand, receptor, bonafide as columns
+#' @param specificity_score Defines which score will be used to prioritze ligand-receptor pairs and consider their differential expression. Default and recommended: "min_lfc".
+#' "min_lfc" looks at the minimal logFC of the ligand/receptor between the celltype of interest and all the other celltypes.
+#' Alternatives: "mean_lfc", "min_score", and "mean_score". Mean uses the average/mean instead of minimum.
+#' score is the product of the logFC and the ratio of fraction of expressing cells.
+#'
+#' @return A tibble giving the differential expression information of ligands in the sender celltypes and their cognate receptors in the receiver cell types.
+#'
+#' @examples
+#' \dontrun{
+#' seurat_obj = readRDS(url("https://zenodo.org/record/5840787/files/seurat_obj_subset_integrated_zonation.rds"))
+#' niches = list(
+#' "KC_niche" = list(
+#'   "sender" = c("LSECs_portal","Hepatocytes_portal","Stellate cells_portal"),
+#'   "receiver" = c("KCs")),
+#' "MoMac2_niche" = list(
+#'   "sender" = c("Cholangiocytes","Fibroblast 2"),
+#'   "receiver" = c("MoMac2")),
+#' "MoMac1_niche" = list(
+#'   "sender" = c("Capsule fibroblasts","Mesothelial cells"),
+#'  "receiver" = c("MoMac1"))
+#' )
+#' DE_sender = calculate_niche_de(seurat_obj, niches, "sender")
+#' DE_receiver = calculate_niche_de(seurat_obj, niches, "receiver")
+#' expression_pct = 0.10
+#' DE_sender_processed = process_niche_de(DE_table = DE_sender, niches = niches, expression_pct = expression_pct, type = "sender")
+#' DE_receiver_processed = process_niche_de(DE_table = DE_receiver, niches = niches, expression_pct = expression_pct, type = "receiver")
+#' specificity_score_LR_pairs = "min_lfc"
+#' DE_sender_receiver = combine_sender_receiver_de(DE_sender_processed, DE_receiver_processed, lr_network, specificity_score = specificity_score_LR_pairs)
+#' }
+#'
+#' @export
+#'
 combine_sender_receiver_de = function(DE_sender_processed, DE_receiver_processed, lr_network, specificity_score = "min_lfc"){
 
   if(specificity_score == "min_lfc"){
@@ -138,6 +258,40 @@ combine_sender_receiver_de = function(DE_sender_processed, DE_receiver_processed
   DE_sender_receiver = DE_sender_receiver %>% dplyr::mutate(scaled_avg_score_ligand_receptor = scale_quantile_adapted(avg_score_ligand_receptor))
   return(DE_sender_receiver)
 }
+#' @title Processing differential expression output of the receiver cell types
+#'
+#' @description \code{process_receiver_target_de} Processing differential expression output of the receiver cell types -- used before ligand-activity and ligand-target inference.
+#'
+#' @usage
+#' process_receiver_target_de(DE_receiver_targets, niches, expression_pct, specificity_score = "min_lfc")
+#'
+#' @param DE_receiver_targets Output of `calculate_niche_de` with `type = receiver`
+#' @inheritParams process_niche_de
+#' @inheritParams combine_sender_receiver_de
+#'
+#' @return A tibble containing the processed DE information of the receiver cell types -- used before ligand-activity and ligand-target inference.
+#'
+#' @examples
+#' \dontrun{
+#' seurat_obj = readRDS(url("https://zenodo.org/record/5840787/files/seurat_obj_subset_integrated_zonation.rds"))
+#' niches = list(
+#' "KC_niche" = list(
+#'   "sender" = c("LSECs_portal","Hepatocytes_portal","Stellate cells_portal"),
+#'   "receiver" = c("KCs")),
+#' "MoMac2_niche" = list(
+#'   "sender" = c("Cholangiocytes","Fibroblast 2"),
+#'   "receiver" = c("MoMac2")),
+#' "MoMac1_niche" = list(
+#'   "sender" = c("Capsule fibroblasts","Mesothelial cells"),
+#'  "receiver" = c("MoMac1"))
+#' )
+#' DE_receiver = calculate_niche_de(seurat_obj, niches, "receiver")
+#' expression_pct = 0.10
+#' DE_receiver_processed = process_receiver_target_de(DE_receiver_targets = DE_receiver, niches = niches, expression_pct = expression_pct)
+#' }
+#'
+#' @export
+#'
 process_receiver_target_de = function(DE_receiver_targets, niches, expression_pct, specificity_score = "min_lfc"){
 
   DE_receiver = DE_receiver_targets %>% mutate(significant = p_val_adj <= 0.05, present = pct.1 >= expression_pct) %>% mutate(pct.1 = pct.1+0.0001, pct.2 = pct.2 + 0.0001) %>% mutate(diff = (pct.1/pct.2)) %>% mutate(score = diff*avg_log2FC) %>% arrange(-score)
@@ -166,6 +320,62 @@ process_receiver_target_de = function(DE_receiver_targets, niches, expression_pc
 
   return(DE_receiver_processed_targets)
 }
+#' @title Calculate the ligand activities and infer ligand-target links based on a list of niche-specific genes per receiver cell type
+#'
+#' @description \code{get_ligand_activities_targets} Calculate the ligand activities and infer ligand-target links based on a list of niche-specific genes per receiver cell type.
+#'
+#' @usage
+#' get_ligand_activities_targets(niche_geneset_list, ligand_target_matrix, top_n_target)
+#'
+#' @param niche_geneset_list List of lists/niches giving the geneset of interest for the receiver cell type in each niche.
+#' @inheritParams nichenet_seuratobj_aggregate
+#' @param top_n_target To predict active, affected targets of the prioritized ligands, consider only DE genes if they also belong to the a priori top n ("top_n_targets") targets of a ligand. Default = 200.
+#'
+#' @return A tibble of ligands, their activities and targets in each receiver cell type
+#'
+#' @examples
+#' \dontrun{
+#' seurat_obj = readRDS(url("https://zenodo.org/record/5840787/files/seurat_obj_subset_integrated_zonation.rds"))
+#' niches = list(
+#' "KC_niche" = list(
+#'   "sender" = c("LSECs_portal","Hepatocytes_portal","Stellate cells_portal"),
+#'   "receiver" = c("KCs")),
+#' "MoMac2_niche" = list(
+#'   "sender" = c("Cholangiocytes","Fibroblast 2"),
+#'   "receiver" = c("MoMac2")),
+#' "MoMac1_niche" = list(
+#'   "sender" = c("Capsule fibroblasts","Mesothelial cells"),
+#'  "receiver" = c("MoMac1"))
+# )
+#' DE_receiver = calculate_niche_de(seurat_obj, niches, "receiver")
+#' expression_pct = 0.10
+#' lfc_cutoff = 0.15 # recommended for 10x as min_lfc cutoff.
+#' specificity_score_targets = "min_lfc"
+#' DE_receiver_processed_targets = process_receiver_target_de(DE_receiver_targets = DE_receiver, niches = niches, expression_pct = expression_pct, specificity_score = specificity_score_targets)
+#' background = DE_receiver_processed_targets  %>% pull(target) %>% unique()
+#' geneset_KC = DE_receiver_processed_targets %>% filter(receiver == niches$KC_niche$receiver & target_score >= lfc_cutoff & target_significant == 1 & target_present == 1) %>% pull(target) %>% unique()
+#' geneset_MoMac2 = DE_receiver_processed_targets %>% filter(receiver == niches$MoMac2_niche$receiver & target_score >= lfc_cutoff & target_significant == 1 & target_present == 1) %>% pull(target) %>% unique()
+#' geneset_MoMac1 = DE_receiver_processed_targets %>% filter(receiver == niches$MoMac1_niche$receiver & target_score >= lfc_cutoff & target_significant == 1 & target_present == 1) %>% pull(target) %>% unique()
+#'top_n_target = 250
+#'niche_geneset_list = list(
+#'  "KC_niche" = list(
+#'    "receiver" = "KCs",
+#'    "geneset" = geneset_KC,
+#'    "background" = background),
+#'  "MoMac1_niche" = list(
+#'    "receiver" = "MoMac1",
+#'    "geneset" = geneset_MoMac1 ,
+#'    "background" = background),
+#'  "MoMac2_niche" = list(
+#'    "receiver" = "MoMac2",
+#'    "geneset" = geneset_MoMac2 ,
+#'    "background" = background)
+#')
+#'ligand_activities_targets = get_ligand_activities_targets(niche_geneset_list = niche_geneset_list, ligand_target_matrix = ligand_target_matrix, top_n_target = top_n_target)
+#' }
+#'
+#' @export
+#'
 get_ligand_activities_targets = function(niche_geneset_list, ligand_target_matrix, top_n_target){
 
   ligand_activities_targets = niche_geneset_list %>% lapply(function(niche_oi, ligand_target_matrix, top_n_target){
@@ -194,6 +404,30 @@ get_ligand_activities_targets = function(niche_geneset_list, ligand_target_matri
 
   return(ligand_activities_targets)
 }
+#' @title Calculate differential expression between spatially different subpopulations of the same cell type
+#'
+#' @description \code{calculate_spatial_DE} Calculate differential expression between spatially different subpopulations of the same cell type
+#'
+#' @usage
+#' calculate_spatial_DE(seurat_obj, spatial_info)
+#'
+#' @param seurat_obj Seurat object
+#' @param spatial_info Tibble giving information about which celltypes should be compared to each other for defining spatial differential expression. Contains the columns "celltype_region_oi", "celltype_other_region", "niche", "celltype_type".
+#'
+#' @return A tibble with DE output
+#'
+#' @examples
+#' \dontrun{
+#' seurat_obj = readRDS(url("https://zenodo.org/record/5840787/files/seurat_obj_subset_integrated_zonation.rds"))
+#' spatial_info = tibble(celltype_region_oi = c("LSECs_portal","Hepatocytes_portal","Stellate cells_portal"),
+#'celltype_other_region = c("LSECs_central","Hepatocytes_central","Stellate cells_central")
+#') %>%
+#'  mutate(niche =  "KC_niche", celltype_type = "sender")
+#' calculate_spatial_DE(seurat_obj, spatial_info)
+#' }
+#'
+#' @export
+#'
 calculate_spatial_DE = function(seurat_obj, spatial_info){
   spatial_info$celltype_region_oi %>% lapply(function(celltype_oi, seurat_obj, spatial_info){
     other_celltype = spatial_info %>% filter(celltype_region_oi == celltype_oi) %>% pull(celltype_other_region) %>% unique()
@@ -205,6 +439,32 @@ calculate_spatial_DE = function(seurat_obj, spatial_info){
     DE_table = DE_table %>% mutate(celltype = celltype_oi, niche = niche_oi) %>% arrange(-avg_log2FC)
   }, seurat_obj, spatial_info) %>% bind_rows()
 }
+#' @title Process the spatialDE output
+#'
+#' @description \code{process_spatial_de} Process the spatialDE output
+#'
+#' @usage
+#' process_spatial_de(DE_table, type, lr_network, expression_pct, specificity_score = "lfc")
+#'
+#' @param DE_table Output of `calculate_spatial_DE`
+#' @inheritParams process_niche_de
+#' @inheritParams combine_sender_receiver_de
+#'
+#' @return A tibble of processed spatial DE information
+#'
+#' @examples
+#' \dontrun{
+#' seurat_obj = readRDS(url("https://zenodo.org/record/5840787/files/seurat_obj_subset_integrated_zonation.rds"))
+#' spatial_info = tibble(celltype_region_oi = c("LSECs_portal","Hepatocytes_portal","Stellate cells_portal"),
+#'celltype_other_region = c("LSECs_central","Hepatocytes_central","Stellate cells_central")
+#') %>%
+#'  mutate(niche =  "KC_niche", celltype_type = "sender")
+#' DE_table= calculate_spatial_DE(seurat_obj, spatial_info)
+#' processed_spatialDE = process_spatial_de(DE_table, type = "sender", lr_network, expression_pct = 0.10, specificity_score = "lfc")
+#' }
+#'
+#' @export
+#'
 process_spatial_de = function(DE_table, type, lr_network, expression_pct, specificity_score = "lfc"){
   ### process the DE_tables of senders and receiver
 
@@ -231,6 +491,43 @@ process_spatial_de = function(DE_table, type, lr_network, expression_pct, specif
     return(DE_receiver)
   }
 }
+#' @title Makes a table similar to the output of `calculate_spatial_DE` and `process_spatial_de`, but now in case you don't have spatial information for the sender and/or receiver celltype. This is needed for comparability reasons.
+#'
+#' @description \code{get_non_spatial_de} Makes a table similar to the output of `calculate_spatial_DE` and `process_spatial_de`, but now in case you don't have spatial information for the sender and/or receiver celltype. This is needed for comparability reasons.
+#'
+#' @usage
+#' get_non_spatial_de(niches, spatial_info, type, lr_network)
+#'
+#' @inheritParams calculate_spatial_DE
+#' @inheritParams calculate_niche_de
+#' @inheritParams process_niche_de
+#' @inheritParams combine_sender_receiver_de
+#'
+#' @return A tibble of mock processed spatial DE information in case you don't have spatial information for the sender and/or receiver celltype.
+#'
+#' @examples
+#' \dontrun{
+#' niches = list(
+#' "KC_niche" = list(
+#'   "sender" = c("LSECs_portal","Hepatocytes_portal","Stellate cells_portal"),
+#'   "receiver" = c("KCs")),
+#' "MoMac2_niche" = list(
+#'   "sender" = c("Cholangiocytes","Fibroblast 2"),
+#'   "receiver" = c("MoMac2")),
+#' "MoMac1_niche" = list(
+#'   "sender" = c("Capsule fibroblasts","Mesothelial cells"),
+#'  "receiver" = c("MoMac1"))
+# )
+#' seurat_obj = readRDS(url("https://zenodo.org/record/5840787/files/seurat_obj_subset_integrated_zonation.rds"))
+#' spatial_info = tibble(celltype_region_oi = c("LSECs_portal","Hepatocytes_portal","Stellate cells_portal"),
+#'celltype_other_region = c("LSECs_central","Hepatocytes_central","Stellate cells_central")
+#') %>%
+#'  mutate(niche =  "KC_niche", celltype_type = "sender")
+#' get_non_spatial_de(niches, spatial_info, type = "receiver", lr_network)
+#' }
+#'
+#' @export
+#'
 get_non_spatial_de = function(niches, spatial_info, type, lr_network){
 
   if(type == "sender"){
@@ -258,11 +555,52 @@ get_non_spatial_de = function(niches, spatial_info, type, lr_network){
   }
   return(spatial_df)
 }
-mutate_cond <- function(.data, condition, ..., envir = parent.frame()) {
-  condition <- eval(substitute(condition), .data, envir)
-  .data[condition, ] <- .data[condition, ] %>% mutate(...)
-  .data
-}
+#' @title Use the information from the niche- and spatial differential expression analysis of ligand-senders and receptor-receivers pairs, in addition to the ligand activity prediction and ligand-target inferernce, in order to make a final ligand-receptor and ligand-target prioritization table.
+#'
+#' @description \code{get_prioritization_tables} Use the information from the niche- and spatial differential expression analysis of ligand-senders and receptor-receivers pairs, in addition to the ligand activity prediction and ligand-target inferernce, in order to make a final ligand-receptor and ligand-target prioritization table.
+#'
+#' @usage
+#' get_prioritization_tables(output_nichenet_analysis, prioritizing_weights)
+#'
+#' @param output_nichenet_analysis List containing following data frames: DE_sender_receiver, ligand_scaled_receptor_expression_fraction_df, sender_spatial_DE_processed,
+#' receiver_spatial_DE_processed, ligand_activities_targets, DE_receiver_processed_targets, exprs_tbl_ligand, exprs_tbl_receptor, exprs_tbl_target
+#' @param prioritizing_weights Named numeric vector in the form of:
+#' #' prioritizing_weights = c("scaled_ligand_score" = 5,
+# "scaled_ligand_expression_scaled" = 1,
+# "ligand_fraction" = 1,
+# "scaled_ligand_score_zonation" = 2,
+# "scaled_receptor_score" = 0.5,
+# "scaled_receptor_expression_scaled" = 0.5,
+# "receptor_fraction" = 1,
+# "ligand_scaled_receptor_expression_fraction" = 1,
+# "scaled_receptor_score_zonation" = 0,
+# "scaled_activity" = 0,
+# "scaled_activity_normalized" = 1,
+# "bona_fide" = 1)
+#'
+#' @return A list containing a prioritization table for ligand-receptor interactions, and one for ligand-target interactions
+#'
+#' @examples
+#' \dontrun{
+#' prioritizing_weights = c("scaled_ligand_score" = 5,
+# "scaled_ligand_expression_scaled" = 1,
+# "ligand_fraction" = 1,
+# "scaled_ligand_score_zonation" = 2,
+# "scaled_receptor_score" = 0.5,
+# "scaled_receptor_expression_scaled" = 0.5,
+# "receptor_fraction" = 1,
+# "ligand_scaled_receptor_expression_fraction" = 1,
+# "scaled_receptor_score_zonation" = 0,
+# "scaled_activity" = 0,
+# "scaled_activity_normalized" = 1,
+# "bona_fide" = 1)
+#' output_nichenet_analysis = list(DE_sender_receiver = DE_sender_receiver, ligand_scaled_receptor_expression_fraction_df = ligand_scaled_receptor_expression_fraction_df, sender_spatial_DE_processed = sender_spatial_DE_processed, receiver_spatial_DE_processed = receiver_spatial_DE_processed,
+# ligand_activities_targets = ligand_activities_targets, DE_receiver_processed_targets = DE_receiver_processed_targets, exprs_tbl_ligand = exprs_tbl_ligand,  exprs_tbl_receptor = exprs_tbl_receptor, exprs_tbl_target = exprs_tbl_target)
+#' prioritization_tables = get_prioritization_tables(output_nichenet_analysis, prioritizing_weights)
+#' }
+#'
+#' @export
+#'
 get_prioritization_tables = function(output_nichenet_analysis, prioritizing_weights){
   combined_information = output_nichenet_analysis$DE_sender_receiver %>%
     inner_join(output_nichenet_analysis$ligand_scaled_receptor_expression_fraction_df, by = c("receiver", "ligand", "receptor")) %>%
@@ -275,8 +613,6 @@ get_prioritization_tables = function(output_nichenet_analysis, prioritizing_weig
     inner_join(output_nichenet_analysis$exprs_tbl_target, by = c("receiver", "target"))
 
   # reorder the columns
-
-
 
   combined_information = combined_information %>% mutate(ligand_receptor = paste(ligand, receptor, sep = "--"))  %>%  mutate(bonafide_score = 1) %>%  mutate_cond(bonafide == FALSE, bonafide_score = 0.5)
 

@@ -38,7 +38,10 @@ Imports:
     Seurat,
     cowplot,
     ggpubr,
-    magrittr
+    magrittr,
+    circlize,
+    ComplexHeatmap,
+    grDevices
 Suggests: knitr,
     rmarkdown,
     testthat,

@@ -1034,6 +1034,9 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
 
   # DE analysis for each sender cell type -- of course only possible when having sender cell types
   if (length(sender) > 1 | (length(sender) == 1 & sender != "undefined")){
+    if (verbose == TRUE){print("Perform DE analysis in sender cells")}
+    seurat_obj = subset(seurat_obj, features= potential_ligands)
+
     DE_table_all = Idents(seurat_obj) %>% levels() %>% intersect(sender_celltypes) %>% lapply(get_lfc_celltype, seurat_obj = seurat_obj, condition_colname = condition_colname, condition_oi = condition_oi, condition_reference = condition_reference, expression_pct = expression_pct, celltype_col = NULL) %>% reduce(full_join, by = "gene") # use this if cell type labels are the identities of your Seurat object -- if not: indicate the celltype_col properly
     DE_table_all[is.na(DE_table_all)] = 0
 
@@ -1051,12 +1054,6 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     colnames(vis_ligand_lfc) = vis_ligand_lfc %>% colnames() %>% make.names()
 
     p_ligand_lfc = vis_ligand_lfc %>% make_threecolor_heatmap_ggplot("Prioritized ligands","LFC in Sender", low_color = "midnightblue",mid_color = "white", mid = median(vis_ligand_lfc), high_color = "red",legend_position = "top", x_axis_position = "top", legend_title = "LFC") + theme(axis.text.y = element_text(face = "italic"))
-    p_ligand_lfc
-
-    # change colors a bit to make them more stand out
-    p_ligand_lfc = p_ligand_lfc + scale_fill_gradientn(colors = c("midnightblue","blue", "grey95", "grey99","firebrick1","red"),values = c(0,0.1,0.2,0.25, 0.40, 0.7,1), limits = c(vis_ligand_lfc %>% min() - 0.1, vis_ligand_lfc %>% max() + 0.1))
-    p_ligand_lfc
-
 
     # ligand expression Seurat dotplot
     real_makenames_conversion = lr_network$from %>% unique() %>% magrittr::set_names(lr_network$from %>% unique() %>% make.names())

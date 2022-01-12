@@ -4,7 +4,7 @@
 \alias{get_ligand_signaling_path_with_receptor}
 \title{Get ligand-target signaling paths between ligand(s), receptors, and target gene(s) of interest}
 \usage{
-get_ligand_signaling_path_with_receptor(ligand_tf_matrix, ligands_all, receptors_all, targets_all, top_n_regulators = 4, weighted_networks, ligands_position = "cols")
+get_ligand_signaling_path_with_receptor(ligand_tf_matrix, ligands_all, receptors_all, targets_all, top_n_regulators = 3, weighted_networks, ligands_position = "cols")
 }
 \arguments{
 \item{ligand_tf_matrix}{A matrix of ligand-regulator probability scores}
