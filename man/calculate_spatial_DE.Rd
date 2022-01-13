@@ -4,12 +4,14 @@
 \alias{calculate_spatial_DE}
 \title{Calculate differential expression between spatially different subpopulations of the same cell type}
 \usage{
-calculate_spatial_DE(seurat_obj, spatial_info)
+calculate_spatial_DE(seurat_obj, spatial_info, assay_oi = "SCT")
 }
 \arguments{
 \item{seurat_obj}{Seurat object}
 
 \item{spatial_info}{Tibble giving information about which celltypes should be compared to each other for defining spatial differential expression. Contains the columns "celltype_region_oi", "celltype_other_region", "niche", "celltype_type".}
+
+\item{assay_oi}{Assay for the DE analysis: RNA, SCT, ...}
 }
 \value{
 A tibble with DE output

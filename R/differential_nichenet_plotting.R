@@ -32,11 +32,11 @@ ligand_lfc_plot = function(plot_data, max_lfc){
   return(p_lig_lfc)
 
 }
-ligand_lfc_zonation_plot = function(plot_data, max_lfc){
-  # ligand zonation
+ligand_lfc_spatial_plot = function(plot_data, max_lfc){
+  # ligand spatial
   p1 = plot_data   %>% filter(niche == "KC") %>%
     # ggplot(aes(ligand_ordered, sender , color = ligand_expression_scaled_myeloid, size = ligand_fraction )) +
-    ggplot(aes(sender,ligand_receptor_ordered , fill = ligand_score_zonation)) +
+    ggplot(aes(sender,ligand_receptor_ordered , fill = ligand_score_spatial)) +
     # geom_point() +
     geom_tile(color = "black") +
     facet_grid(~niche, scales = "free", space = "free") +
@@ -57,13 +57,13 @@ ligand_lfc_zonation_plot = function(plot_data, max_lfc){
       strip.background = element_rect(color="darkgrey", fill="whitesmoke", size=1.5, linetype="solid"),
       strip.background.y = element_blank(),
       strip.text.y = element_blank()
-    ) + labs(fill = "Sender\nPeriportal-vs-Pericentral\nLigand LFC") + xlab("Sender Zonation\nLFC ligand")
+    ) + labs(fill = "Sender\nPeriportal-vs-Pericentral\nLigand LFC") + xlab("Sender spatial\nLFC ligand")
   custom_scale_fill = scale_fill_gradientn(colours = RColorBrewer::brewer.pal(n = 7, name = "RdBu") %>% rev(),values = c(0, 0.3, 0.466, 0.5, 0.533, 0.6, 1),  limits = c(-1*max_lfc, max_lfc))
   # custom_scale_fill = scale_color_gradientn(colours = RColorBrewer::brewer.pal(n = 7, name = "RdYlBu") %>% rev(),values = c(0, 0.2, 0.35, 0.5, 0.65, 0.8, 1),  limits = c(-1*max_exprs, max_exprs))
 
-  p_ligands_zonation = p1 + custom_scale_fill
+  p_ligands_spatial = p1 + custom_scale_fill
 
-  return(p_ligands_zonation)
+  return(p_ligands_spatial)
 
 }
 receptor_lfc_plot = function(plot_data, max_lfc){
@@ -197,7 +197,7 @@ prioritization_score_plot = function(plot_data){
 #' @description \code{make_ligand_activity_target_exprs_plot} Plot the ligand expression in senders plus their activity and target genes in receivers
 #'
 #' @usage
-#' make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, plot_legend = TRUE, heights = NULL, widths = NULL)
+#' make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, ligand_target_matrix, plot_legend = TRUE, heights = NULL, widths = NULL)
 #'
 #' @param receiver_oi Name of the receiver cell type of interest
 #' @param prioritized_tbl_oi Dataframe with the ligand-receptor interactions that should be visualized
@@ -206,6 +206,7 @@ prioritization_score_plot = function(plot_data){
 #' @param exprs_tbl_ligand Dataframe with the expression values for the ligands in the sender cell types
 #' @param exprs_tbl_target Dataframe with the expression values for the targets in the receiver cell types
 #' @param lfc_cutoff Cutoff used on the logFC value
+#' @param ligand_target_matrix ligand-target matrix
 #' @param plot_legend TRUE (default): add legend to the plot. FALSE: do not add legend.
 #' @param heights automatic determination if default NULL. If not NULL: number given by the user to indicate the requested heights, which are the height proportions of the different row panels in the plot.
 #' @param widths automatic determination if default NULL. If not NULL: number given by the user to indicate the requested widths, which are the width proportions of the different columns (side-by-side heatmaps) in the plot.
@@ -214,12 +215,12 @@ prioritization_score_plot = function(plot_data){
 #'
 #' @examples
 #' \dontrun{
-#' make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, plot_legend = TRUE, heights = NULL, widths = NULL)
+#' make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, ligand_target_matrix, plot_legend = TRUE, heights = NULL, widths = NULL)
 #' }
 #'
 #' @export
 #'
-make_ligand_activity_target_exprs_plot = function(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, plot_legend = TRUE, heights = NULL, widths = NULL){
+make_ligand_activity_target_exprs_plot = function(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, ligand_target_matrix, plot_legend = TRUE, heights = NULL, widths = NULL){
   requireNamespace("dplyr")
   requireNamespace("ggplot2")
 
@@ -528,28 +529,30 @@ make_ligand_receptor_lfc_plot = function(receiver_oi, prioritized_tbl_oi, priori
   p_rec_lfc
 
   design = "A#B"
-  p_LR_pair = patchwork::wrap_plots(A = p_lig_lfc, B = p_rec_lfc, nrow = 1, guides = "collect", design = design, widths = c(plot_data$sender %>% unique() %>% length(), 1 ,plot_data$receiver %>% unique() %>% length() +0.5))
+  p_LR_pair = patchwork::wrap_plots(A = p_lig_lfc, B = p_rec_lfc + ylab(""), nrow = 1, guides = "collect", design = design, widths = c(plot_data$sender %>% unique() %>% length(), 1 ,plot_data$receiver %>% unique() %>% length() +0.5))
   p_LR_pair
 }
-#' @title make_ligand_receptor_lfc_zonation_plot
+#' @title make_ligand_receptor_lfc_spatial_plot
 #'
-#' @description \code{make_ligand_receptor_lfc_zonation_plot} Plot the ligand logFC in senders plus the logFC of their receptors in the receivers. In addition, add the spatialDE logFC values of the ligands!
+#' @description \code{make_ligand_receptor_lfc_spatial_plot} Plot the ligand logFC in senders plus the logFC of their receptors in the receivers. In addition, add the spatialDE logFC values of the ligands!
 #'
 #' @usage
-#' make_ligand_receptor_lfc_zonation_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, plot_legend = TRUE, heights = NULL, widths = NULL)
+#' make_ligand_receptor_lfc_spatial_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, ligand_spatial = TRUE, receptor_spatial = TRUE, plot_legend = TRUE, heights = NULL, widths = NULL)
 #'
 #' @inheritParams make_ligand_receptor_lfc_plot
+#' @param ligand_spatial TRUE if need to plot the ligand spatial DE info, FALSE if not.
+#' @param receptor_spatial TRUE if need to plot the receptor spatial DE info, FALSE if not.
 #'
 #' @return List containing the combined heatmap and the legend
 #'
 #' @examples
 #' \dontrun{
-#' make_ligand_receptor_lfc_zonation_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, plot_legend = TRUE, heights = NULL, widths = NULL)
+#' make_ligand_receptor_lfc_spatial_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, ligand_spatial = TRUE, receptor_spatial = TRUE, plot_legend = TRUE, heights = NULL, widths = NULL)
 #' }
 #'
 #' @export
 #'
-make_ligand_receptor_lfc_zonation_plot = function(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, plot_legend = TRUE, heights = NULL, widths = NULL){
+make_ligand_receptor_lfc_spatial_plot = function(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, ligand_spatial = TRUE, receptor_spatial = TRUE, plot_legend = TRUE, heights = NULL, widths = NULL){
 
   filtered_ligand_receptors = prioritized_tbl_oi %>% pull(ligand_receptor) %>% unique()
 
@@ -588,40 +591,79 @@ make_ligand_receptor_lfc_zonation_plot = function(receiver_oi, prioritized_tbl_o
   p_lig_lfc = p_lig_lfc + custom_scale_fill
   # p_lig_lfc
 
-  # ligand zonation
+  if(ligand_spatial == TRUE){
+    # ligand spatial
 
-  senders_zonated = plot_data %>% filter(ligand_score_zonation != 0) %>% pull(sender) %>% unique()
+    senders_zonated = plot_data %>% filter(ligand_score_spatial != 0) %>% pull(sender) %>% unique()
 
-  p1 = plot_data %>% filter(sender %in% senders_zonated) %>%
-    # ggplot(aes(ligand_ordered, sender , color = ligand_expression_scaled_myeloid, size = ligand_fraction )) +
-    ggplot(aes(sender,ligand_receptor_ordered , fill = ligand_score_zonation)) +
-    # geom_point() +
-    geom_tile(color = "black") +
-    facet_grid(~niche, scales = "free", space = "free") +
-    scale_x_discrete(position = "top") +
-    theme_light() +
-    theme(
-      axis.ticks = element_blank(),
-      axis.title.x = element_text(size = 11),
-      axis.title.y = element_text(size = 11),
-      axis.text.y = element_text(face = "bold.italic", size = 9),
-      axis.text.x = element_text(size = 9,  angle = 90,hjust = 0),
-      strip.text.x.top = element_text(angle = 0),
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-      panel.spacing.x = unit(0.25, "lines"),
-      panel.spacing.y = unit(0.1, "lines"),
-      strip.text.x = element_text(size = 7, color = "black", face = "bold"),
-      strip.background = element_rect(color="darkgrey", fill="whitesmoke", size=1.5, linetype="solid"),
-      strip.background.y = element_blank(),
-      strip.text.y = element_blank()
-    ) + labs(fill = "Sender\nRegion-oi-vs-Other\nLigand LFC") + xlab("Sender Spatial\nLFC ligand")
-  max_lfc = abs(plot_data$ligand_score_zonation ) %>% max()
-  custom_scale_fill = scale_fill_gradientn(colours = RColorBrewer::brewer.pal(n = 7, name = "RdBu") %>% rev(),values = c(0, 0.3, 0.466, 0.5, 0.533, 0.6, 1),  limits = c(-1*max_lfc, max_lfc))
-  # custom_scale_fill = scale_color_gradientn(colours = RColorBrewer::brewer.pal(n = 7, name = "RdYlBu") %>% rev(),values = c(0, 0.2, 0.35, 0.5, 0.65, 0.8, 1),  limits = c(-1*max_exprs, max_exprs))
+    p1 = plot_data %>% filter(sender %in% senders_zonated) %>%
+      # ggplot(aes(ligand_ordered, sender , color = ligand_expression_scaled_myeloid, size = ligand_fraction )) +
+      ggplot(aes(sender,ligand_receptor_ordered , fill = ligand_score_spatial)) +
+      # geom_point() +
+      geom_tile(color = "black") +
+      facet_grid(~niche, scales = "free", space = "free") +
+      scale_x_discrete(position = "top") +
+      theme_light() +
+      theme(
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 11),
+        axis.title.y = element_text(size = 11),
+        axis.text.y = element_text(face = "bold.italic", size = 9),
+        axis.text.x = element_text(size = 9,  angle = 90,hjust = 0),
+        strip.text.x.top = element_text(angle = 0),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.spacing.x = unit(0.25, "lines"),
+        panel.spacing.y = unit(0.1, "lines"),
+        strip.text.x = element_text(size = 7, color = "black", face = "bold"),
+        strip.background = element_rect(color="darkgrey", fill="whitesmoke", size=1.5, linetype="solid"),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()
+      ) + labs(fill = "Sender\nRegion-oi-vs-Other\nLigand LFC") + xlab("Sender Spatial\nLFC ligand")
+    max_lfc = abs(plot_data$ligand_score_spatial ) %>% max()
+    custom_scale_fill = scale_fill_gradientn(colours = RColorBrewer::brewer.pal(n = 7, name = "RdBu") %>% rev(),values = c(0, 0.3, 0.466, 0.5, 0.533, 0.6, 1),  limits = c(-1*max_lfc, max_lfc))
+    # custom_scale_fill = scale_color_gradientn(colours = RColorBrewer::brewer.pal(n = 7, name = "RdYlBu") %>% rev(),values = c(0, 0.2, 0.35, 0.5, 0.65, 0.8, 1),  limits = c(-1*max_exprs, max_exprs))
 
-  p_ligands_zonation = p1 + custom_scale_fill
+    p_ligands_spatial = p1 + custom_scale_fill
 
+  }
+
+  if(receptor_spatial == TRUE){
+    # receptor spatial
+
+    receivers_zonated = plot_data %>% filter(receptor_score_spatial != 0) %>% pull(receiver) %>% unique()
+
+    p1 = plot_data %>% filter(receiver %in% receivers_zonated) %>%
+      # ggplot(aes(receptor_ordered, receiver , color = receptor_expression_scaled_myeloid, size = receptor_fraction )) +
+      ggplot(aes(receiver,ligand_receptor_ordered , fill = receptor_score_spatial)) +
+      # geom_point() +
+      geom_tile(color = "black") +
+      facet_grid(~niche, scales = "free", space = "free") +
+      scale_x_discrete(position = "top") +
+      theme_light() +
+      theme(
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 11),
+        axis.title.y = element_text(size = 11),
+        axis.text.y = element_text(face = "bold.italic", size = 9),
+        axis.text.x = element_text(size = 9,  angle = 90,hjust = 0),
+        strip.text.x.top = element_text(angle = 0),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.spacing.x = unit(0.25, "lines"),
+        panel.spacing.y = unit(0.1, "lines"),
+        strip.text.x = element_text(size = 7, color = "black", face = "bold"),
+        strip.background = element_rect(color="darkgrey", fill="whitesmoke", size=1.5, linetype="solid"),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()
+      ) + labs(fill = "Receiver\nRegion-oi-vs-Other\nreceptor LFC") + xlab("Receiver Spatial\nLFC receptor")
+    max_lfc = abs(plot_data$receptor_score_spatial ) %>% max()
+    custom_scale_fill = scale_fill_gradientn(colours = RColorBrewer::brewer.pal(n = 7, name = "RdBu") %>% rev(),values = c(0, 0.3, 0.466, 0.5, 0.533, 0.6, 1),  limits = c(-1*max_lfc, max_lfc))
+    # custom_scale_fill = scale_color_gradientn(colours = RColorBrewer::brewer.pal(n = 7, name = "RdYlBu") %>% rev(),values = c(0, 0.2, 0.35, 0.5, 0.65, 0.8, 1),  limits = c(-1*max_exprs, max_exprs))
+
+    p_receptors_spatial = p1 + custom_scale_fill
+
+  }
 
   p_rec_lfc = plot_data %>%
     ggplot(aes(receiver, ligand_receptor_ordered, fill = receptor_score)) +
@@ -651,8 +693,18 @@ make_ligand_receptor_lfc_zonation_plot = function(receiver_oi, prioritized_tbl_o
   p_rec_lfc = p_rec_lfc + custom_scale_fill
   # p_rec_lfc
 
-  design = "AZ#B"
-  p_LR_pair = patchwork::wrap_plots(A = p_lig_lfc, Z = p_ligands_zonation + ylab(""), B = p_rec_lfc + ylab(""), nrow = 1, guides = "collect", design = design, widths = c(plot_data$sender %>% unique() %>% length(), 3, 1 ,plot_data$receiver %>% unique() %>% length() +0.5))
+  if(ligand_spatial == TRUE & receptor_spatial == FALSE){
+    design = "AZ#B"
+    p_LR_pair = patchwork::wrap_plots(A = p_lig_lfc, Z = p_ligands_spatial + ylab(""), B = p_rec_lfc + ylab(""), nrow = 1, guides = "collect", design = design, widths = c(plot_data$sender %>% unique() %>% length(), 3, 1 ,plot_data$receiver %>% unique() %>% length() +0.5))
+  }
+  if(ligand_spatial == FALSE & receptor_spatial == TRUE){
+    design = "A#BX"
+    p_LR_pair = patchwork::wrap_plots(A = p_lig_lfc,  B = p_rec_lfc + ylab(""), X = p_receptors_spatial + ylab(""),  nrow = 1, guides = "collect", design = design, widths = c(plot_data$sender %>% unique() %>% length(), 1, plot_data$receiver %>% unique() %>% length() +3, 2))
+  }
+  if(ligand_spatial == TRUE & receptor_spatial == TRUE){
+    design = "AZ#BX"
+    p_LR_pair = patchwork::wrap_plots(A = p_lig_lfc, Z = p_ligands_spatial + ylab(""), B = p_rec_lfc + ylab(""), X = p_receptors_spatial + ylab(""), nrow = 1, guides = "collect", design = design, widths = c(plot_data$sender %>% unique() %>% length(), 3, 1, plot_data$receiver %>% unique() %>% length() +3, 2))
+  }
   p_LR_pair
 }
 #' @title make_circos_lr

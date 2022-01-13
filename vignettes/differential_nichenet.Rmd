@@ -182,38 +182,38 @@ if(include_spatial_info_sender == FALSE & include_spatial_info_receiver == FALSE
 
 ```{r}
 if(include_spatial_info_sender == TRUE){
-  sender_spatial_DE = calculate_spatial_DE(seurat_obj = seurat_obj %>% subset(features = lr_network$ligand %>% unique()), spatial_info = spatial_info %>% filter(celltype_type == "sender"))
+  sender_spatial_DE = calculate_spatial_DE(seurat_obj = seurat_obj %>% subset(features = lr_network$ligand %>% unique()), spatial_info = spatial_info %>% filter(celltype_type == "sender"), assay_oi = assay_oi)
   sender_spatial_DE_processed = process_spatial_de(DE_table = sender_spatial_DE, type = "sender", lr_network = lr_network, expression_pct = expression_pct, specificity_score = specificity_score_spatial)
 
-  # add a neutral zonation score for sender celltypes in which the zonation is not known / not of importance
+  # add a neutral spatial score for sender celltypes in which the spatial is not known / not of importance
   sender_spatial_DE_others = get_non_spatial_de(niches = niches, spatial_info = spatial_info, type = "sender", lr_network = lr_network)
   sender_spatial_DE_processed = sender_spatial_DE_processed %>% bind_rows(sender_spatial_DE_others)
 
-  sender_spatial_DE_processed = sender_spatial_DE_processed %>% mutate(scaled_ligand_score_zonation = scale_quantile_adapted(ligand_score_zonation))
+  sender_spatial_DE_processed = sender_spatial_DE_processed %>% mutate(scaled_ligand_score_spatial = scale_quantile_adapted(ligand_score_spatial))
 
 } else {
-  # # add a neutral zonation score for all sender celltypes (for none of them, zonation is relevant in this case)
+  # # add a neutral spatial score for all sender celltypes (for none of them, spatial is relevant in this case)
   sender_spatial_DE_processed = get_non_spatial_de(niches = niches, spatial_info = spatial_info, type = "sender", lr_network = lr_network)
-  sender_spatial_DE_processed = sender_spatial_DE_processed %>% mutate(scaled_ligand_score_zonation = scale_quantile_adapted(ligand_score_zonation))  
+  sender_spatial_DE_processed = sender_spatial_DE_processed %>% mutate(scaled_ligand_score_spatial = scale_quantile_adapted(ligand_score_spatial))  
 
 }
 ```
 
 ```{r}
 if(include_spatial_info_receiver == TRUE){
-  receiver_spatial_DE = calculate_spatial_DE(seurat_obj = seurat_obj %>% subset(features = lr_network$receptor %>% unique()), spatial_info = spatial_info %>% filter(celltype_type == "receiver"))
+  receiver_spatial_DE = calculate_spatial_DE(seurat_obj = seurat_obj %>% subset(features = lr_network$receptor %>% unique()), spatial_info = spatial_info %>% filter(celltype_type == "receiver"), assay_oi = assay_oi)
   receiver_spatial_DE_processed = process_spatial_de(DE_table = receiver_spatial_DE, type = "receiver", lr_network = lr_network, expression_pct = expression_pct, specificity_score = specificity_score_spatial)
 
-  # add a neutral zonation score for receiver celltypes in which the zonation is not known / not of importance
+  # add a neutral spatial score for receiver celltypes in which the spatial is not known / not of importance
   receiver_spatial_DE_others = get_non_spatial_de(niches = niches, spatial_info = spatial_info, type = "receiver", lr_network = lr_network)
   receiver_spatial_DE_processed = receiver_spatial_DE_processed %>% bind_rows(receiver_spatial_DE_others)
 
-  receiver_spatial_DE_processed = receiver_spatial_DE_processed %>% mutate(scaled_receptor_score_zonation = scale_quantile_adapted(receptor_score_zonation))
+  receiver_spatial_DE_processed = receiver_spatial_DE_processed %>% mutate(scaled_receptor_score_spatial = scale_quantile_adapted(receptor_score_spatial))
 
 } else {
-    # # add a neutral zonation score for all receiver celltypes (for none of them, zonation is relevant in this case)
+    # # add a neutral spatial score for all receiver celltypes (for none of them, spatial is relevant in this case)
   receiver_spatial_DE_processed = get_non_spatial_de(niches = niches, spatial_info = spatial_info, type = "receiver", lr_network = lr_network)
-  receiver_spatial_DE_processed = receiver_spatial_DE_processed %>% mutate(scaled_receptor_score_zonation = scale_quantile_adapted(receptor_score_zonation))
+  receiver_spatial_DE_processed = receiver_spatial_DE_processed %>% mutate(scaled_receptor_score_spatial = scale_quantile_adapted(receptor_score_spatial))
 }
 ```
 
@@ -282,7 +282,7 @@ In this step, we will calculate average (scaled) expression, and fraction of exp
 Now this is here demonstrated via the DotPlot function of Seurat, but this can also be done via other ways of course.
 
 ```{r}
-features_oi = union(lr_network$ligand, lr_network$receptor) %>% union(ligand_activities_targets$target)
+features_oi = union(lr_network$ligand, lr_network$receptor) %>% union(ligand_activities_targets$target) %>% setdiff(NA)
   
 dotplot = suppressWarnings(Seurat::DotPlot(seurat_obj %>% subset(idents = niches %>% unlist() %>% unique()), features = features_oi, assay = assay_oi))
 exprs_tbl = dotplot$data %>% as_tibble()
@@ -324,7 +324,7 @@ We provide the user the option to consider the following properties for prioriti
 
 * Ligand expression fraction: Ligands that are expressed in a smaller fraction of cells of a cell type than defined by `exprs_cutoff`(default: 0.10) will get a lower ranking, proportional to their fraction (eg ligand expressed in 9% of cells will be ranked higher than ligand expressed in 0.5% of cells). We opted for this weighting based on fraction, instead of removing ligands that are not expressed in more cells than this cutoff, because some interesting ligands could be removed that way. Fraction of expression is not taken into account for the prioritization if it is already higher than the cutoff. `prioritizing_weights` argument: `"ligand_fraction"`.  Recommended weight: 1.
 
-* Ligand spatial DE score: spatial expression specificity of the ligand. If the niche of interest is at a specific tissue location, but some of the sender cell types of that niche are also present in other locations, it can be very informative to further prioritize ligands of that sender by looking how they are DE between the spatial location of interest compared to the other locations. `prioritizing_weights` argument: `"scaled_ligand_score_zonation"`.  Recommended weight: 2 (or 0 if not applicable). 
+* Ligand spatial DE score: spatial expression specificity of the ligand. If the niche of interest is at a specific tissue location, but some of the sender cell types of that niche are also present in other locations, it can be very informative to further prioritize ligands of that sender by looking how they are DE between the spatial location of interest compared to the other locations. `prioritizing_weights` argument: `"scaled_ligand_score_spatial"`.  Recommended weight: 2 (or 0 if not applicable). 
 
 * Receptor DE score: niche-specific expression of the receptor: by default, this the minimum logFC between the receiver of interest and all the receiver of the other niche(s). The higher the min logFC, the higher the niche-specificity of the receptor. Based on our experience, we don't suggest to give this as high importance as the ligand DE, but this might depend on the specific case study. `prioritizing_weights` argument: `"scaled_receptor_score"`.  Recommended weight: 0.5 (at least 0.5, and lower than `"scaled_ligand_score"`).
 
@@ -334,7 +334,7 @@ We provide the user the option to consider the following properties for prioriti
 
 * Receptor expression strength: this factor let us give higher weights to the most highly expressed receptor of a ligand in the receiver. This let us rank higher one member of a receptor family if it higher expressed than the other members. `prioritizing_weights` argument: `"ligand_scaled_receptor_expression_fraction"`. Recommended value: 1 (minimum: 0.5).
 
-* Receptor spatial DE score: spatial expression specificity of the receptor. If the niche of interest is at a specific tissue location, but the receiver cell type of that niche is also present in other locations, it can be very informative to further prioritize receptors of that receiver by looking how they are DE between the spatial location of interest compared to the other locations. `prioritizing_weights` argument: `"scaled_receptor_score_zonation"`.  Recommended weight: 1 (or 0 if not applicable).
+* Receptor spatial DE score: spatial expression specificity of the receptor. If the niche of interest is at a specific tissue location, but the receiver cell type of that niche is also present in other locations, it can be very informative to further prioritize receptors of that receiver by looking how they are DE between the spatial location of interest compared to the other locations. `prioritizing_weights` argument: `"scaled_receptor_score_spatial"`.  Recommended weight: 1 (or 0 if not applicable).
 
 * Absolute ligand activity: to further prioritize ligand-receptor pairs based on their predicted effect of the ligand-receptor interaction on the gene expression in the receiver cell type - absolute ligand activity accords to 'absolute' enrichment of target genes of a ligand within the affected receiver genes. `prioritizing_weights` argument: `"scaled_activity"`.  Recommended weight: 0, unless absolute enrichment of target genes is of specific interest.
 
@@ -347,12 +347,12 @@ We provide the user the option to consider the following properties for prioriti
 prioritizing_weights = c("scaled_ligand_score" = 5,
                          "scaled_ligand_expression_scaled" = 1,
                          "ligand_fraction" = 1,
-                         "scaled_ligand_score_zonation" = 2, 
+                         "scaled_ligand_score_spatial" = 2, 
                          "scaled_receptor_score" = 0.5,
                          "scaled_receptor_expression_scaled" = 0.5,
                           "receptor_fraction" = 1, 
                          "ligand_scaled_receptor_expression_fraction" = 1,
-                         "scaled_receptor_score_zonation" = 0,
+                         "scaled_receptor_score_spatial" = 0,
                          "scaled_activity" = 0,
                          "scaled_activity_normalized" = 1,
                          "bona_fide" = 1)
@@ -410,8 +410,8 @@ lfc_plot
 Show the spatialDE as additional information
 
 ```{r, fig.height= 26, fig.width=11}
-lfc_plot = make_ligand_receptor_lfc_zonation_plot(receiver_oi, prioritized_tbl_oi, prioritization_tables$prioritization_tbl_ligand_receptor, plot_legend = FALSE, heights = NULL, widths = NULL)
-lfc_plot
+lfc_plot_spatial = make_ligand_receptor_lfc_spatial_plot(receiver_oi, prioritized_tbl_oi, prioritization_tables$prioritization_tbl_ligand_receptor, ligand_spatial = include_spatial_info_sender, receptor_spatial = include_spatial_info_receiver, plot_legend = FALSE, heights = NULL, widths = NULL)
+lfc_plot_spatial
 ```
 
 From this plot, you can see that some KC-niche ligands like Dll4 (by LSEC) and Il34 (by Stellate cells) are higher expressed in the periportal LSEC/stellate cells vs the pericentral ones. This can be interesting information knowing that KCs are mainly located periportally. However, other ligands like Gdf2 (by Stellate cells) are not preferentially expressed by periportal stellate cells, but this does not mean they cannot be interesting. As you can see in the following figure, this ligand has one of the highest ligand activities, meaning that there is a strong enrichment of its target genes among the KC-specific genes. 
@@ -423,11 +423,13 @@ Active target gene inference - cf Default NicheNet
 Now: visualization of ligand activity and ligand-target links
 
 ```{r, fig.height= 12, fig.width=30}
-exprs_plot = make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi,  prioritization_tables$prioritization_tbl_ligand_receptor,  prioritization_tables$prioritization_tbl_ligand_target, output$exprs_tbl_ligand,  output$exprs_tbl_target, lfc_cutoff, plot_legend = FALSE, heights = NULL, widths = NULL)
-exprs_plot$combined_plot
+exprs_activity_target_plot = make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi,  prioritization_tables$prioritization_tbl_ligand_receptor,  prioritization_tables$prioritization_tbl_ligand_target, output$exprs_tbl_ligand,  output$exprs_tbl_target, lfc_cutoff, ligand_target_matrix, plot_legend = FALSE, heights = NULL, widths = NULL)
+exprs_activity_target_plot$combined_plot
 ```
 
 On this plot, we can see that some strongly DE ligand-receptor pairs in the KC niche, have also high scaled ligand activity on KCs - making them strong predictions for further validation. An example of this is Gdf2 and Bmp10, who bind the receptor Acvrl1 (ALK1). The role of Gdf2/Bmp10-Acvrl1 in KC development was experimentally validated in the Guilliams et al paper. 
+
+**important: ligand-receptor pairs with both high differential expression and ligand activity (=target gene enrichment) are very interesting predictions as key regulators of your intercellular communication process of interest !**
 
 If this plot contains too much information because we look at many hits (top 50 ligands), you can make this plot of course for less ligands as well, eg for the top20.
 
@@ -436,8 +438,8 @@ filtered_ligands = ligand_prioritized_tbl_oi %>% filter(receiver == receiver_oi)
 
 prioritized_tbl_oi = prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(ligand %in% filtered_ligands) %>% select(niche, sender, receiver, ligand,  receptor, ligand_receptor, prioritization_score) %>% distinct() %>% inner_join(top_ligand_receptor_niche_df) %>% group_by(ligand) %>% filter(receiver == receiver_oi) %>% top_n(2, prioritization_score) %>% ungroup() 
 
-exprs_plot = make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi,  prioritization_tables$prioritization_tbl_ligand_receptor,  prioritization_tables$prioritization_tbl_ligand_target, output$exprs_tbl_ligand,  output$exprs_tbl_target, lfc_cutoff, plot_legend = FALSE, heights = NULL, widths = NULL)
-exprs_plot$combined_plot
+exprs_activity_target_plot = make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi,  prioritization_tables$prioritization_tbl_ligand_receptor,  prioritization_tables$prioritization_tbl_ligand_target, output$exprs_tbl_ligand,  output$exprs_tbl_target, lfc_cutoff, ligand_target_matrix, plot_legend = FALSE, heights = NULL, widths = NULL)
+exprs_activity_target_plot$combined_plot
 ```
 
 ## Circos plot of prioritized ligand-receptor pairs
@@ -498,4 +500,7 @@ When Ligand-Receptor pairs have both high DE and high activity, we can consider 
 
 # References
 
+Browaeys, R., Saelens, W. & Saeys, Y. NicheNet: modeling intercellular communication by linking ligands to target genes. Nat Methods (2019) doi:10.1038/s41592-019-0667-5
+
+Guilliams et al. Spatial proteogenomics reveals distinct and evolutionarily conserved hepatic macrophage niches. Cell (2022) doi:10.1016/j.cell.2021.12.018
 

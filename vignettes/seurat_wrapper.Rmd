@@ -203,11 +203,13 @@ DotPlot(seuratObj %>% subset(idents = "CD8 T"), features = nichenet_output$top_t
 VlnPlot(seuratObj %>% subset(idents = "CD8 T"), features = c("Zbp1","Ifit3","Irf7"), split.by = "aggregate",    pt.size = 0, combine = FALSE)
 ```
 
-To visualize ligand activities, expression, differentil expression and target genes of ligands, run the following command
+To visualize ligand activities, expression, differential expression and target genes of ligands, run the following command
 
-```{r, fig.width = 16}
+```{r, fig.width = 16, fig.height= 10}
 nichenet_output$ligand_activity_target_heatmap
 ```
+
+**important: above figure can be considered as one of the most important summary figures of the NicheNet analysis. Here you can see which ligand-receptor pairs have both high differential expression and ligand activity (=target gene enrichment). These are very interesting predictions as key regulators of your intercellular communication process of interest ! **
 
 #### Inferred ligand-receptor interactions for top-ranked ligands
 

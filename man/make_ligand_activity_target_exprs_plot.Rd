@@ -4,7 +4,7 @@
 \alias{make_ligand_activity_target_exprs_plot}
 \title{make_ligand_activity_target_exprs_plot}
 \usage{
-make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, plot_legend = TRUE, heights = NULL, widths = NULL)
+make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, ligand_target_matrix, plot_legend = TRUE, heights = NULL, widths = NULL)
 }
 \arguments{
 \item{receiver_oi}{Name of the receiver cell type of interest}
@@ -21,6 +21,8 @@ make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioriti
 
 \item{lfc_cutoff}{Cutoff used on the logFC value}
 
+\item{ligand_target_matrix}{ligand-target matrix}
+
 \item{plot_legend}{TRUE (default): add legend to the plot. FALSE: do not add legend.}
 
 \item{heights}{automatic determination if default NULL. If not NULL: number given by the user to indicate the requested heights, which are the height proportions of the different row panels in the plot.}
@@ -35,7 +37,7 @@ List containing the combined heatmap and the legend
 }
 \examples{
 \dontrun{
-make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, plot_legend = TRUE, heights = NULL, widths = NULL)
+make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, ligand_target_matrix, plot_legend = TRUE, heights = NULL, widths = NULL)
 }
 
 }

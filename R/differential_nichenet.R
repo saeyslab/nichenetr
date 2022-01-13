@@ -570,10 +570,11 @@ get_ligand_activities_targets = function(niche_geneset_list, ligand_target_matri
 #' @description \code{calculate_spatial_DE} Calculate differential expression between spatially different subpopulations of the same cell type
 #'
 #' @usage
-#' calculate_spatial_DE(seurat_obj, spatial_info)
+#' calculate_spatial_DE(seurat_obj, spatial_info, assay_oi = "SCT")
 #'
 #' @param seurat_obj Seurat object
 #' @param spatial_info Tibble giving information about which celltypes should be compared to each other for defining spatial differential expression. Contains the columns "celltype_region_oi", "celltype_other_region", "niche", "celltype_type".
+#' @param assay_oi Assay for the DE analysis: RNA, SCT, ...
 #'
 #' @return A tibble with DE output
 #'
@@ -589,7 +590,7 @@ get_ligand_activities_targets = function(niche_geneset_list, ligand_target_matri
 #'
 #' @export
 #'
-calculate_spatial_DE = function(seurat_obj, spatial_info){
+calculate_spatial_DE = function(seurat_obj, spatial_info, assay_oi = "SCT"){
   spatial_info$celltype_region_oi %>% lapply(function(celltype_oi, seurat_obj, spatial_info){
     other_celltype = spatial_info %>% filter(celltype_region_oi == celltype_oi) %>% pull(celltype_other_region) %>% unique()
     niche_oi = spatial_info %>% filter(celltype_region_oi == celltype_oi) %>% pull(niche) %>% unique()
@@ -632,23 +633,23 @@ process_spatial_de = function(DE_table, type, lr_network, expression_pct, specif
   if(type == "sender"){
     DE_sender = DE_table %>% mutate(significant = p_val_adj <= 0.05, present = pct.1 >= expression_pct) %>% mutate(pct.1 = pct.1+0.0001, pct.2 = pct.2 + 0.0001) %>% mutate(diff = (pct.1/pct.2)) %>% mutate(score = diff*avg_log2FC)
     if(specificity_score == "lfc"){
-      DE_sender = DE_sender %>% rename(ligand = gene, ligand_score_zonation = avg_log2FC, sender = celltype)
+      DE_sender = DE_sender %>% rename(ligand = gene, ligand_score_spatial = avg_log2FC, sender = celltype)
     }
     if(specificity_score == "score"){
-      DE_sender = DE_sender %>% rename(ligand = gene, ligand_score_zonation = score, sender = celltype)
+      DE_sender = DE_sender %>% rename(ligand = gene, ligand_score_spatial = score, sender = celltype)
     }
-    DE_sender = DE_sender %>% select(niche, sender, ligand, ligand_score_zonation)  %>% arrange(-ligand_score_zonation) %>% filter(ligand %in% lr_network$ligand)
+    DE_sender = DE_sender %>% select(niche, sender, ligand, ligand_score_spatial)  %>% arrange(-ligand_score_spatial) %>% filter(ligand %in% lr_network$ligand)
     return(DE_sender)
   }
   if(type == "receiver"){
     DE_receiver = DE_table %>% mutate(significant = p_val_adj <= 0.05, present = pct.1 >= expression_pct) %>% mutate(pct.1 = pct.1+0.0001, pct.2 = pct.2 + 0.0001) %>% mutate(diff = (pct.1/pct.2)) %>% mutate(score = diff*avg_log2FC)
     if(specificity_score == "lfc"){
-      DE_receiver = DE_receiver %>% rename(receptor = gene, receptor_score_zonation = avg_log2FC, receiver = celltype)
+      DE_receiver = DE_receiver %>% rename(receptor = gene, receptor_score_spatial = avg_log2FC, receiver = celltype)
     }
     if(specificity_score == "score"){
-      DE_receiver = DE_receiver %>% rename(receptor = gene, receptor_score_zonation = score, receiver = celltype)
+      DE_receiver = DE_receiver %>% rename(receptor = gene, receptor_score_spatial = score, receiver = celltype)
     }
-    DE_receiver = DE_receiver %>% select(niche, receiver, receptor, receptor_score_zonation)  %>% arrange(-receptor_score_zonation) %>% filter(receptor %in% lr_network$receptor)
+    DE_receiver = DE_receiver %>% select(niche, receiver, receptor, receptor_score_spatial)  %>% arrange(-receptor_score_spatial) %>% filter(receptor %in% lr_network$receptor)
     return(DE_receiver)
   }
 }
@@ -697,9 +698,9 @@ get_non_spatial_de = function(niches, spatial_info, type, lr_network){
       tibble(niche = niche_oi, sender = niches[[niche_oi]]$sender)
     }, niches) %>% bind_rows()
     spatial_df = niches %>% purrr::map("sender") %>% unlist() %>% unique() %>% setdiff(spatial_info %>% filter(celltype_type == "sender") %>% pull(celltype_region_oi)) %>% lapply(function(sender_oi, niches, lr_network){
-      spatial_df =  tibble(ligand = lr_network$ligand %>% unique(), ligand_score_zonation = 0)
+      spatial_df =  tibble(ligand = lr_network$ligand %>% unique(), ligand_score_spatial = 0)
       spatial_df = spatial_df %>% mutate(sender = sender_oi)
-    },  niches, lr_network) %>% bind_rows() %>% select(sender, ligand, ligand_score_zonation)  %>% inner_join(niche_df, by = "sender")
+    },  niches, lr_network) %>% bind_rows() %>% select(sender, ligand, ligand_score_spatial)  %>% inner_join(niche_df, by = "sender")
 
   }
   if(type == "receiver"){
@@ -708,9 +709,9 @@ get_non_spatial_de = function(niches, spatial_info, type, lr_network){
       tibble(niche = niche_oi, receiver = niches[[niche_oi]]$receiver)
     }, niches) %>% bind_rows()
     spatial_df = niches %>% purrr::map("receiver") %>% unlist() %>% unique() %>% setdiff(spatial_info %>% filter(celltype_type == "receiver") %>% pull(celltype_region_oi)) %>% lapply(function(receiver_oi, niches, lr_network){
-      spatial_df =  tibble(receptor = lr_network$receptor %>% unique(), receptor_score_zonation = 0)
+      spatial_df =  tibble(receptor = lr_network$receptor %>% unique(), receptor_score_spatial = 0)
       spatial_df = spatial_df %>% mutate(receiver = receiver_oi)
-    },  niches, lr_network) %>% bind_rows() %>% select(receiver, receptor, receptor_score_zonation)  %>% inner_join(niche_df, by = "receiver")
+    },  niches, lr_network) %>% bind_rows() %>% select(receiver, receptor, receptor_score_spatial)  %>% inner_join(niche_df, by = "receiver")
 
 
   }
@@ -729,12 +730,12 @@ get_non_spatial_de = function(niches, spatial_info, type, lr_network){
 #' #' prioritizing_weights = c("scaled_ligand_score" = 5,
 # "scaled_ligand_expression_scaled" = 1,
 # "ligand_fraction" = 1,
-# "scaled_ligand_score_zonation" = 2,
+# "scaled_ligand_score_spatial" = 2,
 # "scaled_receptor_score" = 0.5,
 # "scaled_receptor_expression_scaled" = 0.5,
 # "receptor_fraction" = 1,
 # "ligand_scaled_receptor_expression_fraction" = 1,
-# "scaled_receptor_score_zonation" = 0,
+# "scaled_receptor_score_spatial" = 0,
 # "scaled_activity" = 0,
 # "scaled_activity_normalized" = 1,
 # "bona_fide" = 1)
@@ -746,12 +747,12 @@ get_non_spatial_de = function(niches, spatial_info, type, lr_network){
 #' prioritizing_weights = c("scaled_ligand_score" = 5,
 # "scaled_ligand_expression_scaled" = 1,
 # "ligand_fraction" = 1,
-# "scaled_ligand_score_zonation" = 2,
+# "scaled_ligand_score_spatial" = 2,
 # "scaled_receptor_score" = 0.5,
 # "scaled_receptor_expression_scaled" = 0.5,
 # "receptor_fraction" = 1,
 # "ligand_scaled_receptor_expression_fraction" = 1,
-# "scaled_receptor_score_zonation" = 0,
+# "scaled_receptor_score_spatial" = 0,
 # "scaled_activity" = 0,
 # "scaled_activity_normalized" = 1,
 # "bona_fide" = 1)
@@ -768,25 +769,24 @@ get_prioritization_tables = function(output_nichenet_analysis, prioritizing_weig
     inner_join(output_nichenet_analysis$sender_spatial_DE_processed, by = c("niche", "sender", "ligand")) %>%
     inner_join(output_nichenet_analysis$receiver_spatial_DE_processed, by = c("niche", "receiver", "receptor")) %>%
     inner_join(output_nichenet_analysis$ligand_activities_targets, by = c("receiver", "ligand")) %>%
-    inner_join(output_nichenet_analysis$DE_receiver_processed_targets, by = c("niche", "receiver", "target")) %>%
+    left_join(output_nichenet_analysis$DE_receiver_processed_targets, by = c("niche", "receiver", "target")) %>% ## if ligand has no target genes --> it gets NA as target value --> these ligands should not be removed --> therefore left_join instead of inner_join
     inner_join(output_nichenet_analysis$exprs_tbl_ligand, by = c("sender", "ligand")) %>%
-    inner_join(output_nichenet_analysis$exprs_tbl_receptor, by = c("receiver", "receptor")) %>%
-    inner_join(output_nichenet_analysis$exprs_tbl_target, by = c("receiver", "target"))
+    inner_join(output_nichenet_analysis$exprs_tbl_receptor, by = c("receiver", "receptor"))  %>%
+    left_join(output_nichenet_analysis$exprs_tbl_target, by = c("receiver", "target"))  ## if ligand has no target genes --> it gets NA as target value --> these ligands should not be removed --> therefore left_join instead of inner_join
 
   # reorder the columns
 
   combined_information = combined_information %>% mutate(ligand_receptor = paste(ligand, receptor, sep = "--"))  %>%  mutate(bonafide_score = 1) %>%  mutate_cond(bonafide == FALSE, bonafide_score = 0.5)
 
-
   combined_information = combined_information %>% select(
     niche, receiver, sender, ligand_receptor, ligand, receptor, bonafide, target,
-    ligand_score,ligand_significant, ligand_present, ligand_expression, ligand_expression_scaled, ligand_fraction, ligand_score_zonation,
-    receptor_score, receptor_significant, receptor_present, receptor_expression, receptor_expression_scaled, receptor_fraction, receptor_score_zonation,
+    ligand_score,ligand_significant, ligand_present, ligand_expression, ligand_expression_scaled, ligand_fraction, ligand_score_spatial,
+    receptor_score, receptor_significant, receptor_present, receptor_expression, receptor_expression_scaled, receptor_fraction, receptor_score_spatial,
     ligand_scaled_receptor_expression_fraction, avg_score_ligand_receptor, bonafide_score,
     target_score, target_significant, target_present, target_expression, target_expression_scaled, target_fraction, ligand_target_weight,
     activity, activity_normalized,
     scaled_ligand_score, scaled_ligand_expression_scaled, scaled_receptor_score, scaled_receptor_expression_scaled, scaled_avg_score_ligand_receptor,
-    scaled_ligand_score_zonation, scaled_receptor_score_zonation,
+    scaled_ligand_score_spatial, scaled_receptor_score_spatial,
     scaled_ligand_fraction_adapted, scaled_receptor_fraction_adapted,
     scaled_activity, scaled_activity_normalized
   ) %>% distinct()
@@ -802,8 +802,8 @@ get_prioritization_tables = function(output_nichenet_analysis, prioritizing_weig
                        (prioritizing_weights["scaled_ligand_expression_scaled"] * scaled_ligand_expression_scaled) +
                        (prioritizing_weights["scaled_receptor_score"] * scaled_receptor_score) +
                        (prioritizing_weights["scaled_receptor_expression_scaled"] * scaled_receptor_expression_scaled) +
-                       (prioritizing_weights["scaled_ligand_score_zonation"] * scaled_ligand_score_zonation) +
-                       (prioritizing_weights["scaled_receptor_score_zonation"] * scaled_receptor_score_zonation) +
+                       (prioritizing_weights["scaled_ligand_score_spatial"] * scaled_ligand_score_spatial) +
+                       (prioritizing_weights["scaled_receptor_score_spatial"] * scaled_receptor_score_spatial) +
                        (prioritizing_weights["ligand_scaled_receptor_expression_fraction"] * ligand_scaled_receptor_expression_fraction) +
                        (prioritizing_weights["scaled_activity"] * scaled_activity) +
                        (prioritizing_weights["scaled_activity_normalized"] * scaled_activity_normalized) +
@@ -813,12 +813,12 @@ get_prioritization_tables = function(output_nichenet_analysis, prioritizing_weig
                     )* (1/length(prioritizing_weights))) %>% dplyr::arrange(-prioritization_score)
 
   prioritization_tbl_ligand_receptor = combined_information_prioritized %>% select(niche, receiver, sender, ligand_receptor, ligand, receptor, bonafide,
-                                                                                   ligand_score,ligand_significant, ligand_present, ligand_expression, ligand_expression_scaled, ligand_fraction, ligand_score_zonation,
-                                                                                   receptor_score, receptor_significant, receptor_present, receptor_expression, receptor_expression_scaled, receptor_fraction, receptor_score_zonation,
+                                                                                   ligand_score,ligand_significant, ligand_present, ligand_expression, ligand_expression_scaled, ligand_fraction, ligand_score_spatial,
+                                                                                   receptor_score, receptor_significant, receptor_present, receptor_expression, receptor_expression_scaled, receptor_fraction, receptor_score_spatial,
                                                                                    ligand_scaled_receptor_expression_fraction, avg_score_ligand_receptor,
                                                                                    activity, activity_normalized,
                                                                                    scaled_ligand_score, scaled_ligand_expression_scaled, scaled_receptor_score, scaled_receptor_expression_scaled, scaled_avg_score_ligand_receptor,
-                                                                                   scaled_ligand_score_zonation, scaled_receptor_score_zonation,
+                                                                                   scaled_ligand_score_spatial, scaled_receptor_score_spatial,
                                                                                    scaled_ligand_fraction_adapted, scaled_receptor_fraction_adapted,
                                                                                    scaled_activity, scaled_activity_normalized,
                                                                                    prioritization_score) %>% distinct()
