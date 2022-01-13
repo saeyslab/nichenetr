@@ -45,7 +45,18 @@ ligand-receptor (L-R) pairs. It was used in that paper to predict
 ligand-receptor pairs specific for the Kupffer cell niche in mouse and
 human.
 
-At the bottom of this page, you can find the links to two vignettes
+The main difference between the classic NicheNet pipeline and the
+Differential NicheNet pipeline is that Differential NicheNet also uses
+the differential expression between the conditions/niches of the
+ligand-receptor pairs for prioritization in addition to the ligand
+activities. The classic NicheNet pipeline on the contrary uses only
+ligand acivity for prioritization (and shows differential expression
+only in visualizations).
+
+So if you have data of multiple conditions or niches, and you want to
+include differential expression of the ligand-receptor pairs in the
+prioritization, we recommend you check out Differential NicheNet. At the
+bottom of this page, you can find the links to two vignettes
 illustrating a Differential NicheNet analysis. We recommend these
 vignettes if you want to apply Differential NicheNet on your own data.
 If you want to see the code used for the analyses used in the Guilliams

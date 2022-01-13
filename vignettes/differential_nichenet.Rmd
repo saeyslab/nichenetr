@@ -34,7 +34,6 @@ In this vignette, we will look at cell-cell communication differences between th
 ## Load in packages
 
 ```{r}
-library(circlize)
 library(nichenetr)
 library(RColorBrewer)
 library(tidyverse)
@@ -122,14 +121,13 @@ The method to calculate the differential expression is here the standard Seurat 
 
 DE will be calculated for each pairwise sender (or receiver) cell type comparision between the niches (so across niches, not within niche). In our case study, this means e.g. that DE of LSECs_portal ligands will be calculated by DE analysis of LSECs_portal vs Cholangiocytes; LSECs_portal vs Fibroblast 2; LSECs_portal vs Capsule fibroblasts; and LSECs_portal vs Mesothelial cells. We split the cells per cell type instead of merging all cells from the other niche to avoid that the DE analysis will be driven by the most abundant cell types. 
 
-The DE analysis between the receiver cell types can take much time to run since logFC and p-values will be calculated for all genes (5-15 minutes). We might consider improving the scalability of this step in the future.
-
 ```{r}
 assay_oi = "SCT" # other possibilities: RNA,...
 DE_sender = calculate_niche_de(seurat_obj = seurat_obj %>% subset(features = lr_network$ligand %>% intersect(rownames(seurat_obj))), niches = niches, type = "sender", assay_oi = assay_oi) # only ligands important for sender cell types
 
-DE_receiver = calculate_niche_de(seurat_obj = seurat_obj, niches = niches, type = "receiver", assay_oi = assay_oi) # all genes important, because we want logFC values of receptors, but also infer DE targets
+DE_receiver = calculate_niche_de(seurat_obj = seurat_obj %>% subset(features = lr_network$receptor %>% unique()), niches = niches, type = "receiver", assay_oi = assay_oi) # only receptors now, later on: DE analysis to find targets
 ```
+
 ### Process DE results:
 
 ```{r}
@@ -231,10 +229,10 @@ Ligand-target links are inferred in the same way as described in the basic Niche
 
 ```{r}
 lfc_cutoff = 0.15 # recommended for 10x as min_lfc cutoff. 
-
 specificity_score_targets = "min_lfc"
 
-DE_receiver_processed_targets = process_receiver_target_de(DE_receiver_targets = DE_receiver, niches = niches, expression_pct = expression_pct, specificity_score = specificity_score_targets)
+DE_receiver_targets = calculate_niche_de_targets(seurat_obj = seurat_obj, niches = niches, lfc_cutoff = lfc_cutoff, expression_pct = expression_pct, assay_oi = assay_oi) 
+DE_receiver_processed_targets = process_receiver_target_de(DE_receiver_targets = DE_receiver_targets, niches = niches, expression_pct = expression_pct, specificity_score = specificity_score_targets)
   
 background = DE_receiver_processed_targets  %>% pull(target) %>% unique()
 geneset_KC = DE_receiver_processed_targets %>% filter(receiver == niches$KC_niche$receiver & target_score >= lfc_cutoff & target_significant == 1 & target_present == 1) %>% pull(target) %>% unique()
@@ -370,6 +368,12 @@ prioritization_tables$prioritization_tbl_ligand_target %>% filter(receiver == ni
 
 prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(receiver == niches[[2]]$receiver) %>% head(10)
 prioritization_tables$prioritization_tbl_ligand_target %>% filter(receiver == niches[[2]]$receiver) %>% head(10)
+
+prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(receiver == niches[[3]]$receiver) %>% head(10)
+prioritization_tables$prioritization_tbl_ligand_target %>% filter(receiver == niches[[3]]$receiver) %>% head(10)
+
+prioritization_tables$prioritization_tbl_ligand_receptor = prioritization_tables$prioritization_tbl_ligand_receptor %>% mutate(receiver = factor(receiver, levels = c("KCs","MoMac1","MoMac2")), niche = factor(niche, levels = c("KC_niche","MoMac1_niche","MoMac2_niche"))) 
+prioritization_tables$prioritization_tbl_ligand_target = prioritization_tables$prioritization_tbl_ligand_target %>% mutate(receiver = factor(receiver, levels = c("KCs","MoMac1","MoMac2")), niche = factor(niche, levels = c("KC_niche","MoMac1_niche","MoMac2_niche"))) 
 ```
 
 # 8. Visualization of the Differential NicheNet output
@@ -399,14 +403,14 @@ prioritized_tbl_oi = prioritization_tables$prioritization_tbl_ligand_receptor %>
 Visualization: minimum LFC compared to other niches
 
 ```{r, fig.height= 25, fig.width=9}
-lfc_plot = make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tables$prioritization_tbl_ligand_receptor, prioritization_tables$prioritization_tbl_ligand_receptor, plot_legend = FALSE, heights = NULL, widths = NULL)
+lfc_plot = make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tables$prioritization_tbl_ligand_receptor, plot_legend = FALSE, heights = NULL, widths = NULL)
 lfc_plot
 ```
 
 Show the spatialDE as additional information
 
 ```{r, fig.height= 26, fig.width=11}
-lfc_plot = make_ligand_receptor_lfc_zonation_plot(receiver_oi, prioritized_tbl_oi, prioritization_tables$prioritization_tbl_ligand_receptor, prioritization_tables$prioritization_tbl_ligand_receptor, plot_legend = FALSE, heights = NULL, widths = NULL)
+lfc_plot = make_ligand_receptor_lfc_zonation_plot(receiver_oi, prioritized_tbl_oi, prioritization_tables$prioritization_tbl_ligand_receptor, plot_legend = FALSE, heights = NULL, widths = NULL)
 lfc_plot
 ```
 
@@ -419,6 +423,19 @@ Active target gene inference - cf Default NicheNet
 Now: visualization of ligand activity and ligand-target links
 
 ```{r, fig.height= 12, fig.width=30}
+exprs_plot = make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi,  prioritization_tables$prioritization_tbl_ligand_receptor,  prioritization_tables$prioritization_tbl_ligand_target, output$exprs_tbl_ligand,  output$exprs_tbl_target, lfc_cutoff, plot_legend = FALSE, heights = NULL, widths = NULL)
+exprs_plot$combined_plot
+```
+
+On this plot, we can see that some strongly DE ligand-receptor pairs in the KC niche, have also high scaled ligand activity on KCs - making them strong predictions for further validation. An example of this is Gdf2 and Bmp10, who bind the receptor Acvrl1 (ALK1). The role of Gdf2/Bmp10-Acvrl1 in KC development was experimentally validated in the Guilliams et al paper. 
+
+If this plot contains too much information because we look at many hits (top 50 ligands), you can make this plot of course for less ligands as well, eg for the top20.
+
+```{r, fig.height= 12, fig.width=30}
+filtered_ligands = ligand_prioritized_tbl_oi %>% filter(receiver == receiver_oi) %>% top_n(20, prioritization_score) %>% pull(ligand) %>% unique()
+
+prioritized_tbl_oi = prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(ligand %in% filtered_ligands) %>% select(niche, sender, receiver, ligand,  receptor, ligand_receptor, prioritization_score) %>% distinct() %>% inner_join(top_ligand_receptor_niche_df) %>% group_by(ligand) %>% filter(receiver == receiver_oi) %>% top_n(2, prioritization_score) %>% ungroup() 
+
 exprs_plot = make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi,  prioritization_tables$prioritization_tbl_ligand_receptor,  prioritization_tables$prioritization_tbl_ligand_target, output$exprs_tbl_ligand,  output$exprs_tbl_target, lfc_cutoff, plot_legend = FALSE, heights = NULL, widths = NULL)
 exprs_plot$combined_plot
 ```
@@ -448,7 +465,7 @@ filtered_ligands = ligand_prioritized_tbl_oi %>% filter(receiver == receiver_oi)
 
 prioritized_tbl_oi = prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(ligand %in% filtered_ligands) %>% select(niche, sender, receiver, ligand,  receptor, ligand_receptor, prioritization_score) %>% distinct() %>% inner_join(top_ligand_receptor_niche_df) %>% group_by(ligand) %>% filter(receiver == receiver_oi) %>% top_n(2, prioritization_score) %>% ungroup() 
 
-lfc_plot = make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tables$prioritization_tbl_ligand_receptor, prioritization_tables$prioritization_tbl_ligand_receptor, plot_legend = FALSE, heights = NULL, widths = NULL)
+lfc_plot = make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tables$prioritization_tbl_ligand_receptor, plot_legend = FALSE, heights = NULL, widths = NULL)
 lfc_plot
 ```
 
@@ -459,7 +476,7 @@ filtered_ligands = ligand_prioritized_tbl_oi %>% filter(receiver == receiver_oi)
 
 prioritized_tbl_oi = prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(ligand %in% filtered_ligands) %>% select(niche, sender, receiver, ligand,  receptor, ligand_receptor, prioritization_score) %>% distinct() %>% inner_join(top_ligand_receptor_niche_df) %>% group_by(ligand) %>% filter(receiver == receiver_oi) %>% top_n(2, prioritization_score) %>% ungroup() 
 
-lfc_plot = make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tables$prioritization_tbl_ligand_receptor, prioritization_tables$prioritization_tbl_ligand_receptor, plot_legend = FALSE, heights = NULL, widths = NULL)
+lfc_plot = make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tables$prioritization_tbl_ligand_receptor, plot_legend = FALSE, heights = NULL, widths = NULL)
 lfc_plot
 ```
 
@@ -467,7 +484,17 @@ lfc_plot
 
 In the default NicheNet pipeline, expressed ligand-receptor pairs are prioritized based on their ligand activity alone.
 Here, in the Differential NicheNet pipeline, we also draw information based on differential expression of the L-R pairs compared to other niches (and if applicable: other spatial locations.)
-Because we here focus on differential expression of ligand-receptor pairs, and by using the default prioritizations weights more on DE than activity, we tend to find many different hits than with the default NicheNet pipeline. With Differential NicheNet, we tend to find more high-DE, low-activity hits, whereas with default NicheNet we find more low-DE, high-activity hits. It should be noted that some of the high-DE, low-activity hits might be really important because they just have low NicheNet activities due to limitations in the NicheNet activity prediction (eg improper/incomplete prior knowledge within NicheNet for that ligand), but some of them might also be high in DE but not in activity because they don't have strong signaling effects (eg ligands involved in cell adhesion only). For the opposite pairs with low-DE and high-activity that are not strongly prioritized by Differential NicheNet, the following should be considered: 1) some ligands are regulated post-transcriptionally, and that the high predicted activities might still reflect true signaling; 2) high predicted activity values might be due to limitations of NicheNet (inaccurate prior knowledge) and these lowDE ligands are not important in the biological process of interest (although a highDE family member of this ligand may! since signaling between family members tends to be very similar); 3) high activity in one condition might be due to downregulation in the other condition, leading to high activity but low DE. In this vignette, ligand activities are automatically calculated on upregulated genes per condition, but downregulated genes could also be a sign of ligand activity - and thus sometimes it could be useful to incorporate downregulated genes for the activity calculation.
+
+Because we here focus on differential expression of ligand-receptor pairs, and by using the default prioritizations weights more on DE than activity, we tend to find many different hits than with the default NicheNet pipeline. With Differential NicheNet, we tend to find more high-DE, low-activity hits, whereas with default NicheNet we find more low-DE, high-activity hits. 
+
+It should be noted that some of the high-DE, low-activity hits might be really important because they just have low NicheNet activities due to limitations in the NicheNet activity prediction (eg improper/incomplete prior knowledge within NicheNet for that ligand), but some of them might also be high in DE but not in activity because they don't have strong signaling effects (eg ligands involved in cell adhesion only). 
+
+For the opposite pairs with low-DE and high-activity that are not strongly prioritized by Differential NicheNet, the following should be considered: 
+1) some ligands are regulated post-transcriptionally, and that the high predicted activities might still reflect true signaling; 
+2) high predicted activity values might be due to limitations of NicheNet (inaccurate prior knowledge) and these lowDE ligands are not important in the biological process of interest (although a highDE family member of this ligand may! since signaling between family members tends to be very similar); 
+3) high activity in one condition might be due to downregulation in the other condition, leading to high activity but low DE. Currently, ligand activities are automatically calculated on upregulated genes per condition, but downregulated genes could also be a sign of ligand activity. 
+
+When Ligand-Receptor pairs have both high DE and high activity, we can consider them to be very good candidates in regulating the process of interest, and we recommend testing these candidates for further experimental validation.
 
 # References
 

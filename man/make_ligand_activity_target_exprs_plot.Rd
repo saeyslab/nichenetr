@@ -4,14 +4,14 @@
 \alias{make_ligand_activity_target_exprs_plot}
 \title{make_ligand_activity_target_exprs_plot}
 \usage{
-make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor_filtered, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, plot_legend = TRUE, heights = NULL, widths = NULL)
+make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, plot_legend = TRUE, heights = NULL, widths = NULL)
 }
 \arguments{
 \item{receiver_oi}{Name of the receiver cell type of interest}
 
 \item{prioritized_tbl_oi}{Dataframe with the ligand-receptor interactions that should be visualized}
 
-\item{prioritization_tbl_ligand_receptor_filtered}{$prioritization_tbl_ligand_receptor slot of `get_prioritization_tables`}
+\item{prioritization_tbl_ligand_receptor}{$prioritization_tbl_ligand_receptor slot of `get_prioritization_tables`}
 
 \item{prioritization_tbl_ligand_target}{$prioritization_tbl_ligand_target slot of `get_prioritization_tables`}
 
@@ -35,7 +35,7 @@ List containing the combined heatmap and the legend
 }
 \examples{
 \dontrun{
-make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor_filtered, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, plot_legend = TRUE, heights = NULL, widths = NULL)
+make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, plot_legend = TRUE, heights = NULL, widths = NULL)
 }
 
 }

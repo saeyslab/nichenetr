@@ -4,7 +4,7 @@
 \alias{make_ligand_receptor_lfc_plot}
 \title{make_ligand_receptor_lfc_plot}
 \usage{
-make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_receptor_filtered, plot_legend = TRUE, heights = NULL, widths = NULL)
+make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, plot_legend = TRUE, heights = NULL, widths = NULL)
 }
 \arguments{
 \item{receiver_oi}{Name of the receiver cell type of interest}
@@ -12,8 +12,6 @@ make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tb
 \item{prioritized_tbl_oi}{Dataframe with the ligand-receptor interactions that should be visualized}
 
 \item{prioritization_tbl_ligand_receptor}{$prioritization_tbl_ligand_receptor slot of `get_prioritization_tables`}
-
-\item{prioritization_tbl_ligand_receptor_filtered}{$prioritization_tbl_ligand_receptor slot of `get_prioritization_tables`}
 
 \item{plot_legend}{TRUE (default): add legend to the plot. FALSE: do not add legend.}
 
@@ -29,7 +27,7 @@ List containing the combined heatmap and the legend
 }
 \examples{
 \dontrun{
-make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_receptor_filtered, plot_legend = TRUE, heights = NULL, widths = NULL)
+make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, plot_legend = TRUE, heights = NULL, widths = NULL)
 }
 
 }

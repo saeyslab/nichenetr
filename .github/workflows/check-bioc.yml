@@ -175,6 +175,8 @@ jobs:
           ## Pass #1 at installing dependencies
           message(paste('****', Sys.time(), 'pass number 1 at installing dependencies: local dependencies ****'))
           BiocManager::install("limma", update = FALSE)
+          BiocManager::install("ComplexHeatmap", update = FALSE)
+          remotes::install_cran("circlize")
           remotes::install_cran("tidyverse")
           remotes::install_local(dependencies = TRUE, repos = BiocManager::repositories(), build_vignettes = FALSE, upgrade = TRUE)
         continue-on-error: true

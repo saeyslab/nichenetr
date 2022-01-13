@@ -114,11 +114,11 @@ In this case study, we are interested to find differences in cell-cell interacti
 ```{r}
 niches = list(
   "pEMT_High_niche" = list(
-    "sender" = c("myofibroblast_High", "Endothelial_High", "CAF_High", "T.cell_High", "Myeloid_High"),
-    "receiver" = c("Malignant_High")),
+    "sender" = c("Malignant_High", "Endothelial_High", "myofibroblast_High", "T.cell_High", "Myeloid_High"),
+    "receiver" = c("CAF_High")),
   "pEMT_Low_niche" = list(
-    "sender" = c("myofibroblast_Low",  "Endothelial_Low", "CAF_Low"),
-    "receiver" = c("Malignant_Low"))
+    "sender" = c("Malignant_low",  "Endothelial_Low", "myofibroblast_Low"),
+    "receiver" = c("CAF_Low"))
   ) # user adaptation required on own dataset
 ```
 
@@ -169,12 +169,12 @@ In this case study, our region of interest is the tumor leading edge, since Pura
 We do this as follows, by first defining a 'spatial info' dataframe. If no spatial information in your data: set the following two parameters to FALSE, and make a mock 'spatial_info' data frame.
 
 ```{r}
-include_spatial_info_sender = TRUE # if not spatial info to include: put this to false # user adaptation required on own dataset
-include_spatial_info_receiver = FALSE # if spatial info to include: put this to true # user adaptation required on own dataset
+include_spatial_info_sender = FALSE # if not spatial info to include: put this to false # user adaptation required on own dataset
+include_spatial_info_receiver = TRUE # if spatial info to include: put this to true # user adaptation required on own dataset
 ```
 
 ```{r}
-spatial_info = tibble(celltype_region_oi = "CAF_High", celltype_other_region = "myofibroblast_High", niche =  "pEMT_High_niche", celltype_type = "sender") # user adaptation required on own dataset
+spatial_info = tibble(celltype_region_oi = "CAF_High", celltype_other_region = "myofibroblast_High", niche =  "pEMT_High_niche", celltype_type = "receiver") # user adaptation required on own dataset
 specificity_score_spatial = "lfc"
 ```
 

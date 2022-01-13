@@ -83,7 +83,26 @@ mutate_cond <- function(.data, condition, ..., envir = parent.frame()) {
 calculate_niche_de = function(seurat_obj, niches, type, assay_oi = "SCT"){
 
   if (type == "sender"){
+      sender_vs_sender_tbl = NULL
     #  Determine DE between sender cell types across the different niches
+      for(niche_n in seq(length(niches))){
+        niche = niches[[niche_n]]
+        senders_niche = niche$sender %>% unlist() %>% unique()
+        senders_other = niches %>% sapply(function(niche){niche$sender})  %>% unlist() %>% unique() %>% setdiff(senders_niche)
+        for(sender_niche_n in seq(length(senders_niche))){
+          sender_oi = senders_niche[sender_niche_n]
+          for(sender_other_n in seq(length(senders_other))){
+            sender_other_niche_oi = senders_other[sender_other_n]
+            if(is.null(sender_vs_sender_tbl)){
+              sender_vs_sender_tbl = tibble(sender = sender_oi, sender_other_niche = sender_other_niche_oi)
+            } else {
+                if (nrow(sender_vs_sender_tbl %>% filter(sender == sender_other_niche_oi & sender_other_niche == sender_oi)) != 1){
+                  sender_vs_sender_tbl = bind_rows(sender_vs_sender_tbl, tibble(sender = sender_oi, sender_other_niche = sender_other_niche_oi))
+              }
+            }
+          }
+        }
+      }
     DE_sender = niches %>% lapply(function(niche, seurat_obj) {
 
       senders_niche = niche$sender %>% unlist() %>% unique()
@@ -93,41 +112,183 @@ calculate_niche_de = function(seurat_obj, niches, type, assay_oi = "SCT"){
 
         print(paste0("Calculate Sender DE between: ",sender_oi, " and ", senders_other))
 
-        DE_subtable = senders_other %>% lapply(function(sender_other_niche, seurat_obj, sender_oi) {
-          DE_sender_oi = FindMarkers(object = seurat_obj, ident.1 = sender_oi, ident.2 = sender_other_niche, min.pct = 0, logfc.threshold = 0, only.pos = FALSE, assay = assay_oi) %>% rownames_to_column("gene") %>% as_tibble()
-          DE_sender_oi = DE_sender_oi %>% mutate(sender = sender_oi, sender_other_niche = sender_other_niche) %>% arrange(-avg_log2FC)
+        DE_subtable = senders_other %>% lapply(function(sender_other_niche_oi, seurat_obj, sender_oi) {
+
+          if (nrow(sender_vs_sender_tbl %>% filter(sender == sender_other_niche_oi & sender_other_niche == sender_oi)) == 1){
+              DE_sender_oi = NULL
+            } else {
+              DE_sender_oi = FindMarkers(object = seurat_obj, ident.1 = sender_oi, ident.2 = sender_other_niche_oi, min.pct = 0, logfc.threshold = 0, only.pos = FALSE, assay = assay_oi) %>% rownames_to_column("gene") %>% as_tibble()
+              DE_sender_oi = DE_sender_oi %>% mutate(sender = sender_oi, sender_other_niche = sender_other_niche_oi) %>% arrange(-avg_log2FC)
+            }
         }, seurat_obj, sender_oi) %>% bind_rows()
 
       }, seurat_obj, senders_other) %>% bind_rows()
 
     }, seurat_obj) %>% bind_rows()
 
+    DE_sender_reverse = DE_sender %>% mutate(avg_log2FC = avg_log2FC * -1) %>%
+      rename(pct.1_old = pct.1, pct.2_old = pct.2, sender_old = sender, sender_other_niche_old = sender_other_niche) %>%
+      rename(pct.1 = pct.2_old, pct.2 = pct.1_old, sender = sender_other_niche_old, sender_other_niche = sender_old) %>%
+      select(gene, p_val, avg_log2FC, pct.1, pct.2, p_val_adj, sender, sender_other_niche)
+    DE_sender = bind_rows(DE_sender, DE_sender_reverse) %>% distinct()
     return(DE_sender)
 
   }
+
   if (type == "receiver"){
+    receiver_vs_receiver_tbl = NULL
     #  Determine DE between receiver cell types across the different niches
-    # # DE receiver: niche one vs other niches
-    all_receivers = niches %>% purrr::map("receiver") %>% unlist() %>% unique()
-    #
-    DE_receiver = all_receivers %>% lapply(function(receiver_oi, seurat_obj) {
+    for(niche_n in seq(length(niches))){
+      niche = niches[[niche_n]]
+      receivers_niche = niche$receiver %>% unlist() %>% unique()
+      receivers_other = niches %>% sapply(function(niche){niche$receiver})  %>% unlist() %>% unique() %>% setdiff(receivers_niche)
+      for(receiver_niche_n in seq(length(receivers_niche))){
+        receiver_oi = receivers_niche[receiver_niche_n]
+        for(receiver_other_n in seq(length(receivers_other))){
+          receiver_other_niche_oi = receivers_other[receiver_other_n]
+          if(is.null(receiver_vs_receiver_tbl)){
+            receiver_vs_receiver_tbl = tibble(receiver = receiver_oi, receiver_other_niche = receiver_other_niche_oi)
+          } else {
+            if (nrow(receiver_vs_receiver_tbl %>% filter(receiver == receiver_other_niche_oi & receiver_other_niche == receiver_oi)) != 1){
+              receiver_vs_receiver_tbl = bind_rows(receiver_vs_receiver_tbl, tibble(receiver = receiver_oi, receiver_other_niche = receiver_other_niche_oi))
+            }
+          }
+        }
+      }
+    }
+    print(receiver_vs_receiver_tbl)
+    DE_receiver = niches %>% lapply(function(niche, seurat_obj) {
 
-      receivers_other = setdiff(all_receivers,receiver_oi)
+      receivers_niche = niche$receiver %>% unlist() %>% unique()
+      receivers_other = niches %>% sapply(function(niche){niche$receiver})  %>% unlist() %>% unique() %>% setdiff(receivers_niche)
 
-      print(paste0("Calculate Receiver DE between: ",receiver_oi, " and ", receivers_other))
+      DE_receiver = receivers_niche %>% lapply(function(receiver_oi, seurat_obj, receivers_other) {
 
-      DE_subtable = receivers_other %>% lapply(function(receiver_other_niche, seurat_obj, receiver_oi) {
+        print(paste0("Calculate receiver DE between: ",receiver_oi, " and ", receivers_other))
 
-        DE_receiver_oi = FindMarkers(object = seurat_obj, ident.1 = receiver_oi, ident.2 = receiver_other_niche, min.pct = 0, logfc.threshold = 0, only.pos = FALSE, assay = assay_oi) %>% rownames_to_column("gene") %>% as_tibble()
-        DE_receiver_oi = DE_receiver_oi %>% mutate(receiver = receiver_oi, receiver_other_niche = receiver_other_niche) %>% arrange(-avg_log2FC)
+        DE_subtable = receivers_other %>% lapply(function(receiver_other_niche_oi, seurat_obj, receiver_oi) {
 
-      }, seurat_obj, receiver_oi) %>% bind_rows()
+          if (nrow(receiver_vs_receiver_tbl %>% filter(receiver == receiver_other_niche_oi & receiver_other_niche == receiver_oi)) == 1){
+            DE_receiver_oi = NULL
+          } else {
+            DE_receiver_oi = FindMarkers(object = seurat_obj, ident.1 = receiver_oi, ident.2 = receiver_other_niche_oi, min.pct = 0, logfc.threshold = 0, only.pos = FALSE, assay = assay_oi) %>% rownames_to_column("gene") %>% as_tibble()
+            DE_receiver_oi = DE_receiver_oi %>% mutate(receiver = receiver_oi, receiver_other_niche = receiver_other_niche_oi) %>% arrange(-avg_log2FC)
+          }
+        }, seurat_obj, receiver_oi) %>% bind_rows()
+
+      }, seurat_obj, receivers_other) %>% bind_rows()
+
     }, seurat_obj) %>% bind_rows()
 
+    DE_receiver_reverse = DE_receiver %>% mutate(avg_log2FC = avg_log2FC * -1) %>%
+      rename(pct.1_old = pct.1, pct.2_old = pct.2, receiver_old = receiver, receiver_other_niche_old = receiver_other_niche) %>%
+      rename(pct.1 = pct.2_old, pct.2 = pct.1_old, receiver = receiver_other_niche_old, receiver_other_niche = receiver_old) %>%
+      select(gene, p_val, avg_log2FC, pct.1, pct.2, p_val_adj, receiver, receiver_other_niche)
+    DE_receiver = bind_rows(DE_receiver, DE_receiver_reverse) %>% distinct()
     return(DE_receiver)
 
   }
 
+
+}
+#' @title Calculate differential expression of receiver cell type in one niche versus all other niches of interest: focus on finding DE genes
+#'
+#' @description \code{calculate_niche_de_targets} Calculate differential expression of receiver cell type in one niche versus all other niches of interest: focus on finding DE genes
+#'
+#' @usage
+#' calculate_niche_de_targets(seurat_obj, niches, expression_pct, ltf_cutoff, assay_oi = "SCT")
+#'
+#' @inheritParams calculate_niche_de
+#' @param expression_pct input of `min.pct` of `Seurat::FindMarkers`
+#' @param lfc_cutoff input of `logfc.threshold` of `Seurat::FindMarkers`
+#'
+#' @return A tibble containing the DE results of the niches versus each other.
+#'
+#' @examples
+#' \dontrun{
+#' seurat_obj = readRDS(url("https://zenodo.org/record/5840787/files/seurat_obj_subset_integrated_zonation.rds"))
+#' niches = list(
+#' "KC_niche" = list(
+#'   "sender" = c("LSECs_portal","Hepatocytes_portal","Stellate cells_portal"),
+#'   "receiver" = c("KCs")),
+#' "MoMac2_niche" = list(
+#'   "sender" = c("Cholangiocytes","Fibroblast 2"),
+#'   "receiver" = c("MoMac2")),
+#' "MoMac1_niche" = list(
+#'   "sender" = c("Capsule fibroblasts","Mesothelial cells"),
+#'  "receiver" = c("MoMac1"))
+#' )
+#' calculate_niche_de_targets(seurat_obj, niches, expression_pct = 0.10, lfc_cutoff = 0.15)
+#' }
+#'
+#' @export
+#'
+calculate_niche_de_targets = function(seurat_obj, niches, expression_pct, lfc_cutoff, assay_oi = "SCT"){
+
+    receiver_vs_receiver_tbl = NULL
+    all_gene_celltype_tbl = NULL
+    #  Determine DE between receiver cell types across the different niches
+    for(niche_n in seq(length(niches))){
+      niche = niches[[niche_n]]
+      receivers_niche = niche$receiver %>% unlist() %>% unique()
+      receivers_other = niches %>% sapply(function(niche){niche$receiver})  %>% unlist() %>% unique() %>% setdiff(receivers_niche)
+      for(receiver_niche_n in seq(length(receivers_niche))){
+        receiver_oi = receivers_niche[receiver_niche_n]
+        for(receiver_other_n in seq(length(receivers_other))){
+          receiver_other_niche_oi = receivers_other[receiver_other_n]
+          if(is.null(receiver_vs_receiver_tbl)){
+            receiver_vs_receiver_tbl = tibble(receiver = receiver_oi, receiver_other_niche = receiver_other_niche_oi)
+            all_gene_celltype_tbl = tibble(receiver = receiver_oi, receiver_other_niche = receiver_other_niche_oi, gene = rownames(seurat_obj))
+          } else {
+            if (nrow(receiver_vs_receiver_tbl %>% filter(receiver == receiver_other_niche_oi & receiver_other_niche == receiver_oi)) != 1){
+              receiver_vs_receiver_tbl = bind_rows(receiver_vs_receiver_tbl, tibble(receiver = receiver_oi, receiver_other_niche = receiver_other_niche_oi))
+              new_gene_tbl = tibble(receiver = receiver_oi, receiver_other_niche = receiver_other_niche_oi, gene = rownames(seurat_obj))
+              all_gene_celltype_tbl = bind_rows(all_gene_celltype_tbl, new_gene_tbl)
+
+            }
+          }
+        }
+      }
+    }
+
+    DE_receiver = niches %>% lapply(function(niche, seurat_obj) {
+
+      receivers_niche = niche$receiver %>% unlist() %>% unique()
+      receivers_other = niches %>% sapply(function(niche){niche$receiver})  %>% unlist() %>% unique() %>% setdiff(receivers_niche)
+
+      DE_receiver = receivers_niche %>% lapply(function(receiver_oi, seurat_obj, receivers_other) {
+
+        print(paste0("Calculate receiver DE between: ",receiver_oi, " and ", receivers_other))
+
+        DE_subtable = receivers_other %>% lapply(function(receiver_other_niche_oi, seurat_obj, receiver_oi) {
+
+          if (nrow(receiver_vs_receiver_tbl %>% filter(receiver == receiver_other_niche_oi & receiver_other_niche == receiver_oi)) == 1){
+            DE_receiver_oi = NULL
+          } else {
+            DE_receiver_oi = FindMarkers(object = seurat_obj, ident.1 = receiver_oi, ident.2 = receiver_other_niche_oi, min.pct = expression_pct, logfc.threshold = lfc_cutoff, only.pos = FALSE, assay = assay_oi) %>% rownames_to_column("gene") %>% as_tibble()
+            DE_receiver_oi = DE_receiver_oi %>% mutate(receiver = receiver_oi, receiver_other_niche = receiver_other_niche_oi) %>% arrange(-avg_log2FC)
+          }
+        }, seurat_obj, receiver_oi) %>% bind_rows()
+
+      }, seurat_obj, receivers_other) %>% bind_rows()
+
+    }, seurat_obj) %>% bind_rows()
+
+    DE_receiver_reverse = DE_receiver %>% mutate(avg_log2FC = avg_log2FC * -1) %>%
+      rename(pct.1_old = pct.1, pct.2_old = pct.2, receiver_old = receiver, receiver_other_niche_old = receiver_other_niche) %>%
+      rename(pct.1 = pct.2_old, pct.2 = pct.1_old, receiver = receiver_other_niche_old, receiver_other_niche = receiver_old) %>%
+      select(gene, p_val, avg_log2FC, pct.1, pct.2, p_val_adj, receiver, receiver_other_niche)
+    DE_receiver = bind_rows(DE_receiver, DE_receiver_reverse) %>% distinct()
+
+
+    all_gene_celltype_tbl_reverse = all_gene_celltype_tbl %>%
+      rename(receiver_old = receiver, receiver_other_niche_old = receiver_other_niche) %>%
+      rename(receiver = receiver_other_niche_old, receiver_other_niche = receiver_old) %>%
+      select(receiver, receiver_other_niche, gene)
+    all_gene_celltype_tbl = bind_rows(all_gene_celltype_tbl, all_gene_celltype_tbl_reverse) %>% distinct()
+    DE_receiver = all_gene_celltype_tbl %>% left_join(DE_receiver, by = c("receiver", "receiver_other_niche", "gene"))
+    DE_receiver = DE_receiver %>% mutate_cond(is.na(p_val_adj), p_val_adj = 1, p_val = 1, avg_log2FC = 0) %>% distinct()
+    return(DE_receiver)
 
 }
 #' @title Process the DE output of `calculate_niche_de`
@@ -294,7 +455,8 @@ combine_sender_receiver_de = function(DE_sender_processed, DE_receiver_processed
 #'
 process_receiver_target_de = function(DE_receiver_targets, niches, expression_pct, specificity_score = "min_lfc"){
 
-  DE_receiver = DE_receiver_targets %>% mutate(significant = p_val_adj <= 0.05, present = pct.1 >= expression_pct) %>% mutate(pct.1 = pct.1+0.0001, pct.2 = pct.2 + 0.0001) %>% mutate(diff = (pct.1/pct.2)) %>% mutate(score = diff*avg_log2FC) %>% arrange(-score)
+  DE_receiver = DE_receiver_targets %>% mutate(significant = p_val_adj <= 0.05, present = pct.1 >= expression_pct) %>% mutate(pct.1 = pct.1+0.0001, pct.2 = pct.2 + 0.0001) %>% mutate(diff = (pct.1/pct.2))
+  DE_receiver = DE_receiver %>% mutate_cond(is.na(present), present = FALSE) %>% mutate_cond(is.na(diff) | is.nan(diff), diff = 1) %>% mutate(score = diff*avg_log2FC) %>% arrange(-score)
 
   DE_receiver_processed = DE_receiver %>% group_by(gene, receiver) %>% summarise(mean_avg_log2FC = mean(avg_log2FC), min_avg_log2FC = min(avg_log2FC), mean_significant = mean(significant), mean_present = mean(present), mean_score = mean(score), min_score = min(score)) %>% arrange(-min_avg_log2FC)
   DE_receiver_processed = names(niches) %>% lapply(function(niche_name, niches){
@@ -316,7 +478,6 @@ process_receiver_target_de = function(DE_receiver_targets, niches, expression_pc
   }
 
   DE_receiver_processed_targets = DE_receiver_processed_targets %>% select(niche, receiver, target, target_score, target_significant, target_present)  %>% arrange(-target_score)
-
 
   return(DE_receiver_processed_targets)
 }

@@ -261,6 +261,7 @@ nichenet_output = nichenet_seuratobj_aggregate(
 ## [1] "Perform NicheNet ligand activity analysis"
 ## [1] "Infer active target genes of the prioritized ligands"
 ## [1] "Infer receptors of the prioritized ligands"
+## [1] "Perform DE analysis in sender cells"
 ```
 
 ### Interpret the NicheNet analysis output
@@ -407,8 +408,8 @@ ligands: run the following command
 
 ``` r
 nichenet_output$top_targets
-##  [1] "Cd274"  "Cd53"   "Ddit4"  "Id3"    "Ifit3"  "Irf1"   "Irf7"   "Irf9"   "Parp14" "Pdcd4"  "Pml"    "Psmb9"  "Rnf213" "Stat1"  "Stat2"  "Tap1"   "Ubc"    "Zbp1"   "Cd69"   "Gbp4"   "Basp1"  "Casp8"  "Cxcl10"
-## [24] "Nlrc5"  "Vim"    "Actb"   "Ifih1"  "Myh9"   "B2m"    "H2-T23" "Rpl13a" "Cxcr4"
+##  [1] "Cd274"  "Cd53"   "Ddit4"  "Id3"    "Ifit3"  "Irf1"   "Irf7"   "Irf9"   "Parp14" "Pdcd4"  "Pml"    "Psmb9"  "Rnf213" "Stat1"  "Stat2"  "Tap1"   "Ubc"    "Zbp1"   "Cd69"   "Gbp4"   "Basp1"  "Casp8"  "Cxcl10" "Nlrc5"  "Vim"    "Actb"   "Ifih1"  "Myh9"   "B2m"   
+## [30] "H2-T23" "Rpl13a" "Cxcr4"
 ```
 
 You can visualize the expression of these as well. Because we only focus
@@ -556,21 +557,18 @@ genes) was used during the ligand activity analysis:
 
 ``` r
 nichenet_output$geneset_oi
-##   [1] "Irf7"          "Stat1"         "Ifit3"         "Ifit1"         "Bst2"          "B2m"           "Rnf213"        "Plac8"         "Isg15"         "Shisa5"        "Zbp1"          "Isg20"         "Samhd1"       
-##  [14] "Usp18"         "H2-T23"        "Gbp2"          "Ifi203"        "Tmsb4x"        "Rsad2"         "Ly6e"          "Rtp4"          "Ifit2"         "Xaf1"          "Smchd1"        "Daxx"          "Alb"          
-##  [27] "Samd9l"        "Actb"          "Parp9"         "Gbp4"          "Lgals3bp"      "Mx1"           "Gbp7"          "Cmpk2"         "Dtx3l"         "Slfn5"         "Oasl1"         "Herc6"         "Ifih1"        
-##  [40] "Rpsa"          "P2ry13"        "Irgm2"         "Tapbp"         "Rps8"          "Stat2"         "Ifi44"         "Rpl8"          "Psmb8"         "Igfbp4"        "Ddx58"         "Rac2"          "Trafd1"       
-##  [53] "Pml"           "Oas2"          "Psme1"         "Apoe"          "Basp1"         "Rps27a"        "Znfx1"         "Rpl13"         "Oas3"          "Nt5c3"         "Rnf114"        "Tap1"          "Rps28"        
-##  [66] "Rplp0"         "Ddx60"         "Vim"           "Ifi35"         "Itm2b"         "Ctss"          "Pabpc1"        "Parp14"        "Hspa8"         "Tor3a"         "Rpl23"         "Tmbim6"        "Thy1"         
-##  [79] "Ncoa7"         "Dhx58"         "Rps10"         "Rps19"         "Psmb9"         "Il2rg"         "Etnk1"         "Irf9"          "1600014C10Rik" "Parp12"        "Eif2ak2"       "Eef1b2"        "Eef2"         
-##  [92] "Npc2"          "Rps2"          "Rps3"          "Sp110"         "Ube2l6"        "Nmi"           "Uba7"          "Psmb10"        "Cxcl10"        "Rpl13a"        "Nhp2"          "Tbrg1"         "Usp25"        
-## [105] "Tor1aip2"      "Adar"          "Gzma"          "Cd53"          "Hspa5"         "Cfl1"          "Crip1"         "Slco3a1"       "Tlr7"          "Trim21"        "Rpl10"         "Mycbp2"        "Rps16"        
-## [118] "Nlrc5"         "Rplp2"         "Acadl"         "Trim12c"       "Rps4x"         "Irf1"          "Psma2"         "Nme2"          "Zcchc11"       "Snord12"       "Phip"          "Ifitm3"        "Sp140"        
-## [131] "Dusp2"         "Mrpl30"        "H2-M3"         "Gbp3"          "Dtx1"          "Eef1g"         "Rbl1"          "Xpo1"          "Gm9844"        "Rpl35"         "Rps26"         "Cxcr4"         "Eif3m"        
-## [144] "Treml2"        "Rpl35a"        "Pdcd4"         "Arrb2"         "Ubc"           "Clic4"         "Rpl10a"        "Lcp1"          "Cd274"         "Ddit4"         "Cnn2"          "Nampt"         "Ascc3"        
-## [157] "Cd47"          "Snord49b"      "D17Wsu92e"     "Fam26f"        "Hcst"          "Myh9"          "Rps27"         "Mov10"         "Arf4"          "Arhgdib"       "Ppib"          "Trim25"        "Tspo"         
-## [170] "Id3"           "Snord35a"      "Rnf8"          "Casp8"         "Ptpn7"         "Itk"           "Cd69"          "Nop10"         "Anxa6"         "Hk1"           "Prkcb"         "Iqgap1"        "Keap1"        
-## [183] "Rpl7"          "Parp10"
+##   [1] "Irf7"          "Stat1"         "Ifit3"         "Ifit1"         "Bst2"          "B2m"           "Rnf213"        "Plac8"         "Isg15"         "Shisa5"        "Zbp1"          "Isg20"         "Samhd1"        "Usp18"         "H2-T23"        "Gbp2"         
+##  [17] "Ifi203"        "Tmsb4x"        "Rsad2"         "Ly6e"          "Rtp4"          "Ifit2"         "Xaf1"          "Smchd1"        "Daxx"          "Alb"           "Samd9l"        "Actb"          "Parp9"         "Gbp4"          "Lgals3bp"      "Mx1"          
+##  [33] "Gbp7"          "Cmpk2"         "Dtx3l"         "Slfn5"         "Oasl1"         "Herc6"         "Ifih1"         "Rpsa"          "P2ry13"        "Irgm2"         "Tapbp"         "Rps8"          "Stat2"         "Ifi44"         "Rpl8"          "Psmb8"        
+##  [49] "Igfbp4"        "Ddx58"         "Rac2"          "Trafd1"        "Pml"           "Oas2"          "Psme1"         "Apoe"          "Basp1"         "Rps27a"        "Znfx1"         "Rpl13"         "Oas3"          "Nt5c3"         "Rnf114"        "Tap1"         
+##  [65] "Rps28"         "Rplp0"         "Ddx60"         "Vim"           "Ifi35"         "Itm2b"         "Ctss"          "Pabpc1"        "Parp14"        "Hspa8"         "Tor3a"         "Rpl23"         "Tmbim6"        "Thy1"          "Ncoa7"         "Dhx58"        
+##  [81] "Rps10"         "Rps19"         "Psmb9"         "Il2rg"         "Etnk1"         "Irf9"          "1600014C10Rik" "Parp12"        "Eif2ak2"       "Eef1b2"        "Eef2"          "Npc2"          "Rps2"          "Rps3"          "Sp110"         "Ube2l6"       
+##  [97] "Nmi"           "Uba7"          "Psmb10"        "Cxcl10"        "Rpl13a"        "Nhp2"          "Tbrg1"         "Usp25"         "Tor1aip2"      "Adar"          "Gzma"          "Cd53"          "Hspa5"         "Cfl1"          "Crip1"         "Slco3a1"      
+## [113] "Tlr7"          "Trim21"        "Rpl10"         "Mycbp2"        "Rps16"         "Nlrc5"         "Rplp2"         "Acadl"         "Trim12c"       "Rps4x"         "Irf1"          "Psma2"         "Nme2"          "Zcchc11"       "Snord12"       "Phip"         
+## [129] "Ifitm3"        "Sp140"         "Dusp2"         "Mrpl30"        "H2-M3"         "Gbp3"          "Dtx1"          "Eef1g"         "Rbl1"          "Xpo1"          "Gm9844"        "Rpl35"         "Rps26"         "Cxcr4"         "Eif3m"         "Treml2"       
+## [145] "Rpl35a"        "Pdcd4"         "Arrb2"         "Ubc"           "Clic4"         "Rpl10a"        "Lcp1"          "Cd274"         "Ddit4"         "Cnn2"          "Nampt"         "Ascc3"         "Cd47"          "Snord49b"      "D17Wsu92e"     "Fam26f"       
+## [161] "Hcst"          "Myh9"          "Rps27"         "Mov10"         "Arf4"          "Arhgdib"       "Ppib"          "Trim25"        "Tspo"          "Id3"           "Snord35a"      "Rnf8"          "Casp8"         "Ptpn7"         "Itk"           "Cd69"         
+## [177] "Nop10"         "Anxa6"         "Hk1"           "Prkcb"         "Iqgap1"        "Keap1"         "Rpl7"          "Parp10"
 nichenet_output$background_expressed_genes %>% length()
 ## [1] 1487
 ```
@@ -589,6 +587,7 @@ nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seuratObj, receiver 
 ## [1] "Perform NicheNet ligand activity analysis"
 ## [1] "Infer active target genes of the prioritized ligands"
 ## [1] "Infer receptors of the prioritized ligands"
+## [1] "Perform DE analysis in sender cells"
 
 nichenet_output$ligand_activity_target_heatmap
 ```
@@ -608,6 +607,7 @@ nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seuratObj, receiver 
 ## [1] "Perform NicheNet ligand activity analysis"
 ## [1] "Infer active target genes of the prioritized ligands"
 ## [1] "Infer receptors of the prioritized ligands"
+## [1] "Perform DE analysis in sender cells"
 
 nichenet_output$ligand_activity_target_heatmap
 ```
@@ -664,12 +664,14 @@ nichenet_output = receiver_celltypes_oi %>% lapply(nichenet_seuratobj_aggregate,
 ## [1] "Perform NicheNet ligand activity analysis"
 ## [1] "Infer active target genes of the prioritized ligands"
 ## [1] "Infer receptors of the prioritized ligands"
+## [1] "Perform DE analysis in sender cells"
 ## [1] "Read in and process NicheNet's networks"
 ## [1] "Define expressed ligands and receptors in receiver and sender cells"
 ## [1] "Perform DE analysis in receiver cell"
 ## [1] "Perform NicheNet ligand activity analysis"
 ## [1] "Infer active target genes of the prioritized ligands"
 ## [1] "Infer receptors of the prioritized ligands"
+## [1] "Perform DE analysis in sender cells"
 
 names(nichenet_output) = receiver_celltypes_oi
 ```

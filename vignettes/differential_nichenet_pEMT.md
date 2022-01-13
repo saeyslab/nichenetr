@@ -39,7 +39,6 @@ HNSCC can also be downloaded from Zenodo
 ## Load in packages
 
 ``` r
-library(circlize)
 library(nichenetr)
 library(RColorBrewer)
 library(tidyverse)
@@ -96,10 +95,8 @@ DimPlot(seurat_obj, group.by = "celltype_aggregate")
 ``` r
 seurat_obj@meta.data$celltype_aggregate %>% table() %>% sort(decreasing = TRUE)
 ## .
-##     Malignant_High        T.cell_High      Malignant_Low           CAF_High myofibroblast_High   Endothelial_High            CAF_Low       Myeloid_High  myofibroblast_Low    Endothelial_Low        Myeloid_Low 
-##               1093                689                549                396                382                105                104                 92                 61                 53                  7 
-##         T.cell_Low 
-##                  3
+##     Malignant_High        T.cell_High      Malignant_Low           CAF_High myofibroblast_High   Endothelial_High            CAF_Low       Myeloid_High  myofibroblast_Low    Endothelial_Low        Myeloid_Low         T.cell_Low 
+##               1093                689                549                396                382                105                104                 92                 61                 53                  7                  3
 ```
 
 ``` r
@@ -204,31 +201,27 @@ myofibroblast\_High vs CAF\_Low. We split the cells per cell type
 instead of merging all cells from the other niche to avoid that the DE
 analysis will be driven by the most abundant cell types.
 
-The DE analysis between the receiver cell types can take much time to
-run since logFC and p-values will be calculated for all genes (5-15
-minutes).
-
 ``` r
 assay_oi = "SCT" # other possibilities: RNA,...
 DE_sender = calculate_niche_de(seurat_obj = seurat_obj %>% subset(features = lr_network$ligand %>% unique()), niches = niches, type = "sender", assay_oi = assay_oi) # only ligands important for sender cell types
-## [1] "Calculate Sender DE between: myofibroblast_High and myofibroblast_Low" "Calculate Sender DE between: myofibroblast_High and Endothelial_Low"  
-## [3] "Calculate Sender DE between: myofibroblast_High and CAF_Low"          
-## [1] "Calculate Sender DE between: Endothelial_High and myofibroblast_Low" "Calculate Sender DE between: Endothelial_High and Endothelial_Low"  
-## [3] "Calculate Sender DE between: Endothelial_High and CAF_Low"          
+## [1] "Calculate Sender DE between: myofibroblast_High and myofibroblast_Low" "Calculate Sender DE between: myofibroblast_High and Endothelial_Low"   "Calculate Sender DE between: myofibroblast_High and CAF_Low"          
+## [1] "Calculate Sender DE between: Endothelial_High and myofibroblast_Low" "Calculate Sender DE between: Endothelial_High and Endothelial_Low"   "Calculate Sender DE between: Endothelial_High and CAF_Low"          
 ## [1] "Calculate Sender DE between: CAF_High and myofibroblast_Low" "Calculate Sender DE between: CAF_High and Endothelial_Low"   "Calculate Sender DE between: CAF_High and CAF_Low"          
 ## [1] "Calculate Sender DE between: T.cell_High and myofibroblast_Low" "Calculate Sender DE between: T.cell_High and Endothelial_Low"   "Calculate Sender DE between: T.cell_High and CAF_Low"          
 ## [1] "Calculate Sender DE between: Myeloid_High and myofibroblast_Low" "Calculate Sender DE between: Myeloid_High and Endothelial_Low"   "Calculate Sender DE between: Myeloid_High and CAF_Low"          
-## [1] "Calculate Sender DE between: myofibroblast_Low and myofibroblast_High" "Calculate Sender DE between: myofibroblast_Low and Endothelial_High"  
-## [3] "Calculate Sender DE between: myofibroblast_Low and CAF_High"           "Calculate Sender DE between: myofibroblast_Low and T.cell_High"       
-## [5] "Calculate Sender DE between: myofibroblast_Low and Myeloid_High"      
-## [1] "Calculate Sender DE between: Endothelial_Low and myofibroblast_High" "Calculate Sender DE between: Endothelial_Low and Endothelial_High"  
-## [3] "Calculate Sender DE between: Endothelial_Low and CAF_High"           "Calculate Sender DE between: Endothelial_Low and T.cell_High"       
-## [5] "Calculate Sender DE between: Endothelial_Low and Myeloid_High"      
-## [1] "Calculate Sender DE between: CAF_Low and myofibroblast_High" "Calculate Sender DE between: CAF_Low and Endothelial_High"   "Calculate Sender DE between: CAF_Low and CAF_High"          
-## [4] "Calculate Sender DE between: CAF_Low and T.cell_High"        "Calculate Sender DE between: CAF_Low and Myeloid_High"
-DE_receiver = calculate_niche_de(seurat_obj = seurat_obj, niches = niches, type = "receiver", assay_oi = assay_oi) # all genes important, because we want logFC values of receptors, but also infer DE targets
-## [1] "Calculate Receiver DE between: Malignant_High and Malignant_Low"
-## [1] "Calculate Receiver DE between: Malignant_Low and Malignant_High"
+## [1] "Calculate Sender DE between: myofibroblast_Low and myofibroblast_High" "Calculate Sender DE between: myofibroblast_Low and Endothelial_High"   "Calculate Sender DE between: myofibroblast_Low and CAF_High"          
+## [4] "Calculate Sender DE between: myofibroblast_Low and T.cell_High"        "Calculate Sender DE between: myofibroblast_Low and Myeloid_High"      
+## [1] "Calculate Sender DE between: Endothelial_Low and myofibroblast_High" "Calculate Sender DE between: Endothelial_Low and Endothelial_High"   "Calculate Sender DE between: Endothelial_Low and CAF_High"          
+## [4] "Calculate Sender DE between: Endothelial_Low and T.cell_High"        "Calculate Sender DE between: Endothelial_Low and Myeloid_High"      
+## [1] "Calculate Sender DE between: CAF_Low and myofibroblast_High" "Calculate Sender DE between: CAF_Low and Endothelial_High"   "Calculate Sender DE between: CAF_Low and CAF_High"           "Calculate Sender DE between: CAF_Low and T.cell_High"       
+## [5] "Calculate Sender DE between: CAF_Low and Myeloid_High"
+DE_receiver = calculate_niche_de(seurat_obj = seurat_obj %>% subset(features = lr_network$receptor %>% unique()), niches = niches, type = "receiver", assay_oi = assay_oi) # only receptors now, later on: DE analysis to find targets
+## # A tibble: 1 x 2
+##   receiver       receiver_other_niche
+##   <chr>          <chr>               
+## 1 Malignant_High Malignant_Low       
+## [1] "Calculate receiver DE between: Malignant_High and Malignant_Low"
+## [1] "Calculate receiver DE between: Malignant_Low and Malignant_High"
 ```
 
 ### Process DE results:
@@ -308,9 +301,6 @@ if(include_spatial_info_sender == FALSE & include_spatial_info_receiver == FALSE
 } 
 ```
 
-!!!! also possible to only look at ligands for senders!! !!! receptors
-for receivers
-
 ``` r
 if(include_spatial_info_sender == TRUE){
   sender_spatial_DE = calculate_spatial_DE(seurat_obj = seurat_obj %>% subset(features = lr_network$ligand %>% unique()), spatial_info = spatial_info %>% filter(celltype_type == "sender"))
@@ -368,11 +358,17 @@ basic NicheNet vignettes.
 
 ``` r
 lfc_cutoff = 0.15 # recommended for 10x as min_lfc cutoff. 
-
 specificity_score_targets = "min_lfc"
 
-DE_receiver_processed_targets = process_receiver_target_de(DE_receiver_targets = DE_receiver, niches = niches, expression_pct = expression_pct, specificity_score = specificity_score_targets)
-  
+DE_receiver_targets = calculate_niche_de_targets(seurat_obj = seurat_obj, niches = niches, lfc_cutoff = lfc_cutoff, expression_pct = expression_pct, assay_oi = assay_oi) 
+## # A tibble: 1 x 2
+##   receiver       receiver_other_niche
+##   <chr>          <chr>               
+## 1 Malignant_High Malignant_Low       
+## [1] "Calculate receiver DE between: Malignant_High and Malignant_Low"
+## [1] "Calculate receiver DE between: Malignant_Low and Malignant_High"
+DE_receiver_processed_targets = process_receiver_target_de(DE_receiver_targets = DE_receiver_targets, niches = niches, expression_pct = expression_pct, specificity_score = specificity_score_targets)
+
 background = DE_receiver_processed_targets  %>% pull(target) %>% unique()
 geneset_niche1 = DE_receiver_processed_targets %>% filter(receiver == niches[[1]]$receiver & target_score >= lfc_cutoff & target_significant == 1 & target_present == 1) %>% pull(target) %>% unique()
 geneset_niche2 = DE_receiver_processed_targets %>% filter(receiver == niches[[2]]$receiver & target_score >= lfc_cutoff & target_significant == 1 & target_present == 1) %>% pull(target) %>% unique()
@@ -380,29 +376,23 @@ geneset_niche2 = DE_receiver_processed_targets %>% filter(receiver == niches[[2]
 # Good idea to check which genes will be left out of the ligand activity analysis (=when not present in the rownames of the ligand-target matrix).
 # If many genes are left out, this might point to some issue in the gene naming (eg gene aliases and old gene symbols, bad human-mouse mapping)
 geneset_niche1 %>% setdiff(rownames(ligand_target_matrix))
-##  [1] "ANXA8L2"       "PRKCDBP"       "IL8"           "PTRF"          "SEPP1"         "C1orf186"      "CCDC109B"      "C10orf54"      "LEPREL1"       "ZNF812"        "LOC645638"     "LOC401397"    
-## [13] "LINC00162"     "DFNA5"         "PLK1S1"        "ZMYM6NB"       "C19orf10"      "CTSL1"         "SQRDL"         "LOC375295"     "WBP5"          "LOC100505633"  "AIM1"          "C1orf63"      
-## [25] "LOC100507463"  "GPR115"        "VIMP"          "SEP15"         "C1orf172"      "NAPRT1"        "LHFP"          "KRT16P1"       "C7orf10"       "PTPLA"         "GRAMD3"        "CPSF3L"       
-## [37] "MESDC2"        "C10orf10"      "KIAA1609"      "CCDC53"        "TXLNG2P"       "NGFRAP1"       "ERO1L"         "FAM134A"       "LSMD1"         "TCEB2"         "B3GALTL"       "HN1L"         
-## [49] "LOC550643"     "KIAA0922"      "GLT25D1"       "FAM127A"       "C1orf151-NBL1" "SEPW1"         "GPR126"        "LOC100505806"  "LINC00478"     "TCEB1"         "GRAMD2"        "GNB2L1"       
-## [61] "KIRREL"
+##  [1] "ANXA8L2"       "PRKCDBP"       "IL8"           "PTRF"          "SEPP1"         "C1orf186"      "CCDC109B"      "C10orf54"      "LEPREL1"       "ZNF812"        "LOC645638"     "LOC401397"     "LINC00162"     "DFNA5"         "PLK1S1"        "ZMYM6NB"      
+## [17] "C19orf10"      "CTSL1"         "SQRDL"         "LOC375295"     "WBP5"          "LOC100505633"  "AIM1"          "C1orf63"       "LOC100507463"  "GPR115"        "VIMP"          "SEP15"         "C1orf172"      "NAPRT1"        "LHFP"          "KRT16P1"      
+## [33] "C7orf10"       "PTPLA"         "GRAMD3"        "CPSF3L"        "MESDC2"        "C10orf10"      "KIAA1609"      "CCDC53"        "TXLNG2P"       "NGFRAP1"       "ERO1L"         "FAM134A"       "LSMD1"         "TCEB2"         "B3GALTL"       "HN1L"         
+## [49] "LOC550643"     "KIAA0922"      "GLT25D1"       "FAM127A"       "C1orf151-NBL1" "SEPW1"         "GPR126"        "LOC100505806"  "LINC00478"     "TCEB1"         "GRAMD2"        "GNB2L1"        "KIRREL"
 geneset_niche2 %>% setdiff(rownames(ligand_target_matrix))
-##   [1] "LOC344887"    "AGPAT9"       "C1orf110"     "KIAA1467"     "LOC100292680" "EPT1"         "CT45A4"       "LOC654433"    "UPK3BL"       "LINC00340"    "LOC100128338" "FAM60A"       "CCDC144C"    
-##  [14] "LOC401109"    "LOC286467"    "LEPREL4"      "LOC731275"    "LOC642236"    "LINC00516"    "LOC101101776" "SC5DL"        "PVRL4"        "LOC100130093" "LINC00338"    "LOC100132891" "PPAP2C"      
-##  [27] "C6orf1"       "C2orf47"      "WHSC1L1"      "LOC100289019" "SETD8"        "KDM5B-AS1"    "SPG20"        "CXCR7"        "LOC100216479" "LOC100505761" "MGC57346"     "LPHN3"        "CENPC1"      
-##  [40] "C11orf93"     "C14orf169"    "LOC100506060" "FLJ31485"     "LOC440905"    "MLF1IP"       "TMEM194A"     "RRP7B"        "REXO1L1"      "LOC100129269" "KIAA1715"     "CTAGE5"       "LOC202781"   
-##  [53] "LOC100506714" "LOC401164"    "UTS2D"        "LOC146880"    "KIAA1804"     "C5orf55"      "C21orf119"    "PRUNE"        "LRRC16A"      "LOC339240"    "FLJ35024"     "C5orf28"      "LOC100505876"
-##  [66] "MGC21881"     "LOC100133985" "PPAPDC2"      "FRG1B"        "CECR5"        "LOC100129361" "CCBL1"        "PTPLAD1"      "MST4"         "LOC550112"    "LOC389791"    "CCDC90A"      "KIAA0195"    
-##  [79] "LOC100506469" "LOC100133161" "LOC646719"    "LOC728819"    "BRE"          "LOC284581"    "LOC441081"    "LOC728377"    "LOC100134229" "C3orf65"      "SMEK2"        "KIAA1737"     "C17orf70"    
-##  [92] "PLEKHM1P"     "LOC338758"    "PCNXL2"       "LOC91948"     "C17orf89"     "LOC100505783" "SMCR7L"       "C8orf4"       "GPR56"        "ATHL1"        "LOC339535"    "PPAPDC1B"     "DAK"         
-## [105] "LOC100507173" "CRHR1-IT1"    "PPAP2B"       "ADCK4"        "KIAA0146"     "GYLTL1B"      "LOC100272216" "LOC400027"    "WHSC1"        "LOC100130855" "C7orf55"      "C19orf40"     "ADCK3"       
-## [118] "C9orf142"     "SGOL1"        "LOC90834"     "PTPLAD2"      "KIAA1967"     "LOC100132352" "LOC100630918" "ADRBK2"       "LINC00263"    "FAM64A"       "LOC401074"    "FAM179B"      "RP1-177G6.2" 
-## [131] "METTL21D"     "ERO1LB"       "FLJ45445"     "NADKD1"       "LOC100506233" "LOC100652772" "FAM175A"      "LINC00630"    "C11orf82"     "SETD5-AS1"    "SGK196"       "FLJ14186"     "CCDC104"     
-## [144] "FAM63A"       "NARG2"        "MTERFD1"      "CCDC74B-AS1"  "LOC286186"    "WDR67"        "C12orf52"     "FLJ30403"     "KIAA2018"     "GCN1L1"       "FLJ43681"     "LOC152217"    "FONG"        
-## [157] "C18orf8"      "ALG1L9P"      "GTDC2"        "LOC100507217" "NBPF24"       "WBSCR27"      "C14orf1"      "LOC284889"    "KIAA0317"     "FAM65A"       "PMS2L2"       "LUST"         "C15orf52"    
-## [170] "FAM195A"      "LOC399744"    "PYCRL"        "LOC338799"    "LOC100506190" "C9orf91"      "FLJ45340"     "LOC349196"    "LOC100128881" "TOMM70A"      "ALS2CR8"      "LDOC1L"       "HDGFRP3"     
-## [183] "ZNF767"       "LOC728558"    "LOC283693"    "LEPREL2"      "QTRTD1"       "SELM"         "C6orf25"      "C1orf86"      "HNRPLL"       "LOC145820"    "LOC100289341" "C17orf85"     "C3orf72"     
-## [196] "C14orf64"     "C9orf9"       "LOC100506394"
+##   [1] "LOC344887"    "AGPAT9"       "C1orf110"     "KIAA1467"     "LOC100292680" "EPT1"         "CT45A4"       "LOC654433"    "UPK3BL"       "LINC00340"    "LOC100128338" "FAM60A"       "CCDC144C"     "LOC401109"    "LOC286467"    "LEPREL4"      "LOC731275"   
+##  [18] "LOC642236"    "LINC00516"    "LOC101101776" "SC5DL"        "PVRL4"        "LOC100130093" "LINC00338"    "LOC100132891" "PPAP2C"       "C6orf1"       "C2orf47"      "WHSC1L1"      "LOC100289019" "SETD8"        "KDM5B-AS1"    "SPG20"        "CXCR7"       
+##  [35] "LOC100216479" "LOC100505761" "MGC57346"     "LPHN3"        "CENPC1"       "C11orf93"     "C14orf169"    "LOC100506060" "FLJ31485"     "LOC440905"    "MLF1IP"       "TMEM194A"     "RRP7B"        "REXO1L1"      "LOC100129269" "KIAA1715"     "CTAGE5"      
+##  [52] "LOC202781"    "LOC100506714" "LOC401164"    "UTS2D"        "LOC146880"    "KIAA1804"     "C5orf55"      "C21orf119"    "PRUNE"        "LRRC16A"      "LOC339240"    "FLJ35024"     "C5orf28"      "LOC100505876" "MGC21881"     "LOC100133985" "PPAPDC2"     
+##  [69] "FRG1B"        "CECR5"        "LOC100129361" "CCBL1"        "PTPLAD1"      "MST4"         "LOC550112"    "LOC389791"    "CCDC90A"      "KIAA0195"     "LOC100506469" "LOC100133161" "LOC646719"    "LOC728819"    "BRE"          "LOC284581"    "LOC441081"   
+##  [86] "LOC728377"    "LOC100134229" "C3orf65"      "SMEK2"        "KIAA1737"     "C17orf70"     "PLEKHM1P"     "LOC338758"    "PCNXL2"       "LOC91948"     "C17orf89"     "LOC100505783" "SMCR7L"       "C8orf4"       "GPR56"        "ATHL1"        "LOC339535"   
+## [103] "PPAPDC1B"     "DAK"          "LOC100507173" "CRHR1-IT1"    "PPAP2B"       "ADCK4"        "KIAA0146"     "GYLTL1B"      "LOC100272216" "LOC400027"    "WHSC1"        "LOC100130855" "C7orf55"      "C19orf40"     "ADCK3"        "C9orf142"     "SGOL1"       
+## [120] "LOC90834"     "PTPLAD2"      "KIAA1967"     "LOC100132352" "LOC100630918" "ADRBK2"       "LINC00263"    "FAM64A"       "LOC401074"    "FAM179B"      "RP1-177G6.2"  "METTL21D"     "ERO1LB"       "FLJ45445"     "NADKD1"       "LOC100506233" "LOC100652772"
+## [137] "FAM175A"      "LINC00630"    "C11orf82"     "SETD5-AS1"    "SGK196"       "FLJ14186"     "CCDC104"      "FAM63A"       "NARG2"        "MTERFD1"      "CCDC74B-AS1"  "LOC286186"    "WDR67"        "C12orf52"     "FLJ30403"     "KIAA2018"     "GCN1L1"      
+## [154] "FLJ43681"     "LOC152217"    "FONG"         "C18orf8"      "ALG1L9P"      "GTDC2"        "LOC100507217" "NBPF24"       "WBSCR27"      "C14orf1"      "LOC284889"    "KIAA0317"     "FAM65A"       "PMS2L2"       "LUST"         "C15orf52"     "FAM195A"     
+## [171] "LOC399744"    "PYCRL"        "LOC338799"    "LOC100506190" "C9orf91"      "FLJ45340"     "LOC349196"    "LOC100128881" "TOMM70A"      "ALS2CR8"      "LDOC1L"       "HDGFRP3"      "ZNF767"       "LOC728558"    "LOC283693"    "LEPREL2"      "QTRTD1"      
+## [188] "SELM"         "C6orf25"      "C1orf86"      "HNRPLL"       "LOC145820"    "LOC100289341" "C17orf85"     "C3orf72"      "C14orf64"     "C9orf9"       "LOC100506394"
 
 length(geneset_niche1)
 ## [1] 1668
@@ -430,7 +420,7 @@ lfc_cutoff = 0.75
 
 specificity_score_targets = "min_lfc"
 
-DE_receiver_processed_targets = process_receiver_target_de(DE_receiver_targets = DE_receiver, niches = niches, expression_pct = expression_pct, specificity_score = specificity_score_targets)
+DE_receiver_processed_targets = process_receiver_target_de(DE_receiver_targets = DE_receiver_targets, niches = niches, expression_pct = expression_pct, specificity_score = specificity_score_targets)
   
 background = DE_receiver_processed_targets  %>% pull(target) %>% unique()
 geneset_niche1 = DE_receiver_processed_targets %>% filter(receiver == niches[[1]]$receiver & target_score >= lfc_cutoff & target_significant == 1 & target_present == 1) %>% pull(target) %>% unique()
@@ -658,6 +648,11 @@ prioritizing_weights = c("scaled_ligand_score" = 5,
                          "bona_fide" = 1)
 ```
 
+Note: these settings will give substantially more weight to DE
+ligand-receptor pairs compared to activity. Users can change this if
+wanted, just like other settings can be changed if that would be better
+to tackle the specific biological question you want to address.
+
 ``` r
 output = list(DE_sender_receiver = DE_sender_receiver, ligand_scaled_receptor_expression_fraction_df = ligand_scaled_receptor_expression_fraction_df, sender_spatial_DE_processed = sender_spatial_DE_processed, receiver_spatial_DE_processed = receiver_spatial_DE_processed,
          ligand_activities_targets = ligand_activities_targets, DE_receiver_processed_targets = DE_receiver_processed_targets, exprs_tbl_ligand = exprs_tbl_ligand,  exprs_tbl_receptor = exprs_tbl_receptor, exprs_tbl_target = exprs_tbl_target)
@@ -665,104 +660,114 @@ prioritization_tables = get_prioritization_tables(output, prioritizing_weights)
 
 prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(receiver == niches[[1]]$receiver) %>% head(10)
 ## # A tibble: 10 x 37
-##    niche  receiver sender ligand_receptor ligand receptor bonafide ligand_score ligand_signific~ ligand_present ligand_expressi~ ligand_expressi~ ligand_fraction ligand_score_zo~ receptor_score receptor_signif~
-##    <chr>  <chr>    <chr>  <chr>           <chr>  <chr>    <lgl>           <dbl>            <dbl>          <dbl>            <dbl>            <dbl>           <dbl>            <dbl>          <dbl>            <dbl>
-##  1 pEMT_~ Maligna~ T.cel~ PTPRC--MET      PTPRC  MET      FALSE            3.22                1              1             9.32             2.5            0.939                0         0.463                 1
-##  2 pEMT_~ Maligna~ T.cel~ PTPRC--EGFR     PTPRC  EGFR     FALSE            3.22                1              1             9.32             2.5            0.939                0         0.454                 1
-##  3 pEMT_~ Maligna~ T.cel~ PTPRC--CD44     PTPRC  CD44     FALSE            3.22                1              1             9.32             2.5            0.939                0         0.104                 1
-##  4 pEMT_~ Maligna~ T.cel~ PTPRC--ERBB2    PTPRC  ERBB2    FALSE            3.22                1              1             9.32             2.5            0.939                0        -0.0286                0
-##  5 pEMT_~ Maligna~ T.cel~ PTPRC--IFNAR1   PTPRC  IFNAR1   FALSE            3.22                1              1             9.32             2.5            0.939                0         0.248                 0
-##  6 pEMT_~ Maligna~ T.cel~ TNF--TNFRSF21   TNF    TNFRSF21 TRUE             1.74                1              1             2.34             2.35           0.251                0         1.14                  1
-##  7 pEMT_~ Maligna~ Myelo~ SERPINA1--LRP1  SERPI~ LRP1     TRUE             2.52                1              1             4.83             2.5            0.761                0        -0.159                 1
-##  8 pEMT_~ Maligna~ Myelo~ IL1B--IL1RAP    IL1B   IL1RAP   TRUE             1.50                1              1             1.93             2.5            0.272                0         0.582                 1
-##  9 pEMT_~ Maligna~ Myelo~ IL1RN--IL1R2    IL1RN  IL1R2    TRUE             1.62                1              1             2.07             2.35           0.380                0         0.259                 0
-## 10 pEMT_~ Maligna~ T.cel~ PTPRC--INSR     PTPRC  INSR     FALSE            3.22                1              1             9.32             2.5            0.939                0        -0.0722                0
-## # ... with 21 more variables: receptor_present <dbl>, receptor_expression <dbl>, receptor_expression_scaled <dbl>, receptor_fraction <dbl>, receptor_score_zonation <dbl>,
-## #   ligand_scaled_receptor_expression_fraction <dbl>, avg_score_ligand_receptor <dbl>, activity <dbl>, activity_normalized <dbl>, scaled_ligand_score <dbl>, scaled_ligand_expression_scaled <dbl>,
-## #   scaled_receptor_score <dbl>, scaled_receptor_expression_scaled <dbl>, scaled_avg_score_ligand_receptor <dbl>, scaled_ligand_score_zonation <dbl>, scaled_receptor_score_zonation <dbl>,
-## #   scaled_ligand_fraction_adapted <dbl>, scaled_receptor_fraction_adapted <dbl>, scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>
+##    niche  receiver  sender  ligand_receptor ligand  receptor bonafide ligand_score ligand_significa~ ligand_present ligand_expressi~ ligand_expressi~ ligand_fraction ligand_score_zo~ receptor_score receptor_signif~ receptor_present receptor_expres~ receptor_expres~
+##    <chr>  <chr>     <chr>   <chr>           <chr>   <chr>    <lgl>           <dbl>             <dbl>          <dbl>            <dbl>            <dbl>           <dbl>            <dbl>          <dbl>            <dbl>            <dbl>            <dbl>            <dbl>
+##  1 pEMT_~ Malignan~ T.cell~ PTPRC--MET      PTPRC   MET      FALSE           3.22                  1              1            9.32              2.5            0.939            0             0.463                 1                1            1.02             1.76 
+##  2 pEMT_~ Malignan~ T.cell~ PTPRC--EGFR     PTPRC   EGFR     FALSE           3.22                  1              1            9.32              2.5            0.939            0             0.454                 1                1            1.21             1.21 
+##  3 pEMT_~ Malignan~ T.cell~ PTPRC--CD44     PTPRC   CD44     FALSE           3.22                  1              1            9.32              2.5            0.939            0             0.104                 1                1            3.27             0.327
+##  4 pEMT_~ Malignan~ T.cell~ PTPRC--ERBB2    PTPRC   ERBB2    FALSE           3.22                  1              1            9.32              2.5            0.939            0            -0.0286                0                1            0.629            1.16 
+##  5 pEMT_~ Malignan~ T.cell~ TNF--TNFRSF21   TNF     TNFRSF21 TRUE            1.74                  1              1            2.34              2.35           0.251            0             1.14                  1                1            2.51             2.14 
+##  6 pEMT_~ Malignan~ T.cell~ PTPRC--IFNAR1   PTPRC   IFNAR1   FALSE           3.22                  1              1            9.32              2.5            0.939            0             0.248                 1                1            0.765           -0.658
+##  7 pEMT_~ Malignan~ Myeloi~ SERPINA1--LRP1  SERPIN~ LRP1     TRUE            2.52                  1              1            4.83              2.5            0.761            0            -0.159                 1                1            0.312           -0.526
+##  8 pEMT_~ Malignan~ Myeloi~ IL1B--IL1RAP    IL1B    IL1RAP   TRUE            1.50                  1              1            1.93              2.5            0.272            0             0.582                 1                1            1.01             2.46 
+##  9 pEMT_~ Malignan~ CAF_Hi~ IL24--IL20RB    IL24    IL20RB   TRUE            0.813                 0              1            0.859             2.5            0.116            0.785         1.42                  1                1            2.58             2.5  
+## 10 pEMT_~ Malignan~ T.cell~ PTPRC--INSR     PTPRC   INSR     FALSE           3.22                  1              1            9.32              2.5            0.939            0            -0.0722                0                1            0.582           -0.719
+## # ... with 18 more variables: receptor_fraction <dbl>, receptor_score_zonation <dbl>, ligand_scaled_receptor_expression_fraction <dbl>, avg_score_ligand_receptor <dbl>, activity <dbl>, activity_normalized <dbl>, scaled_ligand_score <dbl>,
+## #   scaled_ligand_expression_scaled <dbl>, scaled_receptor_score <dbl>, scaled_receptor_expression_scaled <dbl>, scaled_avg_score_ligand_receptor <dbl>, scaled_ligand_score_zonation <dbl>, scaled_receptor_score_zonation <dbl>, scaled_ligand_fraction_adapted <dbl>,
+## #   scaled_receptor_fraction_adapted <dbl>, scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>
 prioritization_tables$prioritization_tbl_ligand_target %>% filter(receiver == niches[[1]]$receiver) %>% head(10)
 ## # A tibble: 10 x 20
-##    niche receiver sender ligand_receptor ligand receptor bonafide target target_score target_signific~ target_present target_expressi~ target_expressi~ target_fraction ligand_target_w~ activity activity_normal~
-##    <chr> <chr>    <chr>  <chr>           <chr>  <chr>    <lgl>    <chr>         <dbl>            <dbl>          <dbl>            <dbl>            <dbl>           <dbl>            <dbl>    <dbl>            <dbl>
-##  1 pEMT~ Maligna~ T.cel~ PTPRC--MET      PTPRC  MET      FALSE    EHF           1.04                 1              1             1.88            2.5             0.678          0.00126   0.0599          -0.0447
-##  2 pEMT~ Maligna~ T.cel~ PTPRC--MET      PTPRC  MET      FALSE    GADD4~        0.836                1              1             2.42           -0.971           0.638          0.00154   0.0599          -0.0447
-##  3 pEMT~ Maligna~ T.cel~ PTPRC--MET      PTPRC  MET      FALSE    SERPI~        0.889                1              1             1.79            0.290           0.603          0.00133   0.0599          -0.0447
-##  4 pEMT~ Maligna~ T.cel~ PTPRC--EGFR     PTPRC  EGFR     FALSE    EHF           1.04                 1              1             1.88            2.5             0.678          0.00126   0.0599          -0.0447
-##  5 pEMT~ Maligna~ T.cel~ PTPRC--EGFR     PTPRC  EGFR     FALSE    GADD4~        0.836                1              1             2.42           -0.971           0.638          0.00154   0.0599          -0.0447
-##  6 pEMT~ Maligna~ T.cel~ PTPRC--EGFR     PTPRC  EGFR     FALSE    SERPI~        0.889                1              1             1.79            0.290           0.603          0.00133   0.0599          -0.0447
-##  7 pEMT~ Maligna~ T.cel~ PTPRC--CD44     PTPRC  CD44     FALSE    EHF           1.04                 1              1             1.88            2.5             0.678          0.00126   0.0599          -0.0447
-##  8 pEMT~ Maligna~ T.cel~ PTPRC--CD44     PTPRC  CD44     FALSE    GADD4~        0.836                1              1             2.42           -0.971           0.638          0.00154   0.0599          -0.0447
-##  9 pEMT~ Maligna~ T.cel~ PTPRC--CD44     PTPRC  CD44     FALSE    SERPI~        0.889                1              1             1.79            0.290           0.603          0.00133   0.0599          -0.0447
-## 10 pEMT~ Maligna~ T.cel~ PTPRC--ERBB2    PTPRC  ERBB2    FALSE    EHF           1.04                 1              1             1.88            2.5             0.678          0.00126   0.0599          -0.0447
-## # ... with 3 more variables: scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>
+##    niche  receiver  sender  ligand_receptor ligand receptor bonafide target  target_score target_significa~ target_present target_expressi~ target_expressi~ target_fraction ligand_target_w~ activity activity_normal~ scaled_activity scaled_activity~ prioritization_~
+##    <chr>  <chr>     <chr>   <chr>           <chr>  <chr>    <lgl>    <chr>          <dbl>             <dbl>          <dbl>            <dbl>            <dbl>           <dbl>            <dbl>    <dbl>            <dbl>           <dbl>            <dbl>            <dbl>
+##  1 pEMT_~ Malignan~ T.cell~ PTPRC--MET      PTPRC  MET      FALSE    CD74           1.58                  1              1             4.99          -0.0869           0.806          0.00101   0.0657           -0.111           0.580            0.387            0.955
+##  2 pEMT_~ Malignan~ T.cell~ PTPRC--MET      PTPRC  MET      FALSE    EHF            1.04                  1              1             1.88           2.5              0.678          0.00126   0.0657           -0.111           0.580            0.387            0.955
+##  3 pEMT_~ Malignan~ T.cell~ PTPRC--MET      PTPRC  MET      FALSE    ETS2           1.15                  1              1             2.68           0.623            0.795          0.00108   0.0657           -0.111           0.580            0.387            0.955
+##  4 pEMT_~ Malignan~ T.cell~ PTPRC--MET      PTPRC  MET      FALSE    GADD45B        0.836                 1              1             2.42          -0.971            0.638          0.00154   0.0657           -0.111           0.580            0.387            0.955
+##  5 pEMT_~ Malignan~ T.cell~ PTPRC--MET      PTPRC  MET      FALSE    ITGA5          1.05                  1              1             1.55          -0.226            0.554          0.00111   0.0657           -0.111           0.580            0.387            0.955
+##  6 pEMT_~ Malignan~ T.cell~ PTPRC--MET      PTPRC  MET      FALSE    LTBP1          1.29                  1              1             2.02           0.130            0.621          0.00106   0.0657           -0.111           0.580            0.387            0.955
+##  7 pEMT_~ Malignan~ T.cell~ PTPRC--MET      PTPRC  MET      FALSE    NNMT           0.975                 1              1             1.07          -0.802            0.352          0.00103   0.0657           -0.111           0.580            0.387            0.955
+##  8 pEMT_~ Malignan~ T.cell~ PTPRC--MET      PTPRC  MET      FALSE    PSMB9          0.798                 1              1             3.95           0.724            0.866          0.00101   0.0657           -0.111           0.580            0.387            0.955
+##  9 pEMT_~ Malignan~ T.cell~ PTPRC--MET      PTPRC  MET      FALSE    RAB31          1.16                  1              1             1.68          -0.0894           0.677          0.00104   0.0657           -0.111           0.580            0.387            0.955
+## 10 pEMT_~ Malignan~ T.cell~ PTPRC--MET      PTPRC  MET      FALSE    SERPIN~        0.889                 1              1             1.79           0.290            0.603          0.00133   0.0657           -0.111           0.580            0.387            0.955
 
 prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(receiver == niches[[2]]$receiver) %>% head(10)
 ## # A tibble: 10 x 37
-##    niche  receiver sender ligand_receptor ligand receptor bonafide ligand_score ligand_signific~ ligand_present ligand_expressi~ ligand_expressi~ ligand_fraction ligand_score_zo~ receptor_score receptor_signif~
-##    <chr>  <chr>    <chr>  <chr>           <chr>  <chr>    <lgl>           <dbl>            <dbl>          <dbl>            <dbl>            <dbl>           <dbl>            <dbl>          <dbl>            <dbl>
-##  1 pEMT_~ Maligna~ Endot~ F8--LRP1        F8     LRP1     TRUE            0.952              1                1            2.17              2.5            0.528                0         0.159                 1
-##  2 pEMT_~ Maligna~ Endot~ PLAT--LRP1      PLAT   LRP1     TRUE            0.913              1                1            2.70              2.12           0.509                0         0.159                 1
-##  3 pEMT_~ Maligna~ CAF_L~ FGF10--FGFR2    FGF10  FGFR2    TRUE            0.385              0.8              1            1.07              2.46           0.25                 0         0.154                 1
-##  4 pEMT_~ Maligna~ CAF_L~ NLGN2--NRXN3    NLGN2  NRXN3    TRUE            0.140              0.2              1            0.269             2.20           0.163                0         0.361                 1
-##  5 pEMT_~ Maligna~ CAF_L~ RSPO3--LGR6     RSPO3  LGR6     TRUE            0.557              0.8              1            1.27              2.5            0.240                0         0.435                 1
-##  6 pEMT_~ Maligna~ CAF_L~ COMP--SDC1      COMP   SDC1     TRUE            0.290              0.8              1            1.27              2.31           0.202                0         0.0498                0
-##  7 pEMT_~ Maligna~ CAF_L~ SEMA3C--NRP2    SEMA3C NRP2     TRUE            0.652              1                1            1.73              2.07           0.423                0        -0.0634                0
-##  8 pEMT_~ Maligna~ CAF_L~ SLIT2--SDC1     SLIT2  SDC1     TRUE            0.494              1                1            0.846             2.5            0.288                0         0.0498                0
-##  9 pEMT_~ Maligna~ Endot~ IL33--IL1RAP    IL33   IL1RAP   FALSE           1.34               1                1            2.75              2.5            0.585                0        -0.582                 1
-## 10 pEMT_~ Maligna~ CAF_L~ C3--LRP1        C3     LRP1     TRUE            0.480              1                1            4.79              2.32           0.721                0         0.159                 1
-## # ... with 21 more variables: receptor_present <dbl>, receptor_expression <dbl>, receptor_expression_scaled <dbl>, receptor_fraction <dbl>, receptor_score_zonation <dbl>,
-## #   ligand_scaled_receptor_expression_fraction <dbl>, avg_score_ligand_receptor <dbl>, activity <dbl>, activity_normalized <dbl>, scaled_ligand_score <dbl>, scaled_ligand_expression_scaled <dbl>,
-## #   scaled_receptor_score <dbl>, scaled_receptor_expression_scaled <dbl>, scaled_avg_score_ligand_receptor <dbl>, scaled_ligand_score_zonation <dbl>, scaled_receptor_score_zonation <dbl>,
-## #   scaled_ligand_fraction_adapted <dbl>, scaled_receptor_fraction_adapted <dbl>, scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>
+##    niche  receiver  sender  ligand_receptor ligand receptor bonafide ligand_score ligand_significa~ ligand_present ligand_expression ligand_expressi~ ligand_fraction ligand_score_zo~ receptor_score receptor_signif~ receptor_present receptor_expres~ receptor_expres~
+##    <chr>  <chr>     <chr>   <chr>           <chr>  <chr>    <lgl>           <dbl>             <dbl>          <dbl>             <dbl>            <dbl>           <dbl>            <dbl>          <dbl>            <dbl>            <dbl>            <dbl>            <dbl>
+##  1 pEMT_~ Malignan~ Endoth~ F8--LRP1        F8     LRP1     TRUE            0.952               1                1             2.17              2.5            0.528                0         0.159                 1                1            0.464          -0.404 
+##  2 pEMT_~ Malignan~ Endoth~ PLAT--LRP1      PLAT   LRP1     TRUE            0.913               1                1             2.70              2.12           0.509                0         0.159                 1                1            0.464          -0.404 
+##  3 pEMT_~ Malignan~ CAF_Low FGF10--FGFR2    FGF10  FGFR2    TRUE            0.385               0.8              1             1.07              2.46           0.25                 0         0.154                 1                1            0.585           2.22  
+##  4 pEMT_~ Malignan~ CAF_Low NLGN2--NRXN3    NLGN2  NRXN3    TRUE            0.140               0.2              1             0.269             2.20           0.163                0         0.361                 1                1            0.297           2.5   
+##  5 pEMT_~ Malignan~ CAF_Low SEMA3C--NRP2    SEMA3C NRP2     TRUE            0.652               1                1             1.73              2.07           0.423                0        -0.0634                0                1            0.565          -0.0958
+##  6 pEMT_~ Malignan~ CAF_Low COMP--SDC1      COMP   SDC1     TRUE            0.290               0.8              1             1.27              2.31           0.202                0         0.0498                0                1            3.47            1.92  
+##  7 pEMT_~ Malignan~ CAF_Low RSPO3--LGR6     RSPO3  LGR6     TRUE            0.557               0.8              1             1.27              2.5            0.240                0         0.435                 1                1            0.384           2.39  
+##  8 pEMT_~ Malignan~ Endoth~ IL33--IL1RAP    IL33   IL1RAP   FALSE           1.34                1                1             2.75              2.5            0.585                0        -0.582                 1                1            0.341           0.178 
+##  9 pEMT_~ Malignan~ CAF_Low C3--LRP1        C3     LRP1     TRUE            0.480               1                1             4.79              2.32           0.721                0         0.159                 1                1            0.464          -0.404 
+## 10 pEMT_~ Malignan~ CAF_Low SLIT2--SDC1     SLIT2  SDC1     TRUE            0.494               1                1             0.846             2.5            0.288                0         0.0498                0                1            3.47            1.92  
+## # ... with 18 more variables: receptor_fraction <dbl>, receptor_score_zonation <dbl>, ligand_scaled_receptor_expression_fraction <dbl>, avg_score_ligand_receptor <dbl>, activity <dbl>, activity_normalized <dbl>, scaled_ligand_score <dbl>,
+## #   scaled_ligand_expression_scaled <dbl>, scaled_receptor_score <dbl>, scaled_receptor_expression_scaled <dbl>, scaled_avg_score_ligand_receptor <dbl>, scaled_ligand_score_zonation <dbl>, scaled_receptor_score_zonation <dbl>, scaled_ligand_fraction_adapted <dbl>,
+## #   scaled_receptor_fraction_adapted <dbl>, scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>
 prioritization_tables$prioritization_tbl_ligand_target %>% filter(receiver == niches[[2]]$receiver) %>% head(10)
 ## # A tibble: 10 x 20
-##    niche receiver sender ligand_receptor ligand receptor bonafide target target_score target_signific~ target_present target_expressi~ target_expressi~ target_fraction ligand_target_w~ activity activity_normal~
-##    <chr> <chr>    <chr>  <chr>           <chr>  <chr>    <lgl>    <chr>         <dbl>            <dbl>          <dbl>            <dbl>            <dbl>           <dbl>            <dbl>    <dbl>            <dbl>
-##  1 pEMT~ Maligna~ Endot~ F8--LRP1        F8     LRP1     TRUE     ETV4          0.771                1              1            1.00            2.5              0.421         0.000816   0.0218           0.107 
-##  2 pEMT~ Maligna~ Endot~ PLAT--LRP1      PLAT   LRP1     TRUE     CLDN7         0.835                1              1            2.30            2.5              0.743         0.00121    0.0199          -0.0740
-##  3 pEMT~ Maligna~ Endot~ PLAT--LRP1      PLAT   LRP1     TRUE     ETV4          0.771                1              1            1.00            2.5              0.421         0.00124    0.0199          -0.0740
-##  4 pEMT~ Maligna~ CAF_L~ FGF10--FGFR2    FGF10  FGFR2    TRUE     ETV4          0.771                1              1            1.00            2.5              0.421         0.00230    0.0217           0.103 
-##  5 pEMT~ Maligna~ CAF_L~ FGF10--FGFR2    FGF10  FGFR2    TRUE     WNT5A         1.40                 1              1            2.01            2.17             0.803         0.000876   0.0217           0.103 
-##  6 pEMT~ Maligna~ CAF_L~ NLGN2--NRXN3    NLGN2  NRXN3    TRUE     CLDN5         0.979                1              1            0.991          -0.0201           0.273         0.000856   0.0266           0.584 
-##  7 pEMT~ Maligna~ CAF_L~ NLGN2--NRXN3    NLGN2  NRXN3    TRUE     ETV4          0.771                1              1            1.00            2.5              0.421         0.000854   0.0266           0.584 
-##  8 pEMT~ Maligna~ CAF_L~ RSPO3--LGR6     RSPO3  LGR6     TRUE     DDC           0.832                1              1            0.785           2.5              0.304         0.00118    0.0156          -0.498 
-##  9 pEMT~ Maligna~ CAF_L~ RSPO3--LGR6     RSPO3  LGR6     TRUE     EGFL7         0.763                1              1            1.09            0.116            0.472         0.00133    0.0156          -0.498 
-## 10 pEMT~ Maligna~ CAF_L~ COMP--SDC1      COMP   SDC1     TRUE     CLDN7         0.835                1              1            2.30            2.5              0.743         0.000989   0.0219           0.121 
-## # ... with 3 more variables: scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>
+##    niche  receiver  sender  ligand_receptor ligand receptor bonafide target target_score target_significa~ target_present target_expression target_expressi~ target_fraction ligand_target_w~ activity activity_normal~ scaled_activity scaled_activity~ prioritization_~
+##    <chr>  <chr>     <chr>   <chr>           <chr>  <chr>    <lgl>    <chr>         <dbl>             <dbl>          <dbl>             <dbl>            <dbl>           <dbl>            <dbl>    <dbl>            <dbl>           <dbl>            <dbl>            <dbl>
+##  1 pEMT_~ Malignan~ Endoth~ F8--LRP1        F8     LRP1     TRUE     CLDN7         0.835                 1              1             2.30            2.5              0.743         0.000681 -2.32e-3          -0.133            0.265            0.384            0.837
+##  2 pEMT_~ Malignan~ Endoth~ F8--LRP1        F8     LRP1     TRUE     ETV4          0.771                 1              1             1.00            2.5              0.421         0.000816 -2.32e-3          -0.133            0.265            0.384            0.837
+##  3 pEMT_~ Malignan~ Endoth~ PLAT--LRP1      PLAT   LRP1     TRUE     CLDN7         0.835                 1              1             2.30            2.5              0.743         0.00121  -3.70e-3          -0.214            0.259            0.375            0.828
+##  4 pEMT_~ Malignan~ Endoth~ PLAT--LRP1      PLAT   LRP1     TRUE     ETV4          0.771                 1              1             1.00            2.5              0.421         0.00124  -3.70e-3          -0.214            0.259            0.375            0.828
+##  5 pEMT_~ Malignan~ Endoth~ PLAT--LRP1      PLAT   LRP1     TRUE     WNT5A         1.40                  1              1             2.01            2.17             0.803         0.00108  -3.70e-3          -0.214            0.259            0.375            0.828
+##  6 pEMT_~ Malignan~ CAF_Low FGF10--FGFR2    FGF10  FGFR2    TRUE     ETV4          0.771                 1              1             1.00            2.5              0.421         0.00230   1.42e-4           0.0118           0.277            0.401            0.824
+##  7 pEMT_~ Malignan~ CAF_Low FGF10--FGFR2    FGF10  FGFR2    TRUE     TFRC          0.815                 1              1             3.19            1.18             0.874         0.000768  1.42e-4           0.0118           0.277            0.401            0.824
+##  8 pEMT_~ Malignan~ CAF_Low FGF10--FGFR2    FGF10  FGFR2    TRUE     WNT5A         1.40                  1              1             2.01            2.17             0.803         0.000876  1.42e-4           0.0118           0.277            0.401            0.824
+##  9 pEMT_~ Malignan~ CAF_Low NLGN2--NRXN3    NLGN2  NRXN3    TRUE     ALDOC         0.803                 1              1             1.36            2.5              0.505         0.000736  1.01e-2           0.598            0.323            0.467            0.815
+## 10 pEMT_~ Malignan~ CAF_Low NLGN2--NRXN3    NLGN2  NRXN3    TRUE     CLDN5         0.979                 1              1             0.991          -0.0201           0.273         0.000856  1.01e-2           0.598            0.323            0.467            0.815
 ```
 
 # 8. Visualization of the Differential NicheNet output
 
 ## Differential expression of ligand and expression
 
+Before visualization, we need to define the most important
+ligand-receptor pairs per niche. We will do this by first determining
+for which niche the highest score is found for each
+ligand/ligand-receptor pair. And then getting the top 50 ligands per
+niche.
+
+``` r
+top_ligand_niche_df = prioritization_tables$prioritization_tbl_ligand_receptor %>% select(niche, sender, receiver, ligand, receptor, prioritization_score) %>% group_by(ligand) %>% top_n(1, prioritization_score) %>% ungroup() %>% select(ligand, receptor, niche) %>% rename(top_niche = niche)
+top_ligand_receptor_niche_df = prioritization_tables$prioritization_tbl_ligand_receptor %>% select(niche, sender, receiver, ligand, receptor, prioritization_score) %>% group_by(ligand, receptor) %>% top_n(1, prioritization_score) %>% ungroup() %>% select(ligand, receptor, niche) %>% rename(top_niche = niche)
+
+ligand_prioritized_tbl_oi = prioritization_tables$prioritization_tbl_ligand_receptor %>% select(niche, sender, receiver, ligand, prioritization_score) %>% group_by(ligand, niche) %>% top_n(1, prioritization_score) %>% ungroup() %>% distinct() %>% inner_join(top_ligand_niche_df) %>% filter(niche == top_niche) %>% group_by(niche) %>% top_n(50, prioritization_score) %>% ungroup() # get the top50 ligands per niche
+```
+
+Now we will look first at the top ligand-receptor pairs for KCs (here,
+we will take the top 2 scoring receptors per prioritized ligand)
+
+``` r
+receiver_oi = "Malignant_High" 
+
+filtered_ligands = ligand_prioritized_tbl_oi %>% filter(receiver == receiver_oi) %>% pull(ligand) %>% unique()
+
+prioritized_tbl_oi = prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(ligand %in% filtered_ligands) %>% select(niche, sender, receiver, ligand,  receptor, ligand_receptor, prioritization_score) %>% distinct() %>% inner_join(top_ligand_receptor_niche_df) %>% group_by(ligand) %>% filter(receiver == receiver_oi) %>% top_n(2, prioritization_score) %>% ungroup() 
+```
+
 Visualization: minimum LFC compared to other niches
 
 ``` r
-receiver_oi = "Malignant_High" # user adaptation required on own dataset
-prioritized_tbl_oi = prioritization_tables$prioritization_tbl_ligand_receptor %>% select(niche, sender, receiver, ligand, prioritization_score) %>% distinct() %>% group_by(ligand, receiver) %>% top_n(1, prioritization_score) %>% filter(receiver == receiver_oi) %>% group_by(sender) %>% top_n(20, prioritization_score) # top20 per sender
-prioritized_tbl_oi2 = prioritization_tables$prioritization_tbl_ligand_receptor %>% select(niche, sender, receiver, ligand, prioritization_score) %>% distinct() %>% group_by(ligand, receiver) %>% top_n(1, prioritization_score) %>% filter(receiver == receiver_oi) %>% ungroup() %>% top_n(75, prioritization_score) # top75 in total
-prioritized_tbl_oi = prioritized_tbl_oi %>% bind_rows(prioritized_tbl_oi2) %>% distinct()
-
-filtered_ligands = prioritized_tbl_oi %>% pull(ligand) %>% unique()
-
-prioritized_tbl_lr_oi = prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(ligand %in% filtered_ligands) %>% select(niche, sender, receiver, ligand, ligand_receptor, prioritization_score) %>% distinct() %>% group_by(ligand) %>% filter(receiver == receiver_oi) %>% top_n(1, prioritization_score) %>% ungroup() 
-prioritized_tbl_oi = prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(ligand %in% filtered_ligands) %>% select(niche, sender, receiver, ligand,  receptor, ligand_receptor, prioritization_score) %>% distinct() %>% group_by(ligand) %>% filter(receiver == receiver_oi) %>% top_n(2, prioritization_score) %>% ungroup()  %>% filter(prioritization_score > prioritized_tbl_lr_oi$prioritization_score %>% min())
-
-lfc_plot = make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tables$prioritization_tbl_ligand_receptor, prioritization_tables$prioritization_tbl_ligand_receptor, plot_legend = FALSE, heights = NULL, widths = NULL)
+lfc_plot = make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tables$prioritization_tbl_ligand_receptor, plot_legend = FALSE, heights = NULL, widths = NULL)
 lfc_plot
 ```
 
-![](differential_nichenet_pEMT_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](differential_nichenet_pEMT_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 Show the spatialDE as additional information
 
 ``` r
-lfc_plot = make_ligand_receptor_lfc_zonation_plot(receiver_oi, prioritized_tbl_oi, prioritization_tables$prioritization_tbl_ligand_receptor, prioritization_tables$prioritization_tbl_ligand_receptor, plot_legend = FALSE, heights = NULL, widths = NULL)
+lfc_plot = make_ligand_receptor_lfc_zonation_plot(receiver_oi, prioritized_tbl_oi, prioritization_tables$prioritization_tbl_ligand_receptor, plot_legend = FALSE, heights = NULL, widths = NULL)
 lfc_plot
 ```
 
-![](differential_nichenet_pEMT_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](differential_nichenet_pEMT_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 ## Ligand expression, activity and target genes
 
@@ -771,29 +776,41 @@ Active target gene inference - cf Default NicheNet
 Now: visualization of ligand activity and ligand-target links
 
 ``` r
-prioritized_tbl_oi =  prioritization_tables$prioritization_tbl_ligand_receptor %>% select(niche, sender, receiver, ligand, prioritization_score) %>% distinct() %>% group_by(ligand, receiver) %>% top_n(1, prioritization_score) %>% filter(receiver == receiver_oi) %>% group_by(sender) %>% top_n(5, prioritization_score) 
-prioritized_tbl_oi2 =  prioritization_tables$prioritization_tbl_ligand_receptor %>% select(niche, sender, receiver, ligand, prioritization_score) %>% distinct() %>% group_by(ligand, receiver) %>% top_n(1, prioritization_score) %>% filter(receiver == receiver_oi) %>% ungroup() %>% top_n(30, prioritization_score) 
-prioritized_tbl_oi = prioritized_tbl_oi %>% bind_rows(prioritized_tbl_oi2) %>% distinct()
-
 exprs_plot = make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi,  prioritization_tables$prioritization_tbl_ligand_receptor,  prioritization_tables$prioritization_tbl_ligand_target, output$exprs_tbl_ligand,  output$exprs_tbl_target, lfc_cutoff, plot_legend = FALSE, heights = NULL, widths = NULL)
 exprs_plot$combined_plot
 ```
 
-![](differential_nichenet_pEMT_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
+![](differential_nichenet_pEMT_files/figure-gfm/unnamed-chunk-31-1.png)<!-- -->
 Based on this plot, we can infer many hypotheses such as the following:
 “Interestingly, IL1 family ligands seem to have activity in inducing the
 DE genes between high pEMT and low pEMT malignant cells; and they are
 mainly expressed by myeloid cells, a cell type unique for pEMT-high
 tumors.”
 
-## Circos plot of prioritized ligand-receptor pairs
+If this plot contains too much information because we look at many hits
+(top 50 ligands), you can make this plot of course for less ligands as
+well, eg for the top20.
 
 ``` r
-prioritized_tbl_all = prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(receiver == receiver_oi) %>% group_by(ligand) %>% top_n(1, prioritization_score)  %>% ungroup() %>% top_n(30, prioritization_score)
-prioritized_tbl_all_extended = prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(receiver == receiver_oi) %>% filter(ligand %in% prioritized_tbl_all$ligand) %>% filter(prioritization_score >= min(prioritized_tbl_all$prioritization_score)) %>% group_by(ligand) %>% top_n(3, prioritization_score) %>% ungroup()
+filtered_ligands = ligand_prioritized_tbl_oi %>% filter(receiver == receiver_oi) %>% top_n(20, prioritization_score) %>% pull(ligand) %>% unique()
 
-prioritized_tbl_oi = prioritized_tbl_all_extended %>% distinct()
-prioritized_tbl_oi = prioritized_tbl_oi %>% inner_join(prioritization_tables$prioritization_tbl_ligand_receptor %>% distinct(sender, receiver, niche) )  %>% arrange(sender, prioritization_score) 
+prioritized_tbl_oi = prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(ligand %in% filtered_ligands) %>% select(niche, sender, receiver, ligand,  receptor, ligand_receptor, prioritization_score) %>% distinct() %>% inner_join(top_ligand_receptor_niche_df) %>% group_by(ligand) %>% filter(receiver == receiver_oi) %>% top_n(2, prioritization_score) %>% ungroup() 
+
+exprs_plot = make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi,  prioritization_tables$prioritization_tbl_ligand_receptor,  prioritization_tables$prioritization_tbl_ligand_target, output$exprs_tbl_ligand,  output$exprs_tbl_target, lfc_cutoff, plot_legend = FALSE, heights = NULL, widths = NULL)
+exprs_plot$combined_plot
+```
+
+![](differential_nichenet_pEMT_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
+
+## Circos plot of prioritized ligand-receptor pairs
+
+Because a top50 is too much to visualize in a circos plot, we will only
+visualize the top 15.
+
+``` r
+filtered_ligands = ligand_prioritized_tbl_oi %>% filter(receiver == receiver_oi) %>% top_n(15, prioritization_score) %>% pull(ligand) %>% unique()
+
+prioritized_tbl_oi = prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(ligand %in% filtered_ligands) %>% select(niche, sender, receiver, ligand,  receptor, ligand_receptor, prioritization_score) %>% distinct() %>% inner_join(top_ligand_receptor_niche_df) %>% group_by(ligand) %>% filter(receiver == receiver_oi) %>% top_n(2, prioritization_score) %>% ungroup() 
 
 colors_sender = brewer.pal(n = prioritized_tbl_oi$sender %>% unique() %>% sort() %>% length(), name = 'Spectral') %>% magrittr::set_names(prioritized_tbl_oi$sender %>% unique() %>% sort())
 colors_receiver = c("lavender")  %>% magrittr::set_names(prioritized_tbl_oi$receiver %>% unique() %>% sort())
@@ -801,11 +818,7 @@ colors_receiver = c("lavender")  %>% magrittr::set_names(prioritized_tbl_oi$rece
 circos_output = make_circos_lr(prioritized_tbl_oi, colors_sender, colors_receiver)
 ```
 
-![](differential_nichenet_pEMT_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->![](differential_nichenet_pEMT_files/figure-gfm/unnamed-chunk-30-2.png)<!-- -->
-
-``` r
-# circos_output$p_circos
-```
+![](differential_nichenet_pEMT_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->![](differential_nichenet_pEMT_files/figure-gfm/unnamed-chunk-33-2.png)<!-- -->
 
 ## Interpretation of these results
 
@@ -830,26 +843,44 @@ a look at the top LR pairs per sender cell type (as we did here for the
 first figures) if you have a case study in which some sender cell types
 are condition-specific.
 
+## Visualization for the other liver macrophages: central vein
+
+``` r
+receiver_oi = "Malignant_Low"  
+filtered_ligands = ligand_prioritized_tbl_oi %>% filter(receiver == receiver_oi) %>% top_n(50, prioritization_score) %>% pull(ligand) %>% unique()
+
+prioritized_tbl_oi = prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(ligand %in% filtered_ligands) %>% select(niche, sender, receiver, ligand,  receptor, ligand_receptor, prioritization_score) %>% distinct() %>% inner_join(top_ligand_receptor_niche_df) %>% group_by(ligand) %>% filter(receiver == receiver_oi) %>% top_n(2, prioritization_score) %>% ungroup() 
+
+lfc_plot = make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tables$prioritization_tbl_ligand_receptor, plot_legend = FALSE, heights = NULL, widths = NULL)
+lfc_plot
+```
+
+![](differential_nichenet_pEMT_files/figure-gfm/unnamed-chunk-34-1.png)<!-- -->
+
 # Notes, limitations, and comparison to default NicheNet.
 
 In the default NicheNet pipeline, expressed ligand-receptor pairs are
 prioritized based on their ligand activity alone. Here, in the
 Differential NicheNet pipeline, we also draw information based on
 differential expression of the L-R pairs compared to other niches (and
-if applicable: other spatial locations.) Because we here focus on
-differential expression of ligand-receptor pairs, and by using the
-default prioritizations weights more on DE than activity, we tend to
-find many different hits than with the default NicheNet pipeline. With
-Differential NicheNet, we tend to find more high-DE, low-activity hits,
-whereas with default NicheNet we find more low-DE, high-activity hits.
+if applicable: other spatial locations.)
+
+Because we here focus on differential expression of ligand-receptor
+pairs, and by using the default prioritizations weights more on DE than
+activity, we tend to find many different hits than with the default
+NicheNet pipeline. With Differential NicheNet, we tend to find more
+high-DE, low-activity hits, whereas with default NicheNet we find more
+low-DE, high-activity hits.
+
 It should be noted that some of the high-DE, low-activity hits might be
 really important because they just have low NicheNet activities due to
 limitations in the NicheNet activity prediction (eg improper/incomplete
 prior knowledge within NicheNet for that ligand), but some of them might
 also be high in DE but not in activity because they don’t have strong
-signaling effects (eg ligands involved in cell adhesion only). For the
-opposite pairs with low-DE and high-activity that are not strongly
-prioritized by Differential NicheNet, the following should be
+signaling effects (eg ligands involved in cell adhesion only).
+
+For the opposite pairs with low-DE and high-activity that are not
+strongly prioritized by Differential NicheNet, the following should be
 considered: 1) some ligands are regulated post-transcriptionally, and
 that the high predicted activities might still reflect true signaling;
 2) high predicted activity values might be due to limitations of
@@ -860,9 +891,12 @@ tends to be very similar); 3) high activity in one condition might be
 due to downregulation in the other condition, leading to high activity
 but low DE. Currently, ligand activities are automatically calculated on
 upregulated genes per condition, but downregulated genes could also be a
-sign of ligand activity. We will adapt the pipeline in the future to
-also enable users to incorporate downregulated genes for the activity
-calculation.
+sign of ligand activity.
+
+When Ligand-Receptor pairs have both high DE and high activity, we can
+consider them to be very good candidates in regulating the process of
+interest, and we recommend testing these candidates for further
+experimental validation.
 
 # References
 

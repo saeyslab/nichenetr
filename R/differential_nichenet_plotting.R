@@ -197,11 +197,11 @@ prioritization_score_plot = function(plot_data){
 #' @description \code{make_ligand_activity_target_exprs_plot} Plot the ligand expression in senders plus their activity and target genes in receivers
 #'
 #' @usage
-#' make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor_filtered, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, plot_legend = TRUE, heights = NULL, widths = NULL)
+#' make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, plot_legend = TRUE, heights = NULL, widths = NULL)
 #'
 #' @param receiver_oi Name of the receiver cell type of interest
 #' @param prioritized_tbl_oi Dataframe with the ligand-receptor interactions that should be visualized
-#' @param prioritization_tbl_ligand_receptor_filtered  $prioritization_tbl_ligand_receptor slot of `get_prioritization_tables`
+#' @param prioritization_tbl_ligand_receptor  $prioritization_tbl_ligand_receptor slot of `get_prioritization_tables`
 #' @param prioritization_tbl_ligand_target $prioritization_tbl_ligand_target slot of `get_prioritization_tables`
 #' @param exprs_tbl_ligand Dataframe with the expression values for the ligands in the sender cell types
 #' @param exprs_tbl_target Dataframe with the expression values for the targets in the receiver cell types
@@ -214,23 +214,23 @@ prioritization_score_plot = function(plot_data){
 #'
 #' @examples
 #' \dontrun{
-#' make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor_filtered, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, plot_legend = TRUE, heights = NULL, widths = NULL)
+#' make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, plot_legend = TRUE, heights = NULL, widths = NULL)
 #' }
 #'
 #' @export
 #'
-make_ligand_activity_target_exprs_plot = function(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor_filtered, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, plot_legend = TRUE, heights = NULL, widths = NULL){
+make_ligand_activity_target_exprs_plot = function(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, plot_legend = TRUE, heights = NULL, widths = NULL){
   requireNamespace("dplyr")
   requireNamespace("ggplot2")
 
   best_upstream_ligands = prioritized_tbl_oi$ligand %>% unique()
 
   # ligand expression
-  ordered_ligands = prioritization_tbl_ligand_receptor_filtered %>% filter(ligand %in% best_upstream_ligands) %>% select(niche, sender, ligand, ligand_score) %>% distinct() %>% group_by(ligand) %>% summarise(ligand_score = max(ligand_score)) %>% inner_join(prioritization_tbl_ligand_receptor_filtered %>% select(niche, sender, ligand, ligand_score) %>% distinct()) %>% arrange(sender, ligand_score)
+  ordered_ligands = prioritization_tbl_ligand_receptor %>% filter(ligand %in% best_upstream_ligands) %>% select(niche, sender, ligand, ligand_score) %>% distinct() %>% group_by(ligand) %>% summarise(ligand_score = max(ligand_score)) %>% inner_join(prioritization_tbl_ligand_receptor %>% select(niche, sender, ligand, ligand_score) %>% distinct()) %>% arrange(sender, ligand_score)
   ordered_ligands = ordered_ligands %>% mutate(ligand_ordered = factor(ligand, ordered = T, levels = ordered_ligands$ligand)) %>% distinct(ligand, ligand_ordered, niche) %>% rename(niche_prior = niche)
 
-  plot_data = exprs_tbl_ligand %>% inner_join(ordered_ligands) %>% filter(sender %in% (prioritization_tbl_ligand_receptor_filtered$sender %>% unique()))
-  plot_data = plot_data %>% group_by(ligand) %>% mutate(ligand_expression_scaled_sender = nichenetr::scaling_zscore(ligand_expression)) %>% inner_join(prioritization_tbl_ligand_receptor_filtered %>% distinct(sender, receiver, niche))
+  plot_data = exprs_tbl_ligand %>% inner_join(ordered_ligands) %>% filter(sender %in% (prioritization_tbl_ligand_receptor$sender %>% unique()))
+  plot_data = plot_data %>% group_by(ligand) %>% mutate(ligand_expression_scaled_sender = nichenetr::scaling_zscore(ligand_expression)) %>% inner_join(prioritization_tbl_ligand_receptor %>% distinct(sender, receiver, niche))
 
   p1 = plot_data  %>%
     # ggplot(aes(ligand_ordered, sender , color = ligand_expression_scaled_myeloid, size = ligand_fraction )) +
@@ -404,7 +404,7 @@ make_ligand_activity_target_exprs_plot = function(receiver_oi, prioritized_tbl_o
   n_groups = ncol(vis_ligand_pearson)
   n_targets = ncol(vis_ligand_target)
   n_ligands = nrow(vis_ligand_target)
-  n_senders = prioritization_tbl_ligand_receptor_filtered$sender %>% unique() %>% length()
+  n_senders = prioritization_tbl_ligand_receptor$sender %>% unique() %>% length()
 
   legends = patchwork::wrap_plots(ggpubr::as_ggplot(ggpubr::get_legend(p_ligands)), ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_pearson)),ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_pearson_scaled)),ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_target_network)), nrow = 2) %>%
     patchwork::wrap_plots(ggpubr::as_ggplot(ggpubr::get_legend(p_targets)))
@@ -446,7 +446,7 @@ make_ligand_activity_target_exprs_plot = function(receiver_oi, prioritized_tbl_o
 #' @description \code{make_ligand_receptor_lfc_plot} Plot the ligand logFC in senders plus the logFC of their receptors in the receivers.
 #'
 #' @usage
-#' make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_receptor_filtered, plot_legend = TRUE, heights = NULL, widths = NULL)
+#' make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, plot_legend = TRUE, heights = NULL, widths = NULL)
 #'
 #' @param prioritization_tbl_ligand_receptor  $prioritization_tbl_ligand_receptor slot of `get_prioritization_tables`
 #' @inheritParams make_ligand_activity_target_exprs_plot
@@ -455,17 +455,17 @@ make_ligand_activity_target_exprs_plot = function(receiver_oi, prioritized_tbl_o
 #'
 #' @examples
 #' \dontrun{
-#' make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_receptor_filtered, plot_legend = TRUE, heights = NULL, widths = NULL)
+#' make_ligand_receptor_lfc_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, plot_legend = TRUE, heights = NULL, widths = NULL)
 #' }
 #'
 #' @export
 #'
-make_ligand_receptor_lfc_plot = function(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_receptor_filtered, plot_legend = TRUE, heights = NULL, widths = NULL){
+make_ligand_receptor_lfc_plot = function(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, plot_legend = TRUE, heights = NULL, widths = NULL){
 
   filtered_ligand_receptors = prioritized_tbl_oi %>% pull(ligand_receptor) %>% unique()
 
-  ordered_ligand_receptors = prioritization_tbl_ligand_receptor_filtered %>% filter(ligand_receptor %in% filtered_ligand_receptors) %>% select(niche, sender, ligand, receptor, ligand_receptor, prioritization_score) %>% distinct() %>% group_by(ligand_receptor) %>% summarise(prioritization_score = max(prioritization_score)) %>% inner_join(prioritization_tbl_ligand_receptor_filtered %>% select(niche, sender, ligand, receptor, ligand_receptor, prioritization_score) %>% distinct()) %>% arrange(sender, prioritization_score)
-  ordered_ligand_receptors_max_ligand_score = prioritization_tbl_ligand_receptor_filtered %>% filter(ligand_receptor %in% filtered_ligand_receptors) %>% select(niche, sender, ligand, prioritization_score) %>% distinct() %>% group_by(ligand) %>% summarise(prioritization_score_ligand = max(prioritization_score)) %>% inner_join(prioritization_tbl_ligand_receptor_filtered %>% select(niche, sender, ligand, prioritization_score) %>% distinct()) %>% arrange(sender, prioritization_score_ligand) %>% distinct()
+  ordered_ligand_receptors = prioritization_tbl_ligand_receptor %>% filter(ligand_receptor %in% filtered_ligand_receptors) %>% select(niche, sender, ligand, receptor, ligand_receptor, prioritization_score) %>% distinct() %>% group_by(ligand_receptor) %>% summarise(prioritization_score = max(prioritization_score)) %>% inner_join(prioritization_tbl_ligand_receptor %>% select(niche, sender, ligand, receptor, ligand_receptor, prioritization_score) %>% distinct()) %>% arrange(sender, prioritization_score)
+  ordered_ligand_receptors_max_ligand_score = prioritization_tbl_ligand_receptor %>% filter(ligand_receptor %in% filtered_ligand_receptors) %>% select(niche, sender, ligand, prioritization_score) %>% distinct() %>% group_by(ligand) %>% summarise(prioritization_score_ligand = max(prioritization_score)) %>% inner_join(prioritization_tbl_ligand_receptor %>% select(niche, sender, ligand, prioritization_score) %>% distinct()) %>% arrange(sender, prioritization_score_ligand) %>% distinct()
 
   ordered_ligand_receptors = ordered_ligand_receptors %>% inner_join(ordered_ligand_receptors_max_ligand_score) %>% arrange(sender, prioritization_score_ligand, prioritization_score)
   ordered_ligand_receptors = ordered_ligand_receptors %>% mutate(ligand_receptor_ordered = factor(ligand_receptor, ordered = T, levels = ordered_ligand_receptors$ligand_receptor)) %>% distinct(ligand_receptor, ligand, receptor, ligand_receptor_ordered, niche) %>% rename(niche_prior = niche)
@@ -536,7 +536,7 @@ make_ligand_receptor_lfc_plot = function(receiver_oi, prioritized_tbl_oi, priori
 #' @description \code{make_ligand_receptor_lfc_zonation_plot} Plot the ligand logFC in senders plus the logFC of their receptors in the receivers. In addition, add the spatialDE logFC values of the ligands!
 #'
 #' @usage
-#' make_ligand_receptor_lfc_zonation_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_receptor_filtered, plot_legend = TRUE, heights = NULL, widths = NULL)
+#' make_ligand_receptor_lfc_zonation_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, plot_legend = TRUE, heights = NULL, widths = NULL)
 #'
 #' @inheritParams make_ligand_receptor_lfc_plot
 #'
@@ -544,17 +544,17 @@ make_ligand_receptor_lfc_plot = function(receiver_oi, prioritized_tbl_oi, priori
 #'
 #' @examples
 #' \dontrun{
-#' make_ligand_receptor_lfc_zonation_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_receptor_filtered, plot_legend = TRUE, heights = NULL, widths = NULL)
+#' make_ligand_receptor_lfc_zonation_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, plot_legend = TRUE, heights = NULL, widths = NULL)
 #' }
 #'
 #' @export
 #'
-make_ligand_receptor_lfc_zonation_plot = function(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_receptor_filtered, plot_legend = TRUE, heights = NULL, widths = NULL){
+make_ligand_receptor_lfc_zonation_plot = function(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, plot_legend = TRUE, heights = NULL, widths = NULL){
 
   filtered_ligand_receptors = prioritized_tbl_oi %>% pull(ligand_receptor) %>% unique()
 
-  ordered_ligand_receptors = prioritization_tbl_ligand_receptor_filtered %>% filter(ligand_receptor %in% filtered_ligand_receptors) %>% select(niche, sender, ligand, receptor, ligand_receptor, prioritization_score) %>% distinct() %>% group_by(ligand_receptor) %>% summarise(prioritization_score = max(prioritization_score)) %>% inner_join(prioritization_tbl_ligand_receptor_filtered %>% select(niche, sender, ligand, receptor, ligand_receptor, prioritization_score) %>% distinct()) %>% arrange(sender, prioritization_score)
-  ordered_ligand_receptors_max_ligand_score = prioritization_tbl_ligand_receptor_filtered %>% filter(ligand_receptor %in% filtered_ligand_receptors) %>% select(niche, sender, ligand, prioritization_score) %>% distinct() %>% group_by(ligand) %>% summarise(prioritization_score_ligand = max(prioritization_score)) %>% inner_join(prioritization_tbl_ligand_receptor_filtered %>% select(niche, sender, ligand, prioritization_score) %>% distinct()) %>% arrange(sender, prioritization_score_ligand) %>% distinct()
+  ordered_ligand_receptors = prioritization_tbl_ligand_receptor %>% filter(ligand_receptor %in% filtered_ligand_receptors) %>% select(niche, sender, ligand, receptor, ligand_receptor, prioritization_score) %>% distinct() %>% group_by(ligand_receptor) %>% summarise(prioritization_score = max(prioritization_score)) %>% inner_join(prioritization_tbl_ligand_receptor %>% select(niche, sender, ligand, receptor, ligand_receptor, prioritization_score) %>% distinct()) %>% arrange(sender, prioritization_score)
+  ordered_ligand_receptors_max_ligand_score = prioritization_tbl_ligand_receptor %>% filter(ligand_receptor %in% filtered_ligand_receptors) %>% select(niche, sender, ligand, prioritization_score) %>% distinct() %>% group_by(ligand) %>% summarise(prioritization_score_ligand = max(prioritization_score)) %>% inner_join(prioritization_tbl_ligand_receptor %>% select(niche, sender, ligand, prioritization_score) %>% distinct()) %>% arrange(sender, prioritization_score_ligand) %>% distinct()
 
   ordered_ligand_receptors = ordered_ligand_receptors %>% inner_join(ordered_ligand_receptors_max_ligand_score) %>% arrange(sender, prioritization_score_ligand, prioritization_score)
   ordered_ligand_receptors = ordered_ligand_receptors %>% mutate(ligand_receptor_ordered = factor(ligand_receptor, ordered = T, levels = ordered_ligand_receptors$ligand_receptor)) %>% distinct(ligand_receptor, ligand, receptor, ligand_receptor_ordered, niche) %>% rename(niche_prior = niche)
@@ -673,7 +673,7 @@ make_ligand_receptor_lfc_zonation_plot = function(receiver_oi, prioritized_tbl_o
 #'
 #' @return List containing the circos plot and the legend
 #'
-#' @importFrom circlize circos.par circos.clear chordDiagram circos.text circos.track
+#' @importFrom circlize circos.par circos.clear chordDiagram circos.text circos.track CELL_META
 #' @importFrom grDevices recordPlot
 #' @importFrom ComplexHeatmap draw Legend
 #'
