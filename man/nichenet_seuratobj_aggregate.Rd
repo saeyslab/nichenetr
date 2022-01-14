@@ -9,13 +9,13 @@ nichenet_seuratobj_aggregate(receiver, seurat_obj, condition_colname, condition_
 \arguments{
 \item{receiver}{Name of cluster identity/identities of cells that are presumably affected by intercellular communication with other cells}
 
-\item{seurat_obj}{Single-cell expression dataset as Seurat v3 object https://satijalab.org/seurat/.}
+\item{seurat_obj}{Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.}
 
 \item{condition_colname}{Name of the column in the meta data dataframe that indicates which condition/sample cells were coming from.}
 
-\item{condition_oi}{Condition of interest in which receiver cells were presumably affected by other cells. Should be a name present in the "aggregate" column of the metadata.}
+\item{condition_oi}{Condition of interest in which receiver cells were presumably affected by other cells. Should be a name present in the `condition_colname` column of the metadata.}
 
-\item{condition_reference}{The second condition (e.g. reference or steady-state condition). Should be a name present in the "aggregate" column of the metadata.}
+\item{condition_reference}{The second condition (e.g. reference or steady-state condition). Should be a name present in the `condition_colname` column of the metadata.}
 
 \item{sender}{Determine the potential sender cells. Name of cluster identity/identities of cells that presumably affect expression in the receiver cell type. In case you want to look at all possible sender cell types in the data, you can  give this argument the value "all". "all" indicates thus that all cell types in the dataset will be considered as possible sender cells. As final option, you could give this argument the value "undefined"."undefined" won't look at ligands expressed by sender cells, but at all ligands for which a corresponding receptor is expressed. This could be useful if the presumably active sender cell is not profiled. Default: "all".}
 
@@ -46,7 +46,25 @@ nichenet_seuratobj_aggregate(receiver, seurat_obj, condition_colname, condition_
 \item{assay_oi}{If wanted: specify yourself which assay to look for. Default this value is NULL and as a consequence the 'most advanced' assay will be used to define expressed genes.}
 }
 \value{
-A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI; geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis; background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
+A list with the following elements:
+$ligand_activities: data frame with output ligand activity analysis;
+$top_ligands: top_n ligands based on ligand activity;
+$top_targets: active, affected target genes of these ligands;
+$top_receptors: receptors of these ligands;
+$ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets;
+$ligand_target_heatmap: heatmap of ligand-target regulatory potential;
+$ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network;
+$ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands;
+$ligand_expression_dotplot: expression dotplot of the top ligands;
+$ligand_differential_expression_heatmap = differential expression heatmap of the top ligands;
+$ligand_receptor_matrix: matrix of ligand-receptor interactions;
+$ligand_receptor_heatmap: heatmap showing ligand-receptor interactions;
+$ligand_receptor_df: data frame of ligand-receptor interactions;
+$ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI;
+$ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI;
+$ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI;
+$geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis;
+$background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 }
 \description{
 \code{nichenet_seuratobj_aggregate} Perform NicheNet analysis on Seurat object: explain differential expression (DE) in a receiver celltype between two different conditions by ligands expressed by sender cells

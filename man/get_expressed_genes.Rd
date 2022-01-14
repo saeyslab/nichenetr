@@ -9,7 +9,7 @@ get_expressed_genes(ident, seurat_obj, pct = 0.10, assay_oi = NULL)
 \arguments{
 \item{ident}{Name of cluster identity/identities of cells}
 
-\item{seurat_obj}{Single-cell expression dataset as Seurat v3 object https://satijalab.org/seurat/. Should contain a column "aggregate" in the metadata. This column indicates the condition/sample where cells came from.}
+\item{seurat_obj}{Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.}
 
 \item{pct}{We consider genes expressed if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10. Choice of this parameter is important and depends largely on the used sequencing platform. We recommend to require a lower fraction (like the default 0.10) for 10X data than for e.g. Smart-seq2 data.}
 

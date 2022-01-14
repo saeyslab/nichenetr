@@ -682,10 +682,10 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #' nichenet_seuratobj_aggregate(receiver, seurat_obj, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE, assay_oi = NULL)
 #'
 #' @param receiver Name of cluster identity/identities of cells that are presumably affected by intercellular communication with other cells
-#' @param seurat_obj Single-cell expression dataset as Seurat v3 object https://satijalab.org/seurat/.
+#' @param seurat_obj Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.
 #' @param condition_colname Name of the column in the meta data dataframe that indicates which condition/sample cells were coming from.
-#' @param condition_oi Condition of interest in which receiver cells were presumably affected by other cells. Should be a name present in the "aggregate" column of the metadata.
-#' @param condition_reference The second condition (e.g. reference or steady-state condition). Should be a name present in the "aggregate" column of the metadata.
+#' @param condition_oi Condition of interest in which receiver cells were presumably affected by other cells. Should be a name present in the `condition_colname` column of the metadata.
+#' @param condition_reference The second condition (e.g. reference or steady-state condition). Should be a name present in the `condition_colname` column of the metadata.
 #' @param sender Determine the potential sender cells. Name of cluster identity/identities of cells that presumably affect expression in the receiver cell type. In case you want to look at all possible sender cell types in the data, you can  give this argument the value "all". "all" indicates thus that all cell types in the dataset will be considered as possible sender cells. As final option, you could give this argument the value "undefined"."undefined" won't look at ligands expressed by sender cells, but at all ligands for which a corresponding receptor is expressed. This could be useful if the presumably active sender cell is not profiled. Default: "all".
 #' @param expression_pct To determine ligands and receptors expressed by sender and receiver cells, we consider genes expressed if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10
 #' @param lfc_cutoff Cutoff on log fold change in the wilcoxon differential expression test. Default: 0.25.
@@ -701,7 +701,25 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #' @param verbose Print out the current analysis stage. Default: TRUE.
 #' @inheritParams get_expressed_genes
 #'
-#' @return A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI; geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis; background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
+#' @return A list with the following elements:
+#' $ligand_activities: data frame with output ligand activity analysis;
+#' $top_ligands: top_n ligands based on ligand activity;
+#' $top_targets: active, affected target genes of these ligands;
+#' $top_receptors: receptors of these ligands;
+#' $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets;
+#' $ligand_target_heatmap: heatmap of ligand-target regulatory potential;
+#' $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network;
+#' $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands;
+#' $ligand_expression_dotplot: expression dotplot of the top ligands;
+#' $ligand_differential_expression_heatmap = differential expression heatmap of the top ligands;
+#' $ligand_receptor_matrix: matrix of ligand-receptor interactions;
+#' $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions;
+#' $ligand_receptor_df: data frame of ligand-receptor interactions;
+#' $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI;
+#' $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI;
+#' $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI;
+#' $geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis;
+#' $background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 #'
 #' @import Seurat
 #' @import dplyr
@@ -1115,7 +1133,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
 #' get_expressed_genes(ident, seurat_obj, pct = 0.10, assay_oi = NULL)
 #'
 #' @param ident Name of cluster identity/identities of cells
-#' @param seurat_obj Single-cell expression dataset as Seurat v3 object https://satijalab.org/seurat/. Should contain a column "aggregate" in the metadata. This column indicates the condition/sample where cells came from.
+#' @param seurat_obj Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.
 #' @param pct We consider genes expressed if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10. Choice of this parameter is important and depends largely on the used sequencing platform. We recommend to require a lower fraction (like the default 0.10) for 10X data than for e.g. Smart-seq2 data.
 #' @param assay_oi If wanted: specify yourself which assay to look for. Default this value is NULL and as a consequence the 'most advanced' assay will be used to define expressed genes.
 #'
@@ -1271,7 +1289,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
 #' @usage
 #' nichenet_seuratobj_cluster_de(seurat_obj, receiver_affected, receiver_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE, assay_oi = NULL)
 #'
-#' @param seurat_obj Single-cell expression dataset as Seurat v3 object https://satijalab.org/seurat/.
+#' @param seurat_obj Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.
 #' @param receiver_reference Name of cluster identity/identities of "steady-state" cells, before they are affected by intercellular communication with other cells
 #' @param receiver_affected Name of cluster identity/identities of "affected" cells that were presumably affected by intercellular communication with other cells
 #' @param sender Determine the potential sender cells. Name of cluster identity/identities of cells that presumably affect expression in the receiver cell type. In case you want to look at all possible sender cell types in the data, you can  give this argument the value "all". "all" indicates thus that all cell types in the dataset will be considered as possible sender cells. As final option, you could give this argument the value "undefined"."undefined" won't look at ligands expressed by sender cells, but at all ligands for which a corresponding receptor is expressed. This could be useful if the presumably active sender cell is not profiled. Default: "all".
@@ -1289,7 +1307,24 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
 #' @param verbose Print out the current analysis stage. Default: TRUE.
 #' @inheritParams get_expressed_genes
 #'
-#' @return A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI; geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis; background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
+#' @return A list with the following elements:
+#' $ligand_activities: data frame with output ligand activity analysis;
+#' $top_ligands: top_n ligands based on ligand activity;
+#' $top_targets: active, affected target genes of these ligands;
+#' $top_receptors: receptors of these ligands;
+#' $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets;
+#' $ligand_target_heatmap: heatmap of ligand-target regulatory potential;
+#' $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network;
+#' $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands;
+#' $ligand_expression_dotplot: expression dotplot of the top ligands;
+#' $ligand_receptor_matrix: matrix of ligand-receptor interactions;
+#' $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions;
+#' $ligand_receptor_df: data frame of ligand-receptor interactions;
+#' $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI;
+#' $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI;
+#' $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI;
+#' $geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis;
+#' $background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 #'
 #' @import Seurat
 #' @import dplyr
@@ -1670,12 +1705,12 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 #' @usage
 #' nichenet_seuratobj_aggregate_cluster_de(seurat_obj, receiver_affected, receiver_reference, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE, assay_oi = NULL)
 #'
-#' @param seurat_obj Single-cell expression dataset as Seurat v3 object https://satijalab.org/seurat/.
+#' @param seurat_obj Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.
 #' @param receiver_reference Name of cluster identity/identities of "steady-state" cells, before they are affected by intercellular communication with other cells
 #' @param receiver_affected Name of cluster identity/identities of "affected" cells that were presumably affected by intercellular communication with other cells
 #' @param condition_colname Name of the column in the meta data dataframe that indicates which condition/sample cells were coming from.
-#' @param condition_oi Condition of interest in which receiver cells were presumably affected by other cells. Should be a name present in the "aggregate" column of the metadata.
-#' @param condition_reference The second condition (e.g. reference or steady-state condition). Should be a name present in the "aggregate" column of the metadata.
+#' @param condition_oi Condition of interest in which receiver cells were presumably affected by other cells. Should be a name present in the `condition_colname` column of the metadata.
+#' @param condition_reference The second condition (e.g. reference or steady-state condition). Should be a name present in the `condition_colname` column of the metadata.
 #' @param sender Determine the potential sender cells. Name of cluster identity/identities of cells that presumably affect expression in the receiver cell type. In case you want to look at all possible sender cell types in the data, you can  give this argument the value "all". "all" indicates thus that all cell types in the dataset will be considered as possible sender cells. As final option, you could give this argument the value "undefined"."undefined" won't look at ligands expressed by sender cells, but at all ligands for which a corresponding receptor is expressed. This could be useful if the presumably active sender cell is not profiled. Default: "all".
 #' @param expression_pct To determine ligands and receptors expressed by sender and receiver cells, we consider genes expressed if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10
 #' @param lfc_cutoff Cutoff on log fold change in the wilcoxon differential expression test. Default: 0.25.
@@ -1691,7 +1726,24 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 #' @param verbose Print out the current analysis stage. Default: TRUE.
 #' @inheritParams get_expressed_genes
 #'
-#' @return A list with the following elements: $ligand_activities: data frame with output ligand activity analysis; $top_ligands: top_n ligands based on ligand activity; $top_targets: active, affected target genes of these ligands; $top_receptors: receptors of these ligands; $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets; $ligand_target_heatmap: heatmap of ligand-target regulatory potential; $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network; $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands; $ligand_receptor_matrix: matrix of ligand-receptor interactions; $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions; $ligand_receptor_df: data frame of ligand-receptor interactions; $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI; $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI; $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI; geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis; background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
+#' @return A list with the following elements:
+#' $ligand_activities: data frame with output ligand activity analysis;
+#' $top_ligands: top_n ligands based on ligand activity;
+#' $top_targets: active, affected target genes of these ligands;
+#' $top_receptors: receptors of these ligands;
+#' $ligand_target_matrix: matrix indicating regulatory potential scores between active ligands and their predicted targets;
+#' $ligand_target_heatmap: heatmap of ligand-target regulatory potential;
+#' $ligand_target_df: data frame showing regulatory potential scores of predicted active ligand-target network;
+#' $ligand_activity_target_heatmap: heatmap showing both ligand activity scores and target genes of these top ligands;
+#' $ligand_expression_dotplot: expression dotplot of the top ligands;
+#' $ligand_receptor_matrix: matrix of ligand-receptor interactions;
+#' $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions;
+#' $ligand_receptor_df: data frame of ligand-receptor interactions;
+#' $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI;
+#' $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI;
+#' $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI;
+#' $geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis;
+#' $background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 #'
 #' @import Seurat
 #' @import dplyr
@@ -2083,7 +2135,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 #' @usage
 #' get_lfc_celltype(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, celltype_col = "celltype", expression_pct = 0.10)
 #' #'
-#' @param seurat_obj Single-cell expression dataset as Seurat v3 object https://satijalab.org/seurat/.
+#' @param seurat_obj Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.
 #' @param celltype_oi Name of celltype of interest. Should be present in the celltype metadata dataframe.
 #' @param condition_colname Name of the column in the meta data dataframe that indicates which condition/sample cells were coming from.
 #' @param condition_oi Condition of interest. Should be a name present in the "condition_colname" column of the metadata.

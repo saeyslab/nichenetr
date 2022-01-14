@@ -10,7 +10,7 @@ get_lfc_celltype(celltype_oi, seurat_obj, condition_colname, condition_oi, condi
 \arguments{
 \item{celltype_oi}{Name of celltype of interest. Should be present in the celltype metadata dataframe.}
 
-\item{seurat_obj}{Single-cell expression dataset as Seurat v3 object https://satijalab.org/seurat/.}
+\item{seurat_obj}{Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.}
 
 \item{condition_colname}{Name of the column in the meta data dataframe that indicates which condition/sample cells were coming from.}
 
