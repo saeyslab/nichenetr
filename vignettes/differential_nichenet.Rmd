@@ -96,6 +96,8 @@ The receiver cell population in the Kupffer cell niche is the "KCs" cell type, t
 The receiver cell population in the lipid-associated macrophage (MoMac2) niche is the "MoMac2" cell type, the sender cell types are: "Cholangiocytes", and "Fibroblast 2".
 The receiver cell population in the capsule macrophage (MoMac1) niche is the "MoMac1" cell type, the sender cell types are: "Capsule fibroblasts", and "Mesothelial cells".
 
+! Important: your receiver cell type should consist of 1 cluster!
+
 ```{r}
 niches = list(
     "KC_niche" = list(

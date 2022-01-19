@@ -110,6 +110,7 @@ Each niche should have at least one “sender/niche” cell population and one �
 
 In this case study, we are interested to find differences in cell-cell interactions to malignant cells between pEMT high and pEMT low tumors. The receiver cell population in the pEMT-High niche is thus the "Malignant_High" cell type, and in the pEMT-Low niche this is "Malignant_Low". The sender cell populations of interest are myofibroblasts, Endothelial, CAF, T.cell, and Myeloid. Importantly, we only include T.Cell and Myeloid in the pEMT-High niche, because there are too few cells of these populations present in the pEMT-low niche. Hereby, we demonstrate the possibility to include a condition-specific cell type in the analysis - which is possible because we calculate DE compared to all sender cells of the other niche, and not only to the pEMT-low group of cells of the same cell type.
 
+! Important: your receiver cell type should consist of 1 cluster!
 
 ```{r}
 niches = list(

@@ -96,7 +96,7 @@ predict_ligand_activities = function(geneset,background_expressed_genes,ligand_t
     ligand_importances = settings_ligand_prediction %>% lapply(get_multi_ligand_importances,ligand_target_matrix = ligand_target_matrix, known = FALSE, ...) %>% bind_rows()
 
   }
-  return(ligand_importances %>% select(test_ligand,auroc,aupr,pearson))
+  return(ligand_importances %>% select(test_ligand,auroc,aupr,aupr_corrected, pearson))
 }
 #' @title Infer weighted active ligand-target links between a possible ligand and target genes of interest
 #'
