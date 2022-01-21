@@ -85,6 +85,43 @@
 #'   }
 #'
 "geneinfo_human"
+#' Gene annotation information: version 2 - january 2022
+#'
+#' A data.frame/tibble describing HGNC human gene symbols, their entrez ids and the MGI mouse gene symbols and entrez ids of the one-one orthologs as determined via NCBI's homologene db and biomaRt ensembl db.
+#'
+#' @format A data frame/tibble
+#' \describe{
+#'   \item{symbol}{human gene symbol}
+#'   \item{entrez}{human gene entrez}
+#'   \item{entrez_mouse}{mouse homolog gene entrez}
+#'   \item{symbol_mouse}{mouse homolog gene symbol}
+#'   }
+#'
+"geneinfo_2022"
+#' Gene annotation information: version 2 - january 2022 - suited for alias conversion
+#'
+#' A data.frame/tibble describing HGNC human gene symbols, their entrez ids and potential aliases.
+#'
+#' @format A data frame/tibble
+#' \describe{
+#'   \item{symbol}{human gene symbol}
+#'   \item{entrez}{human gene entrez}
+#'   \item{alias}{human gene alias}
+#'   }
+#'
+"geneinfo_alias_human"
+#' Gene annotation information: version 2 - january 2022 - suited for alias conversion
+#'
+#' A data.frame/tibble describing MGI mouse gene symbols, their entrez ids and potential aliases.
+#'
+#' @format A data frame/tibble
+#' \describe{
+#'   \item{symbol}{mouse gene symbol}
+#'   \item{entrez}{mouse gene entrez}
+#'   \item{alias}{mouse gene alias}
+#'   }
+#'
+"geneinfo_alias_mouse"
 #' Number of citations for genes
 #'
 #' A data.frame/tibble describing the number of times a particular gene is cited in the pubmed literature (date: 13-03-2018)

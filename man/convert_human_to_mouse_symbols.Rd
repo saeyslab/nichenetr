@@ -4,10 +4,12 @@
 \alias{convert_human_to_mouse_symbols}
 \title{Convert human gene symbols to their mouse one-to-one orthologs.}
 \usage{
-convert_human_to_mouse_symbols(symbols)
+convert_human_to_mouse_symbols(symbols, version = 1)
 }
 \arguments{
 \item{symbols}{A character vector of official human gene symbols}
+
+\item{version}{Indicates which version of the mouse-human annotations should be used: Default 1. In April 2022, and nichenetr 2.0., the default will change to 2.}
 }
 \value{
 A character vector of official mouse gene symbols (one-to-one orthologs of the input human gene symbols).

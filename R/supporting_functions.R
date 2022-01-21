@@ -16,9 +16,10 @@ mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_co
 #' @description \code{convert_human_to_mouse_symbols} Convert human gene symbols to their mouse one-to-one orthologs.
 #'
 #' @usage
-#' convert_human_to_mouse_symbols(symbols)
+#' convert_human_to_mouse_symbols(symbols, version = 1)
 #'
 #' @param symbols A character vector of official human gene symbols
+#' @param version Indicates which version of the mouse-human annotations should be used: Default 1. In April 2022, and nichenetr 2.0., the default will change to 2.
 #'
 #' @return A character vector of official mouse gene symbols (one-to-one orthologs of the input human gene symbols).
 #'
@@ -28,22 +29,36 @@ mapper = function(df, value_col, name_col) setNames(df[[value_col]], df[[name_co
 #' mouse_symbols = human_symbols %>% convert_human_to_mouse_symbols()
 #' @export
 #'
-convert_human_to_mouse_symbols = function(symbols){
+convert_human_to_mouse_symbols = function(symbols, version = 1){
 
   if(!is.character(symbols))
     stop("symbols should be a character vector of human gene symbols")
 
   requireNamespace("dplyr")
 
-  unambiguous_mouse_genes = geneinfo_human %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n<2) %>% .$symbol_mouse
-  ambiguous_mouse_genes = geneinfo_human %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n>=2) %>% .$symbol_mouse
+  if (version == 1){
+    unambiguous_mouse_genes = geneinfo_human %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n<2) %>% .$symbol_mouse
+    ambiguous_mouse_genes = geneinfo_human %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n>=2) %>% .$symbol_mouse
 
-  geneinfo_ambiguous_solved = geneinfo_human %>% filter(symbol_mouse %in% ambiguous_mouse_genes) %>% filter(symbol==toupper(symbol_mouse))
-  geneinfo_human = geneinfo_human %>% filter(symbol_mouse %in% unambiguous_mouse_genes) %>% bind_rows(geneinfo_ambiguous_solved) %>% drop_na()
+    geneinfo_ambiguous_solved = geneinfo_human %>% filter(symbol_mouse %in% ambiguous_mouse_genes) %>% filter(symbol==toupper(symbol_mouse))
+    geneinfo_human = geneinfo_human %>% filter(symbol_mouse %in% unambiguous_mouse_genes) %>% bind_rows(geneinfo_ambiguous_solved) %>% drop_na()
 
-  humansymbol2mousesymbol = mapper(geneinfo_human,"symbol_mouse","symbol")
+    humansymbol2mousesymbol = mapper(geneinfo_human,"symbol_mouse","symbol")
 
-  converted_symbols = symbols %>% humansymbol2mousesymbol[.]
+    converted_symbols = symbols %>% humansymbol2mousesymbol[.]
+  } else if (version == 2) {
+    unambiguous_mouse_genes = geneinfo_2022 %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n<2) %>% .$symbol_mouse
+    ambiguous_mouse_genes = geneinfo_2022 %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n>=2) %>% .$symbol_mouse
+
+    geneinfo_ambiguous_solved = geneinfo_2022 %>% filter(symbol_mouse %in% ambiguous_mouse_genes) %>% filter(symbol==toupper(symbol_mouse))
+    geneinfo_2022 = geneinfo_2022 %>% filter(symbol_mouse %in% unambiguous_mouse_genes) %>% bind_rows(geneinfo_ambiguous_solved) %>% drop_na()
+
+    humansymbol2mousesymbol = mapper(geneinfo_2022,"symbol_mouse","symbol")
+
+    converted_symbols = symbols %>% humansymbol2mousesymbol[.]
+  }
+
+
 
   return(converted_symbols)
 }
@@ -52,9 +67,10 @@ convert_human_to_mouse_symbols = function(symbols){
 #' @description \code{convert_mouse_to_human_symbols} Convert mouse gene symbols to their human one-to-one orthologs.
 #'
 #' @usage
-#' convert_mouse_to_human_symbols(symbols)
+#' convert_mouse_to_human_symbols(symbols, version = 1)
 #'
 #' @param symbols A character vector of official mouse gene symbols
+#' @inheritParams convert_human_to_mouse_symbols
 #'
 #' @return A character vector of official human gene symbols (one-to-one orthologs of the input mouse gene symbols).
 #'
@@ -64,24 +80,317 @@ convert_human_to_mouse_symbols = function(symbols){
 #' human_symbols = mouse_symbols %>% convert_mouse_to_human_symbols()
 #' @export
 #'
-convert_mouse_to_human_symbols = function(symbols){
+convert_mouse_to_human_symbols = function(symbols, version = 1){
 
   if(!is.character(symbols))
     stop("symbols should be a character vector of mouse gene symbols")
 
   requireNamespace("dplyr")
 
-  unambiguous_mouse_genes = geneinfo_human %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n<2) %>% .$symbol_mouse
-  ambiguous_mouse_genes = geneinfo_human %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n>=2) %>% .$symbol_mouse
+  if(version == 1){
+    unambiguous_mouse_genes = geneinfo_human %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n<2) %>% .$symbol_mouse
+    ambiguous_mouse_genes = geneinfo_human %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n>=2) %>% .$symbol_mouse
 
-  geneinfo_ambiguous_solved = geneinfo_human %>% filter(symbol_mouse %in% ambiguous_mouse_genes) %>% filter(symbol==toupper(symbol_mouse))
-  geneinfo_human = geneinfo_human %>% filter(symbol_mouse %in% unambiguous_mouse_genes) %>% bind_rows(geneinfo_ambiguous_solved) %>% drop_na()
+    geneinfo_ambiguous_solved = geneinfo_human %>% filter(symbol_mouse %in% ambiguous_mouse_genes) %>% filter(symbol==toupper(symbol_mouse))
+    geneinfo_human = geneinfo_human %>% filter(symbol_mouse %in% unambiguous_mouse_genes) %>% bind_rows(geneinfo_ambiguous_solved) %>% drop_na()
 
-  mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
+    mousesymbol2humansymbol = mapper(geneinfo_human,"symbol","symbol_mouse")
 
-  converted_symbols = symbols %>% mousesymbol2humansymbol[.]
+    converted_symbols = symbols %>% mousesymbol2humansymbol[.]
+  } else if(version == 2) {
+    unambiguous_mouse_genes = geneinfo_2022 %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n<2) %>% .$symbol_mouse
+    ambiguous_mouse_genes = geneinfo_2022 %>% drop_na() %>% group_by(symbol_mouse) %>% count() %>% filter(n>=2) %>% .$symbol_mouse
+
+    geneinfo_ambiguous_solved = geneinfo_2022 %>% filter(symbol_mouse %in% ambiguous_mouse_genes) %>% filter(symbol==toupper(symbol_mouse))
+    geneinfo_2022 = geneinfo_2022 %>% filter(symbol_mouse %in% unambiguous_mouse_genes) %>% bind_rows(geneinfo_ambiguous_solved) %>% drop_na()
+
+    mousesymbol2humansymbol = mapper(geneinfo_2022,"symbol","symbol_mouse")
+
+    converted_symbols = symbols %>% mousesymbol2humansymbol[.]
+  }
 
   return(converted_symbols)
+}
+#' @title Convert aliases to official gene symbols
+#'
+#' @description \code{convert_alias_to_symbols} Convert aliases to offcial gene symbols
+#'
+#' @usage
+#' convert_alias_to_symbols(aliases, organism, verbose = TRUE)
+#'
+#' @param aliases A character vector of symbols/aliases
+#' @param organism "mouse" or "human"
+#' @param verbose TRUE or FALSE
+#'
+#' @return A character vector of official gene symbols.
+#'
+#' @examples
+#' library(dplyr)
+#' human_symbols = c("TNF","IFNG","IL-15")
+#' aliases = human_symbols %>% convert_alias_to_symbols(organism = "human")
+#' @export
+#'
+convert_alias_to_symbols = function(aliases, organism, verbose = TRUE){
+
+  if(!is.character(aliases))
+    stop("aliases should be a character vector of gene symbols")
+
+  requireNamespace("dplyr")
+
+  if (organism == "human"){
+    orphan_aliases = aliases %>% setdiff(geneinfo_alias_human$alias)
+    if(length(orphan_aliases) > 0){
+      if(verbose == TRUE){
+        print("there are provided symbols that are not in the alias annotation table: ")
+        print(orphan_aliases)
+      }
+      orphan_alias_tbl = tibble(symbol = orphan_aliases, entrez = NA, alias = orphan_aliases)
+      geneinfo_alias_human = geneinfo_alias_human %>% bind_rows(orphan_alias_tbl)
+      if(verbose == TRUE){
+        print("they are added to the alias annotation table, so they don't get lost")
+      }
+    }
+    alias2symbol = mapper(geneinfo_alias_human, "symbol", "alias")
+    converted_symbols = aliases %>% alias2symbol[.]
+    changed_aliases = setdiff(aliases, converted_symbols)
+    if(verbose == TRUE){
+      if(length(changed_aliases) == 0){
+        print("all input symbols were official symbols")
+      } else {
+        print("following are the official gene symbols of input aliases: ")
+        print(geneinfo_alias_human %>% select(symbol, alias) %>% filter(alias %in% changed_aliases) %>% data.frame())
+      }
+    }
+
+
+  } else if (organism == "mouse") {
+    orphan_aliases = aliases %>% setdiff(geneinfo_alias_mouse$alias)
+    if(length(orphan_aliases) > 0){
+      if(verbose == TRUE){
+        print("there are provided symbols that are not in the alias annotation table: ")
+        print(orphan_aliases)
+      }
+      orphan_alias_tbl = tibble(symbol = orphan_aliases, entrez = NA, alias = orphan_aliases)
+      geneinfo_alias_mouse = geneinfo_alias_mouse %>% bind_rows(orphan_alias_tbl)
+      if(verbose == TRUE){
+        print("they are added to the alias annotation table, so they don't get lost")
+      }
+    }
+    alias2symbol = mapper(geneinfo_alias_mouse, "symbol", "alias")
+    converted_symbols = aliases %>% alias2symbol[.]
+    changed_aliases = setdiff(aliases, converted_symbols)
+
+    if(verbose == TRUE){
+      if(length(changed_aliases) == 0){
+        print("all input symbols were official symbols")
+      } else {
+        print("following are the official gene symbols of input aliases: ")
+        print(geneinfo_alias_mouse %>% select(symbol, alias) %>% filter(alias %in% changed_aliases) %>% data.frame())
+      }
+    }
+  }
+
+  return(converted_symbols)
+}
+#' @title Convert aliases to official gene symbols in a Seurat Object
+#'
+#' @description \code{alias_to_symbol_seurat} Convert aliases to official gene symbols in a Seurat Object. Makes use of `convert_alias_to_symbols`
+#' @usage alias_to_symbol_seurat(seurat_obj, organism)
+#'
+#' @param seurat_obj Seurat object
+#' @param organism Is Seurat object data from "mouse" or "human"
+#'
+#' @return Seurat object
+#'
+#'
+#' @examples
+#' \dontrun{
+#' seurat_object_lite = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
+#' seurat_object_lite = seurat_object_lite %>% alias_to_symbol_seurat("human")
+#' }
+#'
+#' @export
+#'
+alias_to_symbol_seurat = function(seurat_obj, organism) {
+
+  requireNamespace("dplyr")
+  requireNamespace("Seurat")
+
+  RNA = seurat_obj@assays$RNA
+  newnames = convert_alias_to_symbols(rownames(RNA@counts), organism = organism)
+
+  if (nrow(RNA) == length(newnames)) {
+
+    if(!is.null(RNA@counts)){
+      if(sum(dim(RNA@counts)) != 0) rownames(RNA@counts) = newnames
+    }
+    if(!is.null(RNA@data)){
+      if(sum(dim(RNA@data)) != 0){
+        newnames = convert_alias_to_symbols(rownames(RNA@data), organism = organism, verbose = FALSE)
+        rownames(RNA@data) = newnames
+      }
+    }
+    if(!is.null(RNA@scale.data)){
+      if(sum(dim(RNA@scale.data)) != 0){
+        newnames = convert_alias_to_symbols(rownames(RNA@scale.data), organism = organism, verbose = FALSE)
+        rownames(RNA@scale.data) = newnames
+      }
+    }
+  } else {"Unequal gene sets: nrow(seurat_obj@assays$RNA) != nrow(newnames)"}
+
+  if(!is.null(RNA@counts)){
+    dim_before = dim(RNA@counts)
+    RNA@counts = RNA@counts %>% .[!is.na(rownames(.)), ]
+    dim_after = dim(RNA@counts)
+    if(sum(dim_before != dim_after) > 0){
+      print("dim counts assay changed")
+      print(paste0("before: ",dim_before))
+      print(paste0("after: ",dim_before))
+    }
+  }
+  if(!is.null(RNA@data)){
+    dim_before = dim(RNA@data)
+    RNA@data = RNA@data %>% .[!is.na(rownames(.)), ]
+    dim_after = dim(RNA@data)
+    if(sum(dim_before != dim_after) > 0){
+      print("dim data assay changed")
+      print(paste0("before: ",dim_before))
+      print(paste0("after: ",dim_before))
+    }
+  }
+  if(!is.null(RNA@scale.data)){
+    dim_before = dim(RNA@scale.data)
+    RNA@scale.data = RNA@scale.data %>% .[!is.na(rownames(.)), ]
+    dim_after = dim(RNA@scale.data)
+    if(sum(dim_before != dim_after) > 0){
+      print("dim scale.data assay changed")
+      print(paste0("before: ",dim_before))
+      print(paste0("after: ",dim_before))
+    }
+  }
+
+  seurat_obj@assays$RNA = RNA
+
+  if(!is.null( seurat_obj@assays$SCT)){
+    SCT = seurat_obj@assays$SCT
+    newnames = convert_alias_to_symbols(rownames(SCT@counts), organism = organism, verbose = FALSE)
+
+    if (nrow(SCT) == length(newnames)) {
+
+      if(!is.null(SCT@counts)){
+        if(sum(dim(SCT@counts)) != 0){
+          rownames(SCT@counts) = newnames
+        }
+      }
+      if(!is.null(SCT@data)){
+        if(sum(dim(SCT@data)) != 0){
+          newnames = convert_alias_to_symbols(rownames(SCT@data), organism = organism, verbose = FALSE)
+          rownames(SCT@data) = newnames
+        }
+      }
+      if(!is.null(SCT@scale.data)){
+        if(sum(dim(SCT@scale.data)) != 0){
+          newnames = convert_alias_to_symbols(rownames(SCT@scale.data), organism = organism, verbose = FALSE)
+          rownames(SCT@scale.data) = newnames
+        }
+      }
+    } else {"Unequal gene sets: nrow(seurat_obj@assays$SCT) != nrow(newnames)"}
+
+    if(!is.null(SCT@counts)){
+      dim_before = dim(SCT@counts)
+      SCT@counts = SCT@counts %>% .[!is.na(rownames(.)), ]
+      dim_after = dim(SCT@counts)
+      if(sum(dim_before != dim_after) > 0){
+        print("dim counts assay changed")
+        print(paste0("before: ",dim_before))
+        print(paste0("after: ",dim_before))
+      }
+    }
+    if(!is.null(SCT@data)){
+      dim_before = dim(SCT@data)
+      SCT@data = SCT@data %>% .[!is.na(rownames(.)), ]
+      dim_after = dim(SCT@data)
+      if(sum(dim_before != dim_after) > 0){
+        print("dim data assay changed")
+        print(paste0("before: ",dim_before))
+        print(paste0("after: ",dim_before))
+      }
+    }
+    if(!is.null(SCT@scale.data)){
+      dim_before = dim(SCT@scale.data)
+      SCT@scale.data = SCT@scale.data %>% .[!is.na(rownames(.)), ]
+      dim_after = dim(SCT@scale.data)
+      if(sum(dim_before != dim_after) > 0){
+        print("dim scale.data assay changed")
+        print(paste0("before: ",dim_before))
+        print(paste0("after: ",dim_before))
+      }
+    }
+    seurat_obj@assays$SCT = SCT
+  }
+
+  if(!is.null( seurat_obj@assays$integrated)){
+    integrated = seurat_obj@assays$integrated
+    newnames = convert_alias_to_symbols(rownames(integrated@data), organism = organism, verbose = FALSE)
+
+    if (nrow(integrated) == length(newnames)) {
+
+      if(!is.null(integrated@counts)){
+        if(sum(dim(integrated@counts)) != 0){
+          newnames = convert_alias_to_symbols(rownames(integrated@counts), organism = organism, verbose = FALSE)
+          rownames(integrated@counts) = newnames
+        }
+      }
+      if(!is.null(integrated@data)){
+        if(sum(dim(integrated@data)) != 0){
+          newnames = convert_alias_to_symbols(rownames(integrated@data), organism = organism, verbose = FALSE)
+          rownames(integrated@data) = newnames
+        }
+      }
+      if(!is.null(integrated@scale.data)){
+        if(sum(dim(integrated@scale.data)) != 0){
+          newnames = convert_alias_to_symbols(rownames(integrated@scale.data), organism = organism, verbose = FALSE)
+          rownames(integrated@scale.data) = newnames
+        }
+      }
+    } else {"Unequal gene sets: nrow(seurat_obj@assays$integrated) != nrow(newnames)"}
+
+    if(!is.null(integrated@counts)){
+      dim_before = dim(integrated@counts)
+      integrated@counts = integrated@counts %>% .[!is.na(rownames(.)), ]
+      dim_after = dim(integrated@counts)
+      if(sum(dim_before != dim_after) > 0){
+        print("dim counts assay changed")
+        print(paste0("before: ",dim_before))
+        print(paste0("after: ",dim_before))
+      }
+    }
+    if(!is.null(integrated@data)){
+      dim_before = dim(integrated@data)
+      integrated@data = integrated@data %>% .[!is.na(rownames(.)), ]
+      dim_after = dim(integrated@data)
+      if(sum(dim_before != dim_after) > 0){
+        print("dim data assay changed")
+        print(paste0("before: ",dim_before))
+        print(paste0("after: ",dim_before))
+      }
+    }
+    if(!is.null(integrated@scale.data)){
+      dim_before = dim(integrated@scale.data)
+      integrated@scale.data = integrated@scale.data %>% .[!is.na(rownames(.)), ]
+      dim_after = dim(integrated@scale.data)
+      if(sum(dim_before != dim_after) > 0){
+        print("dim scale.data assay changed")
+        print(paste0("before: ",dim_before))
+        print(paste0("after: ",dim_before))
+      }
+    }
+    seurat_obj@assays$integrated = integrated
+  }
+
+
+  return(seurat_obj)
+
 }
 
 get_design = function(E) { # make design matrix for differential expression between celltypes
