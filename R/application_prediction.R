@@ -1051,7 +1051,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   }
 
   # DE analysis for each sender cell type -- of course only possible when having sender cell types
-  if (length(sender) > 1 | (length(sender) == 1 & sender != "undefined")){
+  suppressWarnings(if (length(sender) > 1 | (length(sender) == 1 & sender != "undefined")){
     if (verbose == TRUE){print("Perform DE analysis in sender cells")}
     seurat_obj = subset(seurat_obj, features= potential_ligands)
 
@@ -1103,7 +1103,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   } else {
     rotated_dotplot = NULL
     p_ligand_lfc = NULL
-  }
+  })
 
   return(list(
     ligand_activities = ligand_activities,

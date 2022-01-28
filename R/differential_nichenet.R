@@ -118,7 +118,12 @@ calculate_niche_de = function(seurat_obj, niches, type, assay_oi = "SCT"){
               DE_sender_oi = NULL
             } else {
               DE_sender_oi = FindMarkers(object = seurat_obj, ident.1 = sender_oi, ident.2 = sender_other_niche_oi, min.pct = 0, logfc.threshold = 0, only.pos = FALSE, assay = assay_oi) %>% rownames_to_column("gene") %>% as_tibble()
+              SeuratV4 = c("avg_log2FC") %in% colnames(DE_sender_oi)
+              if(SeuratV4 == FALSE){
+                DE_sender_oi = DE_sender_oi %>% dplyr::rename(avg_log2FC = avg_logFC)
+              }
               DE_sender_oi = DE_sender_oi %>% mutate(sender = sender_oi, sender_other_niche = sender_other_niche_oi) %>% arrange(-avg_log2FC)
+
             }
         }, seurat_obj, sender_oi) %>% bind_rows()
 
@@ -126,6 +131,10 @@ calculate_niche_de = function(seurat_obj, niches, type, assay_oi = "SCT"){
 
     }, seurat_obj) %>% bind_rows()
 
+    SeuratV4 = c("avg_log2FC") %in% colnames(DE_sender)
+    if(SeuratV4 == FALSE){
+      DE_sender = DE_sender %>% dplyr::rename(avg_log2FC = avg_logFC)
+    }
     DE_sender_reverse = DE_sender %>% mutate(avg_log2FC = avg_log2FC * -1) %>%
       rename(pct.1_old = pct.1, pct.2_old = pct.2, sender_old = sender, sender_other_niche_old = sender_other_niche) %>%
       rename(pct.1 = pct.2_old, pct.2 = pct.1_old, sender = sender_other_niche_old, sender_other_niche = sender_old) %>%
@@ -172,6 +181,10 @@ calculate_niche_de = function(seurat_obj, niches, type, assay_oi = "SCT"){
             DE_receiver_oi = NULL
           } else {
             DE_receiver_oi = FindMarkers(object = seurat_obj, ident.1 = receiver_oi, ident.2 = receiver_other_niche_oi, min.pct = 0, logfc.threshold = 0, only.pos = FALSE, assay = assay_oi) %>% rownames_to_column("gene") %>% as_tibble()
+            SeuratV4 = c("avg_log2FC") %in% colnames(DE_receiver_oi)
+            if(SeuratV4 == FALSE){
+              DE_receiver_oi = DE_receiver_oi %>% dplyr::rename(avg_log2FC = avg_logFC)
+            }
             DE_receiver_oi = DE_receiver_oi %>% mutate(receiver = receiver_oi, receiver_other_niche = receiver_other_niche_oi) %>% arrange(-avg_log2FC)
           }
         }, seurat_obj, receiver_oi) %>% bind_rows()
@@ -180,6 +193,10 @@ calculate_niche_de = function(seurat_obj, niches, type, assay_oi = "SCT"){
 
     }, seurat_obj) %>% bind_rows()
 
+    SeuratV4 = c("avg_log2FC") %in% colnames(DE_receiver)
+    if(SeuratV4 == FALSE){
+      DE_receiver = DE_receiver %>% dplyr::rename(avg_log2FC = avg_logFC)
+    }
     DE_receiver_reverse = DE_receiver %>% mutate(avg_log2FC = avg_log2FC * -1) %>%
       rename(pct.1_old = pct.1, pct.2_old = pct.2, receiver_old = receiver, receiver_other_niche_old = receiver_other_niche) %>%
       rename(pct.1 = pct.2_old, pct.2 = pct.1_old, receiver = receiver_other_niche_old, receiver_other_niche = receiver_old) %>%
@@ -266,6 +283,10 @@ calculate_niche_de_targets = function(seurat_obj, niches, expression_pct, lfc_cu
             DE_receiver_oi = NULL
           } else {
             DE_receiver_oi = FindMarkers(object = seurat_obj, ident.1 = receiver_oi, ident.2 = receiver_other_niche_oi, min.pct = expression_pct, logfc.threshold = lfc_cutoff, only.pos = FALSE, assay = assay_oi) %>% rownames_to_column("gene") %>% as_tibble()
+            SeuratV4 = c("avg_log2FC") %in% colnames(DE_receiver_oi)
+            if(SeuratV4 == FALSE){
+              DE_receiver_oi = DE_receiver_oi %>% dplyr::rename(avg_log2FC = avg_logFC)
+            }
             DE_receiver_oi = DE_receiver_oi %>% mutate(receiver = receiver_oi, receiver_other_niche = receiver_other_niche_oi) %>% arrange(-avg_log2FC)
           }
         }, seurat_obj, receiver_oi) %>% bind_rows()
@@ -274,6 +295,10 @@ calculate_niche_de_targets = function(seurat_obj, niches, expression_pct, lfc_cu
 
     }, seurat_obj) %>% bind_rows()
 
+    SeuratV4 = c("avg_log2FC") %in% colnames(DE_receiver)
+    if(SeuratV4 == FALSE){
+      DE_receiver = DE_receiver %>% dplyr::rename(avg_log2FC = avg_logFC)
+    }
     DE_receiver_reverse = DE_receiver %>% mutate(avg_log2FC = avg_log2FC * -1) %>%
       rename(pct.1_old = pct.1, pct.2_old = pct.2, receiver_old = receiver, receiver_other_niche_old = receiver_other_niche) %>%
       rename(pct.1 = pct.2_old, pct.2 = pct.1_old, receiver = receiver_other_niche_old, receiver_other_niche = receiver_old) %>%
@@ -326,7 +351,10 @@ calculate_niche_de_targets = function(seurat_obj, niches, expression_pct, lfc_cu
 #'
 process_niche_de = function(DE_table, niches, type, expression_pct){
   ### process the DE_tables of senders and receiver
-
+  SeuratV4 = c("avg_log2FC") %in% colnames(DE_table)
+  if(SeuratV4 == FALSE){
+    DE_table = DE_table %>% dplyr::rename(avg_log2FC = avg_logFC)
+  }
   if(type == "sender"){
     DE_sender = DE_table %>% mutate(significant = p_val_adj <= 0.05, present = pct.1 >= expression_pct) %>% mutate(pct.1 = pct.1+0.0001, pct.2 = pct.2 + 0.0001) %>% mutate(diff = (pct.1/pct.2)) %>% mutate(score = diff*avg_log2FC) %>% arrange(-score)
     DE_sender_processed = DE_sender %>% group_by(gene, sender) %>% summarise(mean_avg_log2FC = mean(avg_log2FC), min_avg_log2FC = min(avg_log2FC), mean_significant = mean(significant), mean_present = mean(present), mean_score = mean(score), min_score = min(score)) %>% arrange(-min_avg_log2FC)
@@ -391,6 +419,14 @@ process_niche_de = function(DE_table, niches, type, expression_pct){
 #'
 combine_sender_receiver_de = function(DE_sender_processed, DE_receiver_processed, lr_network, specificity_score = "min_lfc"){
 
+  SeuratV4 = c("avg_log2FC") %in% colnames(DE_sender_processed)
+  if(SeuratV4 == FALSE){
+    DE_sender_processed = DE_sender_processed %>% dplyr::rename(avg_log2FC = avg_logFC)
+  }
+  SeuratV4 = c("avg_log2FC") %in% colnames(DE_receiver_processed)
+  if(SeuratV4 == FALSE){
+    DE_receiver_processed = DE_receiver_processed %>% dplyr::rename(avg_log2FC = avg_logFC)
+  }
   if(specificity_score == "min_lfc"){
     DE_sender_processed_ligands = DE_sender_processed %>% rename(ligand = gene, ligand_score = min_avg_log2FC, ligand_significant = mean_significant, ligand_present = mean_present)
     DE_receiver_processed_receptors = DE_receiver_processed %>% rename(receptor = gene, receptor_score = min_avg_log2FC, receptor_significant = mean_significant, receptor_present = mean_present)
@@ -454,6 +490,11 @@ combine_sender_receiver_de = function(DE_sender_processed, DE_receiver_processed
 #' @export
 #'
 process_receiver_target_de = function(DE_receiver_targets, niches, expression_pct, specificity_score = "min_lfc"){
+
+  SeuratV4 = c("avg_log2FC") %in% colnames(DE_receiver_targets)
+  if(SeuratV4 == FALSE){
+    DE_receiver_targets = DE_receiver_targets %>% dplyr::rename(avg_log2FC = avg_logFC)
+  }
 
   DE_receiver = DE_receiver_targets %>% mutate(significant = p_val_adj <= 0.05, present = pct.1 >= expression_pct) %>% mutate(pct.1 = pct.1+0.0001, pct.2 = pct.2 + 0.0001) %>% mutate(diff = (pct.1/pct.2))
   DE_receiver = DE_receiver %>% mutate_cond(is.na(present), present = FALSE) %>% mutate_cond(is.na(diff) | is.nan(diff), diff = 1) %>% mutate(score = diff*avg_log2FC) %>% arrange(-score)
@@ -598,6 +639,10 @@ calculate_spatial_DE = function(seurat_obj, spatial_info, assay_oi = "SCT"){
     print(paste0("Calculate Spatial DE between: ",celltype_oi, " and ", other_celltype))
 
     DE_table = FindMarkers(object = seurat_obj, ident.1 = celltype_oi, ident.2 = other_celltype, min.pct = 0, logfc.threshold = 0, only.pos = FALSE, assay = assay_oi) %>% rownames_to_column("gene") %>% as_tibble()
+    SeuratV4 = c("avg_log2FC") %in% colnames(DE_table)
+    if(SeuratV4 == FALSE){
+      DE_table = DE_table %>% dplyr::rename(avg_log2FC = avg_logFC)
+    }
     DE_table = DE_table %>% mutate(celltype = celltype_oi, niche = niche_oi) %>% arrange(-avg_log2FC)
   }, seurat_obj, spatial_info) %>% bind_rows()
 }
@@ -629,7 +674,10 @@ calculate_spatial_DE = function(seurat_obj, spatial_info, assay_oi = "SCT"){
 #'
 process_spatial_de = function(DE_table, type, lr_network, expression_pct, specificity_score = "lfc"){
   ### process the DE_tables of senders and receiver
-
+  SeuratV4 = c("avg_log2FC") %in% colnames(DE_table)
+  if(SeuratV4 == FALSE){
+    DE_table = DE_table %>% dplyr::rename(avg_log2FC = avg_logFC)
+  }
   if(type == "sender"){
     DE_sender = DE_table %>% mutate(significant = p_val_adj <= 0.05, present = pct.1 >= expression_pct) %>% mutate(pct.1 = pct.1+0.0001, pct.2 = pct.2 + 0.0001) %>% mutate(diff = (pct.1/pct.2)) %>% mutate(score = diff*avg_log2FC)
     if(specificity_score == "lfc"){
