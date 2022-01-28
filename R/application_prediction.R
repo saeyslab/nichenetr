@@ -1077,7 +1077,11 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     real_makenames_conversion = lr_network$from %>% unique() %>% magrittr::set_names(lr_network$from %>% unique() %>% make.names())
     order_ligands_adapted = real_makenames_conversion[order_ligands]
     names(order_ligands_adapted) = NULL
-    rotated_dotplot = DotPlot(seurat_obj %>% subset(idents = sender_celltypes), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
+
+    seurat_obj_subset = seurat_obj %>% subset(idents = sender_celltypes)
+    seurat_obj_subset = SetIdent(seurat_obj_subset, value = seurat_obj_subset[[condition_colname]]) %>% subset(idents = condition_oi) ## only shows cells of the condition of interest
+    rotated_dotplot = DotPlot(seurat_obj %>% subset(cells = Cells(seurat_obj_subset)), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
+    rm(seurat_obj_subset)
 
     # combined plot
     figures_without_legend = cowplot::plot_grid(

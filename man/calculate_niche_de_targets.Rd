@@ -4,7 +4,7 @@
 \alias{calculate_niche_de_targets}
 \title{Calculate differential expression of receiver cell type in one niche versus all other niches of interest: focus on finding DE genes}
 \usage{
-calculate_niche_de_targets(seurat_obj, niches, expression_pct, ltf_cutoff, assay_oi = "SCT")
+calculate_niche_de_targets(seurat_obj, niches, expression_pct, lfc_cutoff, assay_oi = "SCT")
 }
 \arguments{
 \item{seurat_obj}{Seurat object}

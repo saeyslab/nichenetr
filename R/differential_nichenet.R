@@ -213,7 +213,7 @@ calculate_niche_de = function(seurat_obj, niches, type, assay_oi = "SCT"){
 #' @description \code{calculate_niche_de_targets} Calculate differential expression of receiver cell type in one niche versus all other niches of interest: focus on finding DE genes
 #'
 #' @usage
-#' calculate_niche_de_targets(seurat_obj, niches, expression_pct, ltf_cutoff, assay_oi = "SCT")
+#' calculate_niche_de_targets(seurat_obj, niches, expression_pct, lfc_cutoff, assay_oi = "SCT")
 #'
 #' @inheritParams calculate_niche_de
 #' @param expression_pct input of `min.pct` of `Seurat::FindMarkers`
@@ -419,14 +419,6 @@ process_niche_de = function(DE_table, niches, type, expression_pct){
 #'
 combine_sender_receiver_de = function(DE_sender_processed, DE_receiver_processed, lr_network, specificity_score = "min_lfc"){
 
-  SeuratV4 = c("avg_log2FC") %in% colnames(DE_sender_processed)
-  if(SeuratV4 == FALSE){
-    DE_sender_processed = DE_sender_processed %>% dplyr::rename(avg_log2FC = avg_logFC)
-  }
-  SeuratV4 = c("avg_log2FC") %in% colnames(DE_receiver_processed)
-  if(SeuratV4 == FALSE){
-    DE_receiver_processed = DE_receiver_processed %>% dplyr::rename(avg_log2FC = avg_logFC)
-  }
   if(specificity_score == "min_lfc"){
     DE_sender_processed_ligands = DE_sender_processed %>% rename(ligand = gene, ligand_score = min_avg_log2FC, ligand_significant = mean_significant, ligand_present = mean_present)
     DE_receiver_processed_receptors = DE_receiver_processed %>% rename(receptor = gene, receptor_score = min_avg_log2FC, receptor_significant = mean_significant, receptor_present = mean_present)
