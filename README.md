@@ -55,12 +55,13 @@ only in visualizations).
 
 So if you have data of multiple conditions or niches, and you want to
 include differential expression of the ligand-receptor pairs in the
-prioritization, we recommend you check out Differential NicheNet. At the
-bottom of this page, you can find the links to two vignettes
-illustrating a Differential NicheNet analysis. We recommend these
-vignettes if you want to apply Differential NicheNet on your own data.
-If you want to see the code used for the analyses used in the Guilliams
-et al. paper, see <https://github.com/saeyslab/NicheNet_LiverCellAtlas>.
+prioritization, we recommend you check out Differential NicheNet (update
+nichenetr to the 1.1.0 version). At the bottom of this page, you can
+find the links to two vignettes illustrating a Differential NicheNet
+analysis. We recommend these vignettes if you want to apply Differential
+NicheNet on your own data. If you want to see the code used for the
+analyses used in the Guilliams et al. paper, see
+<https://github.com/saeyslab/NicheNet_LiverCellAtlas>.
 
 ## Introduction to NicheNet
 
