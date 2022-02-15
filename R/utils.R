@@ -17,9 +17,9 @@
 scaling_zscore = function(x){
   if (typeof(x) == "double"){
     if(sd(x, na.rm = TRUE) > 0){
-      return((x - mean(x))/sd(x))
+      return((x - mean(x, na.rm = TRUE))/sd(x, na.rm = TRUE))
     } else{
-      return((x - mean(x)))
+      return((x - mean(x, na.rm = TRUE)))
     }
   } else {return(x)}
 }
