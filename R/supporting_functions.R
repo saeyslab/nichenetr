@@ -232,12 +232,18 @@ alias_to_symbol_seurat = function(seurat_obj, organism) {
     if(!is.null(RNA@data)){
       if(sum(dim(RNA@data)) != 0){
         newnames = convert_alias_to_symbols(rownames(RNA@data), organism = organism, verbose = FALSE)
+        doubles =  newnames %>% table() %>% .[. > 1] %>% names()
+        genes_remove = (names(newnames[newnames %in% doubles]) != (newnames[newnames %in% doubles])) %>%  .[. == TRUE] %>% names()
+        newnames[genes_remove] = genes_remove # set the doubles back to their old names
         rownames(RNA@data) = newnames
       }
     }
     if(!is.null(RNA@scale.data)){
       if(sum(dim(RNA@scale.data)) != 0){
         newnames = convert_alias_to_symbols(rownames(RNA@scale.data), organism = organism, verbose = FALSE)
+        doubles =  newnames %>% table() %>% .[. > 1] %>% names()
+        genes_remove = (names(newnames[newnames %in% doubles]) != (newnames[newnames %in% doubles])) %>%  .[. == TRUE] %>% names()
+        newnames[genes_remove] = genes_remove # set the doubles back to their old names
         rownames(RNA@scale.data) = newnames
       }
     }
@@ -279,7 +285,9 @@ alias_to_symbol_seurat = function(seurat_obj, organism) {
   if(!is.null( seurat_obj@assays$SCT)){
     SCT = seurat_obj@assays$SCT
     newnames = convert_alias_to_symbols(rownames(SCT@counts), organism = organism, verbose = FALSE)
-
+    doubles =  newnames %>% table() %>% .[. > 1] %>% names()
+    genes_remove = (names(newnames[newnames %in% doubles]) != (newnames[newnames %in% doubles])) %>%  .[. == TRUE] %>% names()
+    newnames[genes_remove] = genes_remove # set the doubles back to their old names
     if (nrow(SCT) == length(newnames)) {
 
       if(!is.null(SCT@counts)){
@@ -290,12 +298,18 @@ alias_to_symbol_seurat = function(seurat_obj, organism) {
       if(!is.null(SCT@data)){
         if(sum(dim(SCT@data)) != 0){
           newnames = convert_alias_to_symbols(rownames(SCT@data), organism = organism, verbose = FALSE)
+          doubles =  newnames %>% table() %>% .[. > 1] %>% names()
+          genes_remove = (names(newnames[newnames %in% doubles]) != (newnames[newnames %in% doubles])) %>%  .[. == TRUE] %>% names()
+          newnames[genes_remove] = genes_remove # set the doubles back to their old names
           rownames(SCT@data) = newnames
         }
       }
       if(!is.null(SCT@scale.data)){
         if(sum(dim(SCT@scale.data)) != 0){
           newnames = convert_alias_to_symbols(rownames(SCT@scale.data), organism = organism, verbose = FALSE)
+          doubles =  newnames %>% table() %>% .[. > 1] %>% names()
+          genes_remove = (names(newnames[newnames %in% doubles]) != (newnames[newnames %in% doubles])) %>%  .[. == TRUE] %>% names()
+          newnames[genes_remove] = genes_remove # set the doubles back to their old names
           rownames(SCT@scale.data) = newnames
         }
       }
@@ -337,24 +351,35 @@ alias_to_symbol_seurat = function(seurat_obj, organism) {
   if(!is.null( seurat_obj@assays$integrated)){
     integrated = seurat_obj@assays$integrated
     newnames = convert_alias_to_symbols(rownames(integrated@data), organism = organism, verbose = FALSE)
-
+    doubles =  newnames %>% table() %>% .[. > 1] %>% names()
+    genes_remove = (names(newnames[newnames %in% doubles]) != (newnames[newnames %in% doubles])) %>%  .[. == TRUE] %>% names()
+    newnames[genes_remove] = genes_remove # set the doubles back to their old names
     if (nrow(integrated) == length(newnames)) {
 
       if(!is.null(integrated@counts)){
         if(sum(dim(integrated@counts)) != 0){
           newnames = convert_alias_to_symbols(rownames(integrated@counts), organism = organism, verbose = FALSE)
+          doubles =  newnames %>% table() %>% .[. > 1] %>% names()
+          genes_remove = (names(newnames[newnames %in% doubles]) != (newnames[newnames %in% doubles])) %>%  .[. == TRUE] %>% names()
+          newnames[genes_remove] = genes_remove # set the doubles back to their old names
           rownames(integrated@counts) = newnames
         }
       }
       if(!is.null(integrated@data)){
         if(sum(dim(integrated@data)) != 0){
           newnames = convert_alias_to_symbols(rownames(integrated@data), organism = organism, verbose = FALSE)
+          doubles =  newnames %>% table() %>% .[. > 1] %>% names()
+          genes_remove = (names(newnames[newnames %in% doubles]) != (newnames[newnames %in% doubles])) %>%  .[. == TRUE] %>% names()
+          newnames[genes_remove] = genes_remove # set the doubles back to their old names
           rownames(integrated@data) = newnames
         }
       }
       if(!is.null(integrated@scale.data)){
         if(sum(dim(integrated@scale.data)) != 0){
           newnames = convert_alias_to_symbols(rownames(integrated@scale.data), organism = organism, verbose = FALSE)
+          doubles =  newnames %>% table() %>% .[. > 1] %>% names()
+          genes_remove = (names(newnames[newnames %in% doubles]) != (newnames[newnames %in% doubles])) %>%  .[. == TRUE] %>% names()
+          newnames[genes_remove] = genes_remove # set the doubles back to their old names
           rownames(integrated@scale.data) = newnames
         }
       }
