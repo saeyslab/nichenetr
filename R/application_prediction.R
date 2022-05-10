@@ -1051,7 +1051,18 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   }
 
   # DE analysis for each sender cell type -- of course only possible when having sender cell types
-  suppressWarnings(if (length(sender) > 1 | (length(sender) == 1 & sender != "undefined")){
+  if (length(sender) > 1){
+    are_there_senders = TRUE
+  }
+  if(length(sender) == 1){
+    if(sender != "undefined"){
+      are_there_senders = TRUE
+    } else {
+      are_there_senders = FALSE
+    }
+  }
+
+  if (are_there_senders == TRUE){
     if (verbose == TRUE){print("Perform DE analysis in sender cells")}
     seurat_obj = subset(seurat_obj, features= potential_ligands)
 
@@ -1107,7 +1118,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   } else {
     rotated_dotplot = NULL
     p_ligand_lfc = NULL
-  })
+  }
 
   return(list(
     ligand_activities = ligand_activities,
@@ -1278,7 +1289,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
                                        pct, n_cells_oi_in_matrix) {
       begin_i = genes_indices[1]
       end_i = genes_indices[length(genes_indices)]
-      exprs = exprs[begin_i:end_i, ]
+      exprs = exprs[begin_i:end_i, , drop = FALSE]
       genes = exprs %>% apply(1, function(x) {
         sum(x > 0)/n_cells_oi_in_matrix
       }) %>% .[. >= pct] %>% names()
@@ -1671,7 +1682,18 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   }
 
   # ligand expression Seurat dotplot
-  if (length(sender) > 1 | (length(sender) == 1 & sender != "undefined")){
+  if (length(sender) > 1){
+    are_there_senders = TRUE
+  }
+  if(length(sender) == 1){
+    if(sender != "undefined"){
+      are_there_senders = TRUE
+    } else {
+      are_there_senders = FALSE
+    }
+  }
+
+  if (are_there_senders == TRUE){
     real_makenames_conversion = lr_network$from %>% unique() %>% magrittr::set_names(lr_network$from %>% unique() %>% make.names())
     order_ligands_adapted = real_makenames_conversion[order_ligands]
     names(order_ligands_adapted) = NULL
@@ -2103,7 +2125,18 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   }
 
   # ligand expression Seurat dotplot
-  if (length(sender) > 1 | (length(sender) == 1 & sender != "undefined")){
+  if (length(sender) > 1){
+    are_there_senders = TRUE
+  }
+  if(length(sender) == 1){
+    if(sender != "undefined"){
+      are_there_senders = TRUE
+    } else {
+      are_there_senders = FALSE
+    }
+  }
+
+  if (are_there_senders == TRUE){
     real_makenames_conversion = lr_network$from %>% unique() %>% magrittr::set_names(lr_network$from %>% unique() %>% make.names())
     order_ligands_adapted = real_makenames_conversion[order_ligands]
     names(order_ligands_adapted) = NULL
