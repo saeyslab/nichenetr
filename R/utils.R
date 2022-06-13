@@ -16,6 +16,10 @@
 #'
 scaling_zscore = function(x){
   if (typeof(x) == "double"){
+
+    if(length(x) == 1){ ## in case the vector has length 1 -- return 0
+      return(0)
+    }
     if(sd(x, na.rm = TRUE) > 0){
       return((x - mean(x, na.rm = TRUE))/sd(x, na.rm = TRUE))
     } else{
