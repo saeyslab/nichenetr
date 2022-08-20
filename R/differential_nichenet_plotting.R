@@ -341,7 +341,7 @@ make_ligand_activity_target_exprs_plot = function(receiver_oi, prioritized_tbl_o
     }) %>% bind_rows
     new_lt_tibble = new_lt_tibble %>% spread(ligand, weight)
 
-    active_ligand_target_links = new_lt_tibble %>% select(-target) %>% data.frame() %>% as.matrix(ncol = length(removed_ligands)) %>% cbind(active_ligand_target_links)
+    active_ligand_target_links = new_lt_tibble %>% select(-target) %>% data.frame() %>% slice_head(n=length(rownames(active_ligand_target_links))) %>% as.matrix(ncol = length(removed_ligands)) %>% cbind(active_ligand_target_links)
   }
 
   if( length(setdiff(order_targets, rownames(active_ligand_target_links))) > 0){
