@@ -228,7 +228,7 @@ make_ligand_activity_target_exprs_plot = function(receiver_oi, prioritized_tbl_o
 
   # ligand expression
   ordered_ligands = prioritization_tbl_ligand_receptor %>% filter(ligand %in% best_upstream_ligands) %>% select(niche, sender, ligand, ligand_score) %>% distinct() %>% group_by(ligand) %>% summarise(ligand_score = max(ligand_score)) %>% inner_join(prioritization_tbl_ligand_receptor %>% select(niche, sender, ligand, ligand_score) %>% distinct()) %>% arrange(sender, ligand_score)
-  ordered_ligands = ordered_ligands %>% mutate(ligand_ordered = factor(ligand, ordered = T, levels = ordered_ligands$ligand)) %>% distinct(ligand, ligand_ordered, niche) %>% rename(niche_prior = niche)
+  ordered_ligands = ordered_ligands %>% mutate(ligand_ordered = factor(ligand, ordered = T, levels = unique(ordered_ligands$ligand))) %>% distinct(ligand, ligand_ordered, niche) %>% rename(niche_prior = niche)
 
   plot_data = exprs_tbl_ligand %>% inner_join(ordered_ligands) %>% filter(sender %in% (prioritization_tbl_ligand_receptor$sender %>% unique()))
   plot_data = plot_data %>% group_by(ligand) %>% mutate(ligand_expression_scaled_sender = nichenetr::scaling_zscore(ligand_expression)) %>% inner_join(prioritization_tbl_ligand_receptor %>% distinct(sender, receiver, niche))
