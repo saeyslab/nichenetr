@@ -469,7 +469,7 @@ make_ligand_receptor_lfc_plot = function(receiver_oi, prioritized_tbl_oi, priori
   ordered_ligand_receptors_max_ligand_score = prioritization_tbl_ligand_receptor %>% filter(ligand_receptor %in% filtered_ligand_receptors) %>% select(niche, sender, ligand, prioritization_score) %>% distinct() %>% group_by(ligand) %>% summarise(prioritization_score_ligand = max(prioritization_score)) %>% inner_join(prioritization_tbl_ligand_receptor %>% select(niche, sender, ligand, prioritization_score) %>% distinct()) %>% arrange(sender, prioritization_score_ligand) %>% distinct()
 
   ordered_ligand_receptors = ordered_ligand_receptors %>% inner_join(ordered_ligand_receptors_max_ligand_score) %>% arrange(sender, prioritization_score_ligand, prioritization_score)
-  ordered_ligand_receptors = ordered_ligand_receptors %>% mutate(ligand_receptor_ordered = factor(ligand_receptor, ordered = T, levels = ordered_ligand_receptors$ligand_receptor)) %>% distinct(ligand_receptor, ligand, receptor, ligand_receptor_ordered, niche) %>% rename(niche_prior = niche)
+  ordered_ligand_receptors = ordered_ligand_receptors %>% mutate(ligand_receptor_ordered = factor(ligand_receptor, ordered = T, levels = unique(ordered_ligand_receptors$ligand_receptor))) %>% distinct(ligand_receptor, ligand, receptor, ligand_receptor_ordered, niche) %>% rename(niche_prior = niche)
 
   plot_data = prioritization_tbl_ligand_receptor %>% inner_join(ordered_ligand_receptors)
   p_lig_lfc = plot_data %>%
