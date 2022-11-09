@@ -938,7 +938,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     order_targets = order_targets %>% intersect(rownames(active_ligand_target_links))
     order_ligands = order_ligands %>% intersect(colnames(active_ligand_target_links))
 
-    vis_ligand_target = active_ligand_target_links[order_targets,order_ligands] %>% t()
+    vis_ligand_target = active_ligand_target_links[order_targets,order_ligands,drop=FALSE] %>% t()
     p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized ligands","Predicted target genes", color = "purple",legend_position = "top", x_axis_position = "top",legend_title = "Regulatory potential")  + theme(axis.text.x = element_text(face = "italic")) #+ scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.006,0.012))
   } else {
     vis_ligand_target = NULL
