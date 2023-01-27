@@ -4,36 +4,42 @@ scale_quantile_adapted = function(x, outlier_cutoff = 0){
   return(y)
 }
 
+check_names <- function(column, seurat_obj = NA){
+  # If seurat_obj is NA
+  if (typeof(seurat_obj) == "logical") {
+    if (column != make.names(column)) {
+      stop(paste0("'", column, "' is not a syntactically valid R name - check make.names"))
+    }
+  } else {
+    if (!all(unique(seurat_obj[[column, drop=TRUE]]) == make.names(unique(seurat_obj[[column, drop=TRUE]])))){
+      stop(paste0("'", column, "' column should have syntactically valid R names - see make.names"))
+    }
+  }
+}
+
 #' @title Calculate differential expression of one cell type versus all other cell types
 #'
-#' @description \code{calculate_niche_de} Calculate differential expression of one cell type versus all other cell types. This is possible for sender cell types and receiver cell types.
+#' @description \code{calculate_de} Calculate differential expression of one cell type versus all other cell types. If condition_oi is provided, only consider cells from that condition.
 #'
 #' @usage
-#' calculate_de(seurat_obj, celltype_id, senders_oi = NA, receivers_oi = NA, assay_oi = "RNA")
+#' calculate_de(seurat_obj, celltype_id, condition_oi = NA, group_id = NA, min.pct = 0.1, assay_oi = "RNA")
 #'
 #' @param seurat_obj Seurat object
 #' @param celltype_id Name of the meta data column that indicates the cell type of a cell
+#' @param condition_oi If provided, subset seurat_obj so DE is only calculated for cells belonging to condition_oi
 #' @param group_id group_id Name of the meta data column that indicates from which group/condition a cell comes from
 #' @param assay_oi Which assay need to be used for DE calculation via `FindMarkers`. Default RNA, alternatives: SCT.
 #'
-#' @return A tibble containing the DE results
+#' @return A dataframe containing the DE results
 #'
 #' @examples
 #' \dontrun{
-#' TODO
-#' seurat_obj = readRDS(url("https://zenodo.org/record/5840787/files/seurat_obj_subset_integrated_zonation.rds"))
-#' niches = list(
-#' "KC_niche" = list(
-#'   "sender" = c("LSECs_portal","Hepatocytes_portal","Stellate cells_portal"),
-#'   "receiver" = c("KCs")),
-#' "MoMac2_niche" = list(
-#'   "sender" = c("Cholangiocytes","Fibroblast 2"),
-#'   "receiver" = c("MoMac2")),
-#' "MoMac1_niche" = list(
-#'   "sender" = c("Capsule fibroblasts","Mesothelial cells"),
-#'  "receiver" = c("MoMac1"))
-#' )
-#' calculate_niche_de(seurat_obj, niches, "sender")
+#' seurat_obj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
+#' seurat_obj$celltype <- make.names(seurat_obj$celltype)
+#' # Calculate cell-type specific markers across conditions
+#' calculate_de(seurat_obj, "celltype")
+#' # Calculate LCMV-specific cell-type markers
+#' calculate_de(seurat_obj, "celltype", condition_oi = "LCMV", group_id = "aggregate")
 #' }
 #'
 #' @export
@@ -42,16 +48,15 @@ calculate_de = function(seurat_obj, celltype_id,
                         condition_oi = NA, group_id = NA,
                         min.pct = 0.1, assay_oi = "RNA"){
 
-  # if (!is.na(group_id) & (is.na(condition_reference) || is.na(condition_oi))){
-  #   stop("Please input both condition_reference and condition_oi")
-  # }
-
   if (any(!is.na(group_id), !is.na(condition_oi)) & !all(!is.na(group_id), !is.na(condition_oi))){
     stop("Please input both group_id and condition_oi")
   }
 
-  celltypes <- unique(seurat_obj[[celltype_id, drop=TRUE]])
+  # Check names
+  sapply(c(celltype_id, condition_oi, group_id) %>% .[!is.na(.)], check_names)
+  sapply(celltype_id, check_names, seurat_obj)
 
+  # Subset seurat obj to condition of interest
   if (!is.na(condition_oi)) {
     seurat_obj = seurat_obj[,seurat_obj[[group_id]] == condition_oi]
   }
@@ -59,37 +64,20 @@ calculate_de = function(seurat_obj, celltype_id,
   DE_table = FindAllMarkers(seurat_obj, min.pct = min.pct) %>%
                 rename(cluster_id = cluster)
 
-
-  # # If there is more than one condition, calculate condition-celltype specificity
-  # if (!is.na(group_id)){
-  #   DE_table = lapply(celltypes, function(ct) {
-  #     seurat_obj_subset = subset(seurat_obj, idents = ct) %>% SetIdent(value = .[[group_id]])
-  #     FindMarkers(object = seurat_obj_subset, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = min.pct) %>%
-  #       rownames_to_column("gene") %>% mutate(cluster_id = ct)
-  #   }) %>% do.call(rbind, .)
-  # # If there is only one condition, calculate cell type specificity
-  # } else {
-  #   seurat_obj <- SetIdent(seurat_obj, value = .[[celltype_id]])
-  #   DE_table = FindAllMarkers(seurat_obj, min.pct = min.pct) %>%
-  #               rename(cluster_id = cluster)
-  # }
-  #
-  # SeuratV4 = c("avg_log2FC") %in% colnames(DE_table)
-  # if(!SeuratV4){
-  #   DE_table = DE_table %>% dplyr::rename(avg_log2FC = avg_logFC)
-  # }
-
+  SeuratV4 = c("avg_log2FC") %in% colnames(DE_table)
+  if(!SeuratV4){
+    DE_table = DE_table %>% dplyr::rename(avg_log2FC = avg_logFC)
+  }
 
   return(DE_table)
 
-
 }
-#' @title get_exprs_avg
+#' @title Calculate average of gene expression per cell type.
 #'
-#' @description \code{get_exprs_avg}  Calculate (group-)average of gene expression per cell type.
-#' @usage get_muscat_exprs_avg(sce, celltype_id, group_id)
+#' @description \code{get_exprs_avg}  Calculate average of gene expression per cell type. If condition_oi is provided, only consider cells from that condition.
+#' @usage get_exprs_avg(seurat_obj, celltype_id, condition_oi = NA, group_id = NA)
 #'
-#' @return Data frame with average gene expression per sample and per group.
+#' @return Data frame with average gene expression per cell type.
 #'
 #' @import dplyr
 #' @import tibble
@@ -98,81 +86,55 @@ calculate_de = function(seurat_obj, celltype_id,
 #'
 #' @examples
 #' \dontrun{
-#' library(dplyr)
-#' sample_id = "tumor"
-#' group_id = "pEMT"
-#' celltype_id = "celltype"
-#' muscat_exprs_avg = get_muscat_exprs_avg(sce = sce, sample_id = sample_id, celltype_id =  celltype_id, group_id = group_id)
+#' seurat_obj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
+#' seurat_obj$celltype <- make.names(seuratObj$celltype)
+#' # Calculate average expression across conditions
+#' expression_info = get_exprs_avg(seurat_obj, "celltype")
+#' # Calculate LCMV-specific average expression
+#' expression_info = get_exprs_avg(seurat_obj, "celltype", condition_oi = "LCMV", group_id = "aggregate")
 #' }
 #'
 #' @export
 #'
-get_exprs_avg = function(seurat_obj, celltype_id, lr_network,
+get_exprs_avg = function(seurat_obj, celltype_id,
                          condition_oi = NA, group_id = NA){
 
   requireNamespace("dplyr")
 
-  seurat_obj[[celltype_id]] <- make.names(seurat_obj[[celltype_id, drop=TRUE]])
-  if (!is.na(group_id)) seurat_obj[[group_id]] <- make.names(seurat_obj[[group_id, drop=TRUE]])
-
-  seurat_obj <- NormalizeData(seurat_obj, verbose = FALSE)
-  avg_list <- list()
-  avg_celltype <- AverageExpression(seurat_obj, assay = "RNA", slot = "data",
-                    group.by = celltype_id) %>%
-                    .$RNA %>% data.frame()
-  avg_list$celltype <- avg_celltype %>% rownames_to_column("gene") %>%
-                        pivot_longer(!gene, names_to = "celltype", values_to = "avg_expr")
-
-  # If there is more than one condition, calculate also condition-specific expressions
-  if (!is.na(group_id)) {
-    avg_group <- AverageExpression(seurat_obj, assay = "RNA", slot = "data",
-                             group.by = c(celltype_id, group_id)) %>%
-      .$RNA %>% data.frame()
-
-    pattern <- paste0("(", paste0(unique(seurat_obj[[celltype_id, drop=TRUE]]), collapse="|"), ")_(",
-                      paste0(unique(seurat_obj[[group_id, drop=TRUE]]), collapse="|"), ")")
-
-    avg_list$group <- avg_group %>% rownames_to_column("gene") %>%
-      pivot_longer(!gene, names_to = c("celltype", "group"), values_to = "avg_expr", names_pattern = pattern)
+  if (any(!is.na(group_id), !is.na(condition_oi)) & !all(!is.na(group_id), !is.na(condition_oi))){
+    stop("Please input both group_id and condition_oi")
   }
 
-  ligands = lr_network %>% dplyr::pull(ligand) %>% unique()
-  receptors = lr_network %>% dplyr::pull(receptor) %>% unique()
+  # Check names
+  sapply(c(celltype_id, condition_oi, group_id) %>% .[!is.na(.)], check_names)
+  sapply(celltype_id, check_names, seurat_obj)
 
-  sender_list <- lapply(avg_list, function(u) u %>% filter(gene %in% ligands) %>%
-                         dplyr::rename(sender = celltype, ligand = gene, avg_ligand = avg_expr))
+  # Subset seurat object
+  if (!is.na(condition_oi)) {
+    seurat_obj = seurat_obj[,seurat_obj[[group_id]] == condition_oi]
+  }
 
-  receiver_list <- lapply(avg_list, function(u) u %>% filter(gene %in% receptors) %>%
-                           dplyr::rename(receiver = celltype, receptor = gene, avg_receptor = avg_expr))
+  seurat_obj <- NormalizeData(seurat_obj, verbose = FALSE)
+  avg_celltype <- AverageExpression(seurat_obj, assay = "RNA", slot = "data", group.by = celltype_id) %>%
+                    .$RNA %>% data.frame() %>% rownames_to_column("gene") %>%
+                    pivot_longer(!gene, names_to = "cluster_id", values_to = "avg_expr")
 
-  avg_sender_receiver <- lapply(names(avg_list), function(u) {
-    columns_select <- c("sender", "receiver", "ligand", "receptor", "avg_ligand", "avg_receptor", "ligand_receptor_prod")
-    avg_df_sender_receiver = sender_list[[u]] %>% dplyr::inner_join(lr_network, by = "ligand") %>% dplyr::inner_join(receiver_list[[u]], by = c("receptor"))
+  return (avg_celltype)
 
-    if (u == "group"){
-      avg_df_sender_receiver = avg_df_sender_receiver %>% filter(group.x == group.y) %>% select(-group.y) %>% rename(group = group.x)
-      columns_select <- c("group", columns_select)
-    }
-
-    avg_df_sender_receiver = avg_df_sender_receiver %>% dplyr::mutate(ligand_receptor_prod = avg_ligand * avg_receptor) %>% dplyr::arrange(-ligand_receptor_prod) %>%
-      dplyr::select(all_of(columns_select)) %>% dplyr::distinct()
-
-  }) %>% setNames(names(avg_list))
-
-
-  return (avg_sender_receiver)
 
 
 }
-#' @title process_info_to_ic
+#' @title Process DE or expression information into intercellular communication focused information.
 #'
-#' @description \code{process_info_to_ic}  Process cell type expression information into intercellular communication focused information. Only keep information of ligands for the sender cell type setting, and information of receptors for the receiver cell type.
+#' @description \code{process_info_to_ic} First, only keep information of ligands for senders_oi, and information of receptors for receivers_oi.
+#' Then, combine information for senders and receivers by linking ligands to receptors based on the prior knowledge ligand-receptor network.
 #' @usage process_info_to_ic(info_object, ic_type = "sender", lr_network)
-#'
-#' @param info_object Output of `get_exprs_avg`
-#' @param ic_type "sender" or "receiver": indicates whether we should keep ligands or receptors respectively.
-#'
-#' @return List with expression information of ligands (sender case) or receptors (receiver case).
+#' @param table_object Output of `get_exprs_avg` or `calculate_de`
+#' @param table_type "expression" or "DE": indicates whether the table contains expression or DE information
+#' @param lr_network
+#' @param senders_oi
+#' @param receivers_oi
+#' @return Dataframe combining sender and receiver information linked to each other through joining by the ligand-receptor network.
 #'
 #' @import dplyr
 #'
@@ -181,117 +143,82 @@ get_exprs_avg = function(seurat_obj, celltype_id, lr_network,
 #' library(dplyr)
 #' lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 #' lr_network = lr_network %>% dplyr::rename(ligand = from, receptor = to) %>% dplyr::distinct(ligand, receptor)
-#' sample_id = "tumor"
-#' group_id = "pEMT"
-#' celltype_id = "celltype"
-#' celltype_info = get_avg_frac_exprs_abund(sce = sce, sample_id = sample_id, celltype_id =  celltype_id, group_id = group_id)
-#' receiver_info_ic = process_info_to_ic(info_object = celltype_info, ic_type = "receiver", lr_network = lr_network)
-#' sender_info_ic = process_info_to_ic(info_object = celltype_info, ic_type = "sender", lr_network = lr_network)
+#' seurat_obj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
+#' seurat_obj$celltype <- make.names(seuratObj$celltype)
+#' # Calculate LCMV-specific average expression
+#' expression_info = get_exprs_avg(seurat_obj, "celltype", condition_oi = "LCMV", group_id = "aggregate")
+#' # Calculate LCMV-specific cell-type markers
+#' DE_table = calculate_de(seurat_obj, "celltype", condition_oi = "LCMV", group_id = "aggregate")
+#' processed_expr_info = process_table_to_ic(expression_info, table_type = "expression", lr_network)
+#' processed_DE_table <- process_table_to_ic(DE_table, table_type = "DE", lr_network,
+#' senders_oi = c("CD4.T", "Treg", "Mono", "NK", "B", "DC"), receivers_oi = "CD8.T")
 #' }
 #'
 #' @export
 #'
-process_info_to_ic = function(info_object, ic_type, lr_network){
-
-  requireNamespace("dplyr")
+process_table_to_ic = function(table_object, table_type = "expression",
+                               lr_network, senders_oi = NA, receivers_oi = NA){
 
   ligands = lr_network %>% dplyr::pull(ligand) %>% unique()
   receptors = lr_network %>% dplyr::pull(receptor) %>% unique()
 
-  if(ic_type == "sender"){
-    avg_df = info_object$avg_df %>% dplyr::filter(gene %in% ligands) %>% dplyr::rename(sender = celltype, ligand = gene, avg_ligand = average_sample)
+  sender_table <- table_object %>% dplyr::rename(sender = cluster_id, ligand = gene)
+  receiver_table <- table_object %>% dplyr::rename(receiver = cluster_id, receptor = gene)
 
-    avg_df_group = info_object$avg_df_group %>% dplyr::filter(gene %in% ligands) %>% dplyr::rename(sender = celltype, ligand = gene, avg_ligand_group = average_group)
+  if (table_type == "expression"){
+    if (!any(is.na(senders_oi))) warning("senders_oi is given. The expression data will be scaled with all remaining cell types, so it is recommended that senders_oi = NA")
+    if (!any(is.na(receivers_oi))) warning("receivers_oi is given. The expression data will be scaled with all remaining cell types, so it is recommended that receivers_oi = NA")
 
+    sender_table <- sender_table %>% dplyr::rename(avg_ligand = avg_expr)
+    receiver_table <- receiver_table %>% dplyr::rename(avg_receptor = avg_expr)
+    columns_select <- c("sender", "receiver", "ligand", "receptor", "avg_ligand", "avg_receptor", "ligand_receptor_prod")
+
+  } else if (table_type == "DE"){
+    if (any(is.na(senders_oi))) warning("senders_oi is NA. For DE filtering, it is best if this parameter is given.")
+    if (any(is.na(receivers_oi))) warning("receivers_oi is NA. For DE filtering, it is best if this parameter is given.")
+
+    sender_table = sender_table %>% dplyr::rename(avg_ligand = avg_log2FC, p_val_ligand = p_val,  p_adj_ligand = p_val_adj)
+    receiver_table =  receiver_table %>% dplyr::rename(avg_receptor = avg_log2FC, p_val_receptor = p_val,  p_adj_receptor = p_val_adj)
+    columns_select <- c("sender", "receiver", "ligand", "receptor", "lfc_ligand", "lfc_receptor", "ligand_receptor_lfc_avg", "p_val_ligand", "p_adj_ligand", "p_val_receptor", "p_adj_receptor")
   }
-  if(ic_type == "receiver"){
-    frq_df = info_object$frq_df %>% dplyr::filter(gene %in% receptors) %>% dplyr::rename(receiver = celltype, receptor = gene, fraction_receptor = fraction_sample)
-    pb_df = info_object$pb_df %>% dplyr::filter(gene %in% receptors) %>% dplyr::rename(receiver = celltype, receptor = gene, pb_receptor = pb_sample)
 
-    avg_df_group = info_object$avg_df_group %>% dplyr::filter(gene %in% receptors) %>% dplyr::rename(receiver = celltype, receptor = gene, avg_receptor_group = average_group)
-    frq_df_group = info_object$frq_df_group %>% dplyr::filter(gene %in% receptors) %>% dplyr::rename(receiver = celltype, receptor = gene, fraction_receptor_group = fraction_group)
-    pb_df_group = info_object$pb_df_group %>% dplyr::filter(gene %in% receptors) %>% dplyr::rename(receiver = celltype, receptor = gene, pb_receptor_group = pb_group)
+  # Filter senders and receivers if it is not NA
+  sender_table <- sender_table %>% {if (all(!is.na(senders_oi))) filter(., sender %in% senders_oi) else (.)}
+  receiver_table <- receiver_table %>% {if (all(!is.na(receivers_oi))) filter(., receiver %in% receivers_oi) else (.)}
 
-    rel_abundance_df = info_object$rel_abundance_df %>% dplyr::rename(receiver = celltype, rel_abundance_scaled_receiver = rel_abundance_scaled)
-  }
+  # Join sender-ligand-receptor-receiver
+  sender_receiver_table <- sender_table %>% dplyr::inner_join(lr_network, by = "ligand") %>%
+    dplyr::inner_join(receiver_table, by = c("receptor"))
 
-  return(list(avg_df = avg_df, frq_df = frq_df, pb_df = pb_df,  avg_df_group = avg_df_group, frq_df_group = frq_df_group, pb_df_group = pb_df_group, rel_abundance_df = rel_abundance_df))
-}
+  # Calculate average expression
+  sender_receiver_table <- sender_receiver_table %>%
+    mutate(ligand_receptor_avg = case_when(
+                table_type == "expression" ~ avg_ligand * avg_receptor,
+                table_type == "DE" ~ (avg_ligand + avg_ligand)/2
+          )
+    )  %>% arrange(-ligand_receptor_avg) %>%
+    # Rename columns appropriately
+    {if (table_type == "expression") rename(., "ligand_receptor_prod" = "ligand_receptor_avg")
+      else rename(., "ligand_receptor_lfc_avg" = "ligand_receptor_avg", "lfc_ligand" = "avg_ligand", "lfc_receptor" = "avg_receptor")} %>%
+    select(all_of(columns_select)) %>% dplyr::distinct()
 
-#' @title combine_sender_receiver_de
-#'
-#' @description \code{combine_sender_receiver_de}  Combine FindMarkers differential expression output for senders and receivers by linking ligands to receptors based on the prior knowledge ligand-receptor network.
-#' @usage combine_sender_receiver_de(DE_table_sender, DE_table_receiver, lr_network)
-#'
-#' @param DE_table_sender Differential expression analysis output for the sender cell types from the output of `Seurat::FindMarkers`.
-#' @param DE_table_receiver Differential expression analysis output for the receiver cell types from the output of `Seurat::FindMarkers`.
-#'
-#' @return Data frame combining Seurat:: FindMarkers DE output for sender and receiver linked to each other through joining by the ligand-receptor network.
-#'
-#' @import dplyr
-#'
-#' @examples
-#' \dontrun{
-#' library(dplyr)
-#' lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-#' lr_network = lr_network %>% dplyr::rename(ligand = from, receptor = to)
-#' condition_col = "aggregate"
-#' condition_oi = "LCMV"
-#' condition_reference = "SS"
-#' senders_oi = c("CD4 T","Treg", "Mono", "NK", "B", "DC")
-#' receivers_oi = "CD8 T"
-#' DE_table_receiver = FindMarkers(object = subset(seuratObj, idents = receivers_oi) %>% SetIdent(.[[condition_col]]),
-#'                                 ident.1 = condition_oi, ident.2 = condition_reference, min.pct = 0.10) %>% rownames_to_column("gene") %>%
-#'                                 mutate(cluster_id = receiver)
-#' DE_table_sender = lapply(senders_oi, function(sender) {
-#'                          seurat_obj_sender = subset(seuratObj, idents = sender) %>% SetIdent(value = .[[condition_col]])
-#'                          FindMarkers(object = seurat_obj_sender, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = 0.10) %>% rownames_to_column("gene") %>%
-#'                            mutate(cluster_id = sender)
-#' }) %>% do.call(rbind, .)
-#' sender_receiver_de = combine_sender_receiver_de(
-#'  DE_table_sender = DE_table_sender,
-#'  DE_table_receiver = DE_table_receiver,
-#'  lr_network = lr_network)
-#' }
-#'
-#' @export
-#'
-combine_sender_receiver_de = function(DE_table_sender, DE_table_receiver, senders_oi, receivers_oi, lr_network){
+  return(sender_receiver_table)
 
-  requireNamespace("dplyr")
-
-  de_output_tidy_sender = DE_table_sender %>% dplyr::filter(cluster_id %in% senders_oi)
-  de_output_tidy_receiver = DE_table_receiver %>% dplyr::filter(cluster_id %in% receivers_oi)
-
-  de_output_tidy_sender = de_output_tidy_sender %>% dplyr::rename(ligand = gene, lfc_ligand = avg_log2FC, p_val_ligand = p_val,  p_adj_ligand = p_val_adj, sender = cluster_id)
-  de_output_tidy_receiver =  de_output_tidy_receiver %>% dplyr::rename(receptor = gene, lfc_receptor = avg_log2FC, p_val_receptor = p_val,  p_adj_receptor = p_val_adj, receiver = cluster_id)
-
-  de_tbl_sender_receiver = de_output_tidy_sender %>% dplyr::inner_join(lr_network, by = "ligand") %>%
-    dplyr::inner_join(de_output_tidy_receiver, by = c("receptor"))
-
-  de_tbl_sender_receiver = de_tbl_sender_receiver %>% dplyr::mutate(ligand_receptor_lfc_avg = (lfc_receptor + lfc_ligand)/2) %>% dplyr::arrange(-ligand_receptor_lfc_avg) %>%
-    dplyr::select(sender, receiver, ligand, receptor, lfc_ligand, lfc_receptor, ligand_receptor_lfc_avg, p_val_ligand, p_adj_ligand, p_val_receptor, p_adj_receptor) %>% dplyr::distinct()
-
-  return(de_tbl_sender_receiver)
 }
 
 
 #' @title generate_prioritization_tables
 #'
 #' @description \code{generate_prioritization_tables}  Perform a prioritization of cell-cell interactions (similar to MultiNicheNet).
-#' User can choose the importance attached to each of the following prioritization criteria: differential expression of ligand and receptor, cell-type-(condition-)specificity of expression of ligand and receptor, NicheNet ligand activity
-#' @usage generate_prioritization_tables(sender_receiver_info, sender_receiver_de, ligand_activities_targets_DEgenes, contrast_tbl, sender_receiver_tbl, grouping_tbl, prioritizing_weights = c("de_ligand" = 1,"de_receptor" = 1,"activity_scaled" = 2,"exprs_ligand" = 2,"exprs_receptor" = 2), fraction_cutoff, abundance_data_receiver, abundance_data_sender)
+#' User can choose the importance attached to each of the following prioritization criteria: differential expression of ligand and receptor, cell-type specificity of expression of ligand and receptor, NicheNet ligand activity
+#' @usage generate_prioritization_tables(sender_receiver_info, sender_receiver_de, ligand_activities, prioritizing_weights = c("de_ligand" = 1,"de_receptor" = 1,"activity_scaled" = 2,"exprs_ligand" = 2,"exprs_receptor" = 2))
 #'
-#' @inheritParams combine_sender_receiver_info_ic
-#' @param sender_receiver_info Output of `combine_sender_receiver_info_ic`
-#' @param sender_receiver_de Output of `combine_sender_receiver_de`
-#' @param ligand_activities_targets_DEgenes Output of `get_ligand_activities_targets_DEgenes`
-#' @param sender_receiver_tbl Data frame with all sender-receiver cell type combinations (columns: sender and receiver)
-#' @param grouping_tbl Data frame showing the groups of each sample (and batches per sample if applicable) (columns: sample and group; and if applicable all batches of interest)
-#' @param abundance_data_receiver Data frame with number of cells per cell type - sample combination;  output of `process_info_to_ic`
-#' @param abundance_data_sender Data frame with number of cells per cell type - sample combination; output of `process_info_to_ic`
+#' @param sender_receiver_info Output of `get_exprs_avg` -> `process_table_to_ic`
+#' @param sender_receiver_de Output of`calculate_de` -> `process_table_to_ic`
+#' @param ligand_activities Output of `predict_ligand_activities`
+#' @param prioritizing_weights Named vector indicating the relative weights of each prioritization criterion
 #'
-#' @return List containing multiple data frames prioritized senderLigand-receiverReceptor interactions (with sample- and group-based expression information), ligand activities and ligand-target links.
+#' @return Data frames of prioritized sender-ligand-receiver-receptor interactions.
 #'
 #' @import dplyr
 #'
@@ -301,67 +228,47 @@ combine_sender_receiver_de = function(DE_table_sender, DE_table_receiver, sender
 #' lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
 #' lr_network = lr_network %>% dplyr::rename(ligand = from, receptor = to) %>% dplyr::distinct(ligand, receptor)
 #' ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
-#' sample_id = "tumor"
-#' group_id = "pEMT"
-#' celltype_id = "celltype"
-#' batches = NA
-#' contrasts_oi = c("'High-Low','Low-High'")
-#' contrast_tbl = tibble(contrast = c("High-Low","Low-High"), group = c("High","Low"))
+#' seurat_obj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
+#' seurat_obj$celltype <- make.names(seuratObj$celltype)
+#' sender_celltypes = c("CD4.T","Treg", "Mono", "NK", "B", "DC")
+#' receiver = "CD8.T"
 #'
-#' metadata_abundance = SummarizedExperiment::colData(sce)[,c(sample_id, group_id, celltype_id)]
-#' colnames(metadata_abundance) =c("sample_id", "group_id", "celltype_id")
-#' abundance_data = metadata_abundance %>% tibble::as_tibble() %>% dplyr::group_by(sample_id , celltype_id) %>% dplyr::count() %>% dplyr::inner_join(metadata_abundance %>% tibble::as_tibble() %>% dplyr::distinct(sample_id , group_id ))
-#' abundance_data = abundance_data %>% dplyr::mutate(keep = n >= min_cells) %>% dplyr::mutate(keep = factor(keep, levels = c(TRUE,FALSE)))
-#' abundance_data_receiver = process_info_to_ic(abund_data = abundance_data, ic_type = "receiver")
-#' abundance_data_sender = process_info_to_ic(abund_data = abundance_data, ic_type = "sender")
+#' # Convert lr_network from mouse to human
+#' lr_network = lr_network %>% mutate(from = convert_human_to_mouse_symbols(from), to = convert_human_to_mouse_symbols(to)) %>% drop_na()
+#' colnames(ligand_target_matrix) = ligand_target_matrix %>% colnames() %>% convert_human_to_mouse_symbols()
+#' rownames(ligand_target_matrix) = ligand_target_matrix %>% rownames() %>% convert_human_to_mouse_symbols()
+#' ligand_target_matrix = ligand_target_matrix %>% .[!is.na(rownames(ligand_target_matrix)), !is.na(colnames(ligand_target_matrix))]
 #'
-#' celltype_info = get_avg_frac_exprs_abund(sce = sce, sample_id = sample_id, celltype_id =  celltype_id, group_id = group_id)
+#' # Ligand activity analysis
+#' seurat_obj_receiver = subset(seurat_obj, idents = receiver) %>% SetIdent(value = .[["aggregate"]])
+#' geneset_oi = FindMarkers(object = seurat_obj_receiver, ident.1 = "LCMV, ident.2 = "SS, min.pct = 0.10) %>% rownames_to_column("gene") %>%
+#'      filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= 0.25) %>% pull(gene) %>% .[. %in% rownames(ligand_target_matrix)]
+#' expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, 0.10) %>% unlist() %>% unique()
+#' expressed_genes_receiver = get_expressed_genes(receiver, seurat_obj, pct = 0.10)
+#' expressed_ligands = intersect(lr_network %>% pull(ligand) %>% unique(), expressed_genes_sender)
+#' expressed_receptors = intersect(lr_network %>% pull(receiver) %>% unique(), expressed_genes_receiver)
+#' potential_ligands = lr_network %>% filter(ligand %in% expressed_ligands & receptor %in% expressed_receptors) %>% pull(from) %>% unique()
+#' ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = expressed_genes_receiver %>% .[. %in% rownames(ligand_target_matrix)],
+#'                                             ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
 #'
-#' receiver_info_ic = process_info_to_ic(info_object = celltype_info, ic_type = "receiver", lr_network = lr_network)
-#' sender_info_ic = process_info_to_ic(info_object = celltype_info, ic_type = "sender", lr_network = lr_network)
-#' senders_oi = SummarizedExperiment::colData(sce)[,celltype_id] %>% unique()
-#' receivers_oi = SummarizedExperiment::colData(sce)[,celltype_id] %>% unique()
-#' sender_receiver_info = combine_sender_receiver_info_ic(sender_info = sender_info_ic,receiver_info = receiver_info_ic,senders_oi = senders_oi,receivers_oi = receivers_oi,lr_network = lr_network)
+#' # Calculate LCMV-specific average expression
+#' expression_info = get_exprs_avg(seurat_obj, "celltype", condition_oi = "LCMV", group_id = "aggregate")
 #'
-#' celltype_de = perform_muscat_de_analysis(
-#'    sce = sce,
-#'    sample_id = sample_id,
-#'    celltype_id = celltype_id,
-#'    group_id = group_id,
-#'    batches = batches,
-#'    contrasts = contrasts_oi)
+#' # Calculate LCMV-specific cell-type markers
+#' DE_table = calculate_de(seurat_obj, "celltype", condition_oi = "LCMV", group_id = "aggregate")
 #'
-#' sender_receiver_de = combine_sender_receiver_de(
-#'  sender_de = celltype_de,
-#'  receiver_de = celltype_de,
-#'  senders_oi = senders_oi,
-#'  receivers_oi = receivers_oi,
-#'  lr_network = lr_network)
-#'
-#' ligand_activities_targets_DEgenes = get_ligand_activities_targets_DEgenes(
-#'    receiver_de = celltype_de,
-#'    receivers_oi = receivers_oi,
-#'    receiver_frq_df_group = celltype_info$frq_df_group,
-#'    ligand_target_matrix = ligand_target_matrix)
-#'
-#'
-#' sender_receiver_tbl = sender_receiver_de %>% dplyr::distinct(sender, receiver)
-#' metadata_combined = SummarizedExperiment::colData(sce) %>% tibble::as_tibble()
-#' grouping_tbl = metadata_combined[,c(sample_id, group_id)] %>% tibble::as_tibble() %>% dplyr::distinct()
-#' colnames(grouping_tbl) = c("sample","group")
-#'
-#' prioritizing_weights = c("de_ligand" = 1,"de_receptor" = 1,"activity_scaled" = 1,"exprs_ligand" = 1,"exprs_receptor" = 1, "frac_exprs_ligand_receptor" = 1,"abund_sender" = 0,"abund_receiver" = 0)
-#' frac_cutoff = 0.05
-#' prioritization_tables = generate_prioritization_tables(
-#'     sender_receiver_info = sender_receiver_info,
-#'     sender_receiver_de = sender_receiver_de,
-#'     ligand_activities_targets_DEgenes = ligand_activities_targets_DEgenes,
-#'     contrast_tbl = contrast_tbl,
-#'     sender_receiver_tbl = sender_receiver_tbl,
-#'     grouping_tbl = grouping_tbl,
-#'     prioritizing_weights = prioritizing_weights,
-#'     fraction_cutoff = frac_cutoff, abundance_data_receiver, abundance_data_sender)
+#' # Process tables
+#' processed_expr_info = process_table_to_ic(expression_info, table_type = "expression", lr_network)
+#' processed_DE_table <- process_table_to_ic(DE_table, table_type = "DE", lr_network,
+#'                                           senders_oi = sender_celltypes, receivers_oi = receiver)
 #' }
+#'
+#' # Generate prioritization tables
+#' prioritizing_weights = c("de_ligand" = 1, "de_receptor" = 1, "activity_scaled" = 2, "exprs_ligand" = 1, "exprs_receptor" = 1)
+#' generate_prioritization_tables(processed_expr_info,
+#'                                processed_DE_table,
+#'                                ligand_activities,
+#'                                prioritizing_weights)
 #'
 #' @export
 #'
@@ -398,21 +305,20 @@ generate_prioritization_tables = function(sender_receiver_info, sender_receiver_
                                       dplyr::mutate(activity_zscore = nichenetr::scaling_zscore(activity),
                                                     scaled_activity = scale_quantile_adapted(activity, outlier_cutoff = 0.01)) %>% dplyr::arrange(-activity_zscore)
 
-  # Check if the group exists
-  sender_receiver_info_subset <- sender_receiver_info[[last(names(sender_receiver_info))]]
-  # Cell-type and condition specificity of expression of ligand:  per ligand: score each sender-condition combination based on expression and fraction
-  ligand_celltype_specificity_prioritization = sender_receiver_info_subset %>% dplyr::inner_join(sender_receiver_tbl) %>% dplyr::select(group, sender, ligand, avg_ligand) %>% dplyr::distinct() %>% dplyr::group_by(ligand) %>%
+
+  # Cell-type specificity of expression of ligand:  per ligand: score each sender combination based on expression
+  ligand_celltype_specificity_prioritization = sender_receiver_info %>% dplyr::select(sender, ligand, avg_ligand) %>% dplyr::distinct() %>% dplyr::group_by(ligand) %>%
                                                dplyr::mutate(scaled_avg_exprs_ligand = scale_quantile_adapted(avg_ligand)) %>% dplyr::arrange(-scaled_avg_exprs_ligand)
 
-  # Cell-type and condition specificity of expression of receptor:  per receptor: score each receiver-condition combination based on expression and fraction
-  receptor_celltype_specificity_prioritization = sender_receiver_info_subset %>% dplyr::inner_join(sender_receiver_tbl) %>% dplyr::select(group, receiver, receptor, avg_receptor) %>% dplyr::distinct() %>% dplyr::group_by(receptor) %>%
+  # Cell-type specificity of expression of receptor:  per receptor: score each receiver combination based on expression
+  receptor_celltype_specificity_prioritization = sender_receiver_info %>% dplyr::select(receiver, receptor, avg_receptor) %>% dplyr::distinct() %>% dplyr::group_by(receptor) %>%
     dplyr::mutate(scaled_avg_exprs_receptor = scale_quantile_adapted(avg_receptor)) %>% dplyr::arrange(-scaled_avg_exprs_receptor)
 
   # final group-based prioritization
   group_prioritization_tbl = sender_receiver_de %>%
     #dplyr::inner_join(ligand_activities %>% rename(ligand=test_ligand, activity=pearson) %>% select(ligand, activity) %>% dplyr::distinct()) %>%
     #dplyr::mutate(lr_interaction = paste(ligand, receptor, sep = "_")) %>% dplyr::mutate(id = paste(lr_interaction, sender, receiver, sep = "_")) %>%
-    dplyr::inner_join(sender_receiver_info_subset) %>%
+    dplyr::inner_join(sender_receiver_info) %>%
     dplyr::inner_join(sender_ligand_prioritization) %>%
     dplyr::inner_join(ligand_activity_prioritization) %>%
     dplyr::inner_join(receiver_receptor_prioritization) %>%
