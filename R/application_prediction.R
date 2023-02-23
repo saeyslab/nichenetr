@@ -351,7 +351,7 @@ get_top_predicted_genes = function(round,gene_prediction_list, quantile_cutoff =
 #' @export
 #'
 calculate_fraction_top_predicted = function(affected_gene_predictions, quantile_cutoff = 0.95){
-  predicted_positive = affected_gene_predictions %>% arrange(-prediction) %>% filter(prediction >= quantile(prediction,0.95)) %>% group_by(response) %>% count() %>% rename(positive_prediction = n) %>% rename(true_target = response)
+  predicted_positive = affected_gene_predictions %>% arrange(-prediction) %>% filter(prediction >= quantile(prediction,quantile_cutoff)) %>% group_by(response) %>% count() %>% rename(positive_prediction = n) %>% rename(true_target = response)
   all = affected_gene_predictions %>% arrange(-prediction) %>% rename(true_target = response) %>% group_by(true_target) %>% count()
   inner_join(all,predicted_positive, by = "true_target") %>% mutate(fraction_positive_predicted = positive_prediction/n)
 }
