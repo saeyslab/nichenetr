@@ -41,7 +41,7 @@ harder because you don’t have a clear set of genes affected by the
 intercellular communication process only. You could still do it, by
 using the total set of genes in the genome as the background, and all
 genes expressed in your cell type as gene set of interest (so you need
-to change the geneset\_oi to all expressed genes, and the background to
+to change the geneset_oi to all expressed genes, and the background to
 all genes in the ligand-target matrix). But I don’t really recommend
 that because not all expressed genes will be influenced by cell-cell
 interactions, on the contrary most genes will probably be expressed
@@ -49,8 +49,8 @@ because they are part of general and cell-type specific gene expression
 programs. And if you can’t discriminate between cell-intrinsic and
 cell-extrinsic effects in your data, and you will still use NicheNet,
 then you risk that ligands will be falsely linked to some
-‘cell-intrinsic’ genes. And this will confound the analysis and lead
-to irrelevant and noisy predictions.
+‘cell-intrinsic’ genes. And this will confound the analysis and lead to
+irrelevant and noisy predictions.
 
 So the take-away message is: NicheNet predicts upstream ligand-receptor
 pairs that might regulate genes in your gene set of interest. The more
@@ -125,8 +125,7 @@ Therefore we also recommend to check expression of the ligands and their
 receptors after the NicheNet prioritization. To give an example: If a
 ligand ranked 7th out of 200 would be much stronger expressed than a
 ligand that would be 1st or 2nd ranked according to the ligand activity,
-this more strongly expressed candidate ligand might be more
-interesting\!
+this more strongly expressed candidate ligand might be more interesting!
 
 So when comparing NicheNet to CellphoneDB output following differences
 can be expected to be present. Ligad-receptor pairs picked up by
@@ -162,8 +161,7 @@ important, we recommend to check expression of the ligands and their
 receptors after the NicheNet prioritization. To give an example: If a
 ligand ranked 7th out of 200 would be much stronger expressed than a
 ligand that would be 1st or 2nd ranked according to the ligand activity,
-this more strongly expressed candidate ligand might be more
-interesting\!
+this more strongly expressed candidate ligand might be more interesting!
 
 ## I observe that some top ligands according to NicheNet to be inducing in my condition of interest compared to control are higher expressed in control than condition of interest. How is this possible?
 
@@ -173,7 +171,7 @@ is expressed. This means that the algorithm does not consider whether a
 ligand is more strongly expressed in the case vs control, as long as it
 is expressed at a sufficient level. Of course, this might be interesting
 information to use for further prioritization after the NicheNet ligand
-activity analysis\! Therefore we recommend checking the expression of
+activity analysis! Therefore we recommend checking the expression of
 your ligands after NicheNet prioritization. The most interesting hits
 might be the ones where ligand and/or receptor is upregulated in the
 condition of interest compared to the control. The opposite pattern
@@ -198,16 +196,15 @@ RNA level.
 ## Can I use NicheNet if I want to find which potential ligands were important in cells of interest, even though I don’t have expression data of the possible interacting/sender cells?
 
 It is perfectly possible to apply NicheNet in case you don’t have a
-‘sender cell type’. In that case, your analysis is more of an
-‘upstream regulator analysis’ than an ‘intercellular communication
-analysis’. You can do this by looking at all ligands in the NicheNet
-database (or all ligands for which a potential receptor is expressed)
-instead of only looking ligands that are expressed by a specific sender
-cell type. Only a small change in the code is required for this by using
-`ligands` instead of `expressed_ligands` in the basic and Seurat steps
-vignette for defining `potential_ligands`. If using the Seurat wrapper
-function you can set the parameter function of sender to `sender =
-“undefined”`.
+‘sender cell type’. In that case, your analysis is more of an ‘upstream
+regulator analysis’ than an ‘intercellular communication analysis’. You
+can do this by looking at all ligands in the NicheNet database (or all
+ligands for which a potential receptor is expressed) instead of only
+looking ligands that are expressed by a specific sender cell type. Only
+a small change in the code is required for this by using `ligands`
+instead of `expressed_ligands` in the basic and Seurat steps vignette
+for defining `potential_ligands`. If using the Seurat wrapper function
+you can set the parameter function of sender to `sender = “undefined”`.
 
 You just need to be sure that you can use the expression data of the
 responder/receiver cell type to define a set of genes that are likely
@@ -236,12 +233,11 @@ both human and mouse origin, and there is no indication on these
 datasets that human would work better than mouse.
 
 However, there is a disadvantage: for some mouse-specific genes, we
-don’t have information in the NicheNet ligand-target model. This
-implies that NicheNet might miss some patterns if well-known mouse-only
-target genes would be DE in the dataset you are working on. A solution
-to this would be to construct a mouse model with additional mouse data
-sources yourself. This is some work, but is not so difficult. In the
-vignette
+don’t have information in the NicheNet ligand-target model. This implies
+that NicheNet might miss some patterns if well-known mouse-only target
+genes would be DE in the dataset you are working on. A solution to this
+would be to construct a mouse model with additional mouse data sources
+yourself. This is some work, but is not so difficult. In the vignette
 <https://github.com/saeyslab/nichenetr/blob/master/vignettes/model_construction.md>,
 we show how to build a model yourself.
 
@@ -276,7 +272,7 @@ without data source weight optimization also seemed to work well.
 Because the optimization is a difficult and time-consuming procedure, we
 don’t see a problem in not optimizing your data source weights, but only
 if you are confident that your data sources are of high quality and not
-too noisy\!
+too noisy!
 
 ## Can NicheNet say which cell populations interact with each other and which don’t?
 
@@ -336,7 +332,7 @@ and ligand-target heatmaps are (at least) equally informative.
 
 ## Can I use my own ligand-receptor network instead of the one included in the NicheNet model?
 
-Yes, you definitely can\! In this vignette
+Yes, you definitely can! In this vignette
 <https://github.com/saeyslab/nichenetr/blob/master/vignettes/model_construction.md>,
 you can see how to incorporate your new data source with new
 ligand-receptor pairs and build a customized NicheNet prior model. I
@@ -411,7 +407,7 @@ if the interaction is predicted via just one protein-protein interaction
 database.
 
 This score is thus solely based on prior knowledge and not based on the
-expression in your dataset\! The only way expression is used, is to
+expression in your dataset! The only way expression is used, is to
 define whether a ligand/receptor is expressed yes or no. So
 ligands/receptor that are not expressed at all won’t appear in this
 heatmap, but it is indeed possible that some lowly expressed
@@ -423,7 +419,7 @@ and receptor (product of expression / average of expression).
 
 ## In the Seurat vignette, you show some code to define bona fide ligand-receptor interactions. But I see that some ligand-receptor pairs that are not considered bona fide have higher prior interaction scores than some bona fide pairs. How is this possible if the prior interaction score is based on the confidence of the prior information? Should bona fide pairs not have the highest scores?
 
-We can indeed see why this confusing\! We categorize bona-fide ligands
+We can indeed see why this confusing! We categorize bona-fide ligands
 based on whether they were coming from a validated curated
 ligand-receptor database (like KEGG, guide2Pharmacology, …) or not. This
 because we have also ligand-receptor interactions not present in these
@@ -457,11 +453,11 @@ upregulated in the case vs control condition. Next to this, you could
 check whether the ligand-receptor interaction is ‘bona fide’ or not (cf
 previous question) and whether the ligand-receptor prior interaction
 potential weight is high or not. But I suggest giving the highest weight
-to the ligand activity and expression/upregulation information\!
+to the ligand activity and expression/upregulation information!
 
 ## How should I interpret the pearson correlation values of the ligand activity? What does it mean when I have negative values?
 
-In the ligand\_pearson\_matrix, you find the pearson correlation values
+In the ligand_pearson_matrix, you find the pearson correlation values
 between NicheNet prior ligand-target predictions and the gene set of
 interest. A high score means that top predicted target genes of a ligand
 are enriched in the gene set of interest compared to the background. We
@@ -586,6 +582,6 @@ First, you can check the open and closed issues
 (<https://github.com/saeyslab/nichenetr/issues>) of this package on
 github to see whether your question might be addressed in one of these.
 If not, don’t hesitate to open a new issue. If you would prefer to keep
-the discussion private, you can also send me an email
-(<robin.browaeys@ugent.be>), but I prefer that you open an issue so
-other users can learn from it as well\!
+the discussion private, you can send an email to the corresponding
+author of the NicheNet paper (yvan.saeys\[at\]ugent.be), but I prefer
+that you open an issue so other users can learn from it as well!
