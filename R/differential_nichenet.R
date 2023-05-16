@@ -3,9 +3,10 @@
 #' @description \code{scale_quantile_adapted} Normalize values in a vector by quantile scaling. Add a pseudovalue of 0.001 to avoid having a score of 0 for the lowest value.
 #'
 #' @usage
-#' scale_quantile_adapted(x)
+#' scale_quantile_adapted(x, outlier_cutoff = 0)
 #'
 #' @param x A numeric vector.
+#' @param outlier_cutoff The quantile cutoff for outliers (default 0).
 #'
 #' @return A quantile-scaled numeric vector.
 #'
@@ -16,8 +17,8 @@
 #'
 #' @export
 #'
-scale_quantile_adapted = function(x){
-  y = scale_quantile(x,outlier_cutoff = 0)
+scale_quantile_adapted = function(x, outlier_cutoff = 0){
+  y = scale_quantile(x, outlier_cutoff = outlier_cutoff)
   y = y + 0.001
   return(y)
 }
