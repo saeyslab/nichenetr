@@ -113,14 +113,6 @@ jobs:
       - name: Install Linux system dependencies
         if: runner.os == 'Linux'
         run: |
-          # apt-get update -y
-          #apt-get upgrade -y
-          #apt autoremove -y
-          #apt-get install libmariadb-dev-compat -y
-          #apt-get install libmariadb-dev -y
-          #apt-get install libmysqlclient-dev -y
-          #apt-get install default-libmysqlclient-dev -y
-          #apt-get install libgdal-dev -y
           sysreqs=$(Rscript -e 'cat("apt-get update -y && apt-get install -y", paste(gsub("apt-get install -y ", "", remotes::system_requirements("ubuntu", "20.04")), collapse = " "))')
           echo $sysreqs
           sudo -s eval "$sysreqs"
