@@ -1,6 +1,6 @@
 context("Differential NicheNet")
 test_that("Differential NicheNet pipeline works", {
-
+  options(timeout = 3600)
   ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
   colnames(ligand_target_matrix) = ligand_target_matrix %>% colnames() %>% convert_human_to_mouse_symbols()
   rownames(ligand_target_matrix) = ligand_target_matrix %>% rownames() %>% convert_human_to_mouse_symbols()
