@@ -2,7 +2,12 @@
 title: "Seurat Wrapper + Circos visualization"
 author: "Robin Browaeys"
 date: "18-1-2021"
-output: html_document
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Seurat Wrapper + Circos visualization}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: library.bib
 ---
 
 
