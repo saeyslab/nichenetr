@@ -4,7 +4,7 @@
 \alias{nichenet_seuratobj_cluster_de}
 \title{Perform NicheNet analysis on Seurat object: explain DE between two cell clusters}
 \usage{
-nichenet_seuratobj_cluster_de(seurat_obj, receiver_affected, receiver_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE, assay_oi = NULL)
+nichenet_seuratobj_cluster_de(seurat_obj, receiver_affected, receiver_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,verbose = TRUE, assay_oi = NULL)
 }
 \arguments{
 \item{seurat_obj}{Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.}
@@ -35,8 +35,6 @@ nichenet_seuratobj_cluster_de(seurat_obj, receiver_affected, receiver_reference,
 
 \item{cutoff_visualization}{Because almost no ligand-target scores have a regulatory potential score of 0, we clarify the heatmap visualization by giving the links with the lowest scores a score of 0. The cutoff_visualization paramter indicates this fraction of links that are given a score of zero. Default = 0.33.}
 
-\item{organism}{Organism from which cells originate."human" (default) or "mouse".}
-
 \item{verbose}{Print out the current analysis stage. Default: TRUE.}
 
 \item{assay_oi}{If wanted: specify yourself which assay to look for. Default this value is NULL and as a consequence the 'most advanced' assay will be used to define expressed genes.}
@@ -55,9 +53,6 @@ $ligand_expression_dotplot: expression dotplot of the top ligands;
 $ligand_receptor_matrix: matrix of ligand-receptor interactions;
 $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions;
 $ligand_receptor_df: data frame of ligand-receptor interactions;
-$ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI;
-$ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI;
-$ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI;
 $geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis;
 $background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 }
@@ -67,9 +62,9 @@ $background_expressed_genes: the background of genes to which the geneset will b
 \examples{
 \dontrun{
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
+weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
 # works, but does not make sense
 nichenet_seuratobj_cluster_de(seurat_obj = seuratObj, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = "Mono", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
 # type of analysis for which this would make sense

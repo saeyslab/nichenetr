@@ -679,7 +679,7 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #'
 #' @description \code{nichenet_seuratobj_aggregate} Perform NicheNet analysis on Seurat object: explain differential expression (DE) in a receiver celltype between two different conditions by ligands expressed by sender cells
 #' @usage
-#' nichenet_seuratobj_aggregate(receiver, seurat_obj, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE, assay_oi = NULL)
+#' nichenet_seuratobj_aggregate(receiver, seurat_obj, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,verbose = TRUE, assay_oi = NULL)
 #'
 #' @param receiver Name of cluster identity/identities of cells that are presumably affected by intercellular communication with other cells
 #' @param seurat_obj Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.
@@ -694,10 +694,9 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #' @param top_n_ligands Indicate how many ligands should be extracted as top-ligands after ligand activity analysis. Only for these ligands, target genes and receptors will be returned. Default: 20.
 #' @param top_n_targets To predict active, affected targets of the prioritized ligands, consider only DE genes if they also belong to the a priori top n ("top_n_targets") targets of a ligand. Default = 200.
 #' @param cutoff_visualization Because almost no ligand-target scores have a regulatory potential score of 0, we clarify the heatmap visualization by giving the links with the lowest scores a score of 0. The cutoff_visualization paramter indicates this fraction of links that are given a score of zero. Default = 0.33.
-#' @param organism Organism from which cells originate."human" (default) or "mouse".
-#' @param ligand_target_matrix The NicheNet ligand-target matrix denoting regulatory potential scores between ligands and targets (ligands in columns).
-#' @param lr_network The ligand-receptor network (columns that should be present: $from, $to).
-#' @param weighted_networks The NicheNet weighted networks denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.
+#' @param ligand_target_matrix The NicheNet ligand-target matrix of the organism of interest denoting regulatory potential scores between ligands and targets (ligands in columns).
+#' @param lr_network The ligand-receptor network (columns that should be present: $from, $to) of the organism of interest.
+#' @param weighted_networks The NicheNet weighted networks of the organism of interest denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.
 #' @param verbose Print out the current analysis stage. Default: TRUE.
 #' @inheritParams get_expressed_genes
 #'
@@ -715,9 +714,6 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #' $ligand_receptor_matrix: matrix of ligand-receptor interactions;
 #' $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions;
 #' $ligand_receptor_df: data frame of ligand-receptor interactions;
-#' $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI;
-#' $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI;
-#' $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI;
 #' $geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis;
 #' $background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 #'
@@ -728,10 +724,10 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #' @examples
 #' \dontrun{
 #' seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
-#' ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
-#' lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-#' weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
-#' nichenet_seuratobj_aggregate(receiver = "CD8 T", seurat_obj = seuratObj, condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = "Mono", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
+#' lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+#' ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
+#' weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
+#' nichenet_seuratobj_aggregate(receiver = "CD8 T", seurat_obj = seuratObj, condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = "Mono", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
 #' }
 #'
 #' @export
@@ -739,7 +735,7 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,
                                         expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE ,top_n_ligands = 20,
                                         top_n_targets = 200, cutoff_visualization = 0.33,
-                                        organism = "human",verbose = TRUE, assay_oi = NULL)
+                                        verbose = TRUE, assay_oi = NULL)
 {
   requireNamespace("Seurat")
   requireNamespace("dplyr")
@@ -798,8 +794,6 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
       stop("The sender argument should be 'all' or 'undefined' or an identity class of your seurat object")
     }
   }
-  if(organism != "mouse" & organism != "human")
-    stop("Organism should be 'mouse' or 'human'")
   if(geneset != "DE" & geneset != "up" & geneset != "down")
     stop("geneset should be 'DE', 'up' or 'down'")
   if("integrated" %in% names(seurat_obj@assays)){
@@ -809,21 +803,8 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   if (verbose == TRUE){print("Read in and process NicheNet's networks")}
   weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
 
-  if (organism == "mouse"){
-    lr_network = lr_network %>% mutate(from = convert_human_to_mouse_symbols(from), to = convert_human_to_mouse_symbols(to)) %>% drop_na()
-    colnames(ligand_target_matrix) = ligand_target_matrix %>% colnames() %>% convert_human_to_mouse_symbols()
-    rownames(ligand_target_matrix) = ligand_target_matrix %>% rownames() %>% convert_human_to_mouse_symbols()
-    ligand_target_matrix = ligand_target_matrix %>% .[!is.na(rownames(ligand_target_matrix)), !is.na(colnames(ligand_target_matrix))]
-    weighted_networks_lr = weighted_networks_lr %>% mutate(from = convert_human_to_mouse_symbols(from), to = convert_human_to_mouse_symbols(to)) %>% drop_na()
-  }
-
-  lr_network_strict = lr_network %>% filter(database != "ppi_prediction_go" & database != "ppi_prediction")
-
   ligands = lr_network %>% pull(from) %>% unique()
   receptors = lr_network %>% pull(to) %>% unique()
-  ligands_bona_fide = lr_network_strict %>% pull(from) %>% unique()
-  receptors_bona_fide = lr_network_strict %>% pull(to) %>% unique()
-
   if (verbose == TRUE){print("Define expressed ligands and receptors in receiver and sender cells")}
 
   # step1 nichenet analysis: get expressed genes in sender and receiver cells
@@ -914,14 +895,13 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   # step4 perform NicheNet's ligand activity analysis
   ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
   ligand_activities = ligand_activities %>%
-    arrange(-pearson) %>%
-    mutate(rank = rank(desc(pearson)),
-           bona_fide_ligand = test_ligand %in% ligands_bona_fide)
+    arrange(-aupr) %>%
+    mutate(rank = rank(desc(aupr)))
 
   if(filter_top_ligands == TRUE){
-    best_upstream_ligands = ligand_activities %>% top_n(top_n_ligands, pearson) %>% arrange(-pearson) %>% pull(test_ligand) %>% unique()
+    best_upstream_ligands = ligand_activities %>% top_n(top_n_ligands, aupr) %>% arrange(-aupr) %>% pull(test_ligand) %>% unique()
   } else {
-    best_upstream_ligands = ligand_activities %>% arrange(-pearson) %>% pull(test_ligand) %>% unique()
+    best_upstream_ligands = ligand_activities %>% arrange(-aupr) %>% pull(test_ligand) %>% unique()
   }
 
   if (verbose == TRUE){print("Infer active target genes of the prioritized ligands")}
@@ -946,23 +926,23 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     print("no highly likely active targets found for top ligands")
   }
   # combined heatmap: overlay ligand activities
-  ligand_pearson_matrix = ligand_activities %>% select(pearson) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
+  ligand_aupr_matrix = ligand_activities %>% select(aupr) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
-  rownames(ligand_pearson_matrix) = rownames(ligand_pearson_matrix) %>% make.names()
-  colnames(ligand_pearson_matrix) = colnames(ligand_pearson_matrix) %>% make.names()
+  rownames(ligand_aupr_matrix) = rownames(ligand_aupr_matrix) %>% make.names()
+  colnames(ligand_aupr_matrix) = colnames(ligand_aupr_matrix) %>% make.names()
 
-  vis_ligand_pearson = ligand_pearson_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("Pearson")
-  p_ligand_pearson = vis_ligand_pearson %>% make_heatmap_ggplot("Prioritized ligands","Ligand activity", color = "darkorange",legend_position = "top", x_axis_position = "top", legend_title = "Pearson correlation coefficient\ntarget gene prediction ability)") + theme(legend.text = element_text(size = 9))
-  p_ligand_pearson
+  vis_ligand_aupr = ligand_aupr_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("AUPR")
+  p_ligand_aupr = vis_ligand_aupr %>% make_heatmap_ggplot("Prioritized ligands","Ligand activity", color = "darkorange",legend_position = "top", x_axis_position = "top", legend_title = "AUPR\n(target gene prediction ability)") + theme(legend.text = element_text(size = 9))
+  p_ligand_aupr
 
   figures_without_legend = cowplot::plot_grid(
-    p_ligand_pearson + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
+    p_ligand_aupr + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
     p_ligand_target_network + theme(legend.position = "none", axis.ticks = element_blank()) + ylab(""),
     align = "hv",
     nrow = 1,
-    rel_widths = c(ncol(vis_ligand_pearson)+10, ncol(vis_ligand_target)))
+    rel_widths = c(ncol(vis_ligand_aupr)+10, ncol(vis_ligand_target)))
   legends = cowplot::plot_grid(
-    ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_pearson)),
+    ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_aupr)),
     ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_target_network)),
     nrow = 1,
     align = "h")
@@ -1007,48 +987,6 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   colnames(vis_ligand_receptor_network) = order_ligands_receptor %>% make.names()
 
   p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential")
-
-  # bona fide ligand-receptor
-  lr_network_top_df_large_strict = lr_network_top_df_large %>% distinct(from,to) %>% inner_join(lr_network_strict, by = c("from","to")) %>% distinct(from,to)
-  lr_network_top_df_large_strict = lr_network_top_df_large_strict %>% inner_join(lr_network_top_df_large, by = c("from","to"))
-
-  lr_network_top_df_strict = lr_network_top_df_large_strict %>% spread("from","weight",fill = 0)
-  lr_network_top_matrix_strict = lr_network_top_df_strict %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df_strict$to)
-
-  if (nrow(lr_network_top_df_large_strict) == 0){
-    print("Remark: no bona fide receptors of top ligands")
-    vis_ligand_receptor_network_strict = NULL
-    p_ligand_receptor_network_strict = NULL
-    lr_network_top_df_large_strict =  NULL
-
-  } else {
-    if (nrow(lr_network_top_matrix_strict) > 1){
-      dist_receptors = dist(lr_network_top_matrix_strict, method = "binary")
-      hclust_receptors = hclust(dist_receptors, method = "ward.D2")
-      order_receptors = hclust_receptors$labels[hclust_receptors$order]
-    } else {
-      order_receptors = rownames(lr_network_top_matrix)
-    }
-    if (ncol(lr_network_top_matrix_strict) > 1) {
-      dist_ligands = dist(lr_network_top_matrix_strict %>% t(), method = "binary")
-      hclust_ligands = hclust(dist_ligands, method = "ward.D2")
-      order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
-    } else {
-      order_ligands_receptor = colnames(lr_network_top_matrix_strict)
-    }
-    order_receptors = order_receptors %>% intersect(rownames(lr_network_top_matrix_strict))
-    order_ligands_receptor = order_ligands_receptor %>% intersect(colnames(lr_network_top_matrix_strict))
-
-    vis_ligand_receptor_network_strict = lr_network_top_matrix_strict[order_receptors, order_ligands_receptor]
-    dim(vis_ligand_receptor_network_strict) = c(length(order_receptors), length(order_ligands_receptor))
-
-    rownames(vis_ligand_receptor_network_strict) = order_receptors %>% make.names()
-    colnames(vis_ligand_receptor_network_strict) = order_ligands_receptor %>% make.names()
-
-    p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential\n(bona fide)")
-
-    lr_network_top_df_large_strict = lr_network_top_df_large_strict %>% rename(ligand = from, receptor = to)
-  }
 
   # DE analysis for each sender cell type -- of course only possible when having sender cell types
   if (length(sender) > 1){
@@ -1096,16 +1034,16 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
 
     # combined plot
     figures_without_legend = cowplot::plot_grid(
-      p_ligand_pearson + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
+      p_ligand_aupr + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
       rotated_dotplot + theme(legend.position = "none", axis.ticks = element_blank(), axis.title.x = element_text(size = 12), axis.text.y = element_text(face = "italic", size = 9), axis.text.x = element_text(size = 9,  angle = 90,hjust = 0)) + ylab("Expression in Sender") + xlab("") + scale_y_discrete(position = "right"),
       p_ligand_lfc + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()) + ylab(""),
       p_ligand_target_network + theme(legend.position = "none", axis.ticks = element_blank()) + ylab(""),
       align = "hv",
       nrow = 1,
-      rel_widths = c(ncol(vis_ligand_pearson)+6, ncol(vis_ligand_lfc) + 7, ncol(vis_ligand_lfc) + 8, ncol(vis_ligand_target)))
+      rel_widths = c(ncol(vis_ligand_aupr)+6, ncol(vis_ligand_lfc) + 7, ncol(vis_ligand_lfc) + 8, ncol(vis_ligand_target)))
 
     legends = cowplot::plot_grid(
-      ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_pearson)),
+      ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_aupr)),
       ggpubr::as_ggplot(ggpubr::get_legend(rotated_dotplot)),
       ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_lfc)),
       ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_target_network)),
@@ -1134,9 +1072,6 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     ligand_receptor_matrix = vis_ligand_receptor_network,
     ligand_receptor_heatmap = p_ligand_receptor_network,
     ligand_receptor_df = lr_network_top_df_large %>% rename(ligand = from, receptor = to),
-    ligand_receptor_matrix_bonafide = vis_ligand_receptor_network_strict,
-    ligand_receptor_heatmap_bonafide = p_ligand_receptor_network_strict,
-    ligand_receptor_df_bonafide = lr_network_top_df_large_strict,
     geneset_oi = geneset_oi,
     background_expressed_genes = background_expressed_genes
   ))
@@ -1302,7 +1237,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
 #'
 #' @description \code{nichenet_seuratobj_cluster_de} Perform NicheNet analysis on Seurat object: explain differential expression (DE) between two 'receiver' cell clusters by ligands expressed by neighboring cells.
 #' @usage
-#' nichenet_seuratobj_cluster_de(seurat_obj, receiver_affected, receiver_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE, assay_oi = NULL)
+#' nichenet_seuratobj_cluster_de(seurat_obj, receiver_affected, receiver_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,verbose = TRUE, assay_oi = NULL)
 #'
 #' @param seurat_obj Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.
 #' @param receiver_reference Name of cluster identity/identities of "steady-state" cells, before they are affected by intercellular communication with other cells
@@ -1315,7 +1250,6 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
 #' @param top_n_ligands Indicate how many ligands should be extracted as top-ligands after ligand activity analysis. Only for these ligands, target genes and receptors will be returned. Default: 20.
 #' @param top_n_targets To predict active, affected targets of the prioritized ligands, consider only DE genes if they also belong to the a priori top n ("top_n_targets") targets of a ligand. Default = 200.
 #' @param cutoff_visualization Because almost no ligand-target scores have a regulatory potential score of 0, we clarify the heatmap visualization by giving the links with the lowest scores a score of 0. The cutoff_visualization paramter indicates this fraction of links that are given a score of zero. Default = 0.33.
-#' @param organism Organism from which cells originate."human" (default) or "mouse".
 #' @param ligand_target_matrix The NicheNet ligand-target matrix denoting regulatory potential scores between ligands and targets (ligands in columns).
 #' @param lr_network The ligand-receptor network (columns that should be present: $from, $to).
 #' @param weighted_networks The NicheNet weighted networks denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.
@@ -1335,9 +1269,6 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
 #' $ligand_receptor_matrix: matrix of ligand-receptor interactions;
 #' $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions;
 #' $ligand_receptor_df: data frame of ligand-receptor interactions;
-#' $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI;
-#' $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI;
-#' $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI;
 #' $geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis;
 #' $background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 #'
@@ -1348,9 +1279,9 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
 #' @examples
 #' \dontrun{
 #' seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
-#' ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
-#' lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-#' weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
+#' lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+#' ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
+#' weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
 #' # works, but does not make sense
 #' nichenet_seuratobj_cluster_de(seurat_obj = seuratObj, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = "Mono", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
 #' # type of analysis for which this would make sense
@@ -1362,7 +1293,7 @@ get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
 nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,
                                         expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,
                                         top_n_targets = 200, cutoff_visualization = 0.33,
-                                        organism = "human",verbose = TRUE, assay_oi = NULL)
+                                        verbose = TRUE, assay_oi = NULL)
 {
   requireNamespace("Seurat")
   requireNamespace("dplyr")
@@ -1419,8 +1350,6 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
       stop("The sender argument should be 'all' or 'undefined' or an identity class of your seurat object")
     }
   }
-  if(organism != "mouse" & organism != "human")
-    stop("Organism should be 'mouse' or 'human'")
   if(geneset != "DE" & geneset != "up" & geneset != "down")
     stop("geneset should be 'DE', 'up' or 'down'")
 
@@ -1432,19 +1361,8 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   if (verbose == TRUE){print("Read in and process NicheNet's networks")}
   weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
 
-  if (organism == "mouse"){
-    lr_network = lr_network %>% mutate(from = convert_human_to_mouse_symbols(from), to = convert_human_to_mouse_symbols(to)) %>% drop_na()
-    colnames(ligand_target_matrix) = ligand_target_matrix %>% colnames() %>% convert_human_to_mouse_symbols()
-    rownames(ligand_target_matrix) = ligand_target_matrix %>% rownames() %>% convert_human_to_mouse_symbols()
-    ligand_target_matrix = ligand_target_matrix %>% .[!is.na(rownames(ligand_target_matrix)), !is.na(colnames(ligand_target_matrix))]
-    weighted_networks_lr = weighted_networks_lr %>% mutate(from = convert_human_to_mouse_symbols(from), to = convert_human_to_mouse_symbols(to)) %>% drop_na()
-  }
-  lr_network_strict = lr_network %>% filter(database != "ppi_prediction_go" & database != "ppi_prediction")
-
   ligands = lr_network %>% pull(from) %>% unique()
   receptors = lr_network %>% pull(to) %>% unique()
-  ligands_bona_fide = lr_network_strict %>% pull(from) %>% unique()
-  receptors_bona_fide = lr_network_strict %>% pull(to) %>% unique()
 
   if (verbose == TRUE){print("Define expressed ligands and receptors in receiver and sender cells")}
 
@@ -1540,14 +1458,13 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   # step4 perform NicheNet's ligand activity analysis
   ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
   ligand_activities = ligand_activities %>%
-    arrange(-pearson) %>%
-    mutate(rank = rank(desc(pearson)),
-           bona_fide_ligand = test_ligand %in% ligands_bona_fide)
+    arrange(-aupr) %>%
+    mutate(rank = rank(desc(aupr)))
 
   if(filter_top_ligands == TRUE){
-    best_upstream_ligands = ligand_activities %>% top_n(top_n_ligands, pearson) %>% arrange(-pearson) %>% pull(test_ligand) %>% unique()
+    best_upstream_ligands = ligand_activities %>% top_n(top_n_ligands, aupr) %>% arrange(-aupr) %>% pull(test_ligand) %>% unique()
   } else {
-    best_upstream_ligands = ligand_activities %>% arrange(-pearson) %>% pull(test_ligand) %>% unique()
+    best_upstream_ligands = ligand_activities %>% arrange(-aupr) %>% pull(test_ligand) %>% unique()
   }
   if (verbose == TRUE){print("Infer active target genes of the prioritized ligands")}
 
@@ -1573,23 +1490,23 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   }
 
   # combined heatmap: overlay ligand activities
-  ligand_pearson_matrix = ligand_activities %>% select(pearson) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
+  ligand_aupr_matrix = ligand_activities %>% select(aupr) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
-  rownames(ligand_pearson_matrix) = rownames(ligand_pearson_matrix) %>% make.names()
-  colnames(ligand_pearson_matrix) = colnames(ligand_pearson_matrix) %>% make.names()
+  rownames(ligand_aupr_matrix) = rownames(ligand_aupr_matrix) %>% make.names()
+  colnames(ligand_aupr_matrix) = colnames(ligand_aupr_matrix) %>% make.names()
 
-  vis_ligand_pearson = ligand_pearson_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("Pearson")
-  p_ligand_pearson = vis_ligand_pearson %>% make_heatmap_ggplot("Prioritized ligands","Ligand activity", color = "darkorange",legend_position = "top", x_axis_position = "top", legend_title = "Pearson correlation coefficient\ntarget gene prediction ability)") + theme(legend.text = element_text(size = 9))
-  p_ligand_pearson
+  vis_ligand_aupr = ligand_aupr_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("AUPR")
+  p_ligand_aupr = vis_ligand_aupr %>% make_heatmap_ggplot("Prioritized ligands","Ligand activity", color = "darkorange",legend_position = "top", x_axis_position = "top", legend_title = "AUPR\n(target gene prediction ability)") + theme(legend.text = element_text(size = 9))
+  p_ligand_aupr
 
   figures_without_legend = cowplot::plot_grid(
-    p_ligand_pearson + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
+    p_ligand_aupr + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
     p_ligand_target_network + theme(legend.position = "none", axis.ticks = element_blank()) + ylab(""),
     align = "hv",
     nrow = 1,
-    rel_widths = c(ncol(vis_ligand_pearson)+10, ncol(vis_ligand_target)))
+    rel_widths = c(ncol(vis_ligand_aupr)+10, ncol(vis_ligand_target)))
   legends = cowplot::plot_grid(
-    ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_pearson)),
+    ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_aupr)),
     ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_target_network)),
     nrow = 1,
     align = "h")
@@ -1636,51 +1553,6 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 
   p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential")
 
-  # bona fide ligand-receptor
-  lr_network_top_df_large_strict = lr_network_top_df_large %>% distinct(from,to) %>% inner_join(lr_network_strict, by = c("from","to")) %>% distinct(from,to)
-  lr_network_top_df_large_strict = lr_network_top_df_large_strict %>% inner_join(lr_network_top_df_large, by = c("from","to"))
-
-  lr_network_top_df_strict = lr_network_top_df_large_strict %>% spread("from","weight",fill = 0)
-  lr_network_top_matrix_strict = lr_network_top_df_strict %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df_strict$to)
-
-  if (nrow(lr_network_top_df_large_strict) == 0){
-    print("Remark: no bona fide receptors of top ligands")
-    vis_ligand_receptor_network_strict = NULL
-    p_ligand_receptor_network_strict = NULL
-    lr_network_top_df_large_strict =  NULL
-
-  } else {
-
-    if (nrow(lr_network_top_matrix_strict) > 1){
-      dist_receptors = dist(lr_network_top_matrix_strict, method = "binary")
-      hclust_receptors = hclust(dist_receptors, method = "ward.D2")
-      order_receptors = hclust_receptors$labels[hclust_receptors$order]
-    } else {
-      order_receptors = rownames(lr_network_top_matrix)
-    }
-    if (ncol(lr_network_top_matrix_strict) > 1) {
-      dist_ligands = dist(lr_network_top_matrix_strict %>% t(), method = "binary")
-      hclust_ligands = hclust(dist_ligands, method = "ward.D2")
-      order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
-    } else {
-      order_ligands_receptor = colnames(lr_network_top_matrix_strict)
-    }
-
-    order_receptors = order_receptors %>% intersect(rownames(lr_network_top_matrix_strict))
-    order_ligands_receptor = order_ligands_receptor %>% intersect(colnames(lr_network_top_matrix_strict))
-
-    vis_ligand_receptor_network_strict = lr_network_top_matrix_strict[order_receptors, order_ligands_receptor]
-    dim(vis_ligand_receptor_network_strict) = c(length(order_receptors), length(order_ligands_receptor))
-
-    rownames(vis_ligand_receptor_network_strict) = order_receptors %>% make.names()
-    colnames(vis_ligand_receptor_network_strict) = order_ligands_receptor %>% make.names()
-
-    p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential\n(bona fide)")
-
-    lr_network_top_df_large_strict = lr_network_top_df_large_strict %>% rename(ligand = from, receptor = to)
-
-  }
-
   # ligand expression Seurat dotplot
   if (length(sender) > 1){
     are_there_senders = TRUE
@@ -1717,9 +1589,6 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
     ligand_receptor_matrix = vis_ligand_receptor_network,
     ligand_receptor_heatmap = p_ligand_receptor_network,
     ligand_receptor_df = lr_network_top_df_large %>% rename(ligand = from, receptor = to),
-    ligand_receptor_matrix_bonafide = vis_ligand_receptor_network_strict,
-    ligand_receptor_heatmap_bonafide = p_ligand_receptor_network_strict,
-    ligand_receptor_df_bonafide = lr_network_top_df_large_strict,
     geneset_oi = geneset_oi,
     background_expressed_genes = background_expressed_genes
 
@@ -1729,7 +1598,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 #'
 #' @description \code{nichenet_seuratobj_aggregate_cluster_de} Perform NicheNet analysis on Seurat object: explain differential expression (DE) between two 'receiver' cell clusters coming from different conditions, by ligands expressed by neighboring cells.
 #' @usage
-#' nichenet_seuratobj_aggregate_cluster_de(seurat_obj, receiver_affected, receiver_reference, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE, assay_oi = NULL)
+#' nichenet_seuratobj_aggregate_cluster_de(seurat_obj, receiver_affected, receiver_reference, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,verbose = TRUE, assay_oi = NULL)
 #'
 #' @param seurat_obj Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.
 #' @param receiver_reference Name of cluster identity/identities of "steady-state" cells, before they are affected by intercellular communication with other cells
@@ -1745,10 +1614,9 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 #' @param top_n_ligands Indicate how many ligands should be extracted as top-ligands after ligand activity analysis. Only for these ligands, target genes and receptors will be returned. Default: 20.
 #' @param top_n_targets To predict active, affected targets of the prioritized ligands, consider only DE genes if they also belong to the a priori top n ("top_n_targets") targets of a ligand. Default = 200.
 #' @param cutoff_visualization Because almost no ligand-target scores have a regulatory potential score of 0, we clarify the heatmap visualization by giving the links with the lowest scores a score of 0. The cutoff_visualization paramter indicates this fraction of links that are given a score of zero. Default = 0.33.
-#' @param organism Organism from which cells originate."human" (default) or "mouse".
-#' @param ligand_target_matrix The NicheNet ligand-target matrix denoting regulatory potential scores between ligands and targets (ligands in columns).
-#' @param lr_network The ligand-receptor network (columns that should be present: $from, $to).
-#' @param weighted_networks The NicheNet weighted networks denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.
+#' @param ligand_target_matrix The NicheNet ligand-target matrix of the organism of interest denoting regulatory potential scores between ligands and targets (ligands in columns).
+#' @param lr_network The ligand-receptor network (columns that should be present: $from, $to) of the organism of interest.
+#' @param weighted_networks The NicheNet weighted networks of the organism of interest denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.
 #' @param verbose Print out the current analysis stage. Default: TRUE.
 #' @inheritParams get_expressed_genes
 #'
@@ -1765,9 +1633,6 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 #' $ligand_receptor_matrix: matrix of ligand-receptor interactions;
 #' $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions;
 #' $ligand_receptor_df: data frame of ligand-receptor interactions;
-#' $ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI;
-#' $ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI;
-#' $ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI;
 #' $geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis;
 #' $background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 #'
@@ -1778,9 +1643,9 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 #' @examples
 #' \dontrun{
 #' seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
-#' ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
-#' lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-#' weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
+#' lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+#' ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
+#' weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
 #' nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seuratObj, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = "Mono", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
 #' }
 #'
@@ -1791,7 +1656,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
                                          ligand_target_matrix,lr_network,weighted_networks,
                                          expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,
                                          top_n_targets = 200, cutoff_visualization = 0.33,
-                                         organism = "human",verbose = TRUE, assay_oi = NULL)
+                                         verbose = TRUE, assay_oi = NULL)
 {
 
   requireNamespace("Seurat")
@@ -1854,8 +1719,6 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
         stop("The sender argument should be 'all' or 'undefined' or an identity class of your seurat object")
       }
   }
-  if(organism != "mouse" & organism != "human")
-    stop("Organism should be 'mouse' or 'human'")
   if(geneset != "DE" & geneset != "up" & geneset != "down")
     stop("geneset should be 'DE', 'up' or 'down'")
 
@@ -1866,19 +1729,8 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   if (verbose == TRUE){print("Read in and process NicheNet's networks")}
   weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
 
-  if (organism == "mouse"){
-    lr_network = lr_network %>% mutate(from = convert_human_to_mouse_symbols(from), to = convert_human_to_mouse_symbols(to)) %>% drop_na()
-    colnames(ligand_target_matrix) = ligand_target_matrix %>% colnames() %>% convert_human_to_mouse_symbols()
-    rownames(ligand_target_matrix) = ligand_target_matrix %>% rownames() %>% convert_human_to_mouse_symbols()
-    ligand_target_matrix = ligand_target_matrix %>% .[!is.na(rownames(ligand_target_matrix)), !is.na(colnames(ligand_target_matrix))]
-    weighted_networks_lr = weighted_networks_lr %>% mutate(from = convert_human_to_mouse_symbols(from), to = convert_human_to_mouse_symbols(to)) %>% drop_na()
-  }
-  lr_network_strict = lr_network %>% filter(database != "ppi_prediction_go" & database != "ppi_prediction")
-
   ligands = lr_network %>% pull(from) %>% unique()
   receptors = lr_network %>% pull(to) %>% unique()
-  ligands_bona_fide = lr_network_strict %>% pull(from) %>% unique()
-  receptors_bona_fide = lr_network_strict %>% pull(to) %>% unique()
 
   if (verbose == TRUE){print("Define expressed ligands and receptors in receiver and sender cells")}
 
@@ -1985,14 +1837,13 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   # step4 perform NicheNet's ligand activity analysis
   ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
   ligand_activities = ligand_activities %>%
-    arrange(-pearson) %>%
-    mutate(rank = rank(desc(pearson)),
-           bona_fide_ligand = test_ligand %in% ligands_bona_fide)
+    arrange(-aupr) %>%
+    mutate(rank = rank(desc(aupr)))
 
   if(filter_top_ligands == TRUE){
-    best_upstream_ligands = ligand_activities %>% top_n(top_n_ligands, pearson) %>% arrange(-pearson) %>% pull(test_ligand) %>% unique()
+    best_upstream_ligands = ligand_activities %>% top_n(top_n_ligands, aupr) %>% arrange(-aupr) %>% pull(test_ligand) %>% unique()
   } else {
-    best_upstream_ligands = ligand_activities %>% arrange(-pearson) %>% pull(test_ligand) %>% unique()
+    best_upstream_ligands = ligand_activities %>% arrange(-aupr) %>% pull(test_ligand) %>% unique()
   }
   if (verbose == TRUE){print("Infer active target genes of the prioritized ligands")}
 
@@ -2017,23 +1868,23 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
     print("no highly likely active targets found for top ligands")
   }
   # combined heatmap: overlay ligand activities
-  ligand_pearson_matrix = ligand_activities %>% select(pearson) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
+  ligand_aupr_matrix = ligand_activities %>% select(aupr) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
-  rownames(ligand_pearson_matrix) = rownames(ligand_pearson_matrix) %>% make.names()
-  colnames(ligand_pearson_matrix) = colnames(ligand_pearson_matrix) %>% make.names()
+  rownames(ligand_aupr_matrix) = rownames(ligand_aupr_matrix) %>% make.names()
+  colnames(ligand_aupr_matrix) = colnames(ligand_aupr_matrix) %>% make.names()
 
-  vis_ligand_pearson = ligand_pearson_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("Pearson")
-  p_ligand_pearson = vis_ligand_pearson %>% make_heatmap_ggplot("Prioritized ligands","Ligand activity", color = "darkorange",legend_position = "top", x_axis_position = "top", legend_title = "Pearson correlation coefficient\ntarget gene prediction ability)") + theme(legend.text = element_text(size = 9))
-  p_ligand_pearson
+  vis_ligand_aupr = ligand_aupr_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("AUPR")
+  p_ligand_aupr = vis_ligand_aupr %>% make_heatmap_ggplot("Prioritized ligands","Ligand activity", color = "darkorange",legend_position = "top", x_axis_position = "top", legend_title = "AUPR\n(target gene prediction ability)") + theme(legend.text = element_text(size = 9))
+  p_ligand_aupr
 
   figures_without_legend = cowplot::plot_grid(
     p_ligand_pearson + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
     p_ligand_target_network + theme(legend.position = "none", axis.ticks = element_blank()) + ylab(""),
     align = "hv",
     nrow = 1,
-    rel_widths = c(ncol(vis_ligand_pearson)+10, ncol(vis_ligand_target)))
+    rel_widths = c(ncol(vis_ligand_aupr)+10, ncol(vis_ligand_target)))
   legends = cowplot::plot_grid(
-    ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_pearson)),
+    ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_aupr)),
     ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_target_network)),
     nrow = 1,
     align = "h")
@@ -2080,50 +1931,6 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 
   p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential")
 
-  # bona fide ligand-receptor
-  lr_network_top_df_large_strict = lr_network_top_df_large %>% distinct(from,to) %>% inner_join(lr_network_strict, by = c("from","to")) %>% distinct(from,to)
-  lr_network_top_df_large_strict = lr_network_top_df_large_strict %>% inner_join(lr_network_top_df_large, by = c("from","to"))
-
-  lr_network_top_df_strict = lr_network_top_df_large_strict %>% spread("from","weight",fill = 0)
-  lr_network_top_matrix_strict = lr_network_top_df_strict %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df_strict$to)
-
-  if (nrow(lr_network_top_df_large_strict) == 0){
-    print("Remark: no bona fide receptors of top ligands")
-    vis_ligand_receptor_network_strict = NULL
-    p_ligand_receptor_network_strict = NULL
-    lr_network_top_df_large_strict =  NULL
-
-  } else {
-      if (nrow(lr_network_top_matrix_strict) > 1){
-        dist_receptors = dist(lr_network_top_matrix_strict, method = "binary")
-        hclust_receptors = hclust(dist_receptors, method = "ward.D2")
-        order_receptors = hclust_receptors$labels[hclust_receptors$order]
-      } else {
-        order_receptors = rownames(lr_network_top_matrix)
-      }
-      if (ncol(lr_network_top_matrix_strict) > 1) {
-        dist_ligands = dist(lr_network_top_matrix_strict %>% t(), method = "binary")
-        hclust_ligands = hclust(dist_ligands, method = "ward.D2")
-        order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
-      } else {
-        order_ligands_receptor = colnames(lr_network_top_matrix_strict)
-      }
-
-    order_receptors = order_receptors %>% intersect(rownames(lr_network_top_matrix_strict))
-    order_ligands_receptor = order_ligands_receptor %>% intersect(colnames(lr_network_top_matrix_strict))
-
-    vis_ligand_receptor_network_strict = lr_network_top_matrix_strict[order_receptors, order_ligands_receptor]
-    dim(vis_ligand_receptor_network_strict) = c(length(order_receptors), length(order_ligands_receptor))
-
-    rownames(vis_ligand_receptor_network_strict) = order_receptors %>% make.names()
-    colnames(vis_ligand_receptor_network_strict) = order_ligands_receptor %>% make.names()
-
-    p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential\n(bona fide)")
-
-    lr_network_top_df_large_strict = lr_network_top_df_large_strict %>% rename(ligand = from, receptor = to)
-
-  }
-
   # ligand expression Seurat dotplot
   if (length(sender) > 1){
     are_there_senders = TRUE
@@ -2158,9 +1965,6 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
     ligand_receptor_matrix = vis_ligand_receptor_network,
     ligand_receptor_heatmap = p_ligand_receptor_network,
     ligand_receptor_df = lr_network_top_df_large %>% rename(ligand = from, receptor = to),
-    ligand_receptor_matrix_bonafide = vis_ligand_receptor_network_strict,
-    ligand_receptor_heatmap_bonafide = p_ligand_receptor_network_strict,
-    ligand_receptor_df_bonafide = lr_network_top_df_large_strict,
     geneset_oi = geneset_oi,
     background_expressed_genes = background_expressed_genes
   ))
