@@ -11,7 +11,7 @@ process_spatial_de(DE_table, type, lr_network, expression_pct, specificity_score
 
 \item{type}{For what type of cellype is the DE analysis: "sender" or "receiver"?}
 
-\item{lr_network}{Ligand-Receptor Network in tibble format: ligand, receptor, bonafide as columns}
+\item{lr_network}{Ligand-Receptor Network in tibble format: ligand, receptor as columns}
 
 \item{expression_pct}{Percentage of cells of a cell type having a non-zero expression value for a gene such that a gene can be considered expressed by that cell type.}
 
