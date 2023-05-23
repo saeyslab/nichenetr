@@ -560,22 +560,22 @@ predict_single_cell_ligand_activities = function(cell_ids, expression_scaled,lig
 #' @export
 #'
 normalize_single_cell_ligand_activities = function(ligand_activities){
-  single_ligand_activities_aupr_norm = ligand_activities %>%
+  single_ligand_activities_pearson_norm = ligand_activities %>%
     group_by(setting) %>%
-    mutate(aupr = nichenetr::scaling_modified_zscore(aupr)) %>%
+    mutate(pearson = nichenetr::scaling_modified_zscore(pearson)) %>%
     ungroup() %>%
     rename(cell = setting, ligand = test_ligand) %>%
-    distinct(cell,ligand,aupr)
+    distinct(cell,ligand,pearson)
 
-  single_ligand_activities_aupr_norm_df = single_ligand_activities_aupr_norm %>%
-    spread(cell, aupr,fill = min(.$aupr))
+  single_ligand_activities_pearson_norm_df = single_ligand_activities_pearson_norm %>%
+    spread(cell, pearson,fill = min(.$pearson))
 
-  single_ligand_activities_aupr_norm_matrix = single_ligand_activities_aupr_norm_df  %>%
+  single_ligand_activities_pearson_norm_matrix = single_ligand_activities_pearson_norm_df  %>%
     select(-ligand) %>%
     t() %>%
-    magrittr::set_colnames(single_ligand_activities_aupr_norm_df$ligand)
+    magrittr::set_colnames(single_ligand_activities_pearson_norm_df$ligand)
 
-  single_cell_ligand_activities_aupr_norm_df = single_ligand_activities_aupr_norm_matrix %>%
+  single_cell_ligand_activities_pearson_norm_df = single_ligand_activities_pearson_norm_matrix %>%
     data.frame() %>%
     rownames_to_column("cell") %>%
     as_tibble()
@@ -1878,7 +1878,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   p_ligand_aupr
 
   figures_without_legend = cowplot::plot_grid(
-    p_ligand_pearson + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
+    p_ligand_aupr + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
     p_ligand_target_network + theme(legend.position = "none", axis.ticks = element_blank()) + ylab(""),
     align = "hv",
     nrow = 1,
