@@ -31,6 +31,7 @@ Bonnardel, T'Jonck et al. (2019) already used NicheNet to predict upstream niche
 * MultiNicheNet - a multi-sample, multi-condition extension of NicheNet - is now available on [biorxiv]() and [Github](https://github.com/saeyslab/multinichenetr).
 * MultiNicheNet uses an [updated prior model (v2)](https://zenodo.org/record/7074291/) consisting of additional ligand-receptor interactions from the [Omnipath database](https://omnipathdb.org/) and from [Verschueren et al. (2020)](https://www.sciencedirect.com/science/article/pii/S0092867420306942?via%3Dihub). We have now also updated the vignettes of NicheNet to use the new model instead.
 * New functionality: we have included additional functions to prioritize ligands not only based on the ligand activity, but also on the ligand and receptor expression, cell type specificity, and condition specificity. This is similar to the criteria used in Differential NicheNet and MultiNicheNet. See the [Prioritizing ligands based on expression]() vignette for more information.
+* We included code for making a ligand-receptor-target circos plot in the [Circos plot visualization](vignettes/circos.md) vignette.
 
 ## Introduction to NicheNet
 

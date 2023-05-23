@@ -12,6 +12,7 @@ status](https://github.com/saeyslab/nichenetr/workflows/R-CMD-check-bioc/badge.s
 [![Coverage
 Status](https://codecov.io/gh/saeyslab/nichenetr/branch/master/graph/badge.svg)](https://codecov.io/gh/saeyslab/nichenetr)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7074291.svg)](https://doi.org/10.5281/zenodo.7074291)
 <!-- badges: end -->
 
 **nichenetr: the R implementation of the NicheNet method.** The goal of
@@ -50,6 +51,8 @@ Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1).
     condition specificity. This is similar to the criteria used in
     Differential NicheNet and MultiNicheNet. See the [Prioritizing
     ligands based on expression]() vignette for more information.
+-   We included code for making a ligand-receptor-target circos plot in
+    the [Circos plot visualization](vignettes/circos.md) vignette.
 
 ## Introduction to NicheNet
 
