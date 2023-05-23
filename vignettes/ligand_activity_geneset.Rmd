@@ -51,11 +51,25 @@ library(tidyverse)
 Ligand-target model:
 
 This model denotes the prior potential that a particular ligand might regulate the expression  of a specific target gene. 
+The Nichenet v2 networks and matrices for both mouse and human can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7074291.svg)](https://doi.org/10.5281/zenodo.7074291).
 
 ```{r}
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+options(timeout = 600)
+organism = "human"
+
+if(organism == "human"){
+  lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
+  ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final.rds"))
+} else if(organism == "mouse"){
+  lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+  ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
+
+}
+
+lr_network = lr_network %>% distinct(from, to)
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 ```
+
 
 Expression data of interacting cells: publicly available single-cell data from CAF and malignant cells from HNSCC tumors:
 
@@ -63,6 +77,13 @@ Expression data of interacting cells: publicly available single-cell data from C
 hnscc_expression = readRDS(url("https://zenodo.org/record/3260758/files/hnscc_expression.rds"))
 expression = hnscc_expression$expression
 sample_info = hnscc_expression$sample_info # contains meta-information about the cells
+```
+
+Because the NicheNet 2.0. networks are in the most recent version of the official gene symbols, we will make sure that the gene symbols used in the expression data are also updated (= converted from their “aliases” to official gene symbols). Afterwards, we will make them again syntactically valid.
+
+```{r}
+# If this is not done, there will be 35 genes fewer in lr_network_expressed!
+colnames(expression) = convert_alias_to_symbols(colnames(expression), "human", verbose = FALSE)
 ```
 
 ## Step 1: Define expressed genes in sender and receiver cell populations
@@ -106,8 +127,6 @@ head(background_expressed_genes)
 As potentially active ligands, we will use ligands that are 1) expressed by CAFs and 2) can bind a (putative) receptor expressed by malignant cells. Putative ligand-receptor links were gathered from NicheNet's ligand-receptor data sources.
 
 ```{r}
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-
 # If wanted, users can remove ligand-receptor interactions that were predicted based on protein-protein interactions and only keep ligand-receptor interactions that are described in curated databases. To do this: uncomment following line of code:
 # lr_network = lr_network %>% filter(database != "ppi_prediction_go" & database != "ppi_prediction")
 
@@ -140,21 +159,21 @@ ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_e
 Now, we want to rank the ligands based on their ligand activity. In our validation study, we showed that the pearson correlation coefficient (PCC) between a ligand's target predictions and the observed transcriptional response was the most informative measure to define ligand activity. Therefore, we will rank the ligands based on their pearson correlation coefficient. This allows us to prioritize p-EMT-regulating ligands.
 
 ```{r}
-ligand_activities %>% arrange(-pearson) 
-best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand)
+ligand_activities %>% arrange(-aupr) 
+best_upstream_ligands = ligand_activities %>% top_n(30, aupr) %>% arrange(-aupr) %>% pull(test_ligand)
 head(best_upstream_ligands)
 ```
 
-We see here that the performance metrics indicate that the 20 top-ranked ligands can predict the p-EMT genes reasonably, this implies that ranking of the ligands might be accurate as shown in our study. However, it is possible that for some gene sets, the target gene prediction performance of the top-ranked ligands would not be much better than random prediction. In that case, prioritization of ligands will be less trustworthy. 
+We see here that the performance metrics indicate that the 30 top-ranked ligands can predict the p-EMT genes reasonably, this implies that ranking of the ligands might be accurate as shown in our study. However, it is possible that for some gene sets, the target gene prediction performance of the top-ranked ligands would not be much better than random prediction. In that case, prioritization of ligands will be less trustworthy. 
 
-Additional note: we looked at the top 20 ligands here and will continue the analysis by inferring p-EMT target genes of these 20 ligands. However, the choice of looking only at the 20 top-ranked ligands for further biological interpretation is based on biological intuition and is quite arbitrary. Therefore, users can decide to continue the analysis with a different number of ligands. We recommend to check the selected cutoff by looking at the distribution of the ligand activity values. Here, we show the ligand activity histogram (the score for the 20th ligand is indicated via the dashed line).
+Additional note: we looked at the top 30 ligands here and will continue the analysis by inferring p-EMT target genes of these 30 ligands. However, the choice of looking only at the 30 top-ranked ligands for further biological interpretation is based on biological intuition and is quite arbitrary. Therefore, users can decide to continue the analysis with a different number of ligands. We recommend to check the selected cutoff by looking at the distribution of the ligand activity values. Here, we show the ligand activity histogram (the score for the 30th ligand is indicated via the dashed line).
 
 ```{r}
 # show histogram of ligand activity scores
-p_hist_lig_activity = ggplot(ligand_activities, aes(x=pearson)) + 
+p_hist_lig_activity = ggplot(ligand_activities, aes(x=aupr)) + 
   geom_histogram(color="black", fill="darkorange")  + 
   # geom_density(alpha=.1, fill="orange") +
-  geom_vline(aes(xintercept=min(ligand_activities %>% top_n(20, pearson) %>% pull(pearson))), color="red", linetype="dashed", size=1) + 
+  geom_vline(aes(xintercept=min(ligand_activities %>% top_n(30, aupr) %>% pull(aupr))), color="red", linetype="dashed", size=1) + 
   labs(x="ligand activity (PCC)", y = "# ligands") +
   theme_classic()
 p_hist_lig_activity
@@ -213,7 +232,7 @@ lr_network_top = lr_network %>% filter(from %in% best_upstream_ligands & to %in%
 best_upstream_receptors = lr_network_top %>% pull(to) %>% unique()
 
 # get the weights of the ligand-receptor interactions as used in the NicheNet model
-weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
+weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final.rds"))
 lr_network_top_df = weighted_networks$lr_sig %>% filter(from %in% best_upstream_ligands & to %in% best_upstream_receptors)
 
 # convert to a matrix
@@ -254,14 +273,14 @@ library(ggpubr)
 #### Prepare the ligand activity matrix
 
 ```{r}
-ligand_pearson_matrix = ligand_activities %>% select(pearson) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
+ligand_aupr_matrix = ligand_activities %>% select(aupr) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
-vis_ligand_pearson = ligand_pearson_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("Pearson")
+vis_ligand_aupr = ligand_aupr_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("AUPR")
 ```
 
 ```{r, fig.width=5, fig.height=6}
-p_ligand_pearson = vis_ligand_pearson %>% make_heatmap_ggplot("Prioritized CAF-ligands","Ligand activity", color = "darkorange",legend_position = "top", x_axis_position = "top", legend_title = "Pearson correlation coefficient\ntarget gene prediction ability)")
-p_ligand_pearson
+p_ligand_aupr = vis_ligand_aupr %>% make_heatmap_ggplot("Prioritized CAF-ligands","Ligand activity", color = "darkorange",legend_position = "top", x_axis_position = "top", legend_title = "AUPR\n(target gene prediction ability)")
+p_ligand_aupr
 ```
 
 #### Prepare expression of ligands in fibroblast per tumor
@@ -312,7 +331,7 @@ p_target_tumor_scaled_expression
 
 ```{r, fig.width=13, fig.height=7}
 figures_without_legend = plot_grid(
-  p_ligand_pearson + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
+  p_ligand_aupr + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
   p_ligand_tumor_expression + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()) + ylab(""),
   p_ligand_target_network + theme(legend.position = "none", axis.ticks = element_blank()) + ylab(""), 
   NULL,
@@ -320,11 +339,11 @@ figures_without_legend = plot_grid(
   p_target_tumor_scaled_expression + theme(legend.position = "none", axis.ticks = element_blank()) + xlab(""), 
   align = "hv",
   nrow = 2,
-  rel_widths = c(ncol(vis_ligand_pearson)+ 4.5, ncol(vis_ligand_tumor_expression), ncol(vis_ligand_target)) -2,
-  rel_heights = c(nrow(vis_ligand_pearson), nrow(vis_target_tumor_expression_scaled) + 3)) 
+  rel_widths = c(ncol(vis_ligand_aupr)+ 4.5, ncol(vis_ligand_tumor_expression), ncol(vis_ligand_target)) -2,
+  rel_heights = c(nrow(vis_ligand_aupr), nrow(vis_target_tumor_expression_scaled) + 3)) 
 
 legends = plot_grid(
-  as_ggplot(get_legend(p_ligand_pearson)),
+  as_ggplot(get_legend(p_ligand_aupr)),
   as_ggplot(get_legend(p_ligand_tumor_expression)),
   as_ggplot(get_legend(p_ligand_target_network)),
   as_ggplot(get_legend(p_target_tumor_scaled_expression)),
