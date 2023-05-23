@@ -62,7 +62,7 @@ expressed_genes_malignant = expression[malignant_ids,] %>% apply(2,function(x){1
 ### Load the ligand-target model we want to use
 
 ```{r}
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final.rds"))
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 ```
 
@@ -71,7 +71,7 @@ ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 In a first step, we will define a set of potentially active ligands. As potentially active ligands, we will use ligands that are 1) expressed by CAFs and 2) can bind a (putative) receptor expressed by malignant cells. Putative ligand-receptor links were gathered from NicheNet's ligand-receptor data sources.
 
 ```{r}
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
 ligands = lr_network$from %>% unique()
 expressed_ligands = intersect(ligands,expressed_genes_CAFs)
 receptors = lr_network$to %>% unique()

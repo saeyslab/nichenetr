@@ -560,22 +560,22 @@ predict_single_cell_ligand_activities = function(cell_ids, expression_scaled,lig
 #' @export
 #'
 normalize_single_cell_ligand_activities = function(ligand_activities){
-  single_ligand_activities_pearson_norm = ligand_activities %>%
+  single_ligand_activities_aupr_norm = ligand_activities %>%
     group_by(setting) %>%
-    mutate(pearson = nichenetr::scaling_modified_zscore(pearson)) %>%
+    mutate(aupr = nichenetr::scaling_modified_zscore(aupr)) %>%
     ungroup() %>%
     rename(cell = setting, ligand = test_ligand) %>%
-    distinct(cell,ligand,pearson)
+    distinct(cell,ligand,aupr)
 
-  single_ligand_activities_pearson_norm_df = single_ligand_activities_pearson_norm %>%
-    spread(cell, pearson,fill = min(.$pearson))
+  single_ligand_activities_aupr_norm_df = single_ligand_activities_aupr_norm %>%
+    spread(cell, aupr,fill = min(.$aupr))
 
-  single_ligand_activities_pearson_norm_matrix = single_ligand_activities_pearson_norm_df  %>%
+  single_ligand_activities_aupr_norm_matrix = single_ligand_activities_aupr_norm_df  %>%
     select(-ligand) %>%
     t() %>%
-    magrittr::set_colnames(single_ligand_activities_pearson_norm_df$ligand)
+    magrittr::set_colnames(single_ligand_activities_aupr_norm_df$ligand)
 
-  single_cell_ligand_activities_pearson_norm_df = single_ligand_activities_pearson_norm_matrix %>%
+  single_cell_ligand_activities_aupr_norm_df = single_ligand_activities_aupr_norm_matrix %>%
     data.frame() %>%
     rownames_to_column("cell") %>%
     as_tibble()
