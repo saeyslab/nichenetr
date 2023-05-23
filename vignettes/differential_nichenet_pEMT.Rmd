@@ -76,19 +76,18 @@ seurat_obj = SetIdent(seurat_obj, value = seurat_obj[[celltype_id]])
 ## Read in the NicheNet ligand-receptor network and ligand-target matrix
 
 ```{r}
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final.rds"))
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 ```
 
 ```{r}
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-lr_network = lr_network %>% mutate(bonafide = ! database %in% c("ppi_prediction","ppi_prediction_go"))
-lr_network = lr_network %>% dplyr::rename(ligand = from, receptor = to) %>% distinct(ligand, receptor, bonafide)
+lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
+lr_network = lr_network %>% dplyr::rename(ligand = from, receptor = to) %>% distinct(ligand, receptor)
 
 head(lr_network)
 ```
 
-Note: if your data is of mouse origin: convert human gene symbols to their one-to-one orthologs
+Note: if your data is of mouse origin: use the mouse networks
 
 ```{r}
 organism = "human" # user adaptation required on own dataset
@@ -96,13 +95,11 @@ organism = "human" # user adaptation required on own dataset
 
 ```{r}
 if(organism == "mouse"){
-  lr_network = lr_network %>% mutate(ligand = convert_human_to_mouse_symbols(ligand), receptor = convert_human_to_mouse_symbols(receptor)) %>% drop_na()
-
-  colnames(ligand_target_matrix) = ligand_target_matrix %>% colnames() %>% convert_human_to_mouse_symbols()
-  rownames(ligand_target_matrix) = ligand_target_matrix %>% rownames() %>% convert_human_to_mouse_symbols()
-  ligand_target_matrix = ligand_target_matrix %>% .[!is.na(rownames(ligand_target_matrix)), !is.na(colnames(ligand_target_matrix))]
+  lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+  ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
 }
-```
+
+``` 
 
 # 1. Define the niches/microenvironments of interest
 
@@ -136,6 +133,7 @@ DE will be calculated for each pairwise sender (or receiver) cell type comparisi
 
 ```{r}
 assay_oi = "SCT" # other possibilities: RNA,...
+seurat_obj = alias_to_symbol_seurat(seurat_obj, organism = "human")
 DE_sender = calculate_niche_de(seurat_obj = seurat_obj %>% subset(features = lr_network$ligand %>% unique()), niches = niches, type = "sender", assay_oi = assay_oi) # only ligands important for sender cell types
 DE_receiver = calculate_niche_de(seurat_obj = seurat_obj %>% subset(features = lr_network$receptor %>% unique()), niches = niches, type = "receiver", assay_oi = assay_oi) # only receptors now, later on: DE analysis to find targets
 DE_sender = DE_sender %>% mutate(avg_log2FC = ifelse(avg_log2FC == Inf, max(avg_log2FC[is.finite(avg_log2FC)]), ifelse(avg_log2FC == -Inf, min(avg_log2FC[is.finite(avg_log2FC)]), avg_log2FC)))
@@ -335,7 +333,7 @@ exprs_sender_receiver = lr_network %>%
   inner_join(exprs_tbl_ligand, by = c("ligand")) %>% 
   inner_join(exprs_tbl_receptor, by = c("receptor")) %>% inner_join(DE_sender_receiver %>% distinct(niche, sender, receiver))
   
-ligand_scaled_receptor_expression_fraction_df = exprs_sender_receiver %>% group_by(ligand, receiver) %>% mutate(rank_receptor_expression = dense_rank(receptor_expression), rank_receptor_fraction  = dense_rank(receptor_fraction)) %>% mutate(ligand_scaled_receptor_expression_fraction = 0.5*( (rank_receptor_fraction / max(rank_receptor_fraction)) + ((rank_receptor_expression / max(rank_receptor_expression))) ) )  %>% distinct(ligand, receptor, receiver, ligand_scaled_receptor_expression_fraction, bonafide) %>% distinct() %>% ungroup() 
+ligand_scaled_receptor_expression_fraction_df = exprs_sender_receiver %>% group_by(ligand, receiver) %>% mutate(rank_receptor_expression = dense_rank(receptor_expression), rank_receptor_fraction  = dense_rank(receptor_fraction)) %>% mutate(ligand_scaled_receptor_expression_fraction = 0.5*( (rank_receptor_fraction / max(rank_receptor_fraction)) + ((rank_receptor_expression / max(rank_receptor_expression))) ) )  %>% distinct(ligand, receptor, receiver, ligand_scaled_receptor_expression_fraction) %>% distinct() %>% ungroup() 
 ```
 
 # 7. Prioritization of ligand-receptor and ligand-target links
@@ -366,9 +364,6 @@ We provide the user the option to consider the following properties for prioriti
 
 * Normalized ligand activity: to further prioritize ligand-receptor pairs based on their predicted effect of the ligand-receptor interaction on the gene expression in the receiver cell type - normalization of activity is done because we found that some datasets/conditions/niches have higher baseline activity values than others - normalized ligand activity accords to 'relative' enrichment of target genes of a ligand within the affected receiver genes. `prioritizing_weights` argument: `"scaled_activity_normalized"`. Recommended weight: at least 1. 
 
-* Prior knowledge quality of the L-R interaction: the NicheNet LR network consists of two types of interactions: L-R pairs documented in curated databases, and L-R pairs predicted based on gene annotation and PPIs. The former are categorized as 'bona fide' interactions. To rank bona fide interactions higher, but not exlude potentially interesting non-bona-fide ones, we give bona fide interactions a score of 1, and non-bona-fide interactions a score fof 0.5. `prioritizing_weights` argument: `"bona_fide"` Recommend weight: at least 1.
-
-
 ```{r}
 prioritizing_weights = c("scaled_ligand_score" = 5,
                          "scaled_ligand_expression_scaled" = 1,
@@ -380,8 +375,7 @@ prioritizing_weights = c("scaled_ligand_score" = 5,
                          "ligand_scaled_receptor_expression_fraction" = 1,
                          "scaled_receptor_score_spatial" = 0,
                          "scaled_activity" = 0,
-                         "scaled_activity_normalized" = 1,
-                         "bona_fide" = 1)
+                         "scaled_activity_normalized" = 1)
 ```
 
 Note: these settings will give substantially more weight to DE ligand-receptor pairs compared to activity. Users can change this if wanted, just like other settings can be changed if that would be better to tackle the specific biological question you want to address.
