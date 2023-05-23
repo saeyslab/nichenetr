@@ -2,7 +2,7 @@ Package: nichenetr
 Type: Package
 Title: NicheNet: Modeling Intercellular Communication by Linking Ligands to Target Genes
 Version: 2.0.0
-Authors@R: person("Robin", "Browaeys",  role = c("aut"),
+Authors@R: c(person("Robin", "Browaeys",  role = c("aut")),
   person("Chananchida", "Sang-aram", role = c("aut", "cre")))
 Description: This package allows you the investigate intercellular communication from a computational perspective. More specifically, it allows to investigate how interacting cells influence each other's gene expression. Functionalities of this package (e.g. including predicting extracellular upstream regulators and their affected target genes) build upon a probabilistic model of ligand-target links that was inferred by data-integration.
 License: GPL-3
@@ -46,6 +46,7 @@ Suggests: knitr,
     rmarkdown,
     testthat,
     doMC,
+    mco,
     parallel,
     covr,
     tidyverse
