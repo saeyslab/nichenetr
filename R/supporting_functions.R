@@ -217,7 +217,7 @@ alias_to_symbol_seurat = function(seurat_obj, organism) {
   requireNamespace("Seurat")
 
   RNA = seurat_obj@assays$RNA
-  newnames = convert_alias_to_symbols(rownames(RNA@counts), organism = organism)
+  newnames = convert_alias_to_symbols(rownames(RNA@counts), organism = organism, verbose = FALSE)
 
   # sometimes: there are doubles:
   doubles =  newnames %>% table() %>% .[. > 1] %>% names()
