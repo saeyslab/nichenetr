@@ -14,13 +14,13 @@ make a circos plot to summarize the top-predicted links (via the
 circlize package). This vignette starts in the same way as the main,
 basis, NicheNet vignette [NicheNet’s ligand activity analysis on a gene
 set of interest: predict active ligands and their target
-genes](ligand_activity_geneset.md):`vignette("ligand_activity_geneset",
-package="nichenetr")`. Make sure you understand the different steps
-described in that vignette before proceeding with this vignette. In
-contrast to the basic vignette, we will look communication between
-multiple cell types. More specifically, we will predict which ligands
-expressed by both CAFs and endothelial cells can induce the p-EMT
-program in neighboring malignant cells (See Puram et al. 2017).
+genes](ligand_activity_geneset.md):`vignette("ligand_activity_geneset", package="nichenetr")`.
+Make sure you understand the different steps described in that vignette
+before proceeding with this vignette. In contrast to the basic vignette,
+we will look communication between multiple cell types. More
+specifically, we will predict which ligands expressed by both CAFs and
+endothelial cells can induce the p-EMT program in neighboring malignant
+cells (See Puram et al. 2017).
 
 ### Load packages required for this vignette
 
@@ -33,8 +33,7 @@ library(circlize)
 ### Read in expression data of interacting cells
 
 First, we will read in the publicly available single-cell data from
-CAFs, endothelial cells and malignant cells from HNSCC
-tumors.
+CAFs, endothelial cells and malignant cells from HNSCC tumors.
 
 ``` r
 hnscc_expression = readRDS(url("https://zenodo.org/record/3260758/files/hnscc_expression.rds"))
@@ -46,8 +45,7 @@ Secondly, we will determine which genes are expressed in CAFs,
 endothelial and malignant cells from high quality primary tumors.
 Therefore, we wil not consider cells from tumor samples of less quality
 or from lymph node metastases. To determine expressed genes, we use the
-definition used by of Puram et
-al.
+definition used by of Puram et al.
 
 ``` r
 tumors_remove = c("HN10","HN","HN12", "HN13", "HN24", "HN7", "HN8","HN23")
@@ -64,14 +62,14 @@ expressed_genes_malignant = expression[malignant_ids,] %>% apply(2,function(x){1
 ### Load the ligand-target model we want to use
 
 ``` r
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final.rds"))
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
-##                 CXCL1        CXCL2        CXCL3        CXCL5         PPBP
-## A1BG     3.534343e-04 4.041324e-04 3.729920e-04 3.080640e-04 2.628388e-04
-## A1BG-AS1 1.650894e-04 1.509213e-04 1.583594e-04 1.317253e-04 1.231819e-04
-## A1CF     5.787175e-04 4.596295e-04 3.895907e-04 3.293275e-04 3.211944e-04
-## A2M      6.027058e-04 5.996617e-04 5.164365e-04 4.517236e-04 4.590521e-04
-## A2M-AS1  8.898724e-05 8.243341e-05 7.484018e-05 4.912514e-05 5.120439e-05
+##                     A2M        AANAT        ABCA1          ACE        ACE2
+## A-GAMMA3'E 0.0000000000 0.0000000000 0.0000000000 0.0000000000 0.000000000
+## A1BG       0.0018503922 0.0011108718 0.0014225077 0.0028594037 0.001139013
+## A1BG-AS1   0.0007400797 0.0004677614 0.0005193137 0.0007836698 0.000375007
+## A1CF       0.0024799266 0.0013026348 0.0020420890 0.0047921048 0.003273375
+## A2M        0.0084693452 0.0040689323 0.0064256379 0.0105191365 0.005719199
 ```
 
 ### Load the gene set of interest and background of genes
@@ -82,8 +80,7 @@ is possibly affected due to communication with other cells.
 Because we here want to investigate how CAFs and endothelial cells
 regulate the expression of p-EMT genes in malignant cells, we will use
 the p-EMT gene set defined by Puram et al. as gene set of interset and
-use all genes expressed in malignant cells as background of
-genes.
+use all genes expressed in malignant cells as background of genes.
 
 ``` r
 pemt_geneset = readr::read_tsv(url("https://zenodo.org/record/3260758/files/pemt_signature.txt"), col_names = "gene") %>% pull(gene) %>% .[. %in% rownames(ligand_target_matrix)] # only consider genes also present in the NicheNet model - this excludes genes from the gene list for which the official HGNC symbol was not used by Puram et al.
@@ -105,11 +102,10 @@ gathered from NicheNet’s ligand-receptor data sources.
 
 Note that we combine the ligands from CAFs and endothelial cells in one
 ligand activity analysis now. Later on, we will look which of the
-top-ranked ligands is mainly expressed by which of both cell
-types.
+top-ranked ligands is mainly expressed by which of both cell types.
 
 ``` r
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
 
 ligands = lr_network %>% pull(from) %>% unique()
 expressed_ligands_CAFs = intersect(ligands,expressed_genes_CAFs)
@@ -121,13 +117,12 @@ expressed_receptors = intersect(receptors,expressed_genes_malignant)
 
 potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
 head(potential_ligands)
-## [1] "IL15"    "HGF"     "TNFSF10" "TGFB2"   "TGFB3"   "INHBA"
+## [1] "A2M"    "ACE"    "ADAM10" "ADAM12" "ADAM15" "ADAM17"
 ```
 
 Now perform the ligand activity analysis: infer how well NicheNet’s
 ligand-target potential scores can predict whether a gene belongs to the
-p-EMT program or
-not.
+p-EMT program or not.
 
 ``` r
 ligand_activities = predict_ligand_activities(geneset = pemt_geneset, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
@@ -141,23 +136,23 @@ we will rank the ligands based on their pearson correlation coefficient.
 
 ``` r
 ligand_activities %>% arrange(-pearson) 
-## # A tibble: 154 x 4
-##    test_ligand auroc   aupr pearson
-##    <chr>       <dbl>  <dbl>   <dbl>
-##  1 PTHLH       0.667 0.0720   0.128
-##  2 EDN1        0.682 0.0586   0.126
-##  3 CXCL12      0.680 0.0507   0.123
-##  4 AGT         0.676 0.0581   0.120
-##  5 TGFB3       0.689 0.0454   0.117
-##  6 IL6         0.693 0.0510   0.115
-##  7 INHBA       0.695 0.0502   0.113
-##  8 ADAM17      0.672 0.0526   0.113
-##  9 TNC         0.700 0.0444   0.109
-## 10 VWF         0.685 0.0490   0.109
-## # … with 144 more rows
+## # A tibble: 232 × 5
+##    test_ligand auroc   aupr aupr_corrected pearson
+##    <chr>       <dbl>  <dbl>          <dbl>   <dbl>
+##  1 TGFB2       0.768 0.123          0.107    0.199
+##  2 BMP8A       0.770 0.0880         0.0718   0.177
+##  3 LTBP1       0.722 0.0785         0.0622   0.163
+##  4 TNXB        0.713 0.0737         0.0574   0.158
+##  5 ENG         0.759 0.0732         0.0569   0.157
+##  6 GDF3        0.758 0.0817         0.0654   0.156
+##  7 ACE         0.711 0.0780         0.0617   0.151
+##  8 BMP5        0.745 0.0715         0.0552   0.150
+##  9 VCAM1       0.697 0.0640         0.0477   0.149
+## 10 MMP2        0.703 0.0652         0.0489   0.145
+## # … with 222 more rows
 best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand)
 head(best_upstream_ligands)
-## [1] "PTHLH"  "EDN1"   "CXCL12" "AGT"    "TGFB3"  "IL6"
+## [1] "TGFB2" "BMP8A" "LTBP1" "TNXB"  "ENG"   "GDF3"
 ```
 
 We see here that the top-ranked ligands can predict the p-EMT genes
@@ -172,10 +167,9 @@ endothelial cells
 
 ``` r
 best_upstream_ligands %>% intersect(expressed_ligands_CAFs) 
-##  [1] "PTHLH"  "CXCL12" "AGT"    "TGFB3"  "IL6"    "INHBA"  "ADAM17" "TNC"    "CTGF"   "FN1"    "BMP5"   "IL24"  
-## [13] "CXCL11" "MMP9"   "COL4A1" "PSEN1"  "CXCL9"
+##  [1] "TGFB2"  "BMP8A"  "LTBP1"  "TNXB"   "ENG"    "BMP5"   "VCAM1"  "MMP2"   "COL3A1" "CXCL12" "CFH"    "VCAN"   "SPON1"  "HGF"    "FBN1"   "CD47"   "MMP14"
 best_upstream_ligands %>% intersect(expressed_ligands_endothelial)
-##  [1] "EDN1"   "CXCL12" "IL6"    "ADAM17" "VWF"    "CTGF"   "FN1"    "SPP1"   "CXCL11" "COL4A1" "PSEN1"  "CXCL9"
+##  [1] "LTBP1"  "TNXB"   "ENG"    "GDF3"   "ACE"    "VCAM1"  "MMP2"   "CXCL12" "CFH"    "VCAN"   "LAMA5"  "HGF"    "FBN1"   "CD47"
 
 # lot of overlap between both cell types in terms of expressed ligands
 # therefore, determine which ligands are more strongly expressed in which of the two
@@ -219,8 +213,7 @@ To avoid making a circos plots with too many ligand-target links, we
 will show only links with a weight higher than a predefined cutoff:
 links belonging to the 66% of lowest scores were removed. Not that this
 cutoffs and other cutoffs used for this visualization can be changed
-according to the user’s
-needs.
+according to the user’s needs.
 
 ``` r
 cutoff_include_all_ligands = active_ligand_target_links_df$weight %>% quantile(0.66)
@@ -304,7 +297,7 @@ chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.de
 circos.track(track.index = 1, panel.fun = function(x, y) {
     circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index,
         facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.55), cex = 1)
-}, bg.border = NA) #
+}, bg.border = NA) 
 ```
 
 ![](circos_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
@@ -349,6 +342,111 @@ circos.clear()
 dev.off()
 ## png 
 ##   2
+```
+
+### Adding an outer track to the circos plot (ligand-receptor-target circos plot)
+
+In the paper of Bonnardel, T’Jonck et al. [Stellate Cells, Hepatocytes,
+and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes
+Colonizing the Liver Macrophage
+Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1), we
+showed in Fig. 6B a ligand-receptor-target circos plot to visualize the
+main NicheNet predictions. This “ligand-receptor-target” circos plot was
+made by making first two separate circos plots: the ligand-target and
+ligand-receptor circos plot. Then these circos plots were overlayed in
+Inkscape (with the center of the two circles at the same location and
+the ligand-receptor circos plot bigger than the ligand-target one). To
+generate the combined circos plot as shown in Fig. 6B, we then manually
+removed all elements of the ligand-receptor circos plot except the outer
+receptor layer.
+
+It is also possible to generate this plot programmatically using the
+`circlize::highlight.sector` function, given that you are able to group
+the target genes. For our purposes, let us randomly assign the target
+genes into one of three groups (Receptors A, B, and C).
+
+``` r
+
+target_gene_groups <- sample(c("Receptor A", "Receptor B", "Receptor C"), length(unique(circos_links$target)), replace = TRUE) %>%
+                          setNames(unique(circos_links$target))
+target_gene_groups
+##        ACTN1          C1S      COL17A1       COL1A1       COL4A2           F3        FSTL3       IGFBP3        ITGA5        LAMC2        MFAP2         MMP2         MYH9       PDLIM7        PSMD2        PTHLH     SERPINE1     SERPINE2        TAGLN 
+## "Receptor C" "Receptor C" "Receptor A" "Receptor C" "Receptor A" "Receptor A" "Receptor A" "Receptor C" "Receptor C" "Receptor C" "Receptor A" "Receptor A" "Receptor C" "Receptor B" "Receptor C" "Receptor A" "Receptor B" "Receptor B" "Receptor B" 
+##        TGFBI          TNC         TPM1          APP       COL5A2         DKK3        FRMD6         GJA1        HTRA1         MMP1        MMP10         MT2A         PLAU       SEMA3C        THBS1          VIM        P4HA2       PRSS23        FSTL1 
+## "Receptor C" "Receptor B" "Receptor A" "Receptor B" "Receptor C" "Receptor B" "Receptor B" "Receptor B" "Receptor B" "Receptor C" "Receptor A" "Receptor C" "Receptor B" "Receptor C" "Receptor B" "Receptor C" "Receptor C" "Receptor C" "Receptor C" 
+##       LGALS1      SLC31A2         TPM4         IL32         FHL2        ITGB1 
+## "Receptor A" "Receptor B" "Receptor A" "Receptor B" "Receptor B" "Receptor B"
+target_gene_group_colors <- c("red", "blue", "green") %>% setNames(unique(target_gene_groups))
+```
+
+We will then have to redefine some variables.
+
+``` r
+# Order targets according to receptor they belong to
+target_order <- target_gene_groups %>% sort %>% names
+order = c(ligand_order,target_order)
+
+# Redefine gaps between sectors
+width_same_cell_same_ligand_type = 0.6
+width_different_cell = 4.5
+width_ligand_target = 12
+width_same_cell_same_target_type = 0.6    # Added
+width_different_target = 4.5              # Added
+
+# Add this to circos_links
+circos_links = circos_links %>% mutate(target_receptor = target_gene_groups[target])
+
+gaps = c(
+  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "CAF-specific") %>% distinct(ligand) %>% nrow() -1)),
+  width_different_cell,
+  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "General") %>% distinct(ligand) %>% nrow() -1)),
+  width_different_cell,
+  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "Endothelial-specific") %>% distinct(ligand) %>% nrow() -1)), 
+  width_ligand_target,
+  # Add code to define gaps between different target groups
+  rep(width_same_cell_same_target_type, times = (circos_links %>% filter(target_receptor == "Receptor A") %>% distinct(target) %>% nrow() -1)),
+  width_different_target,
+  rep(width_same_cell_same_target_type, times = (circos_links %>% filter(target_receptor == "Receptor B") %>% distinct(target) %>% nrow() -1)),
+  width_different_target,
+  rep(width_same_cell_same_target_type, times = (circos_links %>% filter(target_receptor == "Receptor C") %>% distinct(target) %>% nrow() -1)),
+  width_ligand_target
+  )
+```
+
+Finally, create the plot. What’s different here is we add an extra layer
+in `preAllocateTracks`, and we add a `for` loop at the end to draw the
+outer layer.
+
+``` r
+circos.par(gap.degree = gaps)
+chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE,
+             grid.col = grid_col,transparency = transparency, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),
+             link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid",
+    # Add extra track for outer layer
+    preAllocateTracks = list(list(track.height = 0.025),
+                             list(track.height = 0.2)))
+
+# we go back to the first track and customize sector labels
+circos.track(track.index = 2, panel.fun = function(x, y) {
+    circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index,
+        facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.55), cex = 0.8)
+}, bg.border = NA) #
+
+# Add outer layer
+for (target_gene_group in unique(target_gene_groups)){
+  highlight.sector(target_gene_groups %>% .[. == target_gene_group] %>% names,
+                   track.index = 1,
+                 col = target_gene_group_colors[target_gene_group],
+                 text = target_gene_group,
+                 cex = 0.8, facing="bending.inside", niceFacing = TRUE, text.vjust = "5mm")
+}
+```
+
+![](circos_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+
+``` r
+
+circos.clear()
 ```
 
 ### Visualize ligand-receptor interactions of the prioritized ligands in a circos plot
@@ -427,7 +525,7 @@ interaction).
 
 ``` r
 circos.par(gap.degree = gaps)
-chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = 0, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid", 
+chordDiagram(links_circle, directional = 1, order=order, link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = 0, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid", 
     preAllocateTracks = list(track.height = 0.075))
 # we go back to the first track and customize sector labels
 circos.track(track.index = 1, panel.fun = function(x, y) {
@@ -436,7 +534,7 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 }, bg.border = NA) #
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](circos_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
 ``` r
 circos.clear()
@@ -457,7 +555,7 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 }, bg.border = NA) #
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](circos_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 ``` r
 circos.clear()
@@ -481,38 +579,6 @@ dev.off()
 ##   2
 ```
 
-### Remark on making a ligand-receptor-target circos plot
-
-In the paper of Bonnardel, T’Jonck et al. [Stellate Cells, Hepatocytes,
-and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes
-Colonizing the Liver Macrophage
-Niche](https://www.cell.com/immunity/fulltext/S1074-7613\(19\)30368-1),
-we showed in Fig. 6B a ligand-receptor-target circos plot to visualize
-the main NicheNet predictions. This “ligand-receptor-target” circos plot
-was made by making first two separate circos plots: the ligand-target
-and ligand-receptor circos plot. Then these circos plots were overlayed
-in Inkscape (with the center of the two circles at the same location and
-the ligand-receptor circos plot bigger than the ligand-target one). To
-generate the combined circos plot as shown ni Fig. 6B, we then manually
-removed all elements of the ligand-receptor circos plot except the outer
-receptor layer. In the near future, we will be working on a solution to
-generate this ligand-receptor-target circos plot in a fully automated
-manner.
-
-If you would want to split up target genes and receptors in different
-groups according to signaling pathway (as done in mentioned paper), then
-you first need to define these groups in a specific data frame in
-advance (cf what is shown for ligands in the
-`ligand_type_indication_df`in the vignette). When you then want to
-overlay receptors in this case, you need to make sure that the
-ligand-receptor weights of receptors in one group are proportional to
-the ligand-target weights of the targets in that group (to generate the
-nice overlay effect). So in that case, the ligand-receptor weights are
-proportional to the ‘underlying’ ligand-target regulatory potential
-scores and not reflective of prior information supporting the specific
-ligand-receptor interaction (as shown in this vignette for
-ligand-receptor circos plots).
-
 ### References
 
 Bonnardel et al., 2019, Immunity 51, 1–17, [Stellate Cells, Hepatocytes,
@@ -520,9 +586,9 @@ and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes
 Colonizing the Liver Macrophage
 Niche](https://doi.org/10.1016/j.immuni.2019.08.017)
 
-<div id="refs" class="references">
+<div id="refs" class="references csl-bib-body hanging-indent">
 
-<div id="ref-puram_single-cell_2017">
+<div id="ref-puram_single-cell_2017" class="csl-entry">
 
 Puram, Sidharth V., Itay Tirosh, Anuraag S. Parikh, Anoop P. Patel,
 Keren Yizhak, Shawn Gillespie, Christopher Rodman, et al. 2017.

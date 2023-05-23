@@ -61,7 +61,7 @@ expressed_genes_malignant = expression[malignant_ids,] %>% apply(2,function(x){1
 ### Load the ligand-target model we want to use
 
 ```{r}
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final.rds"))
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 ```
 
@@ -88,7 +88,7 @@ In a first step, we will define a set of potentially active ligands. As potentia
 Note that we combine the ligands from CAFs and endothelial cells in one ligand activity analysis now. Later on, we will look which of the top-ranked ligands is mainly expressed by which of both cell types.
 
 ```{r}
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
 
 ligands = lr_network %>% pull(from) %>% unique()
 expressed_ligands_CAFs = intersect(ligands,expressed_genes_CAFs)
@@ -238,7 +238,7 @@ chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.de
 circos.track(track.index = 1, panel.fun = function(x, y) {
     circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index,
         facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.55), cex = 1)
-}, bg.border = NA) #
+}, bg.border = NA) 
 circos.clear()
 ```
 
@@ -270,6 +270,83 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 }, bg.border = NA) #
 circos.clear()
 dev.off()
+```
+
+### Adding an outer track to the circos plot (ligand-receptor-target circos plot)
+
+In the paper of Bonnardel, T'Jonck et al. [Stellate Cells, Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes Colonizing the Liver Macrophage Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1), we showed in Fig. 6B a ligand-receptor-target circos plot to visualize the main NicheNet predictions. This “ligand-receptor-target” circos plot was made by making first two separate circos plots: the ligand-target and ligand-receptor circos plot. Then these circos plots were overlayed in Inkscape (with the center of the two circles at the same location and the ligand-receptor circos plot bigger than the ligand-target one). To generate the combined circos plot as shown in Fig. 6B, we then manually removed all elements of the ligand-receptor circos plot except the outer receptor layer.
+
+It is also possible to generate this plot programmatically using the `circlize::highlight.sector` function, given that you are able to group the target genes. For our purposes, let us randomly assign the target genes into one of three groups (Receptors A, B, and C).
+
+```{r}
+
+target_gene_groups <- sample(c("Receptor A", "Receptor B", "Receptor C"), length(unique(circos_links$target)), replace = TRUE) %>%
+                          setNames(unique(circos_links$target))
+target_gene_groups
+target_gene_group_colors <- c("red", "blue", "green") %>% setNames(unique(target_gene_groups))
+```
+
+We will then have to redefine some variables.
+
+```{r}
+# Order targets according to receptor they belong to
+target_order <- target_gene_groups %>% sort %>% names
+order = c(ligand_order,target_order)
+
+# Redefine gaps between sectors
+width_same_cell_same_ligand_type = 0.6
+width_different_cell = 4.5
+width_ligand_target = 12
+width_same_cell_same_target_type = 0.6    # Added
+width_different_target = 4.5              # Added
+
+# Add this to circos_links
+circos_links = circos_links %>% mutate(target_receptor = target_gene_groups[target])
+
+gaps = c(
+  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "CAF-specific") %>% distinct(ligand) %>% nrow() -1)),
+  width_different_cell,
+  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "General") %>% distinct(ligand) %>% nrow() -1)),
+  width_different_cell,
+  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "Endothelial-specific") %>% distinct(ligand) %>% nrow() -1)), 
+  width_ligand_target,
+  # Add code to define gaps between different target groups
+  rep(width_same_cell_same_target_type, times = (circos_links %>% filter(target_receptor == "Receptor A") %>% distinct(target) %>% nrow() -1)),
+  width_different_target,
+  rep(width_same_cell_same_target_type, times = (circos_links %>% filter(target_receptor == "Receptor B") %>% distinct(target) %>% nrow() -1)),
+  width_different_target,
+  rep(width_same_cell_same_target_type, times = (circos_links %>% filter(target_receptor == "Receptor C") %>% distinct(target) %>% nrow() -1)),
+  width_ligand_target
+  )
+
+```
+
+Finally, create the plot. What's different here is we add an extra layer in `preAllocateTracks`, and we add a `for` loop at the end to draw the outer layer.
+```{r, fig.width=8, fig.height=8}
+circos.par(gap.degree = gaps)
+chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE,
+             grid.col = grid_col,transparency = transparency, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),
+             link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid",
+    # Add extra track for outer layer
+    preAllocateTracks = list(list(track.height = 0.025),
+                             list(track.height = 0.2)))
+
+# we go back to the first track and customize sector labels
+circos.track(track.index = 2, panel.fun = function(x, y) {
+    circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index,
+        facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.55), cex = 0.8)
+}, bg.border = NA) #
+
+# Add outer layer
+for (target_gene_group in unique(target_gene_groups)){
+  highlight.sector(target_gene_groups %>% .[. == target_gene_group] %>% names,
+                   track.index = 1,
+                 col = target_gene_group_colors[target_gene_group],
+                 text = target_gene_group,
+                 cex = 0.8, facing="bending.inside", niceFacing = TRUE, text.vjust = "5mm")
+}
+
+circos.clear()
 ```
 
 ### Visualize ligand-receptor interactions of the prioritized ligands in a circos plot
@@ -346,7 +423,7 @@ Render the circos plot (all links same transparancy). Only the widths of the blo
 
 ```{r, fig.width=8, fig.height=8}
 circos.par(gap.degree = gaps)
-chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = 0, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid", 
+chordDiagram(links_circle, directional = 1, order=order, link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = 0, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid", 
     preAllocateTracks = list(track.height = 0.075))
 # we go back to the first track and customize sector labels
 circos.track(track.index = 1, panel.fun = function(x, y) {
@@ -385,12 +462,6 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 circos.clear()
 dev.off()
 ```
-
-### Remark on making a ligand-receptor-target circos plot
-
-In the paper of Bonnardel, T'Jonck et al. [Stellate Cells, Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes Colonizing the Liver Macrophage Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1), we showed in Fig. 6B a ligand-receptor-target circos plot to visualize the main NicheNet predictions. This “ligand-receptor-target” circos plot was made by making first two separate circos plots: the ligand-target and ligand-receptor circos plot. Then these circos plots were overlayed in Inkscape (with the center of the two circles at the same location and the ligand-receptor circos plot bigger than the ligand-target one). To generate the combined circos plot as shown ni Fig. 6B, we then manually removed all elements of the ligand-receptor circos plot except the outer receptor layer. In the near future, we will be working on a solution to generate this ligand-receptor-target circos plot in a fully automated manner.
-
-If you would want to split up target genes and receptors in different groups according to signaling pathway (as done in mentioned paper), then you first need to define these groups in a specific data frame in advance (cf what is shown for ligands in the `ligand_type_indication_df `in the vignette). When you then want to overlay receptors in this case, you need to make sure that the ligand-receptor weights of receptors in one group are proportional to the ligand-target weights of the targets in that group (to generate the nice overlay effect). So in that case, the ligand-receptor weights are proportional to the ‘underlying’ ligand-target regulatory potential scores and not reflective of prior information supporting the specific ligand-receptor interaction (as shown in this vignette for ligand-receptor circos plots).
 
 ### References
 
