@@ -4,7 +4,7 @@
 \alias{process_table_to_ic}
 \title{Process DE or expression information into intercellular communication focused information.}
 \usage{
-process_info_to_ic(info_object, ic_type = "sender", lr_network)
+process_table_to_ic(table_object, table_type = "expression", lr_network, senders_oi = NULL, receivers_oi = NULL)
 }
 \arguments{
 \item{table_object}{Output of `get_exprs_avg`, `calculate_de`, or `FindMarkers`}
@@ -21,7 +21,7 @@ process_info_to_ic(info_object, ic_type = "sender", lr_network)
 Dataframe combining sender and receiver information linked to each other through joining by the ligand-receptor network.
 }
 \description{
-\code{process_info_to_ic} First, only keep information of ligands for senders_oi, and information of receptors for receivers_oi.
+\code{process_table_to_ic} First, only keep information of ligands for senders_oi, and information of receptors for receivers_oi.
 Then, combine information for senders and receivers by linking ligands to receptors based on the prior knowledge ligand-receptor network.
 }
 \examples{

@@ -6,6 +6,15 @@
 \usage{
 get_exprs_avg(seurat_obj, celltype_colname, condition_oi = NA, condition_colname = NA)
 }
+\arguments{
+\item{seurat_obj}{Seurat object}
+
+\item{celltype_colname}{Name of the meta data column that indicates the cell type of a cell}
+
+\item{condition_oi}{If provided, subset seurat_obj so average expression is only calculated for cells belonging to condition_oi}
+
+\item{condition_colname}{Name of the meta data column that indicates from which group/condition a cell comes from}
+}
 \value{
 Data frame with average gene expression per cell type.
 }

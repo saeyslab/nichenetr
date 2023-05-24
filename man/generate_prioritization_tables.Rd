@@ -4,7 +4,10 @@
 \alias{generate_prioritization_tables}
 \title{generate_prioritization_tables}
 \usage{
-generate_prioritization_tables(sender_receiver_info, sender_receiver_de, ligand_activities, prioritizing_weights = c("de_ligand" = 1,"de_receptor" = 1,"activity_scaled" = 2,"exprs_ligand" = 2,"exprs_receptor" = 2,"condition_specificity"=0))
+generate_prioritization_tables(sender_receiver_info, sender_receiver_de, ligand_activities, lr_condition_de = NULL,
+                                      prioritizing_weights = c("de_ligand" = 1,"de_receptor" = 1,"activity_scaled" = 2,
+                                                               "exprs_ligand" = 2,"exprs_receptor" = 2,
+                                                               "ligand_condition_specificity" = 0, "receptor_condition_specificity"=0))
 }
 \arguments{
 \item{sender_receiver_info}{Output of `get_exprs_avg` -> `process_table_to_ic`}
@@ -12,6 +15,8 @@ generate_prioritization_tables(sender_receiver_info, sender_receiver_de, ligand_
 \item{sender_receiver_de}{Output of`calculate_de` -> `process_table_to_ic`}
 
 \item{ligand_activities}{Output of `predict_ligand_activities`}
+
+\item{lr_condition_de}{Output of `FindMarkers` -> `process_table_to_ic`}
 
 \item{prioritizing_weights}{Named vector indicating the relative weights of each prioritization criterion}
 }

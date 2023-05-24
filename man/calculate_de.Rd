@@ -4,7 +4,7 @@
 \alias{calculate_de}
 \title{Calculate differential expression of one cell type versus all other cell types}
 \usage{
-calculate_de(seurat_obj, celltype_colname, condition_oi = NA, condition_colname = NA, min.pct = 0.1, assay_oi = "RNA")
+calculate_de(seurat_obj, celltype_colname, condition_oi = NA, condition_colname = NA, assay_oi = "RNA", ...)
 }
 \arguments{
 \item{seurat_obj}{Seurat object}
@@ -15,13 +15,9 @@ calculate_de(seurat_obj, celltype_colname, condition_oi = NA, condition_colname 
 
 \item{condition_colname}{Name of the meta data column that indicates from which group/condition a cell comes from}
 
-\item{min.pct}{only test genes that are detected in a minimum fraction of min.pct cells in either of the two populations (Default: 0)}
+\item{assay_oi}{Which assay need to be used for DE calculation. Default RNA, alternatives: SCT.}
 
-\item{logfc.threshold}{Limit testing to genes which show, on average, at least X-fold difference (log-scale) between the two groups of cells (Default: 0)}
-
-\item{return.thresh}{Only return markers that have a p-value < return.thresh (Default: 1)}
-
-\item{assay_oi}{Which assay need to be used for DE calculation via `FindMarkers`. Default RNA, alternatives: SCT.}
+\item{...}{Arguments passed to Seurat::FindAllMarkers(by default: features = NULL, min.pct = 0, logfc.threshold = 0, return.thresh = 1)}
 }
 \value{
 A dataframe containing the DE results

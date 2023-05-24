@@ -16,16 +16,14 @@ check_names <- function(column, seurat_obj = NULL){
 #' @description \code{calculate_de} Calculate differential expression of one cell type versus all other cell types using Seurat::FindAllMarkers. If condition_oi is provided, only consider cells from that condition.
 #'
 #' @usage
-#' calculate_de(seurat_obj, celltype_colname, condition_oi = NA, condition_colname = NA, min.pct = 0.1, assay_oi = "RNA")
+#' calculate_de(seurat_obj, celltype_colname, condition_oi = NA, condition_colname = NA, assay_oi = "RNA", ...)
 #'
 #' @param seurat_obj Seurat object
 #' @param celltype_colname Name of the meta data column that indicates the cell type of a cell
 #' @param condition_oi If provided, subset seurat_obj so DE is only calculated for cells belonging to condition_oi
 #' @param condition_colname Name of the meta data column that indicates from which group/condition a cell comes from
-#' @param min.pct only test genes that are detected in a minimum fraction of min.pct cells in either of the two populations (Default: 0)
-#' @param logfc.threshold Limit testing to genes which show, on average, at least X-fold difference (log-scale) between the two groups of cells (Default: 0)
-#' @param return.thresh Only return markers that have a p-value < return.thresh (Default: 1)
-#' @param assay_oi Which assay need to be used for DE calculation via `FindMarkers`. Default RNA, alternatives: SCT.
+#' @param assay_oi Which assay need to be used for DE calculation. Default RNA, alternatives: SCT.
+#' @param ... Arguments passed to Seurat::FindAllMarkers(by default: features = NULL, min.pct = 0, logfc.threshold = 0, return.thresh = 1)
 #'
 #' @return A dataframe containing the DE results
 #'
@@ -43,10 +41,15 @@ check_names <- function(column, seurat_obj = NULL){
 #'
 calculate_de = function(seurat_obj, celltype_colname,
                         condition_oi = NA, condition_colname = NA,
-                        features = NULL,
-                        min.pct = 0, logfc.threshold = 0,
-                        return.thresh = 1,
-                        assay_oi = "RNA"){
+                        assay_oi = "RNA",
+                        ...){
+
+  # Default settings to return all genes with their p-val and LFC
+  FindAllMarkers_args = list(object = seurat_obj, assay = assay_oi,
+                             features = NULL, min.pct = 0, logfc.threshold = 0, return.thresh = 1)
+
+  # Replace this with user arguments
+  FindAllMarkers_args[names(list(...))] =  list(...)
 
   if (any(!is.na(condition_colname), !is.na(condition_oi)) & !all(!is.na(condition_colname), !is.na(condition_oi))){
     stop("Please input both condition_colname and condition_oi")
@@ -64,7 +67,7 @@ calculate_de = function(seurat_obj, celltype_colname,
   # Set celltype as identity class
   Idents(seurat_obj) <- seuratObj[[celltype_colname, drop=TRUE]]
 
-  DE_table = FindAllMarkers(seurat_obj, features = features,  min.pct = min.pct, logfc.threshold = logfc.threshold, return.thresh = 1) %>%
+  DE_table = do.call(FindAllMarkers, FindAllMarkers_args) %>%
                 rename(cluster_id = cluster)
 
   SeuratV4 = c("avg_log2FC") %in% colnames(DE_table)
@@ -78,14 +81,17 @@ calculate_de = function(seurat_obj, celltype_colname,
 #' @title Calculate average of gene expression per cell type.
 #'
 #' @description \code{get_exprs_avg}  Calculate average of gene expression per cell type. If condition_oi is provided, only consider cells from that condition.
-#' @usage get_exprs_avg(seurat_obj, celltype_colname, condition_oi = NA, condition_colname = NA)
+#' @usage
+#' get_exprs_avg(seurat_obj, celltype_colname, condition_oi = NA, condition_colname = NA)
+#'
+#' @inheritParams calculate_de
+#' @param condition_oi If provided, subset seurat_obj so average expression is only calculated for cells belonging to condition_oi
 #'
 #' @return Data frame with average gene expression per cell type.
 #'
 #' @import dplyr
 #' @import tibble
 #' @import tidyr
-#' @importFrom Seurat NormalizeData
 #'
 #' @examples
 #' \dontrun{
@@ -129,9 +135,9 @@ get_exprs_avg = function(seurat_obj, celltype_colname,
 }
 #' @title Process DE or expression information into intercellular communication focused information.
 #'
-#' @description \code{process_info_to_ic} First, only keep information of ligands for senders_oi, and information of receptors for receivers_oi.
+#' @description \code{process_table_to_ic} First, only keep information of ligands for senders_oi, and information of receptors for receivers_oi.
 #' Then, combine information for senders and receivers by linking ligands to receptors based on the prior knowledge ligand-receptor network.
-#' @usage process_info_to_ic(info_object, ic_type = "sender", lr_network)
+#' @usage process_table_to_ic(table_object, table_type = "expression", lr_network, senders_oi = NULL, receivers_oi = NULL)
 #' @param table_object Output of `get_exprs_avg`, `calculate_de`, or `FindMarkers`
 #' @param table_type "expression", "celltype_DE", or "group_DE": indicates whether the table contains expression, celltype markers, or condition-specific information
 #' @param lr_network Prior knowledge Ligand-Receptor network (columns: ligand, receptor)
@@ -224,11 +230,15 @@ process_table_to_ic = function(table_object, table_type = "expression",
 #'
 #' @description \code{generate_prioritization_tables}  Perform a prioritization of cell-cell interactions (similar to MultiNicheNet).
 #' User can choose the importance attached to each of the following prioritization criteria: differential expression of ligand and receptor, cell-type specificity of expression of ligand and receptor, NicheNet ligand activity
-#' @usage generate_prioritization_tables(sender_receiver_info, sender_receiver_de, ligand_activities, prioritizing_weights = c("de_ligand" = 1,"de_receptor" = 1,"activity_scaled" = 2,"exprs_ligand" = 2,"exprs_receptor" = 2,"condition_specificity"=0))
+#' @usage generate_prioritization_tables(sender_receiver_info, sender_receiver_de, ligand_activities, lr_condition_de = NULL,
+#'                                       prioritizing_weights = c("de_ligand" = 1,"de_receptor" = 1,"activity_scaled" = 2,
+#'                                                                "exprs_ligand" = 2,"exprs_receptor" = 2,
+#'                                                                "ligand_condition_specificity" = 0, "receptor_condition_specificity"=0))
 #'
 #' @param sender_receiver_info Output of `get_exprs_avg` -> `process_table_to_ic`
 #' @param sender_receiver_de Output of`calculate_de` -> `process_table_to_ic`
 #' @param ligand_activities Output of `predict_ligand_activities`
+#' @param lr_condition_de Output of `FindMarkers` -> `process_table_to_ic`
 #' @param prioritizing_weights Named vector indicating the relative weights of each prioritization criterion
 #'
 #' @return Data frames of prioritized sender-ligand-receiver-receptor interactions.
@@ -292,7 +302,8 @@ process_table_to_ic = function(table_object, table_type = "expression",
 #'
 #'
 generate_prioritization_tables = function(sender_receiver_info, sender_receiver_de, ligand_activities, lr_condition_de = NULL,
-                                          prioritizing_weights = c("de_ligand" = 1,"de_receptor" = 1,"activity_scaled" = 2,"exprs_ligand" = 2,"exprs_receptor" = 2,"ligand_condition_specificity" = 0, "receptor_condition_specificity"=0)){
+                                          prioritizing_weights = c("de_ligand" = 1,"de_receptor" = 1,"activity_scaled" = 2,"exprs_ligand" = 2,"exprs_receptor" = 2,
+                                                                   "ligand_condition_specificity" = 0, "receptor_condition_specificity"=0)){
 
   requireNamespace("dplyr")
   sender_receiver_tbl = sender_receiver_de %>% dplyr::distinct(sender, receiver)
