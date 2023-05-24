@@ -49,9 +49,9 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - { os: ubuntu-latest, r: '4.1.0', bioc: '3.13', cont: "bioconductor/bioconductor_docker:RELEASE_3_13", rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest" }
-          - { os: macOS-latest, r: '4.1.0', bioc: '3.13'}
-          - { os: windows-latest, r: '4.1.0', bioc: '3.13'}
+          - { os: ubuntu-latest, r: '4.1', bioc: '3.13', cont: "bioconductor/bioconductor_docker:RELEASE_3_13", rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest" }
+          - { os: macOS-latest, r: '4.1', bioc: '3.13'}
+          - { os: windows-latest, r: '4.1', bioc: '3.13'}
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
       RSPM_ROOT: https://packagemanager.posit.co.
@@ -178,6 +178,7 @@ jobs:
           BiocManager::install("ComplexHeatmap", update = FALSE)
           remotes::install_cran("circlize")
           remotes::install_cran("tidyverse")
+          remotes::install_cran("DiagrammeR", type = ifelse("${{ runner.os }}" == "Windows", "win.binary", getOption("pkgType")))
           remotes::install_local(dependencies = TRUE, repos = BiocManager::repositories(), build_vignettes = FALSE, upgrade = TRUE)
         continue-on-error: true
         shell: Rscript {0}
