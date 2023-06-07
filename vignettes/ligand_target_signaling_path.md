@@ -24,8 +24,8 @@ interest.
 
 For this analysis, you need to define:
 
-  - one or more ligands of interest
-  - one or more target genes of interest
+- one or more ligands of interest
+- one or more target genes of interest
 
 In this vignette, we will demonstrate how to infer signaling paths
 between a CAF-ligand (CAF = cancer-associated fibroblast) of interest
@@ -40,17 +40,16 @@ signaling paths between ligand and target genes of interest.
 library(nichenetr)
 library(tidyverse)
 
-weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
-ligand_tf_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_tf_matrix.rds"))
+weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final.rds"))
+ligand_tf_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_tf_matrix_nsga2r_final.rds"))
 
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-sig_network = readRDS(url("https://zenodo.org/record/3260758/files/signaling_network.rds"))
-gr_network = readRDS(url("https://zenodo.org/record/3260758/files/gr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
+sig_network = readRDS(url("https://zenodo.org/record/7074291/files/signaling_network_human_21122021.rds"))
+gr_network = readRDS(url("https://zenodo.org/record/7074291/files/gr_network_human_21122021.rds"))
 ```
 
 As example, we will infer signaling paths between the CAF-ligand TGFB3
-and its top-predicted p-EMT target genes TGFBI, LAMC2 and
-TNC.
+and its top-predicted p-EMT target genes TGFBI, LAMC2 and TNC.
 
 ``` r
 ligands_all = "TGFB3" # this can be a list of multiple ligands if required
@@ -68,25 +67,23 @@ graph_min_max = diagrammer_format_signaling_graph(signaling_graph_list = active_
 # To render the graph: uncomment following line of code
 # DiagrammeR::render_graph(graph_min_max, layout = "tree")
 ```
-
 ![](tgfb3_targets_signaling_path.png)
 
 We will now look which of the collected data sources support the
-interactions in this
-network.
+interactions in this network.
 
 ``` r
 data_source_network = infer_supporting_datasources(signaling_graph_list = active_signaling_network,lr_network = lr_network, sig_network = sig_network, gr_network = gr_network)
 head(data_source_network) 
-## # A tibble: 6 x 5
-##   from  to    source            database       layer     
-##   <chr> <chr> <chr>             <chr>          <chr>     
-## 1 SMAD1 TGFBI regnetwork_source regnetwork     regulatory
-## 2 SMAD1 TGFBI Remap_5           Remap          regulatory
-## 3 SMAD2 LAMC2 harmonizome_CHEA  harmonizome_gr regulatory
-## 4 SMAD2 TGFBI harmonizome_CHEA  harmonizome_gr regulatory
-## 5 SMAD2 TNC   harmonizome_CHEA  harmonizome_gr regulatory
-## 6 SMAD2 TNC   regnetwork_source regnetwork     regulatory
+## # A tibble: 6 × 5
+##   from  to    source                  database       layer     
+##   <chr> <chr> <chr>                   <chr>          <chr>     
+## 1 PTEN  LAMC2 KnockTF                 KnockTF        regulatory
+## 2 PTEN  TGFBI harmonizome_GEO_GENE    harmonizome_gr regulatory
+## 3 PTEN  TGFBI harmonizome_MSIGDB_GENE harmonizome_gr regulatory
+## 4 PTEN  TGFBI KnockTF                 KnockTF        regulatory
+## 5 SMAD1 TGFBI regnetwork_source       regnetwork     regulatory
+## 6 SMAD1 TGFBI Remap_1                 Remap          regulatory
 ```
 
 For information of all mentioned data sources in the source column (link
