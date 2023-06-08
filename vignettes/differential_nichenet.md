@@ -37,6 +37,7 @@ macrophage subtypes.
 ## Load in packages
 
 ``` r
+options(timeout=600)
 library(nichenetr)
 library(RColorBrewer)
 library(tidyverse)
@@ -72,18 +73,12 @@ HNSCC can also be downloaded from Zenodo
 ``` r
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
-##               2300002M23Rik 2610528A11Rik 9530003J23Rik            a
-## 0610005C13Rik  0.000000e+00  0.000000e+00  1.311297e-05 0.000000e+00
-## 0610009B22Rik  0.000000e+00  0.000000e+00  1.269301e-05 0.000000e+00
-## 0610009L18Rik  8.872902e-05  4.977197e-05  2.581909e-04 7.570125e-05
-## 0610010F05Rik  2.194046e-03  1.111556e-03  3.142374e-03 1.631658e-03
-## 0610010K14Rik  2.271606e-03  9.360769e-04  3.546140e-03 1.697713e-03
-##                        A2m
-## 0610005C13Rik 1.390053e-05
-## 0610009B22Rik 1.345536e-05
-## 0610009L18Rik 9.802264e-05
-## 0610010F05Rik 2.585820e-03
-## 0610010K14Rik 2.632082e-03
+##               2300002M23Rik 2610528A11Rik 9530003J23Rik            a          A2m
+## 0610005C13Rik  0.000000e+00  0.000000e+00  1.311297e-05 0.000000e+00 1.390053e-05
+## 0610009B22Rik  0.000000e+00  0.000000e+00  1.269301e-05 0.000000e+00 1.345536e-05
+## 0610009L18Rik  8.872902e-05  4.977197e-05  2.581909e-04 7.570125e-05 9.802264e-05
+## 0610010F05Rik  2.194046e-03  1.111556e-03  3.142374e-03 1.631658e-03 2.585820e-03
+## 0610010K14Rik  2.271606e-03  9.360769e-04  3.546140e-03 1.697713e-03 2.632082e-03
 ```
 
 ``` r
@@ -169,37 +164,23 @@ seurat_obj = Seurat::PrepSCTFindMarkers(seurat_obj, assay = "SCT", verbose = FAL
 
 seurat_obj = alias_to_symbol_seurat(seurat_obj, organism = "mouse")
 DE_sender = calculate_niche_de(seurat_obj = seurat_obj %>% subset(features = lr_network$ligand %>% intersect(rownames(seurat_obj))), niches = niches, type = "sender", assay_oi = assay_oi) # only ligands important for sender cell types
-## [1] "Calculate Sender DE between: LSECs_portal and Cholangiocytes"     
-## [2] "Calculate Sender DE between: LSECs_portal and Fibroblast 2"       
-## [3] "Calculate Sender DE between: LSECs_portal and Capsule fibroblasts"
-## [4] "Calculate Sender DE between: LSECs_portal and Mesothelial cells"  
-## [1] "Calculate Sender DE between: Hepatocytes_portal and Cholangiocytes"     
-## [2] "Calculate Sender DE between: Hepatocytes_portal and Fibroblast 2"       
-## [3] "Calculate Sender DE between: Hepatocytes_portal and Capsule fibroblasts"
-## [4] "Calculate Sender DE between: Hepatocytes_portal and Mesothelial cells"  
-## [1] "Calculate Sender DE between: Stellate cells_portal and Cholangiocytes"     
-## [2] "Calculate Sender DE between: Stellate cells_portal and Fibroblast 2"       
-## [3] "Calculate Sender DE between: Stellate cells_portal and Capsule fibroblasts"
-## [4] "Calculate Sender DE between: Stellate cells_portal and Mesothelial cells"  
-## [1] "Calculate Sender DE between: Cholangiocytes and LSECs_portal"         
-## [2] "Calculate Sender DE between: Cholangiocytes and Hepatocytes_portal"   
-## [3] "Calculate Sender DE between: Cholangiocytes and Stellate cells_portal"
-## [4] "Calculate Sender DE between: Cholangiocytes and Capsule fibroblasts"  
+## [1] "Calculate Sender DE between: LSECs_portal and Cholangiocytes"      "Calculate Sender DE between: LSECs_portal and Fibroblast 2"       
+## [3] "Calculate Sender DE between: LSECs_portal and Capsule fibroblasts" "Calculate Sender DE between: LSECs_portal and Mesothelial cells"  
+## [1] "Calculate Sender DE between: Hepatocytes_portal and Cholangiocytes"      "Calculate Sender DE between: Hepatocytes_portal and Fibroblast 2"       
+## [3] "Calculate Sender DE between: Hepatocytes_portal and Capsule fibroblasts" "Calculate Sender DE between: Hepatocytes_portal and Mesothelial cells"  
+## [1] "Calculate Sender DE between: Stellate cells_portal and Cholangiocytes"      "Calculate Sender DE between: Stellate cells_portal and Fibroblast 2"       
+## [3] "Calculate Sender DE between: Stellate cells_portal and Capsule fibroblasts" "Calculate Sender DE between: Stellate cells_portal and Mesothelial cells"  
+## [1] "Calculate Sender DE between: Cholangiocytes and LSECs_portal"          "Calculate Sender DE between: Cholangiocytes and Hepatocytes_portal"   
+## [3] "Calculate Sender DE between: Cholangiocytes and Stellate cells_portal" "Calculate Sender DE between: Cholangiocytes and Capsule fibroblasts"  
 ## [5] "Calculate Sender DE between: Cholangiocytes and Mesothelial cells"    
-## [1] "Calculate Sender DE between: Fibroblast 2 and LSECs_portal"         
-## [2] "Calculate Sender DE between: Fibroblast 2 and Hepatocytes_portal"   
-## [3] "Calculate Sender DE between: Fibroblast 2 and Stellate cells_portal"
-## [4] "Calculate Sender DE between: Fibroblast 2 and Capsule fibroblasts"  
+## [1] "Calculate Sender DE between: Fibroblast 2 and LSECs_portal"          "Calculate Sender DE between: Fibroblast 2 and Hepatocytes_portal"   
+## [3] "Calculate Sender DE between: Fibroblast 2 and Stellate cells_portal" "Calculate Sender DE between: Fibroblast 2 and Capsule fibroblasts"  
 ## [5] "Calculate Sender DE between: Fibroblast 2 and Mesothelial cells"    
-## [1] "Calculate Sender DE between: Capsule fibroblasts and LSECs_portal"         
-## [2] "Calculate Sender DE between: Capsule fibroblasts and Hepatocytes_portal"   
-## [3] "Calculate Sender DE between: Capsule fibroblasts and Stellate cells_portal"
-## [4] "Calculate Sender DE between: Capsule fibroblasts and Cholangiocytes"       
+## [1] "Calculate Sender DE between: Capsule fibroblasts and LSECs_portal"          "Calculate Sender DE between: Capsule fibroblasts and Hepatocytes_portal"   
+## [3] "Calculate Sender DE between: Capsule fibroblasts and Stellate cells_portal" "Calculate Sender DE between: Capsule fibroblasts and Cholangiocytes"       
 ## [5] "Calculate Sender DE between: Capsule fibroblasts and Fibroblast 2"         
-## [1] "Calculate Sender DE between: Mesothelial cells and LSECs_portal"         
-## [2] "Calculate Sender DE between: Mesothelial cells and Hepatocytes_portal"   
-## [3] "Calculate Sender DE between: Mesothelial cells and Stellate cells_portal"
-## [4] "Calculate Sender DE between: Mesothelial cells and Cholangiocytes"       
+## [1] "Calculate Sender DE between: Mesothelial cells and LSECs_portal"          "Calculate Sender DE between: Mesothelial cells and Hepatocytes_portal"   
+## [3] "Calculate Sender DE between: Mesothelial cells and Stellate cells_portal" "Calculate Sender DE between: Mesothelial cells and Cholangiocytes"       
 ## [5] "Calculate Sender DE between: Mesothelial cells and Fibroblast 2"
 DE_receiver = calculate_niche_de(seurat_obj = seurat_obj %>% subset(features = lr_network$receptor %>% unique()), niches = niches, type = "receiver", assay_oi = assay_oi) # only receptors now, later on: DE analysis to find targets
 ## # A tibble: 3 × 2
@@ -208,12 +189,9 @@ DE_receiver = calculate_niche_de(seurat_obj = seurat_obj %>% subset(features = l
 ## 1 KCs      MoMac2              
 ## 2 KCs      MoMac1              
 ## 3 MoMac2   MoMac1              
-## [1] "Calculate receiver DE between: KCs and MoMac2"
-## [2] "Calculate receiver DE between: KCs and MoMac1"
-## [1] "Calculate receiver DE between: MoMac2 and KCs"   
-## [2] "Calculate receiver DE between: MoMac2 and MoMac1"
-## [1] "Calculate receiver DE between: MoMac1 and KCs"   
-## [2] "Calculate receiver DE between: MoMac1 and MoMac2"
+## [1] "Calculate receiver DE between: KCs and MoMac2" "Calculate receiver DE between: KCs and MoMac1"
+## [1] "Calculate receiver DE between: MoMac2 and KCs"    "Calculate receiver DE between: MoMac2 and MoMac1"
+## [1] "Calculate receiver DE between: MoMac1 and KCs"    "Calculate receiver DE between: MoMac1 and MoMac2"
 
 DE_sender = DE_sender %>% mutate(avg_log2FC = ifelse(avg_log2FC == Inf, max(avg_log2FC[is.finite(avg_log2FC)]), ifelse(avg_log2FC == -Inf, min(avg_log2FC[is.finite(avg_log2FC)]), avg_log2FC)))
 DE_receiver = DE_receiver %>% mutate(avg_log2FC = ifelse(avg_log2FC == Inf, max(avg_log2FC[is.finite(avg_log2FC)]), ifelse(avg_log2FC == -Inf, min(avg_log2FC[is.finite(avg_log2FC)]), avg_log2FC)))
@@ -361,12 +339,9 @@ lfc_cutoff = 0.15 # recommended for 10x as min_lfc cutoff.
 specificity_score_targets = "min_lfc"
 
 DE_receiver_targets = calculate_niche_de_targets(seurat_obj = seurat_obj, niches = niches, lfc_cutoff = lfc_cutoff, expression_pct = expression_pct, assay_oi = assay_oi) 
-## [1] "Calculate receiver DE between: KCs and MoMac2"
-## [2] "Calculate receiver DE between: KCs and MoMac1"
-## [1] "Calculate receiver DE between: MoMac2 and KCs"   
-## [2] "Calculate receiver DE between: MoMac2 and MoMac1"
-## [1] "Calculate receiver DE between: MoMac1 and KCs"   
-## [2] "Calculate receiver DE between: MoMac1 and MoMac2"
+## [1] "Calculate receiver DE between: KCs and MoMac2" "Calculate receiver DE between: KCs and MoMac1"
+## [1] "Calculate receiver DE between: MoMac2 and KCs"    "Calculate receiver DE between: MoMac2 and MoMac1"
+## [1] "Calculate receiver DE between: MoMac1 and KCs"    "Calculate receiver DE between: MoMac1 and MoMac2"
 DE_receiver_processed_targets = process_receiver_target_de(DE_receiver_targets = DE_receiver_targets, niches = niches, expression_pct = expression_pct, specificity_score = specificity_score_targets)
   
 background = DE_receiver_processed_targets  %>% pull(target) %>% unique()
@@ -376,8 +351,7 @@ geneset_MoMac1 = DE_receiver_processed_targets %>% filter(receiver == niches$MoM
 # Good idea to check which genes will be left out of the ligand activity analysis (=when not present in the rownames of the ligand-target matrix).
 # If many genes are left out, this might point to some issue in the gene naming (eg gene aliases and old gene symbols, bad human-mouse mapping)
 geneset_KC %>% setdiff(rownames(ligand_target_matrix))
-## [1] "Wfdc17"        "AW112010"      "2900097C17Rik" "B430306N03Rik"
-## [5] "AC149090.1"
+## [1] "Wfdc17"        "AW112010"      "2900097C17Rik" "B430306N03Rik" "AC149090.1"
 geneset_MoMac2 %>% setdiff(rownames(ligand_target_matrix))
 ## [1] "Gm21188" "Gm10076" "Rpl41"   "Atp5o.1" "H2afy"
 geneset_MoMac1 %>% setdiff(rownames(ligand_target_matrix))
@@ -467,7 +441,7 @@ exprs_sender_receiver = lr_network %>%
   inner_join(exprs_tbl_ligand, by = c("ligand")) %>% 
   inner_join(exprs_tbl_receptor, by = c("receptor")) %>% inner_join(DE_sender_receiver %>% distinct(niche, sender, receiver))
   
-ligand_scaled_receptor_expression_fraction_df = exprs_sender_receiver %>% group_by(ligand, receiver) %>% mutate(rank_receptor_expression = dense_rank(receptor_expression), rank_receptor_fraction  = dense_rank(receptor_fraction)) %>% mutate(ligand_scaled_receptor_expression_fraction = 0.5*( (rank_receptor_fraction / max(rank_receptor_fraction)) + ((rank_receptor_expression / max(rank_receptor_expression))) ) )  %>% distinct(ligand, receptor, receiver, ligand_scaled_receptor_expression_fraction) %>% distinct() %>% ungroup() 
+ligand_scaled_receptor_expression_fraction_df = exprs_sender_receiver %>% group_by(ligand, receiver) %>% mutate(rank_receptor_expression = dense_rank(receptor_expression), rank_receptor_fraction  = dense_rank(receptor_fraction)) %>% mutate(ligand_scaled_receptor_expression_fraction = 0.5*( (rank_receptor_fraction / max(rank_receptor_fraction)) + ((rank_receptor_expression / max(rank_receptor_expression))) ))  %>% distinct(ligand, receptor, receiver, ligand_scaled_receptor_expression_fraction) %>% distinct() %>% ungroup() 
 ```
 
 # 7. Prioritization of ligand-receptor and ligand-target links
@@ -608,126 +582,105 @@ prioritization_tables = get_prioritization_tables(output, prioritizing_weights)
 
 prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(receiver == niches[[1]]$receiver) %>% head(10)
 ## # A tibble: 10 × 36
-##    niche    receiver sender         ligand_receptor ligand receptor ligand_score
-##    <chr>    <chr>    <chr>          <chr>           <chr>  <chr>           <dbl>
-##  1 KC_niche KCs      Hepatocytes_p… Apoc3--Lrp1     Apoc3  Lrp1             3.33
-##  2 KC_niche KCs      Hepatocytes_p… Apoa2--Lrp1     Apoa2  Lrp1             4.07
-##  3 KC_niche KCs      Hepatocytes_p… Apoc3--Tlr2     Apoc3  Tlr2             3.33
-##  4 KC_niche KCs      Hepatocytes_p… Apoa1--Lrp1     Apoa1  Lrp1             3.18
-##  5 KC_niche KCs      Hepatocytes_p… Serpina1e--Lrp1 Serpi… Lrp1             3.63
-##  6 KC_niche KCs      Hepatocytes_p… Apoa1--Abca1    Apoa1  Abca1            3.18
-##  7 KC_niche KCs      Hepatocytes_p… Hpx--Lrp1       Hpx    Lrp1             1.87
-##  8 KC_niche KCs      Stellate cell… Ntm--Cd79b      Ntm    Cd79b            2.65
-##  9 KC_niche KCs      Hepatocytes_p… Fgb--Cdh5       Fgb    Cdh5             1.98
-## 10 KC_niche KCs      Hepatocytes_p… Serpina1b--Lrp1 Serpi… Lrp1             2.70
-## # … with 29 more variables: ligand_significant <dbl>, ligand_present <dbl>,
-## #   ligand_expression <dbl>, ligand_expression_scaled <dbl>,
-## #   ligand_fraction <dbl>, ligand_score_spatial <dbl>, receptor_score <dbl>,
-## #   receptor_significant <dbl>, receptor_present <dbl>,
-## #   receptor_expression <dbl>, receptor_expression_scaled <dbl>,
-## #   receptor_fraction <dbl>, receptor_score_spatial <dbl>,
-## #   ligand_scaled_receptor_expression_fraction <dbl>, …
+##    niche    receiver sender            ligand_receptor ligand receptor ligand_score ligand_signific… ligand_present ligand_expressi… ligand_expressi… ligand_fraction ligand_score_sp… receptor_score
+##    <chr>    <chr>    <chr>             <chr>           <chr>  <chr>           <dbl>            <dbl>          <dbl>            <dbl>            <dbl>           <dbl>            <dbl>          <dbl>
+##  1 KC_niche KCs      Hepatocytes_port… Apoc3--Lrp1     Apoc3  Lrp1             3.33                1              1            14.8               2.5           0.733            1.20           0.110
+##  2 KC_niche KCs      Hepatocytes_port… Apoa2--Lrp1     Apoa2  Lrp1             4.07                1              1            32.7               2.5           0.781            0.482          0.110
+##  3 KC_niche KCs      Hepatocytes_port… Apoa1--Lrp1     Apoa1  Lrp1             3.18                1              1            14.7               2.5           0.714            1.03           0.110
+##  4 KC_niche KCs      Hepatocytes_port… Serpina1e--Lrp1 Serpi… Lrp1             3.63                1              1            18.4               2.5           0.695            0.609          0.110
+##  5 KC_niche KCs      Hepatocytes_port… Apoc3--Tlr2     Apoc3  Tlr2             3.33                1              1            14.8               2.5           0.733            1.20          -0.173
+##  6 KC_niche KCs      Hepatocytes_port… Apoa1--Abca1    Apoa1  Abca1            3.18                1              1            14.7               2.5           0.714            1.03           0.197
+##  7 KC_niche KCs      Hepatocytes_port… Hpx--Lrp1       Hpx    Lrp1             1.87                1              1             3.44              2.5           0.455            1.23           0.110
+##  8 KC_niche KCs      Hepatocytes_port… Serpina1b--Lrp1 Serpi… Lrp1             2.70                1              1             8.13              2.5           0.686            0.560          0.110
+##  9 KC_niche KCs      Hepatocytes_port… Fgb--Cdh5       Fgb    Cdh5             1.98                1              1             3.62              2.5           0.560            0.913          1.39 
+## 10 KC_niche KCs      Stellate cells_p… Ntm--Cd79b      Ntm    Cd79b            2.65                1              1             8.73              2.5           0.875            0.752         -0.192
+## # … with 22 more variables: receptor_significant <dbl>, receptor_present <dbl>, receptor_expression <dbl>, receptor_expression_scaled <dbl>, receptor_fraction <dbl>, receptor_score_spatial <dbl>,
+## #   ligand_scaled_receptor_expression_fraction <dbl>, avg_score_ligand_receptor <dbl>, activity <dbl>, activity_normalized <dbl>, scaled_ligand_score <dbl>, scaled_ligand_expression_scaled <dbl>,
+## #   scaled_receptor_score <dbl>, scaled_receptor_expression_scaled <dbl>, scaled_avg_score_ligand_receptor <dbl>, scaled_ligand_score_spatial <dbl>, scaled_receptor_score_spatial <dbl>,
+## #   scaled_ligand_fraction_adapted <dbl>, scaled_receptor_fraction_adapted <dbl>, scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>
 prioritization_tables$prioritization_tbl_ligand_target %>% filter(receiver == niches[[1]]$receiver) %>% head(10)
 ## # A tibble: 10 × 19
-##    niche    receiver sender  ligand_receptor ligand receptor target target_score
-##    <chr>    <chr>    <chr>   <chr>           <chr>  <chr>    <chr>         <dbl>
-##  1 KC_niche KCs      Hepato… Apoc3--Lrp1     Apoc3  Lrp1     Abca1         0.197
-##  2 KC_niche KCs      Hepato… Apoc3--Lrp1     Apoc3  Lrp1     Hmox1         1.16 
-##  3 KC_niche KCs      Hepato… Apoc3--Lrp1     Apoc3  Lrp1     Il1a          0.152
-##  4 KC_niche KCs      Hepato… Apoc3--Lrp1     Apoc3  Lrp1     Pten          0.378
-##  5 KC_niche KCs      Hepato… Apoc3--Lrp1     Apoc3  Lrp1     Sgk1          0.265
-##  6 KC_niche KCs      Hepato… Apoc3--Lrp1     Apoc3  Lrp1     Stat1         0.273
-##  7 KC_niche KCs      Hepato… Apoc3--Lrp1     Apoc3  Lrp1     Tcf7l2        0.811
-##  8 KC_niche KCs      Hepato… Apoc3--Lrp1     Apoc3  Lrp1     Txnip         0.342
-##  9 KC_niche KCs      Hepato… Apoc3--Lrp1     Apoc3  Lrp1     Vcam1         0.820
-## 10 KC_niche KCs      Hepato… Apoa2--Lrp1     Apoa2  Lrp1     Abca1         0.197
-## # … with 11 more variables: target_significant <dbl>, target_present <dbl>,
-## #   target_expression <dbl>, target_expression_scaled <dbl>,
-## #   target_fraction <dbl>, ligand_target_weight <dbl>, activity <dbl>,
-## #   activity_normalized <dbl>, scaled_activity <dbl>,
-## #   scaled_activity_normalized <dbl>, prioritization_score <dbl>
+##    niche    receiver sender           ligand_receptor ligand receptor target target_score target_signific… target_present target_expressi… target_expressi… target_fraction ligand_target_w… activity
+##    <chr>    <chr>    <chr>            <chr>           <chr>  <chr>    <chr>         <dbl>            <dbl>          <dbl>            <dbl>            <dbl>           <dbl>            <dbl>    <dbl>
+##  1 KC_niche KCs      Hepatocytes_por… Apoc3--Lrp1     Apoc3  Lrp1     Abca1         0.197                1              1            0.979            2.02            0.571          0.00773   0.0424
+##  2 KC_niche KCs      Hepatocytes_por… Apoc3--Lrp1     Apoc3  Lrp1     Hmox1         1.16                 1              1            5.23             2.5             0.790          0.00922   0.0424
+##  3 KC_niche KCs      Hepatocytes_por… Apoc3--Lrp1     Apoc3  Lrp1     Il1a          0.152                1              1            0.188            0.279           0.146          0.00814   0.0424
+##  4 KC_niche KCs      Hepatocytes_por… Apoc3--Lrp1     Apoc3  Lrp1     Pten          0.378                1              1            0.719            0.982           0.486          0.00704   0.0424
+##  5 KC_niche KCs      Hepatocytes_por… Apoc3--Lrp1     Apoc3  Lrp1     Sgk1          0.265                1              1            0.629            0.226           0.381          0.00752   0.0424
+##  6 KC_niche KCs      Hepatocytes_por… Apoc3--Lrp1     Apoc3  Lrp1     Stat1         0.273                1              1            1.06             2.02            0.575          0.00684   0.0424
+##  7 KC_niche KCs      Hepatocytes_por… Apoc3--Lrp1     Apoc3  Lrp1     Tcf7l2        0.811                1              1            1.32             1.32            0.656          0.00749   0.0424
+##  8 KC_niche KCs      Hepatocytes_por… Apoc3--Lrp1     Apoc3  Lrp1     Txnip         0.342                1              1            1.42             0.751           0.688          0.00780   0.0424
+##  9 KC_niche KCs      Hepatocytes_por… Apoc3--Lrp1     Apoc3  Lrp1     Vcam1         0.820                1              1            1.36             2.46            0.570          0.0648    0.0424
+## 10 KC_niche KCs      Hepatocytes_por… Apoa2--Lrp1     Apoa2  Lrp1     Abca1         0.197                1              1            0.979            2.02            0.571          0.00723   0.0443
+## # … with 4 more variables: activity_normalized <dbl>, scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>
 
 prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(receiver == niches[[2]]$receiver) %>% head(10)
 ## # A tibble: 10 × 36
-##    niche        receiver sender     ligand_receptor ligand receptor ligand_score
-##    <chr>        <chr>    <chr>      <chr>           <chr>  <chr>           <dbl>
-##  1 MoMac2_niche MoMac2   Cholangio… Spp1--Cd44      Spp1   Cd44             6.09
-##  2 MoMac2_niche MoMac2   Cholangio… Spp1--Itga4     Spp1   Itga4            6.09
-##  3 MoMac2_niche MoMac2   Cholangio… Spp1--Itgb5     Spp1   Itgb5            6.09
-##  4 MoMac2_niche MoMac2   Cholangio… Spp1--Itgav     Spp1   Itgav            6.09
-##  5 MoMac2_niche MoMac2   Cholangio… Spp1--Itgb1     Spp1   Itgb1            6.09
-##  6 MoMac2_niche MoMac2   Cholangio… Clu--Trem2      Clu    Trem2            3.79
-##  7 MoMac2_niche MoMac2   Cholangio… Spp1--Itga9     Spp1   Itga9            6.09
-##  8 MoMac2_niche MoMac2   Cholangio… Spp1--Itga5     Spp1   Itga5            6.09
-##  9 MoMac2_niche MoMac2   Cholangio… Spp1--S1pr1     Spp1   S1pr1            6.09
-## 10 MoMac2_niche MoMac2   Cholangio… Spp1--Itga8     Spp1   Itga8            6.09
-## # … with 29 more variables: ligand_significant <dbl>, ligand_present <dbl>,
-## #   ligand_expression <dbl>, ligand_expression_scaled <dbl>,
-## #   ligand_fraction <dbl>, ligand_score_spatial <dbl>, receptor_score <dbl>,
-## #   receptor_significant <dbl>, receptor_present <dbl>,
-## #   receptor_expression <dbl>, receptor_expression_scaled <dbl>,
-## #   receptor_fraction <dbl>, receptor_score_spatial <dbl>,
-## #   ligand_scaled_receptor_expression_fraction <dbl>, …
+##    niche        receiver sender        ligand_receptor ligand receptor ligand_score ligand_signific… ligand_present ligand_expressi… ligand_expressi… ligand_fraction ligand_score_sp… receptor_score
+##    <chr>        <chr>    <chr>         <chr>           <chr>  <chr>           <dbl>            <dbl>          <dbl>            <dbl>            <dbl>           <dbl>            <dbl>          <dbl>
+##  1 MoMac2_niche MoMac2   Cholangiocyt… Spp1--Cd44      Spp1   Cd44             6.09                1              1            72.4               2.5           0.943                0       -0.516  
+##  2 MoMac2_niche MoMac2   Cholangiocyt… Spp1--Itga4     Spp1   Itga4            6.09                1              1            72.4               2.5           0.943                0        0.168  
+##  3 MoMac2_niche MoMac2   Cholangiocyt… Spp1--Itgb5     Spp1   Itgb5            6.09                1              1            72.4               2.5           0.943                0       -0.0856 
+##  4 MoMac2_niche MoMac2   Cholangiocyt… Spp1--Itgav     Spp1   Itgav            6.09                1              1            72.4               2.5           0.943                0       -0.105  
+##  5 MoMac2_niche MoMac2   Cholangiocyt… Spp1--Itgb1     Spp1   Itgb1            6.09                1              1            72.4               2.5           0.943                0       -0.359  
+##  6 MoMac2_niche MoMac2   Cholangiocyt… Clu--Trem2      Clu    Trem2            3.79                1              1            52.0               2.5           0.921                0        1.16   
+##  7 MoMac2_niche MoMac2   Cholangiocyt… Spp1--Itga9     Spp1   Itga9            6.09                1              1            72.4               2.5           0.943                0       -0.620  
+##  8 MoMac2_niche MoMac2   Cholangiocyt… Spp1--Itga5     Spp1   Itga5            6.09                1              1            72.4               2.5           0.943                0       -0.0441 
+##  9 MoMac2_niche MoMac2   Cholangiocyt… Spp1--S1pr1     Spp1   S1pr1            6.09                1              1            72.4               2.5           0.943                0       -0.00416
+## 10 MoMac2_niche MoMac2   Fibroblast 2  Lama2--Rpsa     Lama2  Rpsa             1.51                1              1             3.19              2.5           0.764                0        0.299  
+## # … with 22 more variables: receptor_significant <dbl>, receptor_present <dbl>, receptor_expression <dbl>, receptor_expression_scaled <dbl>, receptor_fraction <dbl>, receptor_score_spatial <dbl>,
+## #   ligand_scaled_receptor_expression_fraction <dbl>, avg_score_ligand_receptor <dbl>, activity <dbl>, activity_normalized <dbl>, scaled_ligand_score <dbl>, scaled_ligand_expression_scaled <dbl>,
+## #   scaled_receptor_score <dbl>, scaled_receptor_expression_scaled <dbl>, scaled_avg_score_ligand_receptor <dbl>, scaled_ligand_score_spatial <dbl>, scaled_receptor_score_spatial <dbl>,
+## #   scaled_ligand_fraction_adapted <dbl>, scaled_receptor_fraction_adapted <dbl>, scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>
 prioritization_tables$prioritization_tbl_ligand_target %>% filter(receiver == niches[[2]]$receiver) %>% head(10)
 ## # A tibble: 10 × 19
-##    niche     receiver sender ligand_receptor ligand receptor target target_score
-##    <chr>     <chr>    <chr>  <chr>           <chr>  <chr>    <chr>         <dbl>
-##  1 MoMac2_n… MoMac2   Chola… Spp1--Cd44      Spp1   Cd44     Alox5…        0.382
-##  2 MoMac2_n… MoMac2   Chola… Spp1--Cd44      Spp1   Cd44     Bax           0.334
-##  3 MoMac2_n… MoMac2   Chola… Spp1--Cd44      Spp1   Cd44     Bcl2l…        0.280
-##  4 MoMac2_n… MoMac2   Chola… Spp1--Cd44      Spp1   Cd44     Cdkn1a        0.609
-##  5 MoMac2_n… MoMac2   Chola… Spp1--Cd44      Spp1   Cd44     Cxcr4         0.374
-##  6 MoMac2_n… MoMac2   Chola… Spp1--Cd44      Spp1   Cd44     Dhrs3         0.371
-##  7 MoMac2_n… MoMac2   Chola… Spp1--Cd44      Spp1   Cd44     Emp1          0.398
-##  8 MoMac2_n… MoMac2   Chola… Spp1--Cd44      Spp1   Cd44     Fn1           0.360
-##  9 MoMac2_n… MoMac2   Chola… Spp1--Cd44      Spp1   Cd44     Gadd4…        0.180
-## 10 MoMac2_n… MoMac2   Chola… Spp1--Cd44      Spp1   Cd44     Gdf15         0.479
-## # … with 11 more variables: target_significant <dbl>, target_present <dbl>,
-## #   target_expression <dbl>, target_expression_scaled <dbl>,
-## #   target_fraction <dbl>, ligand_target_weight <dbl>, activity <dbl>,
-## #   activity_normalized <dbl>, scaled_activity <dbl>,
-## #   scaled_activity_normalized <dbl>, prioritization_score <dbl>
+##    niche        receiver sender       ligand_receptor ligand receptor target target_score target_signific… target_present target_expressi… target_expressi… target_fraction ligand_target_w… activity
+##    <chr>        <chr>    <chr>        <chr>           <chr>  <chr>    <chr>         <dbl>            <dbl>          <dbl>            <dbl>            <dbl>           <dbl>            <dbl>    <dbl>
+##  1 MoMac2_niche MoMac2   Cholangiocy… Spp1--Cd44      Spp1   Cd44     Alox5…        0.382                1              1            2.07             2.17            0.874          0.00921   0.0346
+##  2 MoMac2_niche MoMac2   Cholangiocy… Spp1--Cd44      Spp1   Cd44     Bax           0.334                1              1            0.897            2.21            0.556          0.0106    0.0346
+##  3 MoMac2_niche MoMac2   Cholangiocy… Spp1--Cd44      Spp1   Cd44     Bcl2l…        0.280                1              1            0.453            2.41            0.381          0.00983   0.0346
+##  4 MoMac2_niche MoMac2   Cholangiocy… Spp1--Cd44      Spp1   Cd44     Cdkn1a        0.609                1              1            0.801            2.39            0.336          0.0257    0.0346
+##  5 MoMac2_niche MoMac2   Cholangiocy… Spp1--Cd44      Spp1   Cd44     Cxcr4         0.374                1              1            0.717            2.5             0.444          0.0695    0.0346
+##  6 MoMac2_niche MoMac2   Cholangiocy… Spp1--Cd44      Spp1   Cd44     Dhrs3         0.371                1              1            0.743            0.777           0.514          0.00927   0.0346
+##  7 MoMac2_niche MoMac2   Cholangiocy… Spp1--Cd44      Spp1   Cd44     Emp1          0.398                1              1            0.320            1.40            0.168          0.00909   0.0346
+##  8 MoMac2_niche MoMac2   Cholangiocy… Spp1--Cd44      Spp1   Cd44     Fn1           0.360                1              1            0.456           -0.285           0.243          0.0133    0.0346
+##  9 MoMac2_niche MoMac2   Cholangiocy… Spp1--Cd44      Spp1   Cd44     Gadd4…        0.180                1              1            0.474            2.13            0.276          0.0134    0.0346
+## 10 MoMac2_niche MoMac2   Cholangiocy… Spp1--Cd44      Spp1   Cd44     Gdf15         0.479                1              1            0.521            2.5             0.185          0.0126    0.0346
+## # … with 4 more variables: activity_normalized <dbl>, scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>
 
 prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(receiver == niches[[3]]$receiver) %>% head(10)
 ## # A tibble: 10 × 36
-##    niche        receiver sender     ligand_receptor ligand receptor ligand_score
-##    <chr>        <chr>    <chr>      <chr>           <chr>  <chr>           <dbl>
-##  1 MoMac1_niche MoMac1   Mesotheli… C3--C3ar1       C3     C3ar1            3.52
-##  2 MoMac1_niche MoMac1   Capsule f… C3--C3ar1       C3     C3ar1            3.42
-##  3 MoMac1_niche MoMac1   Capsule f… Slpi--Cd4       Slpi   Cd4              4.37
-##  4 MoMac1_niche MoMac1   Mesotheli… Slpi--Cd4       Slpi   Cd4              4.26
-##  5 MoMac1_niche MoMac1   Capsule f… Lgals1--Ptprc   Lgals1 Ptprc            2.80
-##  6 MoMac1_niche MoMac1   Mesotheli… C3--Itgb2       C3     Itgb2            3.52
-##  7 MoMac1_niche MoMac1   Mesotheli… C3--Lrp1        C3     Lrp1             3.52
-##  8 MoMac1_niche MoMac1   Capsule f… Rarres2--Ccrl2  Rarre… Ccrl2            2.50
-##  9 MoMac1_niche MoMac1   Mesotheli… C3--Itgax       C3     Itgax            3.52
-## 10 MoMac1_niche MoMac1   Capsule f… C3--Itgb2       C3     Itgb2            3.42
-## # … with 29 more variables: ligand_significant <dbl>, ligand_present <dbl>,
-## #   ligand_expression <dbl>, ligand_expression_scaled <dbl>,
-## #   ligand_fraction <dbl>, ligand_score_spatial <dbl>, receptor_score <dbl>,
-## #   receptor_significant <dbl>, receptor_present <dbl>,
-## #   receptor_expression <dbl>, receptor_expression_scaled <dbl>,
-## #   receptor_fraction <dbl>, receptor_score_spatial <dbl>,
-## #   ligand_scaled_receptor_expression_fraction <dbl>, …
+##    niche        receiver sender        ligand_receptor ligand receptor ligand_score ligand_signific… ligand_present ligand_expressi… ligand_expressi… ligand_fraction ligand_score_sp… receptor_score
+##    <chr>        <chr>    <chr>         <chr>           <chr>  <chr>           <dbl>            <dbl>          <dbl>            <dbl>            <dbl>           <dbl>            <dbl>          <dbl>
+##  1 MoMac1_niche MoMac1   Mesothelial … C3--C3ar1       C3     C3ar1            3.52                1              1             22.6             1.99           0.737                0        -0.122 
+##  2 MoMac1_niche MoMac1   Capsule fibr… C3--C3ar1       C3     C3ar1            3.42                1              1             20.9             1.80           0.802                0        -0.122 
+##  3 MoMac1_niche MoMac1   Capsule fibr… Lgals1--Ptprc   Lgals1 Ptprc            2.80                1              1             10.1             2.5            0.616                0         0.267 
+##  4 MoMac1_niche MoMac1   Capsule fibr… Slpi--Cd4       Slpi   Cd4              4.37                1              1             20.0             1.99           0.494                0         0.0239
+##  5 MoMac1_niche MoMac1   Mesothelial … C3--Itgb2       C3     Itgb2            3.52                1              1             22.6             1.99           0.737                0        -0.294 
+##  6 MoMac1_niche MoMac1   Mesothelial … Slpi--Cd4       Slpi   Cd4              4.26                1              1             18.4             1.80           0.432                0         0.0239
+##  7 MoMac1_niche MoMac1   Mesothelial … C3--Lrp1        C3     Lrp1             3.52                1              1             22.6             1.99           0.737                0        -0.552 
+##  8 MoMac1_niche MoMac1   Mesothelial … C3--Itgax       C3     Itgax            3.52                1              1             22.6             1.99           0.737                0         0.0101
+##  9 MoMac1_niche MoMac1   Capsule fibr… C3--Itgb2       C3     Itgb2            3.42                1              1             20.9             1.80           0.802                0        -0.294 
+## 10 MoMac1_niche MoMac1   Capsule fibr… C3--Lrp1        C3     Lrp1             3.42                1              1             20.9             1.80           0.802                0        -0.552 
+## # … with 22 more variables: receptor_significant <dbl>, receptor_present <dbl>, receptor_expression <dbl>, receptor_expression_scaled <dbl>, receptor_fraction <dbl>, receptor_score_spatial <dbl>,
+## #   ligand_scaled_receptor_expression_fraction <dbl>, avg_score_ligand_receptor <dbl>, activity <dbl>, activity_normalized <dbl>, scaled_ligand_score <dbl>, scaled_ligand_expression_scaled <dbl>,
+## #   scaled_receptor_score <dbl>, scaled_receptor_expression_scaled <dbl>, scaled_avg_score_ligand_receptor <dbl>, scaled_ligand_score_spatial <dbl>, scaled_receptor_score_spatial <dbl>,
+## #   scaled_ligand_fraction_adapted <dbl>, scaled_receptor_fraction_adapted <dbl>, scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>
 prioritization_tables$prioritization_tbl_ligand_target %>% filter(receiver == niches[[3]]$receiver) %>% head(10)
 ## # A tibble: 10 × 19
-##    niche     receiver sender ligand_receptor ligand receptor target target_score
-##    <chr>     <chr>    <chr>  <chr>           <chr>  <chr>    <chr>         <dbl>
-##  1 MoMac1_n… MoMac1   Mesot… C3--C3ar1       C3     C3ar1    Btg2          0.615
-##  2 MoMac1_n… MoMac1   Mesot… C3--C3ar1       C3     C3ar1    Ccnd2         0.505
-##  3 MoMac1_n… MoMac1   Mesot… C3--C3ar1       C3     C3ar1    Cdk6          0.221
-##  4 MoMac1_n… MoMac1   Mesot… C3--C3ar1       C3     C3ar1    H2-D1         0.318
-##  5 MoMac1_n… MoMac1   Mesot… C3--C3ar1       C3     C3ar1    Il1b          0.956
-##  6 MoMac1_n… MoMac1   Mesot… C3--C3ar1       C3     C3ar1    Jun           0.765
-##  7 MoMac1_n… MoMac1   Capsu… C3--C3ar1       C3     C3ar1    Btg2          0.615
-##  8 MoMac1_n… MoMac1   Capsu… C3--C3ar1       C3     C3ar1    Ccnd2         0.505
-##  9 MoMac1_n… MoMac1   Capsu… C3--C3ar1       C3     C3ar1    Cdk6          0.221
-## 10 MoMac1_n… MoMac1   Capsu… C3--C3ar1       C3     C3ar1    H2-D1         0.318
-## # … with 11 more variables: target_significant <dbl>, target_present <dbl>,
-## #   target_expression <dbl>, target_expression_scaled <dbl>,
-## #   target_fraction <dbl>, ligand_target_weight <dbl>, activity <dbl>,
-## #   activity_normalized <dbl>, scaled_activity <dbl>,
-## #   scaled_activity_normalized <dbl>, prioritization_score <dbl>
+##    niche        receiver sender       ligand_receptor ligand receptor target target_score target_signific… target_present target_expressi… target_expressi… target_fraction ligand_target_w… activity
+##    <chr>        <chr>    <chr>        <chr>           <chr>  <chr>    <chr>         <dbl>            <dbl>          <dbl>            <dbl>            <dbl>           <dbl>            <dbl>    <dbl>
+##  1 MoMac1_niche MoMac1   Mesothelial… C3--C3ar1       C3     C3ar1    Btg2          0.615                1              1            1.51            1.06             0.542          0.00560   0.0160
+##  2 MoMac1_niche MoMac1   Mesothelial… C3--C3ar1       C3     C3ar1    Ccnd2         0.505                1              1            0.490          -0.0500           0.288          0.00652   0.0160
+##  3 MoMac1_niche MoMac1   Mesothelial… C3--C3ar1       C3     C3ar1    Cdk6          0.221                1              1            0.320           0.299            0.232          0.00583   0.0160
+##  4 MoMac1_niche MoMac1   Mesothelial… C3--C3ar1       C3     C3ar1    H2-D1         0.318                1              1            7.59            1.68             0.990          0.00511   0.0160
+##  5 MoMac1_niche MoMac1   Mesothelial… C3--C3ar1       C3     C3ar1    Il1b          0.956                1              1            3.74            2.5              0.632          0.00798   0.0160
+##  6 MoMac1_niche MoMac1   Mesothelial… C3--C3ar1       C3     C3ar1    Jun           0.765                1              1            1.93            0.120            0.620          0.00826   0.0160
+##  7 MoMac1_niche MoMac1   Capsule fib… C3--C3ar1       C3     C3ar1    Btg2          0.615                1              1            1.51            1.06             0.542          0.00560   0.0160
+##  8 MoMac1_niche MoMac1   Capsule fib… C3--C3ar1       C3     C3ar1    Ccnd2         0.505                1              1            0.490          -0.0500           0.288          0.00652   0.0160
+##  9 MoMac1_niche MoMac1   Capsule fib… C3--C3ar1       C3     C3ar1    Cdk6          0.221                1              1            0.320           0.299            0.232          0.00583   0.0160
+## 10 MoMac1_niche MoMac1   Capsule fib… C3--C3ar1       C3     C3ar1    H2-D1         0.318                1              1            7.59            1.68             0.990          0.00511   0.0160
+## # … with 4 more variables: activity_normalized <dbl>, scaled_activity <dbl>, scaled_activity_normalized <dbl>, prioritization_score <dbl>
 
 prioritization_tables$prioritization_tbl_ligand_receptor = prioritization_tables$prioritization_tbl_ligand_receptor %>% mutate(receiver = factor(receiver, levels = c("KCs","MoMac1","MoMac2")), niche = factor(niche, levels = c("KC_niche","MoMac1_niche","MoMac2_niche"))) 
 prioritization_tables$prioritization_tbl_ligand_target = prioritization_tables$prioritization_tbl_ligand_target %>% mutate(receiver = factor(receiver, levels = c("KCs","MoMac1","MoMac2")), niche = factor(niche, levels = c("KC_niche","MoMac1_niche","MoMac2_niche"))) 

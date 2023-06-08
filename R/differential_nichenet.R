@@ -588,7 +588,7 @@ get_ligand_activities_targets = function(niche_geneset_list, ligand_target_matri
     print(paste0("Calculate Ligand activities for: ",receiver_oi))
 
     ligand_activities = nichenetr::predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = ligands)
-    ligand_activities = ligand_activities  %>% dplyr::rename(ligand = test_ligand, activity = pearson) %>% dplyr::select(-aupr, -auroc) %>% filter(!is.na(activity))
+    ligand_activities = ligand_activities %>% dplyr::rename(ligand = test_ligand, activity = aupr) %>% dplyr::select(-pearson, -auroc, -aupr_corrected) %>% filter(!is.na(activity))
     ligand_target_df = ligand_activities$ligand %>% unique() %>% lapply(nichenetr::get_weighted_ligand_target_links, geneset_oi, ligand_target_matrix, top_n_target) %>% dplyr::bind_rows()  %>% dplyr::rename(ligand_target_weight = weight)
     ligand_activities = ligand_activities %>% dplyr::inner_join(ligand_target_df, by = c("ligand")) %>% dplyr::mutate(receiver = receiver_oi) %>% dplyr::group_by(receiver) %>% dplyr::mutate(activity_normalized = nichenetr::scaling_zscore(activity))
 
