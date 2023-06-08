@@ -51,8 +51,7 @@ propagation methods on the integrated networks to propagate the signal
 starting from a ligand, flowing through receptors, signaling proteins,
 transcriptional regulators, and ultimately ending at target genes.
 
-A graphical summary of this procedure is visualized here
-below:
+A graphical summary of this procedure is visualized here below:
 
 ![](workflow_model_construction.png)
 
@@ -68,9 +67,9 @@ library(tidyverse)
 # in the NicheNet framework, ligand-target links are predicted based on collected biological knowledge on ligand-receptor, signaling and gene regulatory interactions
 
 # The complete networks can be downloaded from Zenodo
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-sig_network = readRDS(url("https://zenodo.org/record/3260758/files/signaling_network.rds"))
-gr_network = readRDS(url("https://zenodo.org/record/3260758/files/gr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
+sig_network = readRDS(url("https://zenodo.org/record/7074291/files/signaling_network_human_21122021.rds"))
+gr_network = readRDS(url("https://zenodo.org/record/7074291/files/gr_network_human_21122021.rds"))
 ```
 
 ## Construct NicheNet’s ligand-target model from unoptimized data source weights
@@ -90,25 +89,27 @@ network hub correction factor were defined as hyperparameter of the
 model to mitigate the potential negative influence of over-dominant hubs
 on the final model. The damping factor hyperparameter is the main
 parameter of the Personalized PageRank algorithm, which we used as
-network propagation algorithm to link ligands to downstream
-regulators.
+network propagation algorithm to link ligands to downstream regulators.
 
 ``` r
 # aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
 weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, source_weights_df = source_weights_df)
 
 # downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
-weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
+                                          lr_sig_hub = hyperparameter_list %>% filter(parameter == "lr_sig_hub") %>% pull(avg_weight),
+                                          gr_hub = hyperparameter_list %>% filter(parameter == "gr_hub") %>% pull(avg_weight)) 
 ```
 
 Infer ligand-target regulatory potential scores based on the weighted
-integrated
-networks
+integrated networks
 
 ``` r
 # in this example we will calculate target gene regulatory potential scores for TNF and the ligand combination TNF+IL6
 ligands = list("TNF",c("TNF","IL6"))
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+                                                      damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
+                                                      ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
 
 Show some top target genes of the ligand TNF and the ligand combination
@@ -116,18 +117,14 @@ TNF+IL6
 
 ``` r
 extract_top_n_targets("TNF",10,ligand_target_matrix)
-##      HACD4       P3H2        UBD       IGHD      CCL19       SELE 
-## 0.05490710 0.03997878 0.02700469 0.02547128 0.02524468 0.02503142 
-##     MUC5AC       COX1        CRP      CXCL9 
-## 0.02383718 0.02357808 0.02357626 0.02337854
+##    NFKBIA      EDN1      MMP9      IRF1      IER3     NFKB1     PTGS2      PTX3     ICAM1      BMP2 
+## 0.7119458 0.7118929 0.7107600 0.7105364 0.7091492 0.7091226 0.7082413 0.7082322 0.7055558 0.7038156
 ```
 
 ``` r
 extract_top_n_targets("TNF-IL6",10,ligand_target_matrix)
-##      BUD23      HACD4       IGHD        CRP       COX1       P3H2 
-## 0.03103603 0.02749870 0.02550983 0.02412252 0.02380473 0.02014130 
-##       SELE       IL11      CASP3       MMP9 
-## 0.01741225 0.01713076 0.01676342 0.01634211
+##     ICAM1      IRF1      JUNB      IER3     CCND1       FOS     PTGS2     SOCS3     NFKB1      EDN1 
+## 0.5947953 0.5312094 0.5247782 0.5202155 0.5002600 0.4729934 0.4636054 0.4634419 0.4603225 0.4578782
 ```
 
 ## Construct NicheNet’s ligand-target model from optimized data source weights
@@ -135,30 +132,32 @@ extract_top_n_targets("TNF-IL6",10,ligand_target_matrix)
 Now, we will demonstrate how you can make an alternative model with the
 optimized data source weights (as given by the
 `optimized_source_weights_df` data frame provided by default by the
-nichenetr
-package)
+nichenetr package)
 
 ``` r
 # aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
-weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = sig_network, gr_network = gr_network,source_weights_df = optimized_source_weights_df)
+weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = sig_network, gr_network = gr_network,
+                                                source_weights_df = optimized_source_weights_df %>% select(source, avg_weight) %>% rename(weight=avg_weight))
 
 # downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
-weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
+                                          lr_sig_hub = hyperparameter_list %>% filter(parameter == "lr_sig_hub") %>% pull(avg_weight),
+                                          gr_hub = hyperparameter_list %>% filter(parameter == "gr_hub") %>% pull(avg_weight)) 
 
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+                                                      damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
+                                                      ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
 
 Show some top target genes of the ligand TNF
 
 ``` r
 extract_top_n_targets("TNF",10,ligand_target_matrix)
-##       HACD4        P3H2        SELE       VCAM1         UBD        CD1A 
-## 0.027721165 0.020233320 0.012049496 0.009775023 0.009667994 0.009532865 
-##       CCL19      MUC5AC       CXCL9         CRP 
-## 0.008979892 0.008507522 0.008459968 0.008431759
+##      PTX3      EDN1      IER3      BMP2     PTGS2   TNFAIP2      IRF1      IRF7   TNFAIP3     RIPK2 
+## 0.2818886 0.2815736 0.2806793 0.2803148 0.2790848 0.2789345 0.2784311 0.2775592 0.2765948 0.2749011
 ```
 
 # Change the data sources at the basis of the NicheNet ligand-target model
@@ -176,9 +175,7 @@ nichenetr package)
 
 ``` r
 annotation_data_sources$type_db %>% unique()
-## [1] "literature"       "prediction"       "comprehensive_db"
-## [4] "ptm"              "text_mining"      "directional_ppi" 
-## [7] "ChIP"             "motif"            "perturbation"
+##  [1] "comprehensive_db" "literature"       "ptm"              "text_mining"      "directional_ppi"  "PPI"              "ChIP"             "motif"            "prediction"       "perturbation"
 ```
 
 ``` r
@@ -195,28 +192,29 @@ new_gr_network = gr_network %>% filter(source %in% data_sources_to_keep)
 weighted_networks = construct_weighted_networks(lr_network = new_lr_network, sig_network = new_sig_network, gr_network = new_gr_network, source_weights_df = new_source_weights_df)
 
 # downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
-weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
+                                          lr_sig_hub = hyperparameter_list %>% filter(parameter == "lr_sig_hub") %>% pull(avg_weight),
+                                          gr_hub = hyperparameter_list %>% filter(parameter == "gr_hub") %>% pull(avg_weight))
 
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+                                                      damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
+                                                      ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
 
 Show some top target genes of the ligand TNF
 
 ``` r
 extract_top_n_targets("TNF",10,ligand_target_matrix)
-##      HACD4       P3H2       CD1A       SELE        UBD      CCL19 
-## 0.05482765 0.03985222 0.03023781 0.02817257 0.02486998 0.02239381 
-##       CCL8        STS       NOX4      KRT12 
-## 0.02206470 0.02137445 0.02072580 0.02034479
+##      SELE      MMP9     ICAM1     CASP3     VCAM1     CCND1    CDKN1A       MYC      TP53       JUN 
+## 0.3120182 0.3116462 0.3103540 0.2993875 0.2987840 0.2097975 0.2067106 0.2059286 0.2032518 0.1960899
 ```
 
 To give a second example: say that you don’t trust TF-target links
 inferred from motif information and want to construct a model with all
-data sources except the motif
-ones.
+data sources except the motif ones.
 
 ``` r
 data_sources_to_remove = annotation_data_sources %>% filter(type_db %in% c("motif")) %>% pull(source)
@@ -233,22 +231,24 @@ new_gr_network = gr_network %>% filter(source %in% data_sources_to_keep)
 weighted_networks = construct_weighted_networks(lr_network = new_lr_network, sig_network = new_sig_network, gr_network = new_gr_network, source_weights_df = new_source_weights_df)
 
 # downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
-weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
+                                          lr_sig_hub = hyperparameter_list %>% filter(parameter == "lr_sig_hub") %>% pull(avg_weight),
+                                          gr_hub = hyperparameter_list %>% filter(parameter == "gr_hub") %>% pull(avg_weight))
 
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+                                                      damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
+                                                      ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
 
 Show some top target genes of the ligand TNF
 
 ``` r
 extract_top_n_targets("TNF",10,ligand_target_matrix)
-##      HACD4       P3H2      CCL19        UBD       IGHD    PLA2G2A 
-## 0.05490710 0.03997878 0.03132835 0.03120573 0.02856990 0.02650077 
-##       SELE     CXCL11        CRP     MUC5AC 
-## 0.02612114 0.02549863 0.02547906 0.02531375
+##      EDN1    NFKBIA      MMP9      PTX3     NFKB1     PTGS2      IER3      IRF1   TNFAIP2     ICAM1 
+## 0.7096364 0.7080196 0.7080049 0.7077747 0.7073651 0.7070222 0.7059278 0.7055725 0.7037034 0.7032143
 ```
 
 ### Add own data sources to the NicheNet model
@@ -265,8 +265,8 @@ regulatory interaction for gene regulatory data sources. The data
 sources should be formatted in a data frame with following columns:
 from, to and source. “from” denotes the source node “gene A” of the
 directional interaction from gene A to B, “to” denotes the target node
-“gene B” of this directional interaction, and “source” is a
-user-defined name of this data source.
+“gene B” of this directional interaction, and “source” is a user-defined
+name of this data source.
 
 Here, we will show how you can download, process and integrate an online
 data source within the NichenNet framework. As example, this is the data
@@ -285,7 +285,7 @@ ppi_network = ppi_network %>% transmute(from=target,to=source) %>%
 ppi_network = ppi_network %>% mutate(source = "harmonizome_hub_ppi", database = "harmonizome") 
 
 head(ppi_network)
-## # A tibble: 6 x 4
+## # A tibble: 6 × 4
 ##   from  to    source              database   
 ##   <chr> <chr> <chr>               <chr>      
 ## 1 LRIF1 GAD1  harmonizome_hub_ppi harmonizome
@@ -305,34 +305,36 @@ because we want it to have a strong contribution to the final model.
 ``` r
 new_sig_network = sig_network %>% bind_rows(ppi_network)
 
-new_network_weights_df = tibble(source = "harmonizome_hub_ppi", weight = 1)
+new_network_weights_df = tibble(source = "harmonizome_hub_ppi", avg_weight = 1, median_weight = 1)
 new_source_weights_df = optimized_source_weights_df %>% bind_rows(new_network_weights_df)
 ```
 
-Now make this
-model
+Now make this model
 
 ``` r
 # aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
-weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = new_sig_network, gr_network = gr_network, source_weights_df = new_source_weights_df)
+weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = new_sig_network, gr_network = gr_network,
+                                                source_weights_df = new_source_weights_df %>% select(source, avg_weight) %>% rename(weight=avg_weight))
 
 # downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
-weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
+                                          lr_sig_hub = hyperparameter_list %>% filter(parameter == "lr_sig_hub") %>% pull(avg_weight),
+                                          gr_hub = hyperparameter_list %>% filter(parameter == "gr_hub") %>% pull(avg_weight))
 
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+                                                      damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
+                                                      ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
 
 Show some top target genes of the ligand TNF
 
 ``` r
 extract_top_n_targets("TNF",10,ligand_target_matrix)
-##       HACD4        P3H2        SELE       VCAM1         UBD        CD1A 
-## 0.027723418 0.020234958 0.012049227 0.009774414 0.009667525 0.009533070 
-##       CCL19      MUC5AC       CXCL9         CRP 
-## 0.008979282 0.008507681 0.008458946 0.008430639
+##      PTX3      EDN1      IER3      BMP2     PTGS2   TNFAIP2      IRF1      IRF7   TNFAIP3     RIPK2 
+## 0.2818874 0.2815333 0.2806313 0.2803472 0.2790419 0.2789683 0.2783588 0.2775317 0.2765463 0.2748918
 ```
 
 In some cases, it’s possible that you want that your data source will be
@@ -344,31 +346,34 @@ of the signaling network.
 ``` r
 new_sig_network = ppi_network
 
-new_network_weights_df = tibble(source = "harmonizome_hub_ppi", weight = 1)
+new_network_weights_df = tibble(source = "harmonizome_hub_ppi", avg_weight = 1, median_weight = 1)
 new_source_weights_df = optimized_source_weights_df %>% bind_rows(new_network_weights_df)
 ```
 
 ``` r
 # aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
-weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = new_sig_network, gr_network = gr_network, source_weights_df = new_source_weights_df)
+weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = new_sig_network, gr_network = gr_network,
+                                                source_weights_df = new_source_weights_df %>% select(source, avg_weight) %>% rename(weight=avg_weight))
 
 # downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
-weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
+                                          lr_sig_hub = hyperparameter_list %>% filter(parameter == "lr_sig_hub") %>% pull(avg_weight),
+                                          gr_hub = hyperparameter_list %>% filter(parameter == "gr_hub") %>% pull(avg_weight))
 
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+                                                      damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
+                                                      ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
 
 Show some top target genes of the ligand TNF
 
 ``` r
 extract_top_n_targets("TNF",10,ligand_target_matrix)
-##       HACD4        P3H2        SELE        CD1A         UBD       VCAM1 
-## 0.027708362 0.020048863 0.011728851 0.009356392 0.009233937 0.009211393 
-##       CCL19      MUC5AC        CCL8         CRP 
-## 0.008644264 0.008246319 0.008010251 0.007858136
+##     CXCL8      PTX3      IRF7   TNFAIP2      EDN1      BMP2     NFKB1     RIPK2    NFKBIA      IER3 
+## 0.2904951 0.2819874 0.2760319 0.2754550 0.2746321 0.2723789 0.2701484 0.2695589 0.2673814 0.2664578
 ```
 
 ## Final note
@@ -376,8 +381,8 @@ extract_top_n_targets("TNF",10,ligand_target_matrix)
 Most optimally, you would like to optimize the parameters again when
 including own data sources. Instructions to do this are given in the
 following vignette: [Parameter optimization via
-mlrMBO](parameter_optimization.md): `vignette("parameter_optimization",
-package="nichenetr")`
+mlrMBO](parameter_optimization.md):
+`vignette("parameter_optimization", package="nichenetr")`
 
 However, this optimization process takes a lot of time and requires the
 availability of multiple cores to perform the optimization in parallel.
