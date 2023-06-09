@@ -560,22 +560,22 @@ predict_single_cell_ligand_activities = function(cell_ids, expression_scaled,lig
 #' @export
 #'
 normalize_single_cell_ligand_activities = function(ligand_activities){
-  single_ligand_activities_pearson_norm = ligand_activities %>%
+  single_ligand_activities_aupr_norm = ligand_activities %>%
     group_by(setting) %>%
-    mutate(pearson = nichenetr::scaling_modified_zscore(pearson)) %>%
+    mutate(aupr = nichenetr::scaling_modified_zscore(aupr)) %>%
     ungroup() %>%
     rename(cell = setting, ligand = test_ligand) %>%
-    distinct(cell,ligand,pearson)
+    distinct(cell,ligand,aupr)
 
-  single_ligand_activities_pearson_norm_df = single_ligand_activities_pearson_norm %>%
-    spread(cell, pearson,fill = min(.$pearson))
+  single_ligand_activities_aupr_norm_df = single_ligand_activities_aupr_norm %>%
+    spread(cell, aupr,fill = min(.$aupr))
 
-  single_ligand_activities_pearson_norm_matrix = single_ligand_activities_pearson_norm_df  %>%
+  single_ligand_activities_aupr_norm_matrix = single_ligand_activities_aupr_norm_df  %>%
     select(-ligand) %>%
     t() %>%
-    magrittr::set_colnames(single_ligand_activities_pearson_norm_df$ligand)
+    magrittr::set_colnames(single_ligand_activities_aupr_norm_df$ligand)
 
-  single_cell_ligand_activities_pearson_norm_df = single_ligand_activities_pearson_norm_matrix %>%
+  single_ligand_activities_aupr_norm_df = single_ligand_activities_aupr_norm_matrix %>%
     data.frame() %>%
     rownames_to_column("cell") %>%
     as_tibble()
@@ -895,13 +895,13 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   # step4 perform NicheNet's ligand activity analysis
   ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
   ligand_activities = ligand_activities %>%
-    arrange(-aupr) %>%
-    mutate(rank = rank(desc(aupr)))
+    arrange(-aupr_corrected) %>%
+    mutate(rank = rank(desc(aupr_corrected)))
 
   if(filter_top_ligands == TRUE){
-    best_upstream_ligands = ligand_activities %>% top_n(top_n_ligands, aupr) %>% arrange(-aupr) %>% pull(test_ligand) %>% unique()
+    best_upstream_ligands = ligand_activities %>% top_n(top_n_ligands, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand) %>% unique()
   } else {
-    best_upstream_ligands = ligand_activities %>% arrange(-aupr) %>% pull(test_ligand) %>% unique()
+    best_upstream_ligands = ligand_activities %>% arrange(-aupr_corrected) %>% pull(test_ligand) %>% unique()
   }
 
   if (verbose == TRUE){print("Infer active target genes of the prioritized ligands")}
@@ -926,7 +926,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     print("no highly likely active targets found for top ligands")
   }
   # combined heatmap: overlay ligand activities
-  ligand_aupr_matrix = ligand_activities %>% select(aupr) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
+  ligand_aupr_matrix = ligand_activities %>% select(aupr_corrected) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
   rownames(ligand_aupr_matrix) = rownames(ligand_aupr_matrix) %>% make.names()
   colnames(ligand_aupr_matrix) = colnames(ligand_aupr_matrix) %>% make.names()
@@ -1458,13 +1458,13 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   # step4 perform NicheNet's ligand activity analysis
   ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
   ligand_activities = ligand_activities %>%
-    arrange(-aupr) %>%
-    mutate(rank = rank(desc(aupr)))
+    arrange(-aupr_corrected) %>%
+    mutate(rank = rank(desc(aupr_corrected)))
 
   if(filter_top_ligands == TRUE){
-    best_upstream_ligands = ligand_activities %>% top_n(top_n_ligands, aupr) %>% arrange(-aupr) %>% pull(test_ligand) %>% unique()
+    best_upstream_ligands = ligand_activities %>% top_n(top_n_ligands, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand) %>% unique()
   } else {
-    best_upstream_ligands = ligand_activities %>% arrange(-aupr) %>% pull(test_ligand) %>% unique()
+    best_upstream_ligands = ligand_activities %>% arrange(-aupr_corrected) %>% pull(test_ligand) %>% unique()
   }
   if (verbose == TRUE){print("Infer active target genes of the prioritized ligands")}
 
@@ -1490,7 +1490,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   }
 
   # combined heatmap: overlay ligand activities
-  ligand_aupr_matrix = ligand_activities %>% select(aupr) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
+  ligand_aupr_matrix = ligand_activities %>% select(aupr_corrected) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
   rownames(ligand_aupr_matrix) = rownames(ligand_aupr_matrix) %>% make.names()
   colnames(ligand_aupr_matrix) = colnames(ligand_aupr_matrix) %>% make.names()
@@ -1837,13 +1837,13 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   # step4 perform NicheNet's ligand activity analysis
   ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
   ligand_activities = ligand_activities %>%
-    arrange(-aupr) %>%
-    mutate(rank = rank(desc(aupr)))
+    arrange(-aupr_corrected) %>%
+    mutate(rank = rank(desc(aupr_corrected)))
 
   if(filter_top_ligands == TRUE){
-    best_upstream_ligands = ligand_activities %>% top_n(top_n_ligands, aupr) %>% arrange(-aupr) %>% pull(test_ligand) %>% unique()
+    best_upstream_ligands = ligand_activities %>% top_n(top_n_ligands, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand) %>% unique()
   } else {
-    best_upstream_ligands = ligand_activities %>% arrange(-aupr) %>% pull(test_ligand) %>% unique()
+    best_upstream_ligands = ligand_activities %>% arrange(-aupr_corrected) %>% pull(test_ligand) %>% unique()
   }
   if (verbose == TRUE){print("Infer active target genes of the prioritized ligands")}
 
@@ -1868,7 +1868,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
     print("no highly likely active targets found for top ligands")
   }
   # combined heatmap: overlay ligand activities
-  ligand_aupr_matrix = ligand_activities %>% select(aupr) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
+  ligand_aupr_matrix = ligand_activities %>% select(aupr_corrected) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
   rownames(ligand_aupr_matrix) = rownames(ligand_aupr_matrix) %>% make.names()
   colnames(ligand_aupr_matrix) = colnames(ligand_aupr_matrix) %>% make.names()
