@@ -18,7 +18,8 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   # comment = "#>",
   warning = FALSE,
-  message = FALSE
+  message = FALSE,
+  eval = FALSE
 )
 ```
 
@@ -34,9 +35,9 @@ library(qsub)
 library(mlrMBO)
 
 # in the NicheNet framework, ligand-target links are predicted based on collected biological knowledge on ligand-receptor, signaling and gene regulatory interactions
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-sig_network = readRDS(url("https://zenodo.org/record/3260758/files/signaling_network.rds"))
-gr_network = readRDS(url("https://zenodo.org/record/3260758/files/gr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
+sig_network = readRDS(url("https://zenodo.org/record/7074291/files/signaling_network_human_21122021.rds"))
+gr_network = readRDS(url("https://zenodo.org/record/7074291/files/gr_network_human_21122021.rds"))
 ```
 
 We will load in the ligand treatment validation datasets and try to optimize the parameters to maximize both target gene and ligand activity prediction. In this vignette, we do the optimization on all datasets. Alternatively, you can select a specific subset of datasets and evaluate the final performance on the left-out datasets.

@@ -7,32 +7,49 @@ Robin Browaeys
 rmarkdown::render("vignettes/parameter_optimization.Rmd", output_format = "github_document") # please, don't run this!!
 -->
 
-This vignette shows how we optimized both hyperparameters and data source weights via model-based optimization (see manuscript for more information). Because the optimization requires intensive parallel computation, we performed optimization in parallel on a gridengine cluster via the qsub package (https://cran.r-project.org/web/packages/qsub/qsub.pdf). This script is merely illustrative and should be adapted by the user to work on its own system.
+This vignette shows how we optimized both hyperparameters and data
+source weights via model-based optimization (see manuscript for more
+information). Because the optimization requires intensive parallel
+computation, we performed optimization in parallel on a gridengine
+cluster via the qsub package
+(<https://cran.r-project.org/web/packages/qsub/qsub.pdf>). This script
+is merely illustrative and should be adapted by the user to work on its
+own system.
 
-The input data used in this vignette can be found at: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758). 
+The input data used in this vignette can be found at:
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758).
 
-First, we will load in the required packages and networks we will use to construct the models which we will evaluate during the optimization procedure.
-```{r}
+First, we will load in the required packages and networks we will use to
+construct the models which we will evaluate during the optimization
+procedure.
+
+``` r
 library(nichenetr)
 library(tidyverse)
 library(qsub)
 library(mlrMBO)
 
 # in the NicheNet framework, ligand-target links are predicted based on collected biological knowledge on ligand-receptor, signaling and gene regulatory interactions
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-sig_network = readRDS(url("https://zenodo.org/record/3260758/files/signaling_network.rds"))
-gr_network = readRDS(url("https://zenodo.org/record/3260758/files/gr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
+sig_network = readRDS(url("https://zenodo.org/record/7074291/files/signaling_network_human_21122021.rds"))
+gr_network = readRDS(url("https://zenodo.org/record/7074291/files/gr_network_human_21122021.rds"))
 ```
 
-We will load in the ligand treatment validation datasets and try to optimize the parameters to maximize both target gene and ligand activity prediction. In this vignette, we do the optimization on all datasets. Alternatively, you can select a specific subset of datasets and evaluate the final performance on the left-out datasets.
+We will load in the ligand treatment validation datasets and try to
+optimize the parameters to maximize both target gene and ligand activity
+prediction. In this vignette, we do the optimization on all datasets.
+Alternatively, you can select a specific subset of datasets and evaluate
+the final performance on the left-out datasets.
 
-```{r}
+``` r
 # The ligand treatment expression datasets used for validation can be downloaded from Zenodo:
 expression_settings_validation = readRDS(url("https://zenodo.org/record/3260758/files/expression_settings.rds"))
 ```
 
-Define the optimization wrapper function and config information for the qsub package
-```{r}
+Define the optimization wrapper function and config information for the
+qsub package
+
+``` r
 mlrmbo_optimization_wrapper = function(...){
   library(nichenetr)
   library(mlrMBO)
@@ -55,7 +72,7 @@ qsub_config = create_qsub_config(
 
 Perform optimization:
 
-```{r}
+``` r
 additional_arguments_topology_correction = list(source_names = source_weights_df$source %>% unique(), 
                                                 algorithm = "PPR", 
                                                 correct_topology = FALSE,
@@ -95,16 +112,28 @@ job_mlrmbo = qsub_lapply(X = 1,
                                50, 24, 240, 
                                additional_arguments_topology_correction)
 ```
-Once the job is finised (which can take a few days - for shorter running time: reduce the number of iterations), run:
 
-```{r}
+Once the job is finised (which can take a few days - for shorter running
+time: reduce the number of iterations), run:
+
+``` r
 res_job_mlrmbo = qsub_retrieve(job_mlrmbo)
 ```
 
 Get now the most optimal parameter setting as a result of this analysis
 
-```{r}
+``` r
 optimized_parameters = res_job_mlrmbo %>% process_mlrmbo_nichenet_optimization(source_names = source_weights_df$source %>% unique())
 ```
 
-When you would be interested to generate a context-specific model, it could be possible that you would like to optimize the parameters specifically on your dataset of interest and not on the general ligand treatment datasets (be aware for overfitting, though!). Because for your own data, you don't know the true active ligands, you could only optimize target gene prediction performance and not ligand activity performance. In order to this, you would need to change the expression settings in the optimization functions such that they include your data, and use the function `model_evaluation_optimization_application` instead of `model_evaluation_optimization` (define this as the function parameter in `makeMultiObjectiveFunction` shown here above).
+When you would be interested to generate a context-specific model, it
+could be possible that you would like to optimize the parameters
+specifically on your dataset of interest and not on the general ligand
+treatment datasets (be aware for overfitting, though!). Because for your
+own data, you don’t know the true active ligands, you could only
+optimize target gene prediction performance and not ligand activity
+performance. In order to this, you would need to change the expression
+settings in the optimization functions such that they include your data,
+and use the function `model_evaluation_optimization_application` instead
+of `model_evaluation_optimization` (define this as the function
+parameter in `makeMultiObjectiveFunction` shown here above).
