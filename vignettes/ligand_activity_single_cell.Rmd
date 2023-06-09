@@ -108,7 +108,7 @@ cell_scores_tbl = tibble(cell = malignant_hn5_ids, score = expression_scaled[mal
 
 Then, we will determine the correlation between these p-EMT scores and ligand activities over all cells to prioritize p-EMT-inducing ligands. We hypothesize that ligands might be potential regulators of the p-EMT program if higher ligand activities are associated with higher p-EMT scores. Based on this correlation, we obtained a ranking of potential p-EMT-inducing ligands.
 
-To do so, we frist need to process and normalize the ligand activities (i.e. pearson correlation values) to make different cells comparable. Here we use modified z-score normalization.
+To do so, we first need to process and normalize the ligand activities (i.e. pearson correlation values) to make different cells comparable. Here we use modified z-score normalization.
 
 ```{r}
 normalized_ligand_activities = normalize_single_cell_ligand_activities(ligand_activities)

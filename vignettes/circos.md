@@ -129,30 +129,30 @@ ligand_activities = predict_ligand_activities(geneset = pemt_geneset, background
 ```
 
 Now, we want to rank the ligands based on their ligand activity. In our
-validation study, we showed that the pearson correlation between a
-ligand’s target predictions and the observed transcriptional response
-was the most informative measure to define ligand activity. Therefore,
-we will rank the ligands based on their pearson correlation coefficient.
+validation study, we showed that the AUPR between a ligand’s target
+predictions and the observed transcriptional response was the most
+informative measure to define ligand activity. Therefore, we will rank
+the ligands based on their AUPR.
 
 ``` r
-ligand_activities %>% arrange(-pearson) 
+ligand_activities %>% arrange(-aupr_corrected) 
 ## # A tibble: 232 × 5
 ##    test_ligand auroc   aupr aupr_corrected pearson
 ##    <chr>       <dbl>  <dbl>          <dbl>   <dbl>
 ##  1 TGFB2       0.768 0.123          0.107    0.199
-##  2 BMP8A       0.770 0.0880         0.0718   0.177
-##  3 LTBP1       0.722 0.0785         0.0622   0.163
-##  4 TNXB        0.713 0.0737         0.0574   0.158
-##  5 ENG         0.759 0.0732         0.0569   0.157
-##  6 GDF3        0.758 0.0817         0.0654   0.156
+##  2 CXCL12      0.708 0.0884         0.0721   0.144
+##  3 BMP8A       0.770 0.0880         0.0718   0.177
+##  4 INHBA       0.773 0.0866         0.0703   0.124
+##  5 GDF3        0.758 0.0817         0.0654   0.156
+##  6 LTBP1       0.722 0.0785         0.0622   0.163
 ##  7 ACE         0.711 0.0780         0.0617   0.151
-##  8 BMP5        0.745 0.0715         0.0552   0.150
-##  9 VCAM1       0.697 0.0640         0.0477   0.149
-## 10 MMP2        0.703 0.0652         0.0489   0.145
+##  8 TNXB        0.713 0.0737         0.0574   0.158
+##  9 ENG         0.759 0.0732         0.0569   0.157
+## 10 BMP5        0.745 0.0715         0.0552   0.150
 ## # … with 222 more rows
-best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand)
+best_upstream_ligands = ligand_activities %>% top_n(30, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand)
 head(best_upstream_ligands)
-## [1] "TGFB2" "BMP8A" "LTBP1" "TNXB"  "ENG"   "GDF3"
+## [1] "TGFB2"  "CXCL12" "BMP8A"  "INHBA"  "GDF3"   "LTBP1"
 ```
 
 We see here that the top-ranked ligands can predict the p-EMT genes
@@ -167,9 +167,11 @@ endothelial cells
 
 ``` r
 best_upstream_ligands %>% intersect(expressed_ligands_CAFs) 
-##  [1] "TGFB2"  "BMP8A"  "LTBP1"  "TNXB"   "ENG"    "BMP5"   "VCAM1"  "MMP2"   "COL3A1" "CXCL12" "CFH"    "VCAN"   "SPON1"  "HGF"    "FBN1"   "CD47"   "MMP14"
+##  [1] "TGFB2"  "CXCL12" "BMP8A"  "INHBA"  "LTBP1"  "TNXB"   "ENG"    "BMP5"   "VCAN"   "HGF"    "COMP"   "COL3A1" "MMP14"  "COL4A1" "FBN1"   "TIMP2"  "COL5A1" "MMP2"   "IBSP"   "BMP4"   "CFH"   
+## [22] "VCAM1"  "COL1A2" "FN1"    "B2M"
 best_upstream_ligands %>% intersect(expressed_ligands_endothelial)
-##  [1] "LTBP1"  "TNXB"   "ENG"    "GDF3"   "ACE"    "VCAM1"  "MMP2"   "CXCL12" "CFH"    "VCAN"   "LAMA5"  "HGF"    "FBN1"   "CD47"
+##  [1] "CXCL12"  "GDF3"    "LTBP1"   "ACE"     "TNXB"    "ENG"     "VCAN"    "HGF"     "COL4A1"  "FBN1"    "TIMP2"   "EDN1"    "MMP2"    "LAMA5"   "BMP4"    "CFH"     "VCAM1"   "COL17A1" "FN1"    
+## [20] "B2M"
 
 # lot of overlap between both cell types in terms of expressed ligands
 # therefore, determine which ligands are more strongly expressed in which of the two
@@ -370,12 +372,14 @@ genes into one of three groups (Receptors A, B, and C).
 target_gene_groups <- sample(c("Receptor A", "Receptor B", "Receptor C"), length(unique(circos_links$target)), replace = TRUE) %>%
                           setNames(unique(circos_links$target))
 target_gene_groups
-##        ACTN1          C1S      COL17A1       COL1A1       COL4A2           F3        FSTL3       IGFBP3        ITGA5        LAMC2        MFAP2         MMP2         MYH9       PDLIM7        PSMD2        PTHLH     SERPINE1     SERPINE2        TAGLN 
-## "Receptor C" "Receptor C" "Receptor A" "Receptor C" "Receptor A" "Receptor A" "Receptor A" "Receptor C" "Receptor C" "Receptor C" "Receptor A" "Receptor A" "Receptor C" "Receptor B" "Receptor C" "Receptor A" "Receptor B" "Receptor B" "Receptor B" 
-##        TGFBI          TNC         TPM1          APP       COL5A2         DKK3        FRMD6         GJA1        HTRA1         MMP1        MMP10         MT2A         PLAU       SEMA3C        THBS1          VIM        P4HA2       PRSS23        FSTL1 
-## "Receptor C" "Receptor B" "Receptor A" "Receptor B" "Receptor C" "Receptor B" "Receptor B" "Receptor B" "Receptor B" "Receptor C" "Receptor A" "Receptor C" "Receptor B" "Receptor C" "Receptor B" "Receptor C" "Receptor C" "Receptor C" "Receptor C" 
-##       LGALS1      SLC31A2         TPM4         IL32         FHL2        ITGB1 
-## "Receptor A" "Receptor B" "Receptor A" "Receptor B" "Receptor B" "Receptor B"
+##        ACTN1          C1S      COL17A1       COL1A1       COL4A2           F3        FSTL3       IGFBP3        ITGA5        LAMC2        MFAP2         MMP2         MYH9       PDLIM7        PSMD2 
+## "Receptor C" "Receptor B" "Receptor A" "Receptor C" "Receptor C" "Receptor A" "Receptor C" "Receptor C" "Receptor C" "Receptor B" "Receptor B" "Receptor C" "Receptor B" "Receptor A" "Receptor A" 
+##        PTHLH     SERPINE1     SERPINE2        TAGLN        TGFBI          TNC         TPM1         MMP1        MMP10         MT2A       PRSS23      SLC31A2        THBS1         TPM4          APP 
+## "Receptor B" "Receptor C" "Receptor A" "Receptor C" "Receptor A" "Receptor A" "Receptor B" "Receptor C" "Receptor A" "Receptor A" "Receptor C" "Receptor C" "Receptor A" "Receptor B" "Receptor B" 
+##       COL5A2         DKK3        FRMD6         GJA1        HTRA1         PLAU       SEMA3C          VIM         CAV1        ITGA6       MAGED1       MAGED2        PLOD2     SLC39A14        FSTL1 
+## "Receptor C" "Receptor B" "Receptor C" "Receptor A" "Receptor A" "Receptor C" "Receptor A" "Receptor A" "Receptor A" "Receptor A" "Receptor C" "Receptor A" "Receptor A" "Receptor C" "Receptor B" 
+##       LGALS1        P4HA2         IL32         FHL2        ITGB1        TIMP3       IGFBP7 
+## "Receptor C" "Receptor B" "Receptor A" "Receptor A" "Receptor C" "Receptor B" "Receptor A"
 target_gene_group_colors <- c("red", "blue", "green") %>% setNames(unique(target_gene_groups))
 ```
 

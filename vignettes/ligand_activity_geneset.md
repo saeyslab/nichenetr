@@ -245,7 +245,7 @@ pearson correlation coefficient. This allows us to prioritize
 p-EMT-regulating ligands.
 
 ``` r
-ligand_activities %>% arrange(-aupr) 
+ligand_activities %>% arrange(-aupr_corrected) 
 ## # A tibble: 212 × 5
 ##    test_ligand auroc   aupr aupr_corrected pearson
 ##    <chr>       <dbl>  <dbl>          <dbl>   <dbl>
@@ -260,7 +260,7 @@ ligand_activities %>% arrange(-aupr)
 ##  9 BMP5        0.750 0.0691         0.0538   0.148
 ## 10 VCAN        0.720 0.0687         0.0534   0.140
 ## # … with 202 more rows
-best_upstream_ligands = ligand_activities %>% top_n(30, aupr) %>% arrange(-aupr) %>% pull(test_ligand)
+best_upstream_ligands = ligand_activities %>% top_n(30, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand)
 head(best_upstream_ligands)
 ## [1] "TGFB2"  "BMP8A"  "INHBA"  "CXCL12" "LTBP1"  "CCN2"
 ```
@@ -285,10 +285,10 @@ ligand is indicated via the dashed line).
 
 ``` r
 # show histogram of ligand activity scores
-p_hist_lig_activity = ggplot(ligand_activities, aes(x=aupr)) + 
+p_hist_lig_activity = ggplot(ligand_activities, aes(x=aupr_corrected)) + 
   geom_histogram(color="black", fill="darkorange")  + 
   # geom_density(alpha=.1, fill="orange") +
-  geom_vline(aes(xintercept=min(ligand_activities %>% top_n(30, aupr) %>% pull(aupr))), color="red", linetype="dashed", size=1) + 
+  geom_vline(aes(xintercept=min(ligand_activities %>% top_n(30, aupr_corrected) %>% pull(aupr_corrected))), color="red", linetype="dashed", size=1) + 
   labs(x="ligand activity (PCC)", y = "# ligands") +
   theme_classic()
 p_hist_lig_activity
@@ -443,7 +443,7 @@ library(ggpubr)
 #### Prepare the ligand activity matrix
 
 ``` r
-ligand_aupr_matrix = ligand_activities %>% select(aupr) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
+ligand_aupr_matrix = ligand_activities %>% select(aupr_corrected) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
 vis_ligand_aupr = ligand_aupr_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("AUPR")
 ```

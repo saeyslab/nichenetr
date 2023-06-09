@@ -159,8 +159,8 @@ ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_e
 Now, we want to rank the ligands based on their ligand activity. In our validation study, we showed that the pearson correlation coefficient (PCC) between a ligand's target predictions and the observed transcriptional response was the most informative measure to define ligand activity. Therefore, we will rank the ligands based on their pearson correlation coefficient. This allows us to prioritize p-EMT-regulating ligands.
 
 ```{r}
-ligand_activities %>% arrange(-aupr) 
-best_upstream_ligands = ligand_activities %>% top_n(30, aupr) %>% arrange(-aupr) %>% pull(test_ligand)
+ligand_activities %>% arrange(-aupr_corrected) 
+best_upstream_ligands = ligand_activities %>% top_n(30, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand)
 head(best_upstream_ligands)
 ```
 
@@ -170,10 +170,10 @@ Additional note: we looked at the top 30 ligands here and will continue the anal
 
 ```{r}
 # show histogram of ligand activity scores
-p_hist_lig_activity = ggplot(ligand_activities, aes(x=aupr)) + 
+p_hist_lig_activity = ggplot(ligand_activities, aes(x=aupr_corrected)) + 
   geom_histogram(color="black", fill="darkorange")  + 
   # geom_density(alpha=.1, fill="orange") +
-  geom_vline(aes(xintercept=min(ligand_activities %>% top_n(30, aupr) %>% pull(aupr))), color="red", linetype="dashed", size=1) + 
+  geom_vline(aes(xintercept=min(ligand_activities %>% top_n(30, aupr_corrected) %>% pull(aupr_corrected))), color="red", linetype="dashed", size=1) + 
   labs(x="ligand activity (PCC)", y = "# ligands") +
   theme_classic()
 p_hist_lig_activity
@@ -273,7 +273,7 @@ library(ggpubr)
 #### Prepare the ligand activity matrix
 
 ```{r}
-ligand_aupr_matrix = ligand_activities %>% select(aupr) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
+ligand_aupr_matrix = ligand_activities %>% select(aupr_corrected) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
 vis_ligand_aupr = ligand_aupr_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("AUPR")
 ```

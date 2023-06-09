@@ -141,7 +141,7 @@ program if higher ligand activities are associated with higher p-EMT
 scores. Based on this correlation, we obtained a ranking of potential
 p-EMT-inducing ligands.
 
-To do so, we frist need to process and normalize the ligand activities
+To do so, we first need to process and normalize the ligand activities
 (i.e. pearson correlation values) to make different cells comparable.
 Here we use modified z-score normalization.
 
@@ -160,16 +160,16 @@ output_correlation_analysis %>% arrange(-pearson_regression) %>% select(pearson_
 ## # A tibble: 203 × 2
 ##    pearson_regression ligand 
 ##                 <dbl> <chr>  
-##  1              0.709 OGN    
-##  2              0.630 TGFBI  
-##  3              0.607 ANGPTL2
-##  4              0.569 BGN    
-##  5              0.560 IFITM1 
-##  6              0.541 COMP   
-##  7              0.531 NID1   
-##  8              0.500 HSPG2  
-##  9              0.493 BMP8A  
-## 10              0.462 ENG    
+##  1              0.830 OGN    
+##  2              0.740 ANGPTL2
+##  3              0.583 CXCL10 
+##  4              0.577 NID1   
+##  5              0.572 MMP14  
+##  6              0.560 CXCL12 
+##  7              0.555 COL11A1
+##  8              0.550 BGN    
+##  9              0.526 CLCF1  
+## 10              0.510 TFPI   
 ## # … with 193 more rows
 ```
 
@@ -180,7 +180,7 @@ score of interest
 inner_join(cell_scores_tbl,normalized_ligand_activities) %>% ggplot(aes(score,TNC)) + geom_point() + geom_smooth(method = "lm")
 ```
 
-![](ligand_activity_single_cell_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](ligand_activity_single_cell_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
 ### References
 

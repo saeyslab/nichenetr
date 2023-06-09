@@ -167,7 +167,7 @@ potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% 
 ```{r}
 ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
 
-ligand_activities = ligand_activities %>% arrange(-aupr) %>% mutate(rank = rank(desc(aupr)))
+ligand_activities = ligand_activities %>% arrange(-aupr_corrected) %>% mutate(rank = rank(desc(aupr_corrected)))
 ligand_activities
 ```
 
@@ -176,7 +176,7 @@ The different ligand activity measures (auroc, aupr, pearson correlation coeffic
 The number of top-ranked ligands that are further used to predict active target genes and construct an active ligand-receptor network is here 20.
 
 ```{r}
-best_upstream_ligands = ligand_activities %>% top_n(30, aupr) %>% arrange(-aupr) %>% pull(test_ligand) %>% unique()
+best_upstream_ligands = ligand_activities %>% top_n(30, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand) %>% unique()
 ```
 
 These ligands are expressed by one or more of the input sender cells. To see which cell population expresses which of these top-ranked ligands, you can run the following:
@@ -284,7 +284,7 @@ For example, you can make a combined heatmap of ligand activities, ligand expres
 
 ```{r}
 # ligand activity heatmap
-ligand_aupr_matrix = ligand_activities %>% select(aupr) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
+ligand_aupr_matrix = ligand_activities %>% select(aupr_corrected) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
 rownames(ligand_aupr_matrix) = rownames(ligand_aupr_matrix) %>% make.names()
 colnames(ligand_aupr_matrix) = colnames(ligand_aupr_matrix) %>% make.names()

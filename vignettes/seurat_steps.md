@@ -97,20 +97,13 @@ mouse/human gene symbol.
 ``` r
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
 seuratObj@meta.data %>% head()
-##         nGene nUMI orig.ident aggregate res.0.6 celltype nCount_RNA
-## W380370   880 1611      LN_SS        SS       1    CD8 T       1607
-## W380372   541  891      LN_SS        SS       0    CD4 T        885
-## W380374   742 1229      LN_SS        SS       0    CD4 T       1223
-## W380378   847 1546      LN_SS        SS       1    CD8 T       1537
-## W380379   839 1606      LN_SS        SS       0    CD4 T       1603
-## W380381   517  844      LN_SS        SS       0    CD4 T        840
-##         nFeature_RNA
-## W380370          876
-## W380372          536
-## W380374          737
-## W380378          838
-## W380379          836
-## W380381          513
+##         nGene nUMI orig.ident aggregate res.0.6 celltype nCount_RNA nFeature_RNA
+## W380370   880 1611      LN_SS        SS       1    CD8 T       1607          876
+## W380372   541  891      LN_SS        SS       0    CD4 T        885          536
+## W380374   742 1229      LN_SS        SS       0    CD4 T       1223          737
+## W380378   847 1546      LN_SS        SS       1    CD8 T       1537          838
+## W380379   839 1606      LN_SS        SS       0    CD4 T       1603          836
+## W380381   517  844      LN_SS        SS       0    CD4 T        840          513
 ```
 
 Visualize which cell populations are present: CD4 T cells (including
@@ -170,18 +163,12 @@ head(lr_network)
 ## 5 a             F11r 
 ## 6 a             Mc1r
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
-##               2300002M23Rik 2610528A11Rik 9530003J23Rik            a
-## 0610005C13Rik  0.000000e+00  0.000000e+00  1.311297e-05 0.000000e+00
-## 0610009B22Rik  0.000000e+00  0.000000e+00  1.269301e-05 0.000000e+00
-## 0610009L18Rik  8.872902e-05  4.977197e-05  2.581909e-04 7.570125e-05
-## 0610010F05Rik  2.194046e-03  1.111556e-03  3.142374e-03 1.631658e-03
-## 0610010K14Rik  2.271606e-03  9.360769e-04  3.546140e-03 1.697713e-03
-##                        A2m
-## 0610005C13Rik 1.390053e-05
-## 0610009B22Rik 1.345536e-05
-## 0610009L18Rik 9.802264e-05
-## 0610010F05Rik 2.585820e-03
-## 0610010K14Rik 2.632082e-03
+##               2300002M23Rik 2610528A11Rik 9530003J23Rik            a          A2m
+## 0610005C13Rik  0.000000e+00  0.000000e+00  1.311297e-05 0.000000e+00 1.390053e-05
+## 0610009B22Rik  0.000000e+00  0.000000e+00  1.269301e-05 0.000000e+00 1.345536e-05
+## 0610009L18Rik  8.872902e-05  4.977197e-05  2.581909e-04 7.570125e-05 9.802264e-05
+## 0610010F05Rik  2.194046e-03  1.111556e-03  3.142374e-03 1.631658e-03 2.585820e-03
+## 0610010K14Rik  2.271606e-03  9.360769e-04  3.546140e-03 1.697713e-03 2.632082e-03
 
 weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network, by = c("from","to"))
 head(weighted_networks$lr_sig) # interactions and their weights in the ligand-receptor + signaling network
@@ -288,7 +275,7 @@ potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% 
 ``` r
 ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
 
-ligand_activities = ligand_activities %>% arrange(-aupr) %>% mutate(rank = rank(desc(aupr)))
+ligand_activities = ligand_activities %>% arrange(-aupr_corrected) %>% mutate(rank = rank(desc(aupr_corrected)))
 ligand_activities
 ## # A tibble: 73 × 6
 ##    test_ligand auroc  aupr aupr_corrected pearson  rank
@@ -320,7 +307,7 @@ The number of top-ranked ligands that are further used to predict active
 target genes and construct an active ligand-receptor network is here 20.
 
 ``` r
-best_upstream_ligands = ligand_activities %>% top_n(30, aupr) %>% arrange(-aupr) %>% pull(test_ligand) %>% unique()
+best_upstream_ligands = ligand_activities %>% top_n(30, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand) %>% unique()
 ```
 
 These ligands are expressed by one or more of the input sender cells. To
@@ -456,7 +443,7 @@ for expression.
 
 ``` r
 # ligand activity heatmap
-ligand_aupr_matrix = ligand_activities %>% select(aupr) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
+ligand_aupr_matrix = ligand_activities %>% select(aupr_corrected) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
 rownames(ligand_aupr_matrix) = rownames(ligand_aupr_matrix) %>% make.names()
 colnames(ligand_aupr_matrix) = colnames(ligand_aupr_matrix) %>% make.names()

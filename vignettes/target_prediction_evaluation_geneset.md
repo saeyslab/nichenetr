@@ -137,10 +137,10 @@ ligand_activities = predict_ligand_activities(geneset = pemt_geneset, background
 ```
 
 Now, we want to rank the ligands based on their ligand activity. In our
-validation study, we showed that the pearson correlation between a
-ligand’s target predictions and the observed transcriptional response
-was the most informative measure to define ligand activity. Therefore,
-we will rank the ligands based on their pearson correlation coefficient.
+validation study, we showed that the AUPR between a ligand’s target
+predictions and the observed transcriptional response was the most
+informative measure to define ligand activity. Therefore, we will rank
+the ligands based on their AUPR.
 
 ``` r
 ligand_activities %>% arrange(-pearson)
@@ -158,9 +158,9 @@ ligand_activities %>% arrange(-pearson)
 ##  9 COL3A1      0.742 0.0697         0.0534   0.145
 ## 10 CXCL12      0.708 0.0884         0.0721   0.144
 ## # … with 193 more rows
-best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand)
+best_upstream_ligands = ligand_activities %>% top_n(20, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand)
 head(best_upstream_ligands)
-## [1] "TGFB2" "BMP8A" "LTBP1" "TNXB"  "ENG"   "BMP5"
+## [1] "TGFB2"  "CXCL12" "BMP8A"  "INHBA"  "LTBP1"  "TNXB"
 ```
 
 For the top 20 ligands, we will now build a multi-ligand model that uses
@@ -189,11 +189,11 @@ cross-validation rounds)?
 
 ``` r
 target_prediction_performances_cv$auroc %>% mean()
-## [1] 0.7511288
+## [1] 0.7371764
 target_prediction_performances_cv$aupr %>% mean()
-## [1] 0.09557484
+## [1] 0.08870974
 target_prediction_performances_cv$pearson %>% mean()
-## [1] 0.1944454
+## [1] 0.1912928
 ```
 
 Evaluate now whether genes belonging to the gene set are more likely to
@@ -209,7 +209,7 @@ targets?
 
 ``` r
 target_prediction_performances_discrete_cv %>% filter(true_target) %>% .$fraction_positive_predicted %>% mean()
-## [1] 0.3541667
+## [1] 0.328125
 ```
 
 What is the fraction of non-p-EMT genes that belongs to the top 5%
@@ -217,7 +217,7 @@ predicted targets?
 
 ``` r
 target_prediction_performances_discrete_cv %>% filter(!true_target) %>% .$fraction_positive_predicted %>% mean()
-## [1] 0.04538395
+## [1] 0.04616048
 ```
 
 We see that the p-EMT genes are enriched in the top-predicted target
@@ -227,7 +227,7 @@ cross-validation round and report the average p-value.
 ``` r
 target_prediction_performances_discrete_fisher = pemt_gene_predictions_top20_list %>% lapply(calculate_fraction_top_predicted_fisher, quantile_cutoff = 0.95) 
 target_prediction_performances_discrete_fisher %>% unlist() %>% mean()
-## [1] 5.000915e-18
+## [1] 6.521223e-16
 ```
 
 Finally, we will look at which p-EMT genes are well-predicted in every
@@ -237,20 +237,20 @@ cross-validation round.
 # get top predicted genes
 top_predicted_genes = seq(length(pemt_gene_predictions_top20_list)) %>% lapply(get_top_predicted_genes,pemt_gene_predictions_top20_list) %>% reduce(full_join, by = c("gene","true_target"))
 top_predicted_genes %>% filter(true_target)
-## # A tibble: 44 × 4
+## # A tibble: 39 × 4
 ##    gene     true_target predicted_top_target_round1 predicted_top_target_round2
 ##    <chr>    <lgl>       <lgl>                       <lgl>                      
 ##  1 SERPINE1 TRUE        TRUE                        TRUE                       
 ##  2 MMP1     TRUE        TRUE                        TRUE                       
-##  3 FSTL3    TRUE        TRUE                        TRUE                       
-##  4 MT2A     TRUE        TRUE                        TRUE                       
-##  5 COL1A1   TRUE        TRUE                        TRUE                       
-##  6 TAGLN    TRUE        TRUE                        TRUE                       
-##  7 TNC      TRUE        TRUE                        NA                         
-##  8 LAMC2    TRUE        TRUE                        TRUE                       
-##  9 THBS1    TRUE        TRUE                        TRUE                       
-## 10 MYH9     TRUE        TRUE                        TRUE                       
-## # … with 34 more rows
+##  3 TAGLN    TRUE        TRUE                        TRUE                       
+##  4 FSTL3    TRUE        TRUE                        TRUE                       
+##  5 MT2A     TRUE        TRUE                        TRUE                       
+##  6 COL1A1   TRUE        TRUE                        TRUE                       
+##  7 TNC      TRUE        TRUE                        TRUE                       
+##  8 SEMA3C   TRUE        TRUE                        TRUE                       
+##  9 PLOD2    TRUE        TRUE                        TRUE                       
+## 10 THBS1    TRUE        TRUE                        TRUE                       
+## # … with 29 more rows
 ```
 
 ### References
