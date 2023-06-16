@@ -56,9 +56,9 @@ in neighboring malignant cells. This program, a partial
 epithelial-mesenschymal transition (p-EMT) program, could be linked to
 metastasis by Puram et al. 
 
-The used ligand-target matrix and example expression data of interacting
-cells can be downloaded from Zenodo.
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
+The used [ligand-target matrix](https://doi.org/10.5281/zenodo.7074290)
+and example [expression data](https://doi.org/10.5281/zenodo.3260758) of
+interacting cells can be downloaded from Zenodo.
 
 ## Step 0: Load required packages, NicheNet’s ligand-target prior model and processed expression data of interacting cells
 
@@ -72,9 +72,8 @@ library(tidyverse)
 Ligand-target model:
 
 This model denotes the prior potential that a particular ligand might
-regulate the expression of a specific target gene. The Nichenet v2
-networks and matrices for both mouse and human can be downloaded from
-Zenodo
+regulate the expression of a specific target gene. In Nichenet v2,
+networks and matrices for both mouse and human are made separately
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7074291.svg)](https://doi.org/10.5281/zenodo.7074291).
 
 ``` r
@@ -112,8 +111,7 @@ sample_info = hnscc_expression$sample_info # contains meta-information about the
 Because the NicheNet 2.0. networks are in the most recent version of the
 official gene symbols, we will make sure that the gene symbols used in
 the expression data are also updated (= converted from their “aliases”
-to official gene symbols). Afterwards, we will make them again
-syntactically valid.
+to official gene symbols).
 
 ``` r
 # If this is not done, there will be 35 genes fewer in lr_network_expressed!
@@ -237,11 +235,11 @@ ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_e
 ```
 
 Now, we want to rank the ligands based on their ligand activity. In our
-validation study, we showed that the pearson correlation coefficient
-(PCC) between a ligand’s target predictions and the observed
+validation study, we showed that the area under the precision-recall
+curve (AUPR) between a ligand’s target predictions and the observed
 transcriptional response was the most informative measure to define
-ligand activity. Therefore, we will rank the ligands based on their
-pearson correlation coefficient. This allows us to prioritize
+ligand activity (this was the Pearson correlation for v1). Therefore, we
+will rank the ligands based on their AUPR. This allows us to prioritize
 p-EMT-regulating ligands.
 
 ``` r
@@ -330,7 +328,7 @@ head(active_ligand_target_links_df)
 For visualization purposes, we adapted the ligand-target regulatory
 potential matrix as follows. Regulatory potential scores were set as 0
 if their score was below a predefined threshold, which was here the 0.25
-quantile of scores of interactions between the 20 top-ranked ligands and
+quantile of scores of interactions between the 30 top-ranked ligands and
 each of their respective top targets (see the ligand-target network
 defined in the data frame).
 
