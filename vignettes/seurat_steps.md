@@ -9,14 +9,14 @@ rmarkdown::render("vignettes/seurat_steps.Rmd", output_format = "github_document
 -->
 
 In this vignette, you can learn how to perform a basic NicheNet analysis
-on a Seurat v3 object. Such a NicheNet analysis can help you to generate
-hypotheses about an intercellular communication process of interest for
-which you have single-cell gene expression data as a Seurat object.
-Specifically, NicheNet can predict 1) which ligands from one or more
-cell population(s) (“sender/niche”) are most likely to affect target
-gene expression in an interacting cell population (“receiver/target”)
-and 2) which specific target genes are affected by which of these
-predicted ligands.
+on a Seurat v3/v4 object. Such a NicheNet analysis can help you to
+generate hypotheses about an intercellular communication process of
+interest for which you have single-cell gene expression data as a Seurat
+object. Specifically, NicheNet can predict 1) which ligands from one or
+more cell population(s) (“sender/niche”) are most likely to affect
+target gene expression in an interacting cell population
+(“receiver/target”) and 2) which specific target genes are affected by
+which of these predicted ligands.
 
 Because NicheNet studies how ligands affect gene expression in
 putatively neighboring/interacting cells, you need to have data about
@@ -54,12 +54,10 @@ regulate and induce these observed gene expression changes. NicheNet
 will specifically prioritize ligands from these immune cells and their
 target genes that change in expression upon LCMV infection.
 
-The used NicheNet networks, ligand-target matrix and example expression
-data of interacting cells can be downloaded from Zenodo. The NicheNet
-networks and ligand-target matrix at
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
-and the Seurat object of the processed NICHE-seq single-cell data at
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3531889.svg)](https://doi.org/10.5281/zenodo.3531889).
+The used [ligand-target matrix](https://doi.org/10.5281/zenodo.7074290)
+and the [Seurat object of the processed NICHE-seq single-cell
+data](https://doi.org/10.5281/zenodo.3531889) can be downloaded from
+Zenodo.
 
 # Prepare NicheNet analysis
 
@@ -91,7 +89,7 @@ The dataset used here is publicly available single-cell data from immune
 cells in the T cell area of the inguinal lymph node. The data was
 processed and aggregated by applying the Seurat alignment pipeline. The
 Seurat object contains this aggregated data. Note that this should be a
-Seurat v3 object and that gene should be named by their official
+Seurat v3/v4 object and that gene should be named by their official
 mouse/human gene symbol.
 
 ``` r
@@ -192,6 +190,9 @@ head(weighted_networks$gr) # interactions and their weights in the gene regulato
 ## 5 0610010K14Rik Alg1          0.127 
 ## 6 0610010K14Rik Alox12        0.128
 ```
+
+If your expression data has the older gene symbols, you may want to use
+our alias conversion function to avoid the loss of gene names.
 
 ``` r
 seuratObj = alias_to_symbol_seurat(seuratObj, "mouse")
@@ -296,15 +297,16 @@ ligand_activities
 The different ligand activity measures (auroc, aupr, pearson correlation
 coefficient) are a measure for how well a ligand can predict the
 observed differentially expressed genes compared to the background of
-expressed genes. In our validation study, we showed that the pearson
-correlation coefficient between a ligand’s target predictions and the
-observed transcriptional response was the most informative measure to
-define ligand activity. Therefore, NicheNet ranks the ligands based on
-their pearson correlation coefficient. This allows us to prioritize
-ligands inducing the antiviral response in CD8 T cells.
+expressed genes. In our validation study, we showed that the area under
+the precision-recall curve (AUPR) between a ligand’s target predictions
+and the observed transcriptional response was the most informative
+measure to define ligand activity (this was the Pearson correlation for
+v1). Therefore, NicheNet ranks the ligands based on their AUPR. This
+allows us to prioritize ligands inducing the antiviral response in CD8 T
+cells.
 
 The number of top-ranked ligands that are further used to predict active
-target genes and construct an active ligand-receptor network is here 20.
+target genes and construct an active ligand-receptor network is here 30.
 
 ``` r
 best_upstream_ligands = ligand_activities %>% top_n(30, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand) %>% unique()
@@ -347,7 +349,7 @@ p_ligand_target_network
 
 ![](seurat_steps_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
-Note that not all ligands from the top 20 are present in this
+Note that not all ligands from the top 30 are present in this
 ligand-target heatmap. The left-out ligands are ligands that don’t have
 target genes with high enough regulatory potential scores. Therefore,
 they did not survive the used cutoffs. To include them, you can be less
@@ -487,9 +489,10 @@ combined_plot
 
 # Remarks
 
-1.  Top-ranked ligands and target genes shown here differ from the
-    predictions shown in the respective case study in the NicheNet paper
-    because a different definition of expressed genes was used.
+Top-ranked ligands and target genes shown here differ from the
+predictions shown in the respective case study in the NicheNet paper
+because 1) a different definition of expressed genes was used, and 2) we
+have updated the ligand-target matrix to include more data sources.
 
 # References
 

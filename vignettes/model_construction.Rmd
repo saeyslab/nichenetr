@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-This vignette shows how ligand-target prior regulatory potential scores are inferred in the NicheNet framework. You can use the procedure shown here to develop your own model with inclusion of context-specific networks or removal of noisy irrelevant data sources. The networks at the basis of NicheNet can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758). 
+This vignette shows how ligand-target prior regulatory potential scores are inferred in the NicheNet framework. You can use the procedure shown here to develop your own model with inclusion of context-specific networks or removal of noisy irrelevant data sources. The networks at the basis of NicheNet can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7074291.svg)](https://doi.org/10.5281/zenodo.7074291). 
 
 # Background information about NicheNet's prior ligand-target model
 

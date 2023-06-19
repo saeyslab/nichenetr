@@ -36,9 +36,9 @@ genes. This allows us to prioritize p-EMT-regulating ligands. Then, we
 will assess how well the prioritized ligands together can predict
 whether genes belong to the gene set of interest or not.
 
-The used ligand-target matrix and example expression data of interacting
-cells can be downloaded from Zenodo.
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
+The used [ligand-target matrix](https://doi.org/10.5281/zenodo.7074290)
+and example [expression data](https://doi.org/10.5281/zenodo.3260758) of
+interacting cells can be downloaded from Zenodo.
 
 ### Load packages required for this vignette
 
@@ -143,27 +143,27 @@ informative measure to define ligand activity. Therefore, we will rank
 the ligands based on their AUPR.
 
 ``` r
-ligand_activities %>% arrange(-pearson)
+ligand_activities %>% arrange(-aupr_corrected)
 ## # A tibble: 203 × 5
 ##    test_ligand auroc   aupr aupr_corrected pearson
 ##    <chr>       <dbl>  <dbl>          <dbl>   <dbl>
 ##  1 TGFB2       0.768 0.123          0.107    0.199
-##  2 BMP8A       0.770 0.0880         0.0718   0.177
-##  3 LTBP1       0.722 0.0785         0.0622   0.163
-##  4 TNXB        0.713 0.0737         0.0574   0.158
-##  5 ENG         0.759 0.0732         0.0569   0.157
-##  6 BMP5        0.745 0.0715         0.0552   0.150
-##  7 VCAM1       0.697 0.0640         0.0477   0.149
-##  8 MMP2        0.703 0.0652         0.0489   0.145
-##  9 COL3A1      0.742 0.0697         0.0534   0.145
-## 10 CXCL12      0.708 0.0884         0.0721   0.144
+##  2 CXCL12      0.708 0.0884         0.0721   0.144
+##  3 BMP8A       0.770 0.0880         0.0718   0.177
+##  4 INHBA       0.773 0.0866         0.0703   0.124
+##  5 LTBP1       0.722 0.0785         0.0622   0.163
+##  6 TNXB        0.713 0.0737         0.0574   0.158
+##  7 ENG         0.759 0.0732         0.0569   0.157
+##  8 BMP5        0.745 0.0715         0.0552   0.150
+##  9 VCAN        0.715 0.0711         0.0548   0.142
+## 10 HGF         0.712 0.0711         0.0548   0.138
 ## # … with 193 more rows
-best_upstream_ligands = ligand_activities %>% top_n(20, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand)
+best_upstream_ligands = ligand_activities %>% top_n(30, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand)
 head(best_upstream_ligands)
 ## [1] "TGFB2"  "CXCL12" "BMP8A"  "INHBA"  "LTBP1"  "TNXB"
 ```
 
-For the top 20 ligands, we will now build a multi-ligand model that uses
+For the top 30 ligands, we will now build a multi-ligand model that uses
 all top-ranked ligands to predict whether a gene belongs to the p-EMT
 program of not. This classification model will be trained via
 cross-validation and returns a probability for every gene.
@@ -173,7 +173,7 @@ cross-validation and returns a probability for every gene.
 k = 3 # 3-fold
 n = 2 # 2 rounds
 
-pemt_gene_predictions_top20_list = seq(n) %>% lapply(assess_rf_class_probabilities, folds = k, geneset = pemt_geneset, background_expressed_genes = background_expressed_genes, ligands_oi = best_upstream_ligands, ligand_target_matrix = ligand_target_matrix)
+pemt_gene_predictions_top30_list = seq(n) %>% lapply(assess_rf_class_probabilities, folds = k, geneset = pemt_geneset, background_expressed_genes = background_expressed_genes, ligands_oi = best_upstream_ligands, ligand_target_matrix = ligand_target_matrix)
 ```
 
 Evaluate now how well the target gene probabilies accord to the gene set
@@ -181,7 +181,7 @@ assignments
 
 ``` r
 # get performance: auroc-aupr-pearson
-target_prediction_performances_cv = pemt_gene_predictions_top20_list %>% lapply(classification_evaluation_continuous_pred_wrapper) %>% bind_rows() %>% mutate(round=seq(1:nrow(.)))
+target_prediction_performances_cv = pemt_gene_predictions_top30_list %>% lapply(classification_evaluation_continuous_pred_wrapper) %>% bind_rows() %>% mutate(round=seq(1:nrow(.)))
 ```
 
 What is the AUROC, AUPR and PCC of this model (averaged over
@@ -189,11 +189,11 @@ cross-validation rounds)?
 
 ``` r
 target_prediction_performances_cv$auroc %>% mean()
-## [1] 0.7371764
+## [1] 0.7606117
 target_prediction_performances_cv$aupr %>% mean()
-## [1] 0.08870974
+## [1] 0.09281456
 target_prediction_performances_cv$pearson %>% mean()
-## [1] 0.1912928
+## [1] 0.1911942
 ```
 
 Evaluate now whether genes belonging to the gene set are more likely to
@@ -201,7 +201,7 @@ be top-predicted. We will look at the top 5% of predicted targets here.
 
 ``` r
 # get performance: how many p-EMT genes and non-p-EMT-genes among top 5% predicted targets
-target_prediction_performances_discrete_cv = pemt_gene_predictions_top20_list %>% lapply(calculate_fraction_top_predicted, quantile_cutoff = 0.95) %>% bind_rows() %>% ungroup() %>% mutate(round=rep(1:length(pemt_gene_predictions_top20_list), each = 2))
+target_prediction_performances_discrete_cv = pemt_gene_predictions_top30_list %>% lapply(calculate_fraction_top_predicted, quantile_cutoff = 0.95) %>% bind_rows() %>% ungroup() %>% mutate(round=rep(1:length(pemt_gene_predictions_top30_list), each = 2))
 ```
 
 What is the fraction of p-EMT genes that belongs to the top 5% predicted
@@ -209,7 +209,7 @@ targets?
 
 ``` r
 target_prediction_performances_discrete_cv %>% filter(true_target) %>% .$fraction_positive_predicted %>% mean()
-## [1] 0.328125
+## [1] 0.3489583
 ```
 
 What is the fraction of non-p-EMT genes that belongs to the top 5%
@@ -217,7 +217,7 @@ predicted targets?
 
 ``` r
 target_prediction_performances_discrete_cv %>% filter(!true_target) %>% .$fraction_positive_predicted %>% mean()
-## [1] 0.04616048
+## [1] 0.04529767
 ```
 
 We see that the p-EMT genes are enriched in the top-predicted target
@@ -225,9 +225,9 @@ genes. To test this, we will now apply a Fisher’s exact test for every
 cross-validation round and report the average p-value.
 
 ``` r
-target_prediction_performances_discrete_fisher = pemt_gene_predictions_top20_list %>% lapply(calculate_fraction_top_predicted_fisher, quantile_cutoff = 0.95) 
+target_prediction_performances_discrete_fisher = pemt_gene_predictions_top30_list %>% lapply(calculate_fraction_top_predicted_fisher, quantile_cutoff = 0.95) 
 target_prediction_performances_discrete_fisher %>% unlist() %>% mean()
-## [1] 6.521223e-16
+## [1] 4.529691e-18
 ```
 
 Finally, we will look at which p-EMT genes are well-predicted in every
@@ -235,22 +235,22 @@ cross-validation round.
 
 ``` r
 # get top predicted genes
-top_predicted_genes = seq(length(pemt_gene_predictions_top20_list)) %>% lapply(get_top_predicted_genes,pemt_gene_predictions_top20_list) %>% reduce(full_join, by = c("gene","true_target"))
+top_predicted_genes = seq(length(pemt_gene_predictions_top30_list)) %>% lapply(get_top_predicted_genes,pemt_gene_predictions_top30_list) %>% reduce(full_join, by = c("gene","true_target"))
 top_predicted_genes %>% filter(true_target)
-## # A tibble: 39 × 4
+## # A tibble: 41 × 4
 ##    gene     true_target predicted_top_target_round1 predicted_top_target_round2
 ##    <chr>    <lgl>       <lgl>                       <lgl>                      
 ##  1 SERPINE1 TRUE        TRUE                        TRUE                       
 ##  2 MMP1     TRUE        TRUE                        TRUE                       
 ##  3 TAGLN    TRUE        TRUE                        TRUE                       
-##  4 FSTL3    TRUE        TRUE                        TRUE                       
-##  5 MT2A     TRUE        TRUE                        TRUE                       
-##  6 COL1A1   TRUE        TRUE                        TRUE                       
+##  4 COL1A1   TRUE        TRUE                        TRUE                       
+##  5 FSTL3    TRUE        TRUE                        TRUE                       
+##  6 MT2A     TRUE        TRUE                        TRUE                       
 ##  7 TNC      TRUE        TRUE                        TRUE                       
 ##  8 SEMA3C   TRUE        TRUE                        TRUE                       
-##  9 PLOD2    TRUE        TRUE                        TRUE                       
-## 10 THBS1    TRUE        TRUE                        TRUE                       
-## # … with 29 more rows
+##  9 THBS1    TRUE        TRUE                        TRUE                       
+## 10 LAMC2    TRUE        TRUE                        TRUE                       
+## # … with 31 more rows
 ```
 
 ### References

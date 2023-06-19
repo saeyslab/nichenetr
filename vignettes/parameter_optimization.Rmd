@@ -25,7 +25,7 @@ knitr::opts_chunk$set(
 
 This vignette shows how we optimized both hyperparameters and data source weights via model-based optimization (see manuscript for more information). Because the optimization requires intensive parallel computation, we performed optimization in parallel on a gridengine cluster via the qsub package (https://cran.r-project.org/web/packages/qsub/qsub.pdf). This script is merely illustrative and should be adapted by the user to work on its own system.
 
-The input data used in this vignette can be found at: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758). 
+The [ligand treatment validation datasets](https://doi.org/10.5281/zenodo.3260758), and [NicheNet’s v2 ligand-target model](https://doi.org/10.5281/zenodo.7074290) can be downloaded from Zenodo.
 
 First, we will load in the required packages and networks we will use to construct the models which we will evaluate during the optimization procedure.
 ```{r}

@@ -16,8 +16,7 @@ cluster via the qsub package
 is merely illustrative and should be adapted by the user to work on its
 own system.
 
-The input data used in this vignette can be found at:
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758).
+The [ligand treatment validation datasets](https://doi.org/10.5281/zenodo.3260758), and [NicheNet’s v2 ligand-target model](https://doi.org/10.5281/zenodo.7074290) can be downloaded from Zenodo.
 
 First, we will load in the required packages and networks we will use to
 construct the models which we will evaluate during the optimization

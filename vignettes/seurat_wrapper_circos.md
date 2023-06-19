@@ -41,12 +41,10 @@ regulate and induce these observed gene expression changes. NicheNet
 will specifically prioritize ligands from these immune cells and their
 target genes that change in expression upon LCMV infection.
 
-The used NicheNet networks, ligand-target matrix and example expression
-data of interacting cells can be downloaded from Zenodo. The NicheNet
-networks and ligand-target matrix at
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
-and the Seurat object of the processed NICHE-seq single-cell data at
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3531889.svg)](https://doi.org/10.5281/zenodo.3531889).
+The used [ligand-target matrix](https://doi.org/10.5281/zenodo.7074290)
+and the [Seurat object of the processed NICHE-seq single-cell
+data](https://doi.org/10.5281/zenodo.3531889) can be downloaded from
+Zenodo.
 
 # Prepare NicheNet analysis
 
@@ -111,7 +109,7 @@ head(weighted_networks$gr) # interactions and their weights in the gene regulato
 ## 6 0610010K14Rik Alox12        0.128
 ```
 
-### Read in the expression data of interacting cells:
+### Read in the expression data of interacting cells
 
 ``` r
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
@@ -167,8 +165,9 @@ method to calculate the differential expression is the standard Seurat
 Wilcoxon test.
 
 The number of top-ranked ligands that are further used to predict active
-target genes and construct an active ligand-receptor network is 20 by
-default.
+target genes and construct an active ligand-receptor network is 30 by
+default, but we will only choose the top 20 to not overcrowd the circos
+plot.
 
 To perform the NicheNet analysis with these specifications, run the
 following:
@@ -183,7 +182,8 @@ nichenet_output = nichenet_seuratobj_aggregate(
   receiver = "CD8 T", 
   condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", 
   sender = sender_celltypes, 
-  ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
+  ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks,
+  top_n_ligands = 20)
 ## [1] "Read in and process NicheNet's networks"
 ## [1] "Define expressed ligands and receptors in receiver and sender cells"
 ## [1] "Perform DE analysis in receiver cell"
@@ -600,6 +600,7 @@ dev.off()
 ## png 
 ##   2
 ```
+### References
 
 <div id="refs" class="references csl-bib-body hanging-indent">
 

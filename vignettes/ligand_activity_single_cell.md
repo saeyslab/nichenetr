@@ -15,9 +15,9 @@ Puram et al. to explore intercellular communication in the tumor
 microenvironment in head and neck squamous cell carcinoma (HNSCC) (See
 Puram et al. 2017). More specifically, we will assess the activity of
 cancer-associated fibroblast (CAF) ligands in malignant cells. The used
-ligand-target matrix and example expression data of interacting cells
-can be downloaded from Zenodo
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758).
+[ligand-target matrix](https://doi.org/10.5281/zenodo.7074290) and
+example [expression data](https://doi.org/10.5281/zenodo.3260758) of
+interacting cells can be downloaded from Zenodo.
 
 In order to prioritize ligands regulating a process of interest, you can
 perform a regression/correlation analysis between ligand activities in
@@ -142,8 +142,8 @@ scores. Based on this correlation, we obtained a ranking of potential
 p-EMT-inducing ligands.
 
 To do so, we first need to process and normalize the ligand activities
-(i.e. pearson correlation values) to make different cells comparable.
-Here we use modified z-score normalization.
+(i.e. area under the precision-recall curve) to make different cells
+comparable. Here we use modified z-score normalization.
 
 ``` r
 normalized_ligand_activities = normalize_single_cell_ligand_activities(ligand_activities)
@@ -180,7 +180,7 @@ score of interest
 inner_join(cell_scores_tbl,normalized_ligand_activities) %>% ggplot(aes(score,TNC)) + geom_point() + geom_smooth(method = "lm")
 ```
 
-![](ligand_activity_single_cell_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](ligand_activity_single_cell_files/figure-gfm/unnamed-chunk-80-1.png)<!-- -->
 
 ### References
 

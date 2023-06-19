@@ -29,7 +29,7 @@ The goal of Differential NicheNet is to predict ligand-receptors pairs that are 
 
 This vignette guides you in detail through all the steps of a Differential NicheNet analysis. As example expression data of interacting cells, we will use data from Puram et al. to explore intercellular communication in the tumor microenvironment in head and neck squamous cell carcinoma (HNSCC) [@puram_single-cell_2017]. More specifically, we will look at cell-cell communication differences between pEMT-high and pEMT-low tumors (pEMT = partial epithelial-mesenschymal transition). In this data, we thus have 2 conditions/niches, but this pipeline is also usable for more conditions/niches.
 
-The used ligand-receptor network and ligand-target matrix can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758).
+The used ligand-receptor network and ligand-target matrix can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7074291.svg)](https://doi.org/10.5281/zenodo.7074291).
 The Seurat object containing expression data of interacting cells in HNSCC can also be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4675430.svg)](https://doi.org/10.5281/zenodo.4675430).
 
 # 0. Read in the expression data of interest, and the NicheNet ligand-receptor network and ligand-target matrix
@@ -91,9 +91,7 @@ Note: if your data is of mouse origin: use the mouse networks
 
 ```{r}
 organism = "human" # user adaptation required on own dataset
-```
 
-```{r}
 if(organism == "mouse"){
   lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
   ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
@@ -506,7 +504,7 @@ For the opposite pairs with low-DE and high-activity that are not strongly prior
 
 When Ligand-Receptor pairs have both high DE and high activity, we can consider them to be very good candidates in regulating the process of interest, and we recommend testing these candidates for further experimental validation.
 
-# References
+### References
 
 Browaeys, R., Saelens, W. & Saeys, Y. NicheNet: modeling intercellular communication by linking ligands to target genes. Nat Methods (2019) doi:10.1038/s41592-019-0667-5
 

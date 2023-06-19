@@ -52,8 +52,7 @@ As you can see, the LSECs, hepatocytes and Stellate cells are each divided in tw
 
 ## Read in the NicheNet ligand-receptor network and ligand-target matrix
 
-The used ligand-receptor network and ligand-target matrix can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758).
-The Seurat object containing expression data of interacting cells in HNSCC can also be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4675430.svg)](https://doi.org/10.5281/zenodo.4675430).
+The used ligand-receptor network and ligand-target matrix can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7074291.svg)](https://doi.org/10.5281/zenodo.7074291).
 
 ```{r}
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
@@ -487,7 +486,7 @@ For the opposite pairs with low-DE and high-activity that are not strongly prior
 
 When Ligand-Receptor pairs have both high DE and high activity, we can consider them to be very good candidates in regulating the process of interest, and we recommend testing these candidates for further experimental validation.
 
-# References
+### References
 
 Browaeys, R., Saelens, W. & Saeys, Y. NicheNet: modeling intercellular communication by linking ligands to target genes. Nat Methods (2019) doi:10.1038/s41592-019-0667-5
 

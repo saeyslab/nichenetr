@@ -24,11 +24,7 @@ knitr::opts_chunk$set(
 
 This vignette shows how the ligand-target predictions of NicheNet were evaluated. For validation, we collected transcriptome data of cells before and after they were treated by one or two ligands in culture. Using these ligand treatment datasets for validation has the advantage that observed gene expression changes can be directly attributed to the addition of the ligand(s). Hence, differentially expressed genes can be considered as a gold standard of target genes of a particular ligand. 
 
-You can use the procedure shown here to evaluate your own model and compare its performance to NicheNet. In NicheNet v2, we added more ligand treatment validation datasets from CytoSig.We will also demonstrate the better performance of NicheNet v2's ligand-target matrix.
-
-# To change
-and NicheNet's ligand-target model can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758). 
-
+You can use the procedure shown here to evaluate your own model and compare its performance to NicheNet. In NicheNet v2, we added more ligand treatment validation datasets from CytoSig. We will also demonstrate the better performance of NicheNet v2's ligand-target matrix. [Ligand treatment validation datasets, NicheNet's v1 ligand-target model](https://doi.org/10.5281/zenodo.3260758), and [NicheNet’s v2 ligand-target model](https://doi.org/10.5281/zenodo.7074290) can be downloaded from Zenodo.
 
 ### Load nichenetr, the model we want to evaluate, and the datasets on which we want to evaluate it.
 ```{r}
@@ -36,10 +32,8 @@ library(nichenetr)
 library(tidyverse)
 
 # Load in the ligand-target model
-#ligand_target_matrix_v1 = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
-#ligand_target_matrix_v2 = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final.rds"))
-ligand_target_matrix_v1 = readRDS("~/Documents/nichenet/nichenet_files/ligand_target_matrix.rds")
-ligand_target_matrix_v2 = readRDS("~/Documents/nichenet/multinichenet_files/ligand_target_matrix_nsga2r_final.rds")
+ligand_target_matrix_v1 = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+ligand_target_matrix_v2 = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final.rds"))
 
 # The ligand treatment expression datasets used for validation can be downloaded from Zenodo:
 expression_settings_validation = readRDS(url("https://zenodo.org/record/8010790/files/expression_settings"))
@@ -92,7 +86,7 @@ performances %>%
 
 ```
 
-We will now compare performances between NicheNet v1 and v2 on both ligand treatment datasets. Note that although the performance of v2 is much better here, the CytoSig experiments were also included during model construction of v2. To get the results in the paper, you will have to follow the `model_construction.Rmd` vignette and filter out the CytoSig data sources during model construction.
+We will now compare performances between NicheNet v1 and v2 on both ligand treatment datasets. Note that although the performance of v2 is much better here, the CytoSig experiments were also included during model construction of v2. To get the results in the MultiNicheNet paper, you will have to follow the `model_construction.Rmd` vignette and filter out the CytoSig data sources during model construction.
 
 ```{r fig.width=8, fig.height=6}
 

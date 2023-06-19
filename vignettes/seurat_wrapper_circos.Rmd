@@ -31,7 +31,7 @@ As example expression data of interacting cells, we will use mouse NICHE-seq dat
 
 In this dataset, differential expression is observed between CD8 T cells in steady-state and CD8 T cells after LCMV infection. NicheNet can be applied to look at how several immune cell populations in the lymph node (i.e., monocytes, dendritic cells, NK cells, B cells, CD4 T cells) can regulate and induce these observed gene expression changes. NicheNet will specifically prioritize ligands from these immune cells and their target genes that change in expression upon LCMV infection.
 
-The used NicheNet networks, ligand-target matrix and example expression data of interacting cells can be downloaded from Zenodo. The NicheNet networks and ligand-target matrix at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758) and the Seurat object of the processed NICHE-seq single-cell data at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3531889.svg)](https://doi.org/10.5281/zenodo.3531889).
+The used [ligand-target matrix](https://doi.org/10.5281/zenodo.7074290) and the [Seurat object of the processed NICHE-seq single-cell data](https://doi.org/10.5281/zenodo.3531889) can be downloaded from Zenodo.
 
 # Prepare NicheNet analysis
 
@@ -63,7 +63,7 @@ head(weighted_networks$lr_sig) # interactions and their weights in the ligand-re
 head(weighted_networks$gr) # interactions and their weights in the gene regulatory network
 ```
 
-### Read in the expression data of interacting cells: 
+### Read in the expression data of interacting cells
 
 
 ```{r}
@@ -91,7 +91,7 @@ In this case study, the receiver cell population is the 'CD8 T' cell population,
 
 The gene set of interest are the genes differentially expressed in CD8 T cells after LCMV infection. The condition of interest is thus 'LCMV', whereas the reference/steady-state condition is 'SS'. The notion of conditions can be extracted from the metadata column 'aggregate', the method to calculate the differential expression is the standard Seurat Wilcoxon test. 
 
-The number of top-ranked ligands that are further used to predict active target genes and construct an active ligand-receptor network is 20 by default.
+The number of top-ranked ligands that are further used to predict active target genes and construct an active ligand-receptor network is 30 by default, but we will only choose the top 20 to not overcrowd the circos plot.
 
 To perform the NicheNet analysis with these specifications, run the following:
 
@@ -105,7 +105,8 @@ nichenet_output = nichenet_seuratobj_aggregate(
   receiver = "CD8 T", 
   condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", 
   sender = sender_celltypes, 
-  ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
+  ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks,
+  top_n_ligands = 20)
 ```
 
 ### Interpret the NicheNet analysis output
@@ -426,3 +427,5 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 circos.clear()
 dev.off()
 ```
+
+### References
