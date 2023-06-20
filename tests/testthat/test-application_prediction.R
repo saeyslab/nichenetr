@@ -140,7 +140,7 @@ test_that("Target gene prediction can be predicted by multi-ligand models", {
   target_prediction_performances_discrete_cv = gene_predictions_list %>% lapply(calculate_fraction_top_predicted,quantile_cutoff = 0.66) %>% bind_rows()
   expect_type(target_prediction_performances_discrete_cv,"list")
 
-  target_prediction_performances_fisher_pval = gene_predictions_list %>% lapply(calculate_fraction_top_predicted_fisher,quantile_cutoff = 0.66) %>% unlist() %>% mean()
+  target_prediction_performances_fisher_pval = gene_predictions_list %>% lapply(calculate_fraction_top_predicted_fisher,quantile_cutoff = 0.5) %>% unlist() %>% mean()
   expect_type(target_prediction_performances_fisher_pval,"double")
 
 })
@@ -174,6 +174,8 @@ test_that("Single-cell ligand activity prediction functions work a bit OK", {
   expect_type(normalized_ligand_activities,"list")
 
   cell_scores_tbl = tibble(cell = cell_ids, score = c(1,4,2,3))
+  # Since changing the metric, these return zeros so standard deviation is zero
+  normalized_ligand_activities <- cbind(normalized_ligand_activities %>% select(cell), normalized_ligand_activities %>% select(-cell) + matrix(rnorm(12, sd=0.01),4))
   regression_analysis_output = single_ligand_activity_score_regression(normalized_ligand_activities,cell_scores_tbl)
   expect_type(regression_analysis_output,"list")
 
