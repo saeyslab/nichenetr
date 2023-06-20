@@ -43,7 +43,8 @@ Imports:
     ComplexHeatmap,
     grDevices,
     ggnewscale,
-    ggforce
+    ggforce,
+    shadowtext
 Suggests: 
     knitr,
     rmarkdown,
@@ -52,6 +53,5 @@ Suggests:
     mco,
     parallel,
     covr,
-    tidyverse,
-    shadowtext
+    tidyverse
 VignetteBuilder: knitr
