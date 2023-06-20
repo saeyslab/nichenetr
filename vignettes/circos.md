@@ -1,8 +1,8 @@
 Circos plot visualization to show active ligand-target links between
 interacting cells
 ================
-Robin Browaeys
-3-7-2019
+Robin Browaeys & Chananchida Sang-aram
+2023-07-20
 
 <!-- github markdown built using 
 rmarkdown::render("vignettes/circos.Rmd", output_format = "github_document")

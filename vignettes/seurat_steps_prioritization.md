@@ -1,7 +1,7 @@
 Perform NicheNet analysis with prioritization
 ================
 Robin Browaeys & Chananchida Sang-aram
-2019-11-12
+2023-07-20
 
 <!-- github markdown built using 
 rmarkdown::render("vignettes/seurat_steps_prioritization.Rmd", output_format = "github_document")
