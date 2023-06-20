@@ -41,13 +41,17 @@ Imports:
     magrittr,
     circlize,
     ComplexHeatmap,
-    grDevices
-Suggests: knitr,
+    grDevices,
+    ggnewscale,
+    ggforce
+Suggests: 
+    knitr,
     rmarkdown,
     testthat,
     doMC,
     mco,
     parallel,
     covr,
-    tidyverse
+    tidyverse,
+    shadowtext
 VignetteBuilder: knitr
