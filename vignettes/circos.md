@@ -302,7 +302,7 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 }, bg.border = NA) 
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-113-1.png)<!-- -->
+![](circos_files/figure-gfm/unnamed-chunk-94-1.png)<!-- -->
 
 ``` r
 circos.clear()
@@ -322,7 +322,7 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 }, bg.border = NA) #
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-114-1.png)<!-- -->
+![](circos_files/figure-gfm/unnamed-chunk-95-1.png)<!-- -->
 
 ``` r
 circos.clear()
@@ -431,7 +431,7 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 }, bg.border = NA) #
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-120-1.png)<!-- -->
+![](circos_files/figure-gfm/unnamed-chunk-101-1.png)<!-- -->
 
 ``` r
 circos.clear()
@@ -452,7 +452,7 @@ circos.track(track.index = 1, panel.fun = function(x, y) {
 }, bg.border = NA) #
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-121-1.png)<!-- -->
+![](circos_files/figure-gfm/unnamed-chunk-102-1.png)<!-- -->
 
 ``` r
 circos.clear()
@@ -492,9 +492,9 @@ generate the combined circos plot as shown in Fig. 6B, we then manually
 removed all elements of the ligand-receptor circos plot except the outer
 receptor layer.
 
-It is also possible to generate this plot programmatically, given that
-you are able to group your ligands. Below, we demonstrate two approaches
-that uses either the `circlize::draw.sector` or
+It is also possible to generate this kind of plot programmatically,
+given that you are able to group your ligands. Below, we demonstrate two
+approaches that uses either the `circlize::draw.sector` or
 `circlize::highlight.sector` function. The former is more complicated
 but gives you the flexibility to draw receptor arcs of different
 lengths, while the `highlight.sector` function is constrained to the
@@ -505,6 +505,7 @@ and the color scheme.
 
 ``` r
 circos_links = active_ligand_target_links_df %>% filter(!target %in% targets_to_remove &!ligand %in% ligands_to_remove)
+
 grid_col_ligand =c("General" = "lawngreen",
             "CAF-specific" = "royalblue",
             "Endothelial-specific" = "gold")
@@ -530,84 +531,86 @@ ligand_order = c(CAF_specific_ligands,general_ligands,endothelial_specific_ligan
 
 #### Using the `draw.sector` function
 
-For demonstration purposes, we will group ligands into those belonging
-to the TGF beta signaling pathway and “other” ligands. We obtained this
-ligand group by performing a gene set enrichment analysis of
-`best_upstream_ligands` using [PantherDB](http://www.pantherdb.org/)
-(using the “PANTHER pathways” annotation set).
+For demonstration purposes, we will use a subset of ligands and divide them into four groups that differ in the signaling pathways they interact with. Then, we assign targets and receptors to each ligand group based on their relative rankings (and summed weights in case the rankings are the same). The way we assigned targets and receptors to ligand groups here does not always lead to the most biologically meaningful results, as you will see in the final plot. Hence, it is best if you curate this list manually, e.g., through prior knowledge and by also looking at the ligand-target and ligand-receptor heatmap. Also keep in mind that there is no real correspondence between receptors and targets, as explained more [here](https://github.com/saeyslab/nichenetr/issues/20#issuecomment-611601039). 
 
 ``` r
-tgfb_pathway_ligands <- c("TGFB2", "BMP8A", "BMP5", "INHBA", "GDF3")
-other_ligands <- setdiff(best_upstream_ligands, tgfb_pathway_ligands)
+groups <- list(group1 = c("TGFB2", "ENG"),
+               group2 = grep("BMP|GDF|INHBA", best_upstream_ligands, value = TRUE),
+               group3 = grep("COL|MMP|TIMP", best_upstream_ligands, value = TRUE),
+               group4 = "CXCL12")
 
-# Get targets that are connected to more than one-third of the ligands
-other_targets <- active_ligand_target_links_df %>% filter(ligand %in% other_ligands) %>% group_by(target) %>%
-  summarise(n = n(), summed_weight=sum(weight)) %>% filter(n >= (length(other_ligands)/3)) %>% mutate(type = "other")
+# Create list of targets for each group of ligand
+targets <- lapply(names(groups), function(i) {
+  # Rank each target for each ligand
+  active_ligand_target_links_df %>% group_by(ligand) %>% mutate(target_rank = dense_rank(desc(weight))) %>%
+    filter(ligand %in% groups[[i]]) %>%
+    # Make two metrics for each target -> summed weight and avg_rank
+    group_by(target) %>%
+    summarise(n = n(), summed_weight=sum(weight), avg_rank = mean(target_rank)) %>%
+    # Only keep targets that are connected to at least half of ligands in the group
+    filter(n > (length(groups[[i]])/2)) %>% mutate(type = i)
+}) %>% do.call(rbind, .)
 
-# Get targets that are connected to more than 3/5 of the tgfb ligands and are specific to the set of ligands
-tgfb_pathway_targets <- active_ligand_target_links_df %>% filter(ligand %in% tgfb_pathway_ligands) %>% group_by(target) %>%
-  summarise(n = n(), summed_weight=sum(weight)) %>% filter(n >= 3, !target %in% other_targets$target) %>% mutate(type = "tgfb")
+# Check if any targets are distinct per group (groups 2 and 4 have some)
+lapply(paste0("group", 1:5), function(group_name) setdiff(targets %>% filter(type == group_name) %>% pull(target), targets %>% filter(type != group_name) %>% pull(target)))
+## [[1]]
+## character(0)
+## 
+## [[2]]
+## [1] "DKK3"   "GJA1"   "HTRA1"  "SEMA3C"
+## 
+## [[3]]
+## character(0)
+## 
+## [[4]]
+## [1] "LAMC2"   "MMP10"   "PRSS23"  "SLC31A2" "TPM4"   
+## 
+## [[5]]
+## character(0)
 
-# Get receptors that are connected to the tgfb ligands
-tgfb_pathway_receptors = weighted_networks$lr_sig %>% filter(from %in% tgfb_pathway_ligands & to %in% best_upstream_receptors) %>% group_by(to) %>%
-  summarise(summed_weight=sum(weight)) %>% mutate(type="tgfb", color = "#387D7A")
+# Assign target to a specific group, first based on ranking and second based on weight
+targets_filtered <- targets %>% group_by(target) %>% filter(avg_rank == min(avg_rank)) %>%
+  filter(summed_weight == max(summed_weight)) %>% ungroup()
 
-# Do the same, but filter out receptors that are also present in in tgfb ligands
-other_receptors = weighted_networks$lr_sig %>% filter(from %in% other_ligands & to %in% best_upstream_receptors) %>% filter(!to %in% tgfb_pathway_receptors$to) %>%
-  group_by(to) %>% summarise(summed_weight=sum(weight)) %>% mutate(type="other", color = "#9DA9A0")
+# Do the same for receptors
+receptor_colors <- c("#387D7A", "#9DA9A0", "#DD7373", "#725752") %>% setNames(names(groups))
+receptors <- lapply(names(groups), function(i) {
+  weighted_networks$lr_sig %>% filter(from %in% groups[[i]] & to %in% best_upstream_receptors) %>% 
+    group_by(from) %>% mutate(receptor_rank = dense_rank(desc(weight))) %>%
+    group_by(to) %>%  summarise(summed_weight=sum(weight),  avg_weight=mean(weight),  avg_rank = mean(receptor_rank)) %>%
+    mutate(type=i, color = receptor_colors[i]) %>% rename(receptor = to)
+}) %>% do.call(rbind, .)
 
-# Combine the dataframes
-all_targets <- bind_rows(tgfb_pathway_targets, other_targets)
-all_receptors <- bind_rows(tgfb_pathway_receptors, other_receptors) %>% rename(receptor = to)
-
-all_targets
-## # A tibble: 19 × 4
-##    target       n summed_weight type 
-##    <chr>    <int>         <dbl> <chr>
-##  1 DKK3         3        0.0401 tgfb 
-##  2 GJA1         3        0.0394 tgfb 
-##  3 HTRA1        3        0.0425 tgfb 
-##  4 MT2A         3        0.0387 tgfb 
-##  5 SEMA3C       3        0.0423 tgfb 
-##  6 APP         13        0.116  other
-##  7 CAV1        13        0.119  other
-##  8 COL1A1       9        0.178  other
-##  9 IGFBP3      15        0.384  other
-## 10 ITGA5       11        0.217  other
-## 11 MMP1        15        0.668  other
-## 12 MMP2        14        0.195  other
-## 13 PLAU        14        0.324  other
-## 14 PTHLH       13        0.239  other
-## 15 SERPINE1    15        0.677  other
-## 16 TGFBI        9        0.262  other
-## 17 THBS1       15        0.362  other
-## 18 TNC         14        0.213  other
-## 19 VIM         13        0.182  other
-all_receptors
-## # A tibble: 22 × 4
-##    receptor summed_weight type  color  
-##    <chr>            <dbl> <chr> <chr>  
-##  1 ACVR2A          0.926  tgfb  #387D7A
-##  2 CD44            0.0691 tgfb  #387D7A
-##  3 MET             0.0357 tgfb  #387D7A
-##  4 MMP2            0.0932 tgfb  #387D7A
-##  5 TGFBR1          0.771  tgfb  #387D7A
-##  6 BDKRB2          0.334  other #9DA9A0
-##  7 CD47            0.349  other #9DA9A0
-##  8 DDR1            0.263  other #9DA9A0
-##  9 ECE1            0.783  other #9DA9A0
-## 10 EGFR            0.377  other #9DA9A0
-## # … with 12 more rows
+# Check distinct receptors per group
+lapply(paste0("group", 1:5), function(group_name) setdiff(receptors %>% filter(type == group_name) %>% pull(receptor), receptors %>% filter(type != group_name) %>% pull(receptor)))
+## [[1]]
+## [1] "MET"
+## 
+## [[2]]
+## character(0)
+## 
+## [[3]]
+## [1] "CD47"  "ITGA2" "ITGA3" "ITGB5" "ITGB6" "ITGB8"
+## 
+## [[4]]
+## [1] "BDKRB2"
+## 
+## [[5]]
+## character(0)
+ 
+# Assign receptor to a specific group
+receptors_filtered <-  receptors %>% group_by(receptor) %>% filter(avg_rank == min(avg_rank)) %>%
+  filter(summed_weight == max(summed_weight)) %>% ungroup()
 ```
 
 We will then have to redefine some variables.
 
 ``` r
-# Filter out targets that are no longer present
-links_circle_approach1 <- links_circle %>% filter(target %in% all_targets$target)
+# Filter out targets and ligands that are no longer present
+links_circle_approach1 <- links_circle %>% filter(ligand %in% paste0(unlist(groups), "  "),
+                                                  target %in% targets_filtered$target)
 
-target_order <- all_targets$target
-order <- c(ligand_order,target_order)
+order <- c(ligand_order %>%.[. %in% paste0(unlist(groups), "  ")], targets_filtered$target)
 
 # Redefine gaps between sectors
 width_same_cell_same_ligand_type = 0.6
@@ -616,25 +619,41 @@ width_ligand_target = 12
 width_same_cell_same_target_type = 0.6    # Added
 width_different_target = 4.5              # Added
 
+group_widths <- sapply(paste0("group", 1:4), function(group) {
+  # Gap between targets of the same group
+  paste0(rep(width_same_cell_same_target_type, times =(targets_filtered %>% filter(type==group) %>% nrow)-1), collapse=",")}) %>% 
+  # Separate this with gap of different group
+  paste0(., collapse=paste0(",",width_different_target,",")) %>%
+  str_split(., ",") %>% .[[1]] %>% as.numeric
 
 gaps = c(
-  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "CAF-specific", target %in% all_targets$target) %>% distinct(ligand) %>% nrow() -1)),
+  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "CAF-specific",
+                                                                         ligand %in% paste0(unlist(groups), "  "),
+                                                                         target %in% targets_filtered$target) %>%
+                                                   distinct(ligand) %>% nrow() -1)),
   width_different_cell,
-  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "General", target %in% all_targets$target) %>% distinct(ligand) %>% nrow() -1)),
+  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "General",
+                                                                         ligand %in% paste0(unlist(groups), "  "),
+                                                                         target %in% targets_filtered$target) %>%
+                                                   distinct(ligand) %>% nrow() -1)),
   width_different_cell,
-  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "Endothelial-specific", target %in% all_targets$target) %>% distinct(ligand) %>% nrow() -1)), 
+  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "Endothelial-specific",
+                                                                         ligand %in% paste0(unlist(groups), "  "),
+                                                                         target %in% targets_filtered$target) %>%
+                                                   distinct(ligand) %>% nrow() -1)), 
   width_ligand_target,
-  # Add code to define gaps between different target groups
-  rep(width_same_cell_same_target_type, times = nrow(tgfb_pathway_targets)-1),
-  width_different_target,
-  rep(width_same_cell_same_target_type, times = nrow(other_targets)-1),
+  group_widths,
   width_ligand_target
   )
+
+gaps = gaps %>% .[!is.na(.)]
 ```
 
 Finally, we create the plot. What’s different here is we add an extra
 layer in `preAllocateTracks`, and we add a `for` loop at the end to draw
-the outer layer.
+the outer layer. As mentioned previously, the resulting plot will
+require some further manual tweaking (e.g., ITG receptors from group 1
+should be moved to group 3).
 
 ``` r
 circos.par(gap.degree = gaps)
@@ -654,11 +673,11 @@ circos.track(track.index = 2, panel.fun = function(x, y) {
 
 
 padding <- 0.05        # Gaps between receptor arcs
-rou_adjustment <- 0.05 # Might need adjustment
-for (group in unique(all_targets$type)){
+rou_adjustment <- 0.08 # Might need adjustment
+for (group in unique(targets_filtered$type)){
   # Subset target and receptor
-  targets_subset <- all_targets %>% filter(type == group)
-  receptors_subset <- all_receptors %>% filter(type == group)
+  targets_subset <- targets_filtered %>% filter(type == group)
+  receptors_subset <- receptors_filtered %>% filter(type == group)
   
   # Get approximate position of outer ring
   pos <- circlize(c(0, 1), c(0, 1), track.index = 1)
@@ -671,7 +690,6 @@ for (group in unique(all_targets$type)){
   
   # Scale the arc lengths according to the summed ligand-receptor weights
   receptors_subset_scaled <- receptors_subset %>% mutate(scaled_weight = summed_weight/sum(summed_weight)*(theta1-theta2))
-  
   # For each receptor
   current_theta <- theta1
   for (i in 1:nrow(receptors_subset_scaled)){
@@ -687,10 +705,10 @@ for (group in unique(all_targets$type)){
     
     # Add text containing receptor name
     pos_text <- reverse.circlize((current_theta + end_theta)/2 + ifelse(current_theta < end_theta, 180, 0), (rou1 +  rou2)/2)
-    circos.text(pos_text[1,1], pos_text[1,2]+convert_y(7, "mm"),
+    # It's going to give a Note that point is out of plotting region
+    suppressMessages(circos.text(pos_text[1,1], pos_text[1,2]+convert_y(7, "mm"),
                 labels = receptors_subset_scaled %>% slice(i) %>% pull(receptor),
-                adj = c(0.5, 0.5),
-                niceFacing=TRUE, facing="clockwise", cex=0.6)
+                niceFacing=TRUE, facing="clockwise", cex=0.6))
     
     current_theta <- end_theta
   }
@@ -698,7 +716,7 @@ for (group in unique(all_targets$type)){
 }
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-126-1.png)<!-- -->
+![](circos_files/figure-gfm/unnamed-chunk-107-1.png)<!-- -->
 
 ``` r
 
@@ -717,14 +735,14 @@ B, and C).
 target_gene_groups <- sample(c("Receptor A", "Receptor B", "Receptor C"), length(unique(circos_links$target)), replace = TRUE) %>%
                           setNames(unique(circos_links$target))
 target_gene_groups
-##        ACTN1          C1S      COL17A1       COL1A1       COL4A2           F3        FSTL3       IGFBP3        ITGA5        LAMC2        MFAP2         MMP2         MYH9       PDLIM7        PSMD2        PTHLH 
-## "Receptor A" "Receptor B" "Receptor A" "Receptor B" "Receptor C" "Receptor C" "Receptor B" "Receptor B" "Receptor C" "Receptor A" "Receptor C" "Receptor B" "Receptor A" "Receptor C" "Receptor C" "Receptor C" 
-##     SERPINE1     SERPINE2        TAGLN        TGFBI          TNC         TPM1         MMP1        MMP10         MT2A       PRSS23      SLC31A2        THBS1         TPM4          APP       COL5A2         DKK3 
-## "Receptor B" "Receptor C" "Receptor C" "Receptor C" "Receptor C" "Receptor B" "Receptor B" "Receptor C" "Receptor B" "Receptor B" "Receptor A" "Receptor A" "Receptor B" "Receptor B" "Receptor C" "Receptor B" 
-##         GJA1        HTRA1         PLAU       SEMA3C          VIM         CAV1        ITGA6       MAGED1       MAGED2        PLOD2     SLC39A14        FSTL1       LGALS1        P4HA2         IL32         FHL2 
-## "Receptor C" "Receptor C" "Receptor C" "Receptor C" "Receptor B" "Receptor C" "Receptor C" "Receptor A" "Receptor A" "Receptor B" "Receptor A" "Receptor A" "Receptor C" "Receptor C" "Receptor A" "Receptor C" 
-##        ITGB1 
-## "Receptor C"
+##        ACTN1          C1S      COL17A1       COL1A1       COL4A2           F3        FSTL3       IGFBP3        ITGA5        LAMC2        MFAP2         MMP2         MYH9       PDLIM7 
+## "Receptor B" "Receptor A" "Receptor A" "Receptor B" "Receptor C" "Receptor C" "Receptor B" "Receptor C" "Receptor C" "Receptor C" "Receptor B" "Receptor C" "Receptor C" "Receptor C" 
+##        PSMD2        PTHLH     SERPINE1     SERPINE2        TAGLN        TGFBI          TNC         TPM1         MMP1        MMP10         MT2A       PRSS23      SLC31A2        THBS1 
+## "Receptor A" "Receptor B" "Receptor C" "Receptor A" "Receptor C" "Receptor A" "Receptor C" "Receptor B" "Receptor C" "Receptor B" "Receptor C" "Receptor C" "Receptor C" "Receptor B" 
+##         TPM4          APP       COL5A2         DKK3         GJA1        HTRA1         PLAU       SEMA3C          VIM         CAV1        ITGA6       MAGED1       MAGED2        PLOD2 
+## "Receptor A" "Receptor B" "Receptor B" "Receptor B" "Receptor C" "Receptor B" "Receptor C" "Receptor C" "Receptor B" "Receptor A" "Receptor B" "Receptor A" "Receptor B" "Receptor A" 
+##     SLC39A14        FSTL1       LGALS1        P4HA2         IL32         FHL2        ITGB1 
+## "Receptor B" "Receptor C" "Receptor C" "Receptor C" "Receptor C" "Receptor B" "Receptor C"
 
 target_gene_group_colors <- c("#387D7A", "#9DA9A0", "#704E2E") %>% setNames(unique(target_gene_groups))
 ```
@@ -733,8 +751,7 @@ Again, we will redefine some variables.
 
 ``` r
 # Order targets according to receptor they belong to
-target_order <- target_gene_groups %>% sort %>% names
-order = c(ligand_order,target_order)
+order = c(ligand_order, target_gene_groups %>% sort %>% names)
 
 # Redefine gaps between sectors
 width_same_cell_same_ligand_type = 0.6
@@ -792,7 +809,7 @@ for (target_gene_group in unique(target_gene_groups)){
 }
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-129-1.png)<!-- -->
+![](circos_files/figure-gfm/unnamed-chunk-110-1.png)<!-- -->
 
 ``` r
 
