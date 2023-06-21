@@ -24,7 +24,6 @@ rmarkdown::render("README.Rmd",output_format = "md_document")
 
 We describe the NicheNet algorithm in the following paper: [NicheNet: modeling intercellular communication by linking ligands to target genes](https://www.nature.com/articles/s41592-019-0667-5).
 
-Bonnardel, T'Jonck et al. (2019) already used NicheNet to predict upstream niche signals driving Kupffer cell differentiation [Stellate Cells, Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes Colonizing the Liver Macrophage Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1).
 
 ### Major updates (20-06-2023)!  
 
@@ -64,11 +63,13 @@ Specific functionalities of this package include:
 Moreover, we provide instructions on how to make intuitive visualizations of the main predictions (e.g., via circos plots as shown here below).
 
 <br><br>
-![](vignettes/circos_plot_adapted.jpg)     functions to prioritize ligands not only based on the ligand activity, but also on the ligand and receptor expression, cell type specificity, and condition specificity. This is similar to the criteria used in Differential NicheNet and MultiNicheNet. See the Prioritizing ligands based on expression values vignette for more information.
-    Due to this more generalizable prioritization scheme, we will no longer provide support for Differential NicheNet.
-    We included code for making a ligand-receptor-target circos plot in the Circos plot visualization vignette.
+![](vignettes/circos_plot_adapted.jpg)
 
-Introduction to NicheNet dependencies) from github with:
+## Installation of nichenetr
+
+Installation typically takes a few minutes, depending on the number of
+dependencies that has already been installed on your pc. You can install
+nichenetr (and required dependencies) from github with:
 
 ```{r gh-installation, eval = FALSE}
 # install.packages("devtools")
@@ -109,8 +110,8 @@ People interested in building own models or benchmark own models against NicheNe
 * [Parameter optimization via mlrMBO](vignettes/parameter_optimization.md): `vignette("parameter_optimization", package="nichenetr")`
 
 
-**[Deprecated]**
-Instead of using Differential NicheNet, you may want to consider using the [general prioritization scheme]() instead.
+##### Deprecated vignettes
+Differential NicheNet has been deprecated; you may want to consider using the [general prioritization scheme](vignettes/seurat_steps_prioritization.md) instead.
 
 * [Differential NicheNet analysis between niches of interest](vignettes/differential_nichenet.md):`vignette("differential_nichenet", package="nichenetr")`
 * [Differential NicheNet analysis between conditions of interest](vignettes/differential_nichenet_pEMT.md):`vignette("differential_nichenet_pEMT", package="nichenetr")`
@@ -125,11 +126,13 @@ Check the FAQ page at  [FAQ NicheNet](vignettes/faq.md): `vignette("faq", packag
 
 ## Previous updates
 
-12-01-2022: In the Liver Atlas paper from Guilliams et al.: [Spatial proteogenomics reveals distinct and evolutionarily conserved hepatic macrophage niches](https://www.sciencedirect.com/science/article/pii/S0092867421014811), we used Differential NicheNet, an extension to the default NicheNet algorithm. **Differential NicheNet** can be used to compare cell-cell interactions between different niches and better predict niche-specific ligand-receptor (L-R) pairs. It was used in that paper to predict ligand-receptor pairs specific for the Kupffer cell niche in mouse and human. 
+**12-01-2022:** In the Liver Atlas paper from Guilliams et al.: [Spatial proteogenomics reveals distinct and evolutionarily conserved hepatic macrophage niches](https://www.sciencedirect.com/science/article/pii/S0092867421014811), we used Differential NicheNet, an extension to the default NicheNet algorithm. **Differential NicheNet** can be used to compare cell-cell interactions between different niches and better predict niche-specific ligand-receptor (L-R) pairs. It was used in that paper to predict ligand-receptor pairs specific for the Kupffer cell niche in mouse and human. 
 
 The main difference between the classic NicheNet pipeline and the Differential NicheNet pipeline is that Differential NicheNet also uses the differential expression between the conditions/niches of the ligand-receptor pairs for prioritization in addition to the ligand activities. The classic NicheNet pipeline on the contrary uses only ligand acivity for prioritization (and shows differential expression only in visualizations). 
 
 So if you have data of multiple conditions or niches, and you want to include differential expression of the ligand-receptor pairs in the prioritization, we recommend you check out Differential NicheNet (update nichenetr to the 1.1.0 version). At the bottom of this page, you can find the links to two vignettes illustrating a Differential NicheNet analysis. We recommend these vignettes if you want to apply Differential NicheNet on your own data. If you want to see the code used for the analyses used in the Guilliams et al. paper, see https://github.com/saeyslab/NicheNet_LiverCellAtlas.
+
+**15-10-2019:** Bonnardel, T'Jonck et al. used NicheNet to predict upstream niche signals driving Kupffer cell differentiation [Stellate Cells, Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes Colonizing the Liver Macrophage Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1).
 
 
 ## References

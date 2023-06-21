@@ -28,12 +28,6 @@ We describe the NicheNet algorithm in the following paper: [NicheNet:
 modeling intercellular communication by linking ligands to target
 genes](https://www.nature.com/articles/s41592-019-0667-5).
 
-Bonnardel, T’Jonck et al. (2019) already used NicheNet to predict
-upstream niche signals driving Kupffer cell differentiation [Stellate
-Cells, Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell
-Identity on Monocytes Colonizing the Liver Macrophage
-Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1).
-
 ### Major updates (20-06-2023)!
 
 - MultiNicheNet - a multi-sample, multi-condition extension of
@@ -203,8 +197,11 @@ NicheNet can read one of the following vignettes:
   mlrMBO](vignettes/parameter_optimization.md):
   `vignette("parameter_optimization", package="nichenetr")`
 
-**\[Deprecated\]** Instead of using Differential NicheNet, you may want
-to consider using the [general prioritization scheme]() instead.
+##### Deprecated vignettes
+
+Differential NicheNet has been deprecated; you may want to consider
+using the [general prioritization
+scheme](vignettes/seurat_steps_prioritization.md) instead.
 
 - [Differential NicheNet analysis between niches of
   interest](vignettes/differential_nichenet.md):`vignette("differential_nichenet", package="nichenetr")`
@@ -227,7 +224,7 @@ Check the FAQ page at [FAQ NicheNet](vignettes/faq.md):
 
 ## Previous updates
 
-12-01-2022: In the Liver Atlas paper from Guilliams et al.: [Spatial
+**12-01-2022:** In the Liver Atlas paper from Guilliams et al.: [Spatial
 proteogenomics reveals distinct and evolutionarily conserved hepatic
 macrophage
 niches](https://www.sciencedirect.com/science/article/pii/S0092867421014811),
@@ -255,6 +252,12 @@ analysis. We recommend these vignettes if you want to apply Differential
 NicheNet on your own data. If you want to see the code used for the
 analyses used in the Guilliams et al. paper, see
 <https://github.com/saeyslab/NicheNet_LiverCellAtlas>.
+
+**15-10-2019:** Bonnardel, T’Jonck et al. used NicheNet to predict
+upstream niche signals driving Kupffer cell differentiation [Stellate
+Cells, Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell
+Identity on Monocytes Colonizing the Liver Macrophage
+Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1).
 
 ## References
 
