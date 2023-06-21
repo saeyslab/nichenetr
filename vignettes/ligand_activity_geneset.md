@@ -26,40 +26,39 @@ cells.
 The pipeline of a basic NicheNet analysis consist mainly of the
 following steps:
 
-  - 1.  Define a “sender/niche” cell population and a “receiver/target”
-        cell population present in your expression data and determine
-        which genes are expressed in both populations
+- 1.  Define a “sender/niche” cell population and a “receiver/target”
+      cell population present in your expression data and determine
+      which genes are expressed in both populations
 
-  - 2.  Define a gene set of interest: these are the genes in the
-        “receiver/target” cell population that are potentially
-        affected by ligands expressed by interacting cells (e.g. genes
-        differentially expressed upon cell-cell interaction)
+- 2.  Define a gene set of interest: these are the genes in the
+      “receiver/target” cell population that are potentially affected by
+      ligands expressed by interacting cells (e.g. genes differentially
+      expressed upon cell-cell interaction)
 
-  - 3.  Define a set of potential ligands: these are ligands that are
-        expressed by the “sender/niche” cell population and bind a
-        (putative) receptor expressed by the “receiver/target”
-        population
+- 3.  Define a set of potential ligands: these are ligands that are
+      expressed by the “sender/niche” cell population and bind a
+      (putative) receptor expressed by the “receiver/target” population
 
-  - 4)  Perform NicheNet ligand activity analysis: rank the potential
-        ligands based on the presence of their target genes in the gene
-        set of interest (compared to the background set of genes)
+- 4)  Perform NicheNet ligand activity analysis: rank the potential
+      ligands based on the presence of their target genes in the gene
+      set of interest (compared to the background set of genes)
 
-  - 5)  Infer top-predicted target genes of ligands that are top-ranked
-        in the ligand activity analysis
+- 5)  Infer top-predicted target genes of ligands that are top-ranked in
+      the ligand activity analysis
 
 This vignette guides you in detail through all these steps. As example
 expression data of interacting cells, we will use data from Puram et
-al. to explore intercellular communication in the tumor
-microenvironment in head and neck squamous cell carcinoma (HNSCC) (See
-Puram et al. 2017). More specifically, we will look at which ligands
-expressed by cancer-associated fibroblasts (CAFs) can induce a specific
-gene program in neighboring malignant cells. This program, a partial
+al. to explore intercellular communication in the tumor microenvironment
+in head and neck squamous cell carcinoma (HNSCC) (See Puram et al.
+2017). More specifically, we will look at which ligands expressed by
+cancer-associated fibroblasts (CAFs) can induce a specific gene program
+in neighboring malignant cells. This program, a partial
 epithelial-mesenschymal transition (p-EMT) program, could be linked to
 metastasis by Puram et al. 
 
-The used ligand-target matrix and example expression data of interacting
-cells can be downloaded from Zenodo.
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
+The used [ligand-target matrix](https://doi.org/10.5281/zenodo.7074290)
+and example [expression data](https://doi.org/10.5281/zenodo.3260758) of
+interacting cells can be downloaded from Zenodo.
 
 ## Step 0: Load required packages, NicheNet’s ligand-target prior model and processed expression data of interacting cells
 
@@ -73,17 +72,31 @@ library(tidyverse)
 Ligand-target model:
 
 This model denotes the prior potential that a particular ligand might
-regulate the expression of a specific target gene.
+regulate the expression of a specific target gene. In Nichenet v2,
+networks and matrices for both mouse and human are made separately
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7074291.svg)](https://doi.org/10.5281/zenodo.7074291).
 
 ``` r
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+options(timeout = 600)
+organism = "human"
+
+if(organism == "human"){
+  lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
+  ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final.rds"))
+} else if(organism == "mouse"){
+  lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+  ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
+
+}
+
+lr_network = lr_network %>% distinct(from, to)
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
-##                 CXCL1        CXCL2        CXCL3        CXCL5         PPBP
-## A1BG     3.534343e-04 4.041324e-04 3.729920e-04 3.080640e-04 2.628388e-04
-## A1BG-AS1 1.650894e-04 1.509213e-04 1.583594e-04 1.317253e-04 1.231819e-04
-## A1CF     5.787175e-04 4.596295e-04 3.895907e-04 3.293275e-04 3.211944e-04
-## A2M      6.027058e-04 5.996617e-04 5.164365e-04 4.517236e-04 4.590521e-04
-## A2M-AS1  8.898724e-05 8.243341e-05 7.484018e-05 4.912514e-05 5.120439e-05
+##                     A2M        AANAT        ABCA1          ACE        ACE2
+## A-GAMMA3'E 0.0000000000 0.0000000000 0.0000000000 0.0000000000 0.000000000
+## A1BG       0.0018503922 0.0011108718 0.0014225077 0.0028594037 0.001139013
+## A1BG-AS1   0.0007400797 0.0004677614 0.0005193137 0.0007836698 0.000375007
+## A1CF       0.0024799266 0.0013026348 0.0020420890 0.0047921048 0.003273375
+## A2M        0.0084693452 0.0040689323 0.0064256379 0.0105191365 0.005719199
 ```
 
 Expression data of interacting cells: publicly available single-cell
@@ -93,6 +106,16 @@ data from CAF and malignant cells from HNSCC tumors:
 hnscc_expression = readRDS(url("https://zenodo.org/record/3260758/files/hnscc_expression.rds"))
 expression = hnscc_expression$expression
 sample_info = hnscc_expression$sample_info # contains meta-information about the cells
+```
+
+Because the NicheNet 2.0. networks are in the most recent version of the
+official gene symbols, we will make sure that the gene symbols used in
+the expression data are also updated (= converted from their “aliases”
+to official gene symbols).
+
+``` r
+# If this is not done, there will be 35 genes fewer in lr_network_expressed!
+colnames(expression) = convert_alias_to_symbols(colnames(expression), "human", verbose = FALSE)
 ```
 
 ## Step 1: Define expressed genes in sender and receiver cell populations
@@ -119,8 +142,7 @@ consider genes to be expressed in a cell type when they have non-zero
 values in at least 10% of the cells from that cell type. This is
 described as well in the other vignette [Perform NicheNet analysis
 starting from a Seurat object: step-by-step
-analysis](seurat_steps.md):`vignette("seurat_steps",
-package="nichenetr")`.
+analysis](seurat_steps.md):`vignette("seurat_steps", package="nichenetr")`.
 
 ``` r
 tumors_remove = c("HN10","HN","HN12", "HN13", "HN24", "HN7", "HN8","HN23")
@@ -168,8 +190,6 @@ cells. Putative ligand-receptor links were gathered from NicheNet’s
 ligand-receptor data sources.
 
 ``` r
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-
 # If wanted, users can remove ligand-receptor interactions that were predicted based on protein-protein interactions and only keep ligand-receptor interactions that are described in curated databases. To do this: uncomment following line of code:
 # lr_network = lr_network %>% filter(database != "ppi_prediction_go" & database != "ppi_prediction")
 
@@ -181,15 +201,15 @@ expressed_receptors = intersect(receptors,expressed_genes_receiver)
 
 lr_network_expressed = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) 
 head(lr_network_expressed)
-## # A tibble: 6 x 4
-##   from    to        source         database
-##   <chr>   <chr>     <chr>          <chr>   
-## 1 HGF     MET       kegg_cytokines kegg    
-## 2 TNFSF10 TNFRSF10A kegg_cytokines kegg    
-## 3 TNFSF10 TNFRSF10B kegg_cytokines kegg    
-## 4 TGFB2   TGFBR1    kegg_cytokines kegg    
-## 5 TGFB3   TGFBR1    kegg_cytokines kegg    
-## 6 INHBA   ACVR2A    kegg_cytokines kegg
+## # A tibble: 6 × 2
+##   from   to     
+##   <chr>  <chr>  
+## 1 A2M    MMP2   
+## 2 A2M    MMP9   
+## 3 ADAM10 APP    
+## 4 ADAM10 CD44   
+## 5 ADAM10 TSPAN5 
+## 6 ADAM10 TSPAN15
 ```
 
 This ligand-receptor network contains the expressed ligand-receptor
@@ -199,7 +219,7 @@ we will consider the ligands from this network.
 ``` r
 potential_ligands = lr_network_expressed %>% pull(from) %>% unique()
 head(potential_ligands)
-## [1] "HGF"     "TNFSF10" "TGFB2"   "TGFB3"   "INHBA"   "CD99"
+## [1] "A2M"    "ADAM10" "ADAM12" "ADAM15" "ADAM17" "ADAM9"
 ```
 
 ## Step 4: Perform NicheNet’s ligand activity analysis on the gene set of interest
@@ -215,35 +235,35 @@ ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_e
 ```
 
 Now, we want to rank the ligands based on their ligand activity. In our
-validation study, we showed that the pearson correlation coefficient
-(PCC) between a ligand’s target predictions and the observed
+validation study, we showed that the area under the precision-recall
+curve (AUPR) between a ligand’s target predictions and the observed
 transcriptional response was the most informative measure to define
-ligand activity. Therefore, we will rank the ligands based on their
-pearson correlation coefficient. This allows us to prioritize
+ligand activity (this was the Pearson correlation for v1). Therefore, we
+will rank the ligands based on their AUPR. This allows us to prioritize
 p-EMT-regulating ligands.
 
 ``` r
-ligand_activities %>% arrange(-pearson) 
-## # A tibble: 131 x 4
-##    test_ligand auroc   aupr pearson
-##    <chr>       <dbl>  <dbl>   <dbl>
-##  1 PTHLH       0.667 0.0720   0.128
-##  2 CXCL12      0.680 0.0507   0.123
-##  3 AGT         0.676 0.0581   0.120
-##  4 TGFB3       0.689 0.0454   0.117
-##  5 IL6         0.693 0.0510   0.115
-##  6 INHBA       0.695 0.0502   0.113
-##  7 ADAM17      0.672 0.0526   0.113
-##  8 TNC         0.700 0.0444   0.109
-##  9 CTGF        0.680 0.0473   0.108
-## 10 FN1         0.679 0.0505   0.108
-## # ... with 121 more rows
-best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand)
+ligand_activities %>% arrange(-aupr_corrected) 
+## # A tibble: 212 × 5
+##    test_ligand auroc   aupr aupr_corrected pearson
+##    <chr>       <dbl>  <dbl>          <dbl>   <dbl>
+##  1 TGFB2       0.772 0.120          0.105    0.195
+##  2 BMP8A       0.774 0.0852         0.0699   0.175
+##  3 INHBA       0.777 0.0837         0.0685   0.122
+##  4 CXCL12      0.714 0.0829         0.0676   0.141
+##  5 LTBP1       0.727 0.0762         0.0609   0.160
+##  6 CCN2        0.736 0.0734         0.0581   0.141
+##  7 TNXB        0.719 0.0717         0.0564   0.157
+##  8 ENG         0.764 0.0703         0.0551   0.145
+##  9 BMP5        0.750 0.0691         0.0538   0.148
+## 10 VCAN        0.720 0.0687         0.0534   0.140
+## # … with 202 more rows
+best_upstream_ligands = ligand_activities %>% top_n(30, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand)
 head(best_upstream_ligands)
-## [1] "PTHLH"  "CXCL12" "AGT"    "TGFB3"  "IL6"    "INHBA"
+## [1] "TGFB2"  "BMP8A"  "INHBA"  "CXCL12" "LTBP1"  "CCN2"
 ```
 
-We see here that the performance metrics indicate that the 20 top-ranked
+We see here that the performance metrics indicate that the 30 top-ranked
 ligands can predict the p-EMT genes reasonably, this implies that
 ranking of the ligands might be accurate as shown in our study. However,
 it is possible that for some gene sets, the target gene prediction
@@ -251,28 +271,28 @@ performance of the top-ranked ligands would not be much better than
 random prediction. In that case, prioritization of ligands will be less
 trustworthy.
 
-Additional note: we looked at the top 20 ligands here and will continue
-the analysis by inferring p-EMT target genes of these 20 ligands.
-However, the choice of looking only at the 20 top-ranked ligands for
+Additional note: we looked at the top 30 ligands here and will continue
+the analysis by inferring p-EMT target genes of these 30 ligands.
+However, the choice of looking only at the 30 top-ranked ligands for
 further biological interpretation is based on biological intuition and
 is quite arbitrary. Therefore, users can decide to continue the analysis
 with a different number of ligands. We recommend to check the selected
 cutoff by looking at the distribution of the ligand activity values.
-Here, we show the ligand activity histogram (the score for the 20th
+Here, we show the ligand activity histogram (the score for the 30th
 ligand is indicated via the dashed line).
 
 ``` r
 # show histogram of ligand activity scores
-p_hist_lig_activity = ggplot(ligand_activities, aes(x=pearson)) + 
+p_hist_lig_activity = ggplot(ligand_activities, aes(x=aupr_corrected)) + 
   geom_histogram(color="black", fill="darkorange")  + 
   # geom_density(alpha=.1, fill="orange") +
-  geom_vline(aes(xintercept=min(ligand_activities %>% top_n(20, pearson) %>% pull(pearson))), color="red", linetype="dashed", size=1) + 
+  geom_vline(aes(xintercept=min(ligand_activities %>% top_n(30, aupr_corrected) %>% pull(aupr_corrected))), color="red", linetype="dashed", size=1) + 
   labs(x="ligand activity (PCC)", y = "# ligands") +
   theme_classic()
 p_hist_lig_activity
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ## Step 5: Infer target genes of top-ranked ligands and visualize in a heatmap
 
@@ -292,23 +312,23 @@ not be shown on the heatmap.
 active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
 
 nrow(active_ligand_target_links_df)
-## [1] 143
+## [1] 460
 head(active_ligand_target_links_df)
-## # A tibble: 6 x 3
+## # A tibble: 6 × 3
 ##   ligand target  weight
 ##   <chr>  <chr>    <dbl>
-## 1 PTHLH  COL1A1 0.00399
-## 2 PTHLH  MMP1   0.00425
-## 3 PTHLH  MMP2   0.00210
-## 4 PTHLH  MYH9   0.00116
-## 5 PTHLH  P4HA2  0.00190
-## 6 PTHLH  PLAU   0.00401
+## 1 TGFB2  ACTN1   0.0849
+## 2 TGFB2  C1S     0.124 
+## 3 TGFB2  COL17A1 0.0732
+## 4 TGFB2  COL1A1  0.243 
+## 5 TGFB2  COL4A2  0.148 
+## 6 TGFB2  F3      0.0747
 ```
 
 For visualization purposes, we adapted the ligand-target regulatory
 potential matrix as follows. Regulatory potential scores were set as 0
 if their score was below a predefined threshold, which was here the 0.25
-quantile of scores of interactions between the 20 top-ranked ligands and
+quantile of scores of interactions between the 30 top-ranked ligands and
 each of their respective top targets (see the ligand-target network
 defined in the data frame).
 
@@ -316,17 +336,17 @@ defined in the data frame).
 active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = 0.25)
 
 nrow(active_ligand_target_links_df)
-## [1] 143
+## [1] 460
 head(active_ligand_target_links_df)
-## # A tibble: 6 x 3
+## # A tibble: 6 × 3
 ##   ligand target  weight
 ##   <chr>  <chr>    <dbl>
-## 1 PTHLH  COL1A1 0.00399
-## 2 PTHLH  MMP1   0.00425
-## 3 PTHLH  MMP2   0.00210
-## 4 PTHLH  MYH9   0.00116
-## 5 PTHLH  P4HA2  0.00190
-## 6 PTHLH  PLAU   0.00401
+## 1 TGFB2  ACTN1   0.0849
+## 2 TGFB2  C1S     0.124 
+## 3 TGFB2  COL17A1 0.0732
+## 4 TGFB2  COL1A1  0.243 
+## 5 TGFB2  COL4A2  0.148 
+## 6 TGFB2  F3      0.0747
 ```
 
 The putatively active ligand-target links will now be visualized in a
@@ -343,7 +363,7 @@ p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized
 p_ligand_target_network
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 Note that the choice of these cutoffs for visualization is quite
 arbitrary. We recommend users to test several cutoff values.
@@ -372,7 +392,7 @@ lr_network_top = lr_network %>% filter(from %in% best_upstream_ligands & to %in%
 best_upstream_receptors = lr_network_top %>% pull(to) %>% unique()
 
 # get the weights of the ligand-receptor interactions as used in the NicheNet model
-weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
+weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final.rds"))
 lr_network_top_df = weighted_networks$lr_sig %>% filter(from %in% best_upstream_ligands & to %in% best_upstream_receptors)
 
 # convert to a matrix
@@ -397,7 +417,7 @@ p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap
 p_ligand_receptor_network
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 ## Follow-up analysis 2: Visualize expression of top-predicted ligands and their target genes in a combined heatmap
 
@@ -421,17 +441,17 @@ library(ggpubr)
 #### Prepare the ligand activity matrix
 
 ``` r
-ligand_pearson_matrix = ligand_activities %>% select(pearson) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
+ligand_aupr_matrix = ligand_activities %>% select(aupr_corrected) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
-vis_ligand_pearson = ligand_pearson_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("Pearson")
+vis_ligand_aupr = ligand_aupr_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("AUPR")
 ```
 
 ``` r
-p_ligand_pearson = vis_ligand_pearson %>% make_heatmap_ggplot("Prioritized CAF-ligands","Ligand activity", color = "darkorange",legend_position = "top", x_axis_position = "top", legend_title = "Pearson correlation coefficient\ntarget gene prediction ability)")
-p_ligand_pearson
+p_ligand_aupr = vis_ligand_aupr %>% make_heatmap_ggplot("Prioritized CAF-ligands","Ligand activity", color = "darkorange",legend_position = "top", x_axis_position = "top", legend_title = "AUPR\n(target gene prediction ability)")
+p_ligand_aupr
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 #### Prepare expression of ligands in fibroblast per tumor
 
@@ -458,7 +478,7 @@ p_ligand_tumor_expression = vis_ligand_tumor_expression %>% make_heatmap_ggplot(
 p_ligand_tumor_expression
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 #### Prepare expression of target genes in malignant cells per tumor
 
@@ -479,13 +499,13 @@ p_target_tumor_scaled_expression = vis_target_tumor_expression_scaled  %>% make_
 p_target_tumor_scaled_expression
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 #### Combine the different heatmaps in one overview figure
 
 ``` r
 figures_without_legend = plot_grid(
-  p_ligand_pearson + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
+  p_ligand_aupr + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
   p_ligand_tumor_expression + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()) + ylab(""),
   p_ligand_target_network + theme(legend.position = "none", axis.ticks = element_blank()) + ylab(""), 
   NULL,
@@ -493,11 +513,11 @@ figures_without_legend = plot_grid(
   p_target_tumor_scaled_expression + theme(legend.position = "none", axis.ticks = element_blank()) + xlab(""), 
   align = "hv",
   nrow = 2,
-  rel_widths = c(ncol(vis_ligand_pearson)+ 4.5, ncol(vis_ligand_tumor_expression), ncol(vis_ligand_target)) -2,
-  rel_heights = c(nrow(vis_ligand_pearson), nrow(vis_target_tumor_expression_scaled) + 3)) 
+  rel_widths = c(ncol(vis_ligand_aupr)+ 4.5, ncol(vis_ligand_tumor_expression), ncol(vis_ligand_target)) -2,
+  rel_heights = c(nrow(vis_ligand_aupr), nrow(vis_target_tumor_expression_scaled) + 3)) 
 
 legends = plot_grid(
-  as_ggplot(get_legend(p_ligand_pearson)),
+  as_ggplot(get_legend(p_ligand_aupr)),
   as_ggplot(get_legend(p_ligand_tumor_expression)),
   as_ggplot(get_legend(p_ligand_target_network)),
   as_ggplot(get_legend(p_target_tumor_scaled_expression)),
@@ -509,35 +529,33 @@ plot_grid(figures_without_legend,
           rel_heights = c(10,2), nrow = 2, align = "hv")
 ```
 
-![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](ligand_activity_geneset_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 ## Other follow-up analyses:
 
 As another follow-up analysis, you can infer possible signaling paths
 between ligands and targets of interest. You can read how to do this in
 the following vignette [Inferring ligand-to-target signaling
-paths](ligand_target_signaling_path.md):`vignette("ligand_target_signaling_path",
-package="nichenetr")`.
+paths](ligand_target_signaling_path.md):`vignette("ligand_target_signaling_path", package="nichenetr")`.
 
 Another follow-up analysis is getting a “tangible” measure of how well
 top-ranked ligands predict the gene set of interest and assess which
 genes of the gene set can be predicted well. You can read how to do this
 in the following vignette [Assess how well top-ranked ligands can
 predict a gene set of
-interest](target_prediction_evaluation_geneset.md):`vignette("target_prediction_evaluation_geneset",
-package="nichenetr")`.
+interest](target_prediction_evaluation_geneset.md):`vignette("target_prediction_evaluation_geneset", package="nichenetr")`.
 
 In case you want to visualize ligand-target links between multiple
 interacting cells, you can make an appealing circos plot as shown in
 vignette [Circos plot visualization to show active ligand-target links
-between interacting cells](circos.md):`vignette("circos",
-package="nichenetr")`.
+between interacting
+cells](circos.md):`vignette("circos", package="nichenetr")`.
 
 ## References
 
-<div id="refs" class="references">
+<div id="refs" class="references csl-bib-body hanging-indent">
 
-<div id="ref-puram_single-cell_2017">
+<div id="ref-puram_single-cell_2017" class="csl-entry">
 
 Puram, Sidharth V., Itay Tirosh, Anuraag S. Parikh, Anoop P. Patel,
 Keren Yizhak, Shawn Gillespie, Christopher Rodman, et al. 2017.

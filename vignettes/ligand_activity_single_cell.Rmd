@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-This vignette shows how NicheNet can be used to predict which ligands might be active in single-cells. If a ligand has a high activity in a cell, this means that target genes of that ligand are stronger expressed in that cell than in other cells. In this example, we will use data from Puram et al. to explore intercellular communication in the tumor microenvironment in head and neck squamous cell carcinoma (HNSCC) [See @puram_single-cell_2017]. More specifically, we will assess the activity of cancer-associated fibroblast (CAF) ligands in malignant cells. The used ligand-target matrix and example expression data of interacting cells can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758).
+This vignette shows how NicheNet can be used to predict which ligands might be active in single-cells. If a ligand has a high activity in a cell, this means that target genes of that ligand are stronger expressed in that cell than in other cells. In this example, we will use data from Puram et al. to explore intercellular communication in the tumor microenvironment in head and neck squamous cell carcinoma (HNSCC) [See @puram_single-cell_2017]. More specifically, we will assess the activity of cancer-associated fibroblast (CAF) ligands in malignant cells. The used [ligand-target matrix](https://doi.org/10.5281/zenodo.7074290) and example [expression data](https://doi.org/10.5281/zenodo.3260758) of interacting cells can be downloaded from Zenodo.
 
 In order to prioritize ligands regulating a process of interest, you can perform a regression/correlation analysis between ligand activities in cells, and scores of a cell corresponding to the process of interest. For example, in this case study we were interested in finding ligands regulating p-EMT. Therefore we correlated ligand activities to the p-EMT scores of cells. 
 
@@ -62,7 +62,7 @@ expressed_genes_malignant = expression[malignant_ids,] %>% apply(2,function(x){1
 ### Load the ligand-target model we want to use
 
 ```{r}
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final.rds"))
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 ```
 
@@ -71,7 +71,7 @@ ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 In a first step, we will define a set of potentially active ligands. As potentially active ligands, we will use ligands that are 1) expressed by CAFs and 2) can bind a (putative) receptor expressed by malignant cells. Putative ligand-receptor links were gathered from NicheNet's ligand-receptor data sources.
 
 ```{r}
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
 ligands = lr_network$from %>% unique()
 expressed_ligands = intersect(ligands,expressed_genes_CAFs)
 receptors = lr_network$to %>% unique()
@@ -108,7 +108,7 @@ cell_scores_tbl = tibble(cell = malignant_hn5_ids, score = expression_scaled[mal
 
 Then, we will determine the correlation between these p-EMT scores and ligand activities over all cells to prioritize p-EMT-inducing ligands. We hypothesize that ligands might be potential regulators of the p-EMT program if higher ligand activities are associated with higher p-EMT scores. Based on this correlation, we obtained a ranking of potential p-EMT-inducing ligands.
 
-To do so, we frist need to process and normalize the ligand activities (i.e. pearson correlation values) to make different cells comparable. Here we use modified z-score normalization.
+To do so, we first need to process and normalize the ligand activities (i.e. area under the precision-recall curve) to make different cells comparable. Here we use modified z-score normalization.
 
 ```{r}
 normalized_ligand_activities = normalize_single_cell_ligand_activities(ligand_activities)

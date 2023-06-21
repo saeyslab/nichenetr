@@ -9,7 +9,7 @@ get_ligand_activities_targets(niche_geneset_list, ligand_target_matrix, top_n_ta
 \arguments{
 \item{niche_geneset_list}{List of lists/niches giving the geneset of interest for the receiver cell type in each niche.}
 
-\item{ligand_target_matrix}{The NicheNet ligand-target matrix denoting regulatory potential scores between ligands and targets (ligands in columns).}
+\item{ligand_target_matrix}{The NicheNet ligand-target matrix of the organism of interest denoting regulatory potential scores between ligands and targets (ligands in columns).}
 
 \item{top_n_target}{To predict active, affected targets of the prioritized ligands, consider only DE genes if they also belong to the a priori top n ("top_n_targets") targets of a ligand. Default = 200.}
 }

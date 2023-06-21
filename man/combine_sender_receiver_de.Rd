@@ -11,7 +11,7 @@ combine_sender_receiver_de(DE_sender_processed, DE_receiver_processed, lr_networ
 
 \item{DE_receiver_processed}{Output of `process_niche_de` with `type = receiver`}
 
-\item{lr_network}{Ligand-Receptor Network in tibble format: ligand, receptor, bonafide as columns}
+\item{lr_network}{Ligand-Receptor Network in tibble format: ligand, receptor as columns}
 
 \item{specificity_score}{Defines which score will be used to prioritze ligand-receptor pairs and consider their differential expression. Default and recommended: "min_lfc".
 "min_lfc" looks at the minimal logFC of the ligand/receptor between the celltype of interest and all the other celltypes.

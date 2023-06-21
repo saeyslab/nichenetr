@@ -1,15 +1,11 @@
 context("Differential NicheNet")
 test_that("Differential NicheNet pipeline works", {
-
-  ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
-  colnames(ligand_target_matrix) = ligand_target_matrix %>% colnames() %>% convert_human_to_mouse_symbols()
-  rownames(ligand_target_matrix) = ligand_target_matrix %>% rownames() %>% convert_human_to_mouse_symbols()
+  options(timeout = 3600)
+  ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
   ligand_target_matrix = ligand_target_matrix %>% .[!is.na(rownames(ligand_target_matrix)), !is.na(colnames(ligand_target_matrix))]
 
-  lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-  lr_network = lr_network %>% mutate(from = convert_human_to_mouse_symbols(from), to = convert_human_to_mouse_symbols(to)) %>% tidyr::drop_na()
-  lr_network = lr_network %>% mutate(bonafide = ! database %in% c("ppi_prediction","ppi_prediction_go"))
-  lr_network = lr_network %>% dplyr::rename(ligand = from, receptor = to) %>% distinct(ligand, receptor, bonafide)
+  lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+  lr_network = lr_network %>% dplyr::rename(ligand = from, receptor = to) %>% distinct(ligand, receptor)
 
   seurat_object_lite = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
   seurat_object_lite@meta.data$celltype_aggregate = paste(seurat_object_lite@meta.data$celltype, seurat_object_lite@meta.data$aggregate,sep = "_") # user adaptation required on own dataset
@@ -94,7 +90,7 @@ test_that("Differential NicheNet pipeline works", {
   length(geneset_niche2)
 
   top_n_target = 250
-
+ 
   niche_geneset_list = list(
     "LCMV_niche" = list(
       "receiver" = niches[[1]]$receiver,
@@ -128,7 +124,7 @@ test_that("Differential NicheNet pipeline works", {
     inner_join(exprs_tbl_ligand, by = c("ligand")) %>%
     inner_join(exprs_tbl_receptor, by = c("receptor")) %>% inner_join(DE_sender_receiver %>% distinct(niche, sender, receiver))
 
-  ligand_scaled_receptor_expression_fraction_df = exprs_sender_receiver %>% group_by(ligand, receiver) %>% mutate(rank_receptor_expression = dense_rank(receptor_expression), rank_receptor_fraction  = dense_rank(receptor_fraction)) %>% mutate(ligand_scaled_receptor_expression_fraction = 0.5*( (rank_receptor_fraction / max(rank_receptor_fraction)) + ((rank_receptor_expression / max(rank_receptor_expression))) ) )  %>% distinct(ligand, receptor, receiver, ligand_scaled_receptor_expression_fraction, bonafide) %>% distinct() %>% ungroup()
+  ligand_scaled_receptor_expression_fraction_df = exprs_sender_receiver %>% group_by(ligand, receiver) %>% mutate(rank_receptor_expression = dense_rank(receptor_expression), rank_receptor_fraction  = dense_rank(receptor_fraction)) %>% mutate(ligand_scaled_receptor_expression_fraction = 0.5*( (rank_receptor_fraction / max(rank_receptor_fraction)) + ((rank_receptor_expression / max(rank_receptor_expression))) ) )  %>% distinct(ligand, receptor, receiver, ligand_scaled_receptor_expression_fraction) %>% distinct() %>% ungroup()
 
   prioritizing_weights = c("scaled_ligand_score" = 5,
                            "scaled_ligand_expression_scaled" = 1,
@@ -140,8 +136,7 @@ test_that("Differential NicheNet pipeline works", {
                            "ligand_scaled_receptor_expression_fraction" = 1,
                            "scaled_receptor_score_spatial" = 0,
                            "scaled_activity" = 0,
-                           "scaled_activity_normalized" = 1,
-                           "bona_fide" = 1)
+                           "scaled_activity_normalized" = 1)
 
   output = list(DE_sender_receiver = DE_sender_receiver, ligand_scaled_receptor_expression_fraction_df = ligand_scaled_receptor_expression_fraction_df, sender_spatial_DE_processed = sender_spatial_DE_processed, receiver_spatial_DE_processed = receiver_spatial_DE_processed,
                 ligand_activities_targets = ligand_activities_targets, DE_receiver_processed_targets = DE_receiver_processed_targets, exprs_tbl_ligand = exprs_tbl_ligand,  exprs_tbl_receptor = exprs_tbl_receptor, exprs_tbl_target = exprs_tbl_target)

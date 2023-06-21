@@ -4,10 +4,12 @@
 \alias{scale_quantile_adapted}
 \title{Normalize values in a vector by quantile scaling and add a pseudovalue of 0.001}
 \usage{
-scale_quantile_adapted(x)
+scale_quantile_adapted(x, outlier_cutoff = 0)
 }
 \arguments{
 \item{x}{A numeric vector.}
+
+\item{outlier_cutoff}{The quantile cutoff for outliers (default 0).}
 }
 \value{
 A quantile-scaled numeric vector.

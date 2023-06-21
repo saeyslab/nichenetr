@@ -23,18 +23,18 @@ knitr::opts_chunk$set(
 )
 ```
 
-In this vignette, you can learn how to perform a basic NicheNet analysis on a Seurat v3 object. Such a NicheNet analysis can help you to generate hypotheses about an intercellular communication process of interest for which you have single-cell gene expression data as a Seurat object. Specifically, NicheNet can predict 1) which ligands from one or more cell population(s) ("sender/niche") are most likely to affect target gene expression in an interacting cell population ("receiver/target") and 2) which specific target genes are affected by which of these predicted ligands. 
+In this vignette, you can learn how to perform a basic NicheNet analysis on a Seurat v3/v4 object. Such a NicheNet analysis can help you to generate hypotheses about an intercellular communication process of interest for which you have single-cell gene expression data as a Seurat object. Specifically, NicheNet can predict 1) which ligands from one or more cell population(s) ("sender/niche") are most likely to affect target gene expression in an interacting cell population ("receiver/target") and 2) which specific target genes are affected by which of these predicted ligands. 
 
 Because NicheNet studies how ligands affect gene expression in putatively neighboring/interacting cells, you need to have data about this effect in gene expression you want to study. So, there need to be 'some kind of' differential expression in a receiver cell population, caused by ligands from one of more interacting sender cell populations.  
 
 In this vignette, we demonstrate the use of NicheNet on a Seurat Object. The wrapper function we will show consists of the same different steps that are discussed in detail in the main, basis, NicheNet vignette [NicheNet's ligand activity analysis on a gene set of interest: predict active ligands and their target genes](ligand_activity_geneset.md):`vignette("ligand_activity_geneset", package="nichenetr")`. Make sure you understand the different steps in a NicheNet analysis that are described in that vignette before proceeding with this vignette and performing a real NicheNet analysis on your data. 
 In another vignette [Perform NicheNet analysis starting from a Seurat object: step-by-step analysis](seurat_steps.md):`vignette("seurat_steps", package="nichenetr")`, we also show the execution of these steps one for one, but in contrast to the main vignette now specifically for a Seurat Object. This allows users to adapt specific steps of the pipeline to make them more appropriate for their data (recommended).
 
-As example expression data of interacting cells, we will use mouse NICHE-seq data from Medaglia et al. to explore intercellular communication in the T cell area in the inguinal lymph node before and 72 hours after lymphocytic choriomeningitis virus (LCMV) infection [See @medaglia_spatial_2017]. We will NicheNet to explore immune cell crosstalk in response to this LCMV infection.
+As example expression data of interacting cells, we will use mouse NICHE-seq data from Medaglia et al. to explore intercellular communication in the T cell area in the inguinal lymph node before and 72 hours after lymphocytic choriomeningitis virus (LCMV) infection [@medaglia_spatial_2017]. We will NicheNet to explore immune cell crosstalk in response to this LCMV infection.
 
 In this dataset, differential expression is observed between CD8 T cells in steady-state and CD8 T cells after LCMV infection. NicheNet can be applied to look at how several immune cell populations in the lymph node (i.e., monocytes, dendritic cells, NK cells, B cells, CD4 T cells) can regulate and induce these observed gene expression changes. NicheNet will specifically prioritize ligands from these immune cells and their target genes that change in expression upon LCMV infection.
 
-The used NicheNet networks, ligand-target matrix and example expression data of interacting cells can be downloaded from Zenodo. The NicheNet networks and ligand-target matrix at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758) and the Seurat object of the processed NICHE-seq single-cell data at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3531889.svg)](https://doi.org/10.5281/zenodo.3531889).
+The used [ligand-target matrix](https://doi.org/10.5281/zenodo.7074290) and the [Seurat object of the processed NICHE-seq single-cell data](https://doi.org/10.5281/zenodo.3531889) can be downloaded from Zenodo.
 
 # Prepare NicheNet analysis
 
@@ -55,23 +55,36 @@ If you would use and load other packages, we recommend to load these 3 packages 
 ### Read in NicheNet's ligand-target prior model, ligand-receptor network and weighted integrated networks:
 
 ```{r}
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+options(timeout=600)
+organism = "mouse"
+
+if(organism == "human"){
+  lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
+  ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final.rds"))
+  weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final.rds"))
+} else if(organism == "mouse"){
+  lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+  ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
+  weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
+
+}
+
+lr_network = lr_network %>% distinct(from, to)
+head(lr_network)
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-head(lr_network)
-
-weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
+weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network, by = c("from","to"))
 head(weighted_networks$lr_sig) # interactions and their weights in the ligand-receptor + signaling network
 head(weighted_networks$gr) # interactions and their weights in the gene regulatory network
 ```
 
 ### Read in the expression data of interacting cells: 
 
-The dataset used here is publicly available single-cell data from immune cells in the T cell area of the inguinal lymph node. The data was processed and aggregated by applying the Seurat alignment pipeline. The Seurat object contains this aggregated data. Note that this should be a Seurat v3 object and that gene should be named by their official mouse/human gene symbol.
+The dataset used here is publicly available single-cell data from immune cells in the T cell area of the inguinal lymph node. The data was processed and aggregated by applying the Seurat alignment pipeline. The Seurat object contains this aggregated data. Note that this should be a Seurat v3/v4 object and that gene should be named by their official mouse/human gene symbol. If your expression data has the older gene symbols, you may want to use our alias conversion function to avoid the loss of gene names.
 
 ```{r}
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
+seuratObj = alias_to_symbol_seurat(seuratObj, "mouse") # convert gene names
 seuratObj@meta.data %>% head()
 ```
 
@@ -110,7 +123,7 @@ In this case study, the receiver cell population is the 'CD8 T' cell population,
 
 The gene set of interest are the genes differentially expressed in CD8 T cells after LCMV infection. The condition of interest is thus 'LCMV', whereas the reference/steady-state condition is 'SS'. The notion of conditions can be extracted from the metadata column 'aggregate', the method to calculate the differential expression is the standard Seurat Wilcoxon test. 
 
-The number of top-ranked ligands that are further used to predict active target genes and construct an active ligand-receptor network is 20 by default.
+The number of top-ranked ligands that are further used to predict active target genes and construct an active ligand-receptor network is 30 by default.
 
 To perform the NicheNet analysis with these specifications, run the following:
 
@@ -123,7 +136,9 @@ nichenet_output = nichenet_seuratobj_aggregate(
   receiver = "CD8 T", 
   condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", 
   sender = c("CD4 T","Treg", "Mono", "NK", "B", "DC"), 
-  ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
+  ligand_target_matrix = ligand_target_matrix,
+  lr_network = lr_network,
+  weighted_networks = weighted_networks)
 ```
 
 ### Interpret the NicheNet analysis output
@@ -136,11 +151,9 @@ A first thing NicheNet does, is prioritizing ligands based on predicted ligand a
 nichenet_output$ligand_activities
 ```
 
-The different ligand activity measures (auroc, aupr, pearson correlation coefficient) are a measure for how well a ligand can predict the observed differentially expressed genes compared to the background of expressed genes. In our validation study, we showed that the pearson correlation coefficient between a ligand's target predictions and the observed transcriptional response was the most informative measure to define ligand activity. Therefore, NicheNet ranks the ligands based on their pearson correlation coefficient. This allows us to prioritize ligands inducing the antiviral response in CD8 T cells. 
+The different ligand activity measures (auroc, aupr, pearson correlation coefficient) are a measure for how well a ligand can predict the observed differentially expressed genes compared to the background of expressed genes. In our validation study, we showed that the area under the precision-recall curve (AUPR) between a ligand's target predictions and the observed transcriptional response was the most informative measure to define ligand activity (this was the Pearson correlation for v1). Therefore, NicheNet ranks the ligands based on their AUPR. This allows us to prioritize ligands inducing the antiviral response in CD8 T cells.
 
-The column 'bona_fide_ligand' indicates whether the ligand is part of ligand-receptor interactions that are documented in public databases ('bona_fide_ligand = TRUE') and not of ligand-receptor interactions that we predicted based on annotation as ligand/receptor and protein-protein interaction databases ('bona_fide_ligand = FALSE').
-
-To get a list of the 20 top-ranked ligands: run the following command
+To get a list of the 30 top-ranked ligands: run the following command
 
 ```{r}
 nichenet_output$top_ligands
@@ -187,7 +200,7 @@ nichenet_output$ligand_target_matrix %>% .[1:10,1:6]
 nichenet_output$ligand_target_df # weight column = regulatory potential
 ```
 
-To get a list of the top-predicted target genes of the 20 top-ranked ligands: run the following command
+To get a list of the top-predicted target genes of the 30 top-ranked ligands: run the following command
 
 ```{r}
 nichenet_output$top_targets
@@ -241,13 +254,6 @@ You can visualize the expression of these as well. Because we only focus on CD8 
 DotPlot(seuratObj %>% subset(idents = "CD8 T"), features = nichenet_output$top_receptors %>% rev(), split.by = "aggregate") + RotatedAxis()
 ```
 
-You also can just show 'bona fide' ligand-receptor links that are described in the literature and not predicted based on protein-protein interactions:
-
-```{r}
-nichenet_output$ligand_receptor_heatmap_bonafide
-nichenet_output$ligand_receptor_matrix_bonafide
-nichenet_output$ligand_receptor_df_bonafide
-```
 
 If you are interested in checking which geneset (and background set of genes) was used during the ligand activity analysis: 
 ```{r}
@@ -260,7 +266,7 @@ nichenet_output$background_expressed_genes %>% length()
 Instead of focusing on multiple sender cell types, it is possible that you are only interested in doing the analyis for one sender cell type, such as dendritic cells in this case.
 
 ```{r, fig.width=14}
-nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seuratObj, receiver = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = "DC", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
+nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seuratObj, receiver = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = "DC", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
 
 nichenet_output$ligand_activity_target_heatmap
 ```
@@ -268,7 +274,7 @@ nichenet_output$ligand_activity_target_heatmap
 Instead of focusing on one or multiple predefined sender cell types, it is also possible that you want to consider all cell types present as possible sender cell. This also includes the receiver cell type, making that you can look at autocrine signaling as well.
 
 ```{r, fig.width=14}
-nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seuratObj, receiver = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = "all", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
+nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seuratObj, receiver = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = "all", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
 
 nichenet_output$ligand_activity_target_heatmap
 ```
@@ -276,7 +282,7 @@ nichenet_output$ligand_activity_target_heatmap
 In some cases, it could be possible that you don't have data of potential sender cells. If you still want to predict possible upstream ligands that could have been responsible for the observed differential expression in your cell type, you can do this by following command. This will consider all possible ligands in the NicheNet databases for which a receptor is expressed by the receiver cell of interest.
 
 ```{r, fig.width=8}
-nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seuratObj, receiver = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = "undefined", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
+nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seuratObj, receiver = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = "undefined", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
 
 nichenet_output$ligand_activity_target_heatmap
 
@@ -292,7 +298,7 @@ In some cases, you might be interested in multiple target/receiver cell populati
 receiver_celltypes_oi = c("CD4 T", "CD8 T")
 # receiver_celltypes_oi = seuratObj %>% Idents() %>% unique() # for all celltypes in the dataset: use only when this would make sense biologically
 
-nichenet_output = receiver_celltypes_oi %>% lapply(nichenet_seuratobj_aggregate, seurat_obj = seuratObj, condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = c("CD4 T","Treg", "Mono", "NK", "B", "DC"), ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
+nichenet_output = receiver_celltypes_oi %>% lapply(nichenet_seuratobj_aggregate, seurat_obj = seuratObj, condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = c("CD4 T","Treg", "Mono", "NK", "B", "DC"), ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
 
 names(nichenet_output) = receiver_celltypes_oi
 
@@ -320,7 +326,7 @@ print(cd8_ligands)
 
 Previously, we demonstrated the use of a wrapper function for applying NicheNet to explain differential expression between two conditions in one cell type. However, also differential expression between two cell populations might sometimes be (partially) caused by communication with cells in the neighborhood. For example, differentiation from a progenitor cell to the differentiated cell might be induced by niche cells. A concrete example is discussed in this paper: [Stellate Cells, Hepatocytes, and Endothelial Cells Imprint the Kupffer Cell Identity on Monocytes Colonizing the Liver Macrophage Niche](https://www.cell.com/immunity/fulltext/S1074-7613(19)30368-1).
 
-Therefore, we will now also demonstrate the use of another Seurat wrapper function that can be used in the case of explaining differential expression between cell populations. But keep in mind that the comparison that you make should be biologically relevant. It is possible to use NicheNet to explain differential expression beween any two cell populations in your dataset, but in most cases, differential expression between cell populations will be a result of cell-intrinisc properties (i.e. different cell types have a different gene expression profile) and not of intercellular communication processes. In such a case, it does not make any sense to use NicheNet.
+Therefore, we will now also demonstrate the use of another Seurat wrapper function that can be used in the case of explaining differential expression between cell populations. But keep in mind that the comparison that you make should be biologically relevant. It is possible to use NicheNet to explain differential expression between any two cell populations in your dataset, but in most cases, differential expression between cell populations will be a result of cell-intrinsic properties (i.e. different cell types have a different gene expression profile) and not of intercellular communication processes. In such a case, it does not make any sense to use NicheNet.
 
 For demonstration purposes, we will here first change the seuratObject of the data described above, such that it can be used in this setting.
 
@@ -339,7 +345,7 @@ nichenet_output = nichenet_seuratobj_cluster_de(
   seurat_obj = seuratObj, 
   receiver_reference = "CD8 T_SS", receiver_affected = "CD8 T_LCMV", 
   sender = c("DC_LCMV","Mono_LCMV"), 
-  ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
+  ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
 
 ```
 

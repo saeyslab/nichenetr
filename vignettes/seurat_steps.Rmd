@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-In this vignette, you can learn how to perform a basic NicheNet analysis on a Seurat v3 object. Such a NicheNet analysis can help you to generate hypotheses about an intercellular communication process of interest for which you have single-cell gene expression data as a Seurat object. Specifically, NicheNet can predict 1) which ligands from one or more cell population(s) ("sender/niche") are most likely to affect target gene expression in an interacting cell population ("receiver/target") and 2) which specific target genes are affected by which of these predicted ligands. 
+In this vignette, you can learn how to perform a basic NicheNet analysis on a Seurat v3/v4 object. Such a NicheNet analysis can help you to generate hypotheses about an intercellular communication process of interest for which you have single-cell gene expression data as a Seurat object. Specifically, NicheNet can predict 1) which ligands from one or more cell population(s) ("sender/niche") are most likely to affect target gene expression in an interacting cell population ("receiver/target") and 2) which specific target genes are affected by which of these predicted ligands. 
 
 Because NicheNet studies how ligands affect gene expression in putatively neighboring/interacting cells, you need to have data about this effect in gene expression you want to study. So, there need to be 'some kind of' differential expression in a receiver cell population, caused by ligands from one of more interacting sender cell populations.  
 
@@ -34,7 +34,7 @@ As example expression data of interacting cells, we will use mouse NICHE-seq dat
 
 In this dataset, differential expression is observed between CD8 T cells in steady-state and CD8 T cells after LCMV infection. NicheNet can be applied to look at how several immune cell populations in the lymph node (i.e., monocytes, dendritic cells, NK cells, B cells, CD4 T cells) can regulate and induce these observed gene expression changes. NicheNet will specifically prioritize ligands from these immune cells and their target genes that change in expression upon LCMV infection.
 
-The used NicheNet networks, ligand-target matrix and example expression data of interacting cells can be downloaded from Zenodo. The NicheNet networks and ligand-target matrix at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758) and the Seurat object of the processed NICHE-seq single-cell data at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3531889.svg)](https://doi.org/10.5281/zenodo.3531889).
+The used [ligand-target matrix](https://doi.org/10.5281/zenodo.7074290) and the [Seurat object of the processed NICHE-seq single-cell data](https://doi.org/10.5281/zenodo.3531889) can be downloaded from Zenodo.
 
 # Prepare NicheNet analysis
 
@@ -54,7 +54,7 @@ If you would use and load other packages, we recommend to load these 3 packages 
 
 ### Read in the expression data of interacting cells: 
 
-The dataset used here is publicly available single-cell data from immune cells in the T cell area of the inguinal lymph node. The data was processed and aggregated by applying the Seurat alignment pipeline. The Seurat object contains this aggregated data. Note that this should be a Seurat v3 object and that gene should be named by their official mouse/human gene symbol.
+The dataset used here is publicly available single-cell data from immune cells in the T cell area of the inguinal lymph node. The data was processed and aggregated by applying the Seurat alignment pipeline. The Seurat object contains this aggregated data. Note that this should be a Seurat v3/v4 object and that gene should be named by their official mouse/human gene symbol.
 
 ```{r}
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
@@ -77,30 +77,33 @@ DimPlot(seuratObj, reduction = "tsne", group.by = "aggregate")
 ### Read in NicheNet's ligand-target prior model, ligand-receptor network and weighted integrated networks:
 
 ```{r}
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+
+organism = "mouse"
+
+if(organism == "human"){
+  lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
+  ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final.rds"))
+  weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final.rds"))
+} else if(organism == "mouse"){
+  lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+  ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
+  weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
+
+}
+
+lr_network = lr_network %>% distinct(from, to)
+head(lr_network)
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-head(lr_network)
-
-weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
-weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
-
+weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network, by = c("from","to"))
 head(weighted_networks$lr_sig) # interactions and their weights in the ligand-receptor + signaling network
 head(weighted_networks$gr) # interactions and their weights in the gene regulatory network
-
 ```
 
-Because the expression data is of mouse origin, we will convert the NicheNet network gene symbols from human to mouse based on one-to-one orthology:
+If your expression data has the older gene symbols, you may want to use our alias conversion function to avoid the loss of gene names.
 
 ```{r}
-lr_network = lr_network %>% mutate(from = convert_human_to_mouse_symbols(from), to = convert_human_to_mouse_symbols(to)) %>% drop_na()
-colnames(ligand_target_matrix) = ligand_target_matrix %>% colnames() %>% convert_human_to_mouse_symbols()
-rownames(ligand_target_matrix) = ligand_target_matrix %>% rownames() %>% convert_human_to_mouse_symbols()
-
-ligand_target_matrix = ligand_target_matrix %>% .[!is.na(rownames(ligand_target_matrix)), !is.na(colnames(ligand_target_matrix))]
-
-weighted_networks_lr = weighted_networks_lr %>% mutate(from = convert_human_to_mouse_symbols(from), to = convert_human_to_mouse_symbols(to)) %>% drop_na()
+seuratObj = alias_to_symbol_seurat(seuratObj, "mouse")
 ```
 
 # Perform the NicheNet analysis
@@ -166,16 +169,16 @@ potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% 
 ```{r}
 ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
 
-ligand_activities = ligand_activities %>% arrange(-pearson) %>% mutate(rank = rank(desc(pearson)))
+ligand_activities = ligand_activities %>% arrange(-aupr_corrected) %>% mutate(rank = rank(desc(aupr_corrected)))
 ligand_activities
 ```
 
-The different ligand activity measures (auroc, aupr, pearson correlation coefficient) are a measure for how well a ligand can predict the observed differentially expressed genes compared to the background of expressed genes. In our validation study, we showed that the pearson correlation coefficient between a ligand's target predictions and the observed transcriptional response was the most informative measure to define ligand activity. Therefore, NicheNet ranks the ligands based on their pearson correlation coefficient. This allows us to prioritize ligands inducing the antiviral response in CD8 T cells. 
+The different ligand activity measures (auroc, aupr, pearson correlation coefficient) are a measure for how well a ligand can predict the observed differentially expressed genes compared to the background of expressed genes. In our validation study, we showed that the area under the precision-recall curve (AUPR) between a ligand's target predictions and the observed transcriptional response was the most informative measure to define ligand activity (this was the Pearson correlation for v1). Therefore, NicheNet ranks the ligands based on their AUPR. This allows us to prioritize ligands inducing the antiviral response in CD8 T cells. 
 
-The number of top-ranked ligands that are further used to predict active target genes and construct an active ligand-receptor network is here 20.
+The number of top-ranked ligands that are further used to predict active target genes and construct an active ligand-receptor network is here 30.
 
 ```{r}
-best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand) %>% unique()
+best_upstream_ligands = ligand_activities %>% top_n(30, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand) %>% unique()
 ```
 
 These ligands are expressed by one or more of the input sender cells. To see which cell population expresses which of these top-ranked ligands, you can run the following:
@@ -209,7 +212,7 @@ p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized
 p_ligand_target_network
 ```
 
-Note that not all ligands from the top 20 are present in this ligand-target heatmap. The left-out ligands are ligands that don't have target genes with high enough regulatory potential scores. Therefore, they did not survive the used cutoffs. To include them, you can be less stringent in the used cutoffs.
+Note that not all ligands from the top 30 are present in this ligand-target heatmap. The left-out ligands are ligands that don't have target genes with high enough regulatory potential scores. Therefore, they did not survive the used cutoffs. To include them, you can be less stringent in the used cutoffs.
 
 ### Receptors of top-ranked ligands
 
@@ -241,41 +244,6 @@ colnames(vis_ligand_receptor_network) = order_ligands_receptor %>% make.names()
 ```{r}
 p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential")
 p_ligand_receptor_network
-```
-
-### Receptors of top-ranked ligands, but after considering only bona fide ligand-receptor interactions documented in literature and publicly available databases
-
-```{r}
-lr_network_strict = lr_network %>% filter(database != "ppi_prediction_go" & database != "ppi_prediction")
-ligands_bona_fide = lr_network_strict %>% pull(from) %>% unique()
-receptors_bona_fide = lr_network_strict %>% pull(to) %>% unique()
-
-lr_network_top_df_large_strict = lr_network_top_df_large %>% distinct(from,to) %>% inner_join(lr_network_strict, by = c("from","to")) %>% distinct(from,to)
-lr_network_top_df_large_strict = lr_network_top_df_large_strict %>% inner_join(lr_network_top_df_large, by = c("from","to"))
-
-lr_network_top_df_strict = lr_network_top_df_large_strict %>% spread("from","weight",fill = 0)
-lr_network_top_matrix_strict = lr_network_top_df_strict %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df_strict$to)
-
-dist_receptors = dist(lr_network_top_matrix_strict, method = "binary")
-hclust_receptors = hclust(dist_receptors, method = "ward.D2")
-order_receptors = hclust_receptors$labels[hclust_receptors$order]
-
-dist_ligands = dist(lr_network_top_matrix_strict %>% t(), method = "binary")
-hclust_ligands = hclust(dist_ligands, method = "ward.D2")
-order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
-
-order_receptors = order_receptors %>% intersect(rownames(lr_network_top_matrix_strict))
-order_ligands_receptor = order_ligands_receptor %>% intersect(colnames(lr_network_top_matrix_strict))
-
-vis_ligand_receptor_network_strict = lr_network_top_matrix_strict[order_receptors, order_ligands_receptor]
-rownames(vis_ligand_receptor_network_strict) = order_receptors %>% make.names()
-colnames(vis_ligand_receptor_network_strict) = order_ligands_receptor %>% make.names()
-
-```
-
-```{r}
-p_ligand_receptor_network_strict = vis_ligand_receptor_network_strict %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential\n(bona fide)")
-p_ligand_receptor_network_strict
 ```
 
 ## 6) Add log fold change information of ligands from sender cells
@@ -318,13 +286,13 @@ For example, you can make a combined heatmap of ligand activities, ligand expres
 
 ```{r}
 # ligand activity heatmap
-ligand_pearson_matrix = ligand_activities %>% select(pearson) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
+ligand_aupr_matrix = ligand_activities %>% select(aupr_corrected) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
 
-rownames(ligand_pearson_matrix) = rownames(ligand_pearson_matrix) %>% make.names()
-colnames(ligand_pearson_matrix) = colnames(ligand_pearson_matrix) %>% make.names()
+rownames(ligand_aupr_matrix) = rownames(ligand_aupr_matrix) %>% make.names()
+colnames(ligand_aupr_matrix) = colnames(ligand_aupr_matrix) %>% make.names()
 
-vis_ligand_pearson = ligand_pearson_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("Pearson")
-p_ligand_pearson = vis_ligand_pearson %>% make_heatmap_ggplot("Prioritized ligands","Ligand activity", color = "darkorange",legend_position = "top", x_axis_position = "top", legend_title = "Pearson correlation coefficient\ntarget gene prediction ability)") + theme(legend.text = element_text(size = 9))
+vis_ligand_aupr = ligand_aupr_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("AUPR")
+p_ligand_aupr = vis_ligand_aupr %>% make_heatmap_ggplot("Prioritized ligands","Ligand activity", color = "darkorange",legend_position = "top", x_axis_position = "top", legend_title = "AUPR\n(target gene prediction ability)") + theme(legend.text = element_text(size = 9))
 
 ```
 
@@ -339,16 +307,16 @@ rotated_dotplot = DotPlot(seuratObj %>% subset(celltype %in% sender_celltypes), 
 ```{r, fig.width=12, fig.height=10}
 
 figures_without_legend = cowplot::plot_grid(
-  p_ligand_pearson + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
+  p_ligand_aupr + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
   rotated_dotplot + theme(legend.position = "none", axis.ticks = element_blank(), axis.title.x = element_text(size = 12), axis.text.y = element_text(face = "italic", size = 9), axis.text.x = element_text(size = 9,  angle = 90,hjust = 0)) + ylab("Expression in Sender") + xlab("") + scale_y_discrete(position = "right"),
   p_ligand_lfc + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()) + ylab(""),
   p_ligand_target_network + theme(legend.position = "none", axis.ticks = element_blank()) + ylab(""),
   align = "hv",
   nrow = 1,
-  rel_widths = c(ncol(vis_ligand_pearson)+6, ncol(vis_ligand_lfc) + 7, ncol(vis_ligand_lfc) + 8, ncol(vis_ligand_target)))
+  rel_widths = c(ncol(vis_ligand_aupr)+6, ncol(vis_ligand_lfc) + 7, ncol(vis_ligand_lfc) + 8, ncol(vis_ligand_target)))
 
 legends = cowplot::plot_grid(
-    ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_pearson)),
+    ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_aupr)),
     ggpubr::as_ggplot(ggpubr::get_legend(rotated_dotplot)),
     ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_lfc)),
     ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_target_network)),
@@ -362,7 +330,7 @@ combined_plot
 
 # Remarks
 
-1. Top-ranked ligands and target genes shown here differ from the predictions shown in the respective case study in the NicheNet paper because a different definition of expressed genes was used.
+Top-ranked ligands and target genes shown here differ from the predictions shown in the respective case study in the NicheNet paper because 1) a different definition of expressed genes was used, and 2) we have updated the ligand-target matrix to include more data sources.
 
 # References
 

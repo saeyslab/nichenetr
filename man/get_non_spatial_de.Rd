@@ -13,7 +13,7 @@ get_non_spatial_de(niches, spatial_info, type, lr_network)
 
 \item{type}{For what type of cellype is the DE analysis: "sender" or "receiver"?}
 
-\item{lr_network}{Ligand-Receptor Network in tibble format: ligand, receptor, bonafide as columns}
+\item{lr_network}{Ligand-Receptor Network in tibble format: ligand, receptor as columns}
 }
 \value{
 A tibble of mock processed spatial DE information in case you don't have spatial information for the sender and/or receiver celltype.

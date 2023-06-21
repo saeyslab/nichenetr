@@ -582,6 +582,5 @@ First, you can check the open and closed issues
 (<https://github.com/saeyslab/nichenetr/issues>) of this package on
 github to see whether your question might be addressed in one of these.
 If not, don’t hesitate to open a new issue. If you would prefer to keep
-the discussion private, you can send an email to the corresponding
-author of the NicheNet paper (yvan.saeys\[at\]ugent.be), but I prefer
+the discussion private, you can send an email to info\[at\]nichenet.be, but we prefer
 that you open an issue so other users can learn from it as well!

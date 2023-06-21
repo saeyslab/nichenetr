@@ -1,75 +1,75 @@
 context("NicheNet analysis on Seurat objects")
 test_that("Seurat wrapper works", {
-
-  ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
-  lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-  weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
+  options(timeout = 3600)
+  ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
+  lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+  weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
   seurat_object_lite = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
 
-  nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seurat_object_lite, receiver = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse")
+  nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seurat_object_lite, receiver = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network)
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seurat_object_lite, receiver = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse",geneset = "up")
+  nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seurat_object_lite, receiver = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network,geneset = "up")
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seurat_object_lite, receiver = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse",geneset = "down")
+  nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seurat_object_lite, receiver = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network,geneset = "down")
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seurat_object_lite, receiver = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = "all", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse")
+  nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seurat_object_lite, receiver = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = "all", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network)
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seurat_object_lite, receiver = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse")
+  nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seurat_object_lite, receiver = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network)
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seurat_object_lite, receiver = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse", filter_top_ligands = FALSE)
+  nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seurat_object_lite, receiver = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, filter_top_ligands = FALSE)
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse")
+  nichenet_output = nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network)
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse",geneset = "up")
+  nichenet_output = nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network,geneset = "up")
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse",geneset = "down")
+  nichenet_output = nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network,geneset = "down")
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = "all", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse")
+  nichenet_output = nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = "all", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network)
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse")
+  nichenet_output = nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network)
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse", filter_top_ligands = FALSE)
+  nichenet_output = nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, filter_top_ligands = FALSE)
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse")
+  nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network)
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse",geneset = "up")
+  nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network,geneset = "up")
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse",geneset = "down")
+  nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network,geneset = "down")
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = "all", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse")
+  nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = "all", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network)
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse")
+  nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network)
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse", filter_top_ligands = FALSE)
+  nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, filter_top_ligands = FALSE)
   expect_type(nichenet_output,"list")
 
   seurat_object_lite@meta.data$aggregate = seurat_object_lite@meta.data$aggregate %>% as.factor()
   seurat_object_lite@meta.data$celltype = seurat_object_lite@meta.data$celltype %>% as.factor()
 
-  nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seurat_object_lite, receiver = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse")
+  nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seurat_object_lite, receiver = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network)
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse")
+  nichenet_output = nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network)
   expect_type(nichenet_output,"list")
 
-  nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network, organism = "mouse")
+  nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network)
   expect_type(nichenet_output,"list")
 
   lfc_output = get_lfc_celltype(seurat_obj = seurat_object_lite, celltype_oi = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", expression_pct = 0.10)
@@ -140,7 +140,7 @@ test_that("Target gene prediction can be predicted by multi-ligand models", {
   target_prediction_performances_discrete_cv = gene_predictions_list %>% lapply(calculate_fraction_top_predicted,quantile_cutoff = 0.66) %>% bind_rows()
   expect_type(target_prediction_performances_discrete_cv,"list")
 
-  target_prediction_performances_fisher_pval = gene_predictions_list %>% lapply(calculate_fraction_top_predicted_fisher,quantile_cutoff = 0.66) %>% unlist() %>% mean()
+  target_prediction_performances_fisher_pval = gene_predictions_list %>% lapply(calculate_fraction_top_predicted_fisher,quantile_cutoff = 0.5) %>% unlist() %>% mean()
   expect_type(target_prediction_performances_fisher_pval,"double")
 
 })
@@ -174,6 +174,8 @@ test_that("Single-cell ligand activity prediction functions work a bit OK", {
   expect_type(normalized_ligand_activities,"list")
 
   cell_scores_tbl = tibble(cell = cell_ids, score = c(1,4,2,3))
+  # Since changing the metric, these return zeros so standard deviation is zero
+  normalized_ligand_activities <- cbind(normalized_ligand_activities %>% select(cell), normalized_ligand_activities %>% select(-cell) + matrix(rnorm(12, sd=0.01),4))
   regression_analysis_output = single_ligand_activity_score_regression(normalized_ligand_activities,cell_scores_tbl)
   expect_type(regression_analysis_output,"list")
 

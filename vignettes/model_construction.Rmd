@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-This vignette shows how ligand-target prior regulatory potential scores are inferred in the NicheNet framework. You can use the procedure shown here to develop your own model with inclusion of context-specific networks or removal of noisy irrelevant data sources. The networks at the basis of NicheNet can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758). 
+This vignette shows how ligand-target prior regulatory potential scores are inferred in the NicheNet framework. You can use the procedure shown here to develop your own model with inclusion of context-specific networks or removal of noisy irrelevant data sources. The networks at the basis of NicheNet can be downloaded from Zenodo [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7074291.svg)](https://doi.org/10.5281/zenodo.7074291). 
 
 # Background information about NicheNet's prior ligand-target model
 
@@ -50,9 +50,9 @@ library(tidyverse)
 # in the NicheNet framework, ligand-target links are predicted based on collected biological knowledge on ligand-receptor, signaling and gene regulatory interactions
 
 # The complete networks can be downloaded from Zenodo
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-sig_network = readRDS(url("https://zenodo.org/record/3260758/files/signaling_network.rds"))
-gr_network = readRDS(url("https://zenodo.org/record/3260758/files/gr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
+sig_network = readRDS(url("https://zenodo.org/record/7074291/files/signaling_network_human_21122021.rds"))
+gr_network = readRDS(url("https://zenodo.org/record/7074291/files/gr_network_human_21122021.rds"))
 ```
 
 ## Construct NicheNet's ligand-target model from unoptimized data source weights
@@ -67,7 +67,9 @@ The damping factor hyperparameter is the main parameter of the Personalized Page
 weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = sig_network, gr_network = gr_network, source_weights_df = source_weights_df)
 
 # downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
-weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
+                                          lr_sig_hub = hyperparameter_list %>% filter(parameter == "lr_sig_hub") %>% pull(avg_weight),
+                                          gr_hub = hyperparameter_list %>% filter(parameter == "gr_hub") %>% pull(avg_weight)) 
 ```
 
 Infer ligand-target regulatory potential scores based on the weighted integrated networks
@@ -75,7 +77,9 @@ Infer ligand-target regulatory potential scores based on the weighted integrated
 ```{r}
 # in this example we will calculate target gene regulatory potential scores for TNF and the ligand combination TNF+IL6
 ligands = list("TNF",c("TNF","IL6"))
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+                                                      damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
+                                                      ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
 
 Show some top target genes of the ligand TNF and the ligand combination TNF+IL6
@@ -94,15 +98,20 @@ Now, we will demonstrate how you can make an alternative model with the optimize
 
 ```{r}
 # aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
-weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = sig_network, gr_network = gr_network,source_weights_df = optimized_source_weights_df)
+weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = sig_network, gr_network = gr_network,
+                                                source_weights_df = optimized_source_weights_df %>% select(source, avg_weight) %>% rename(weight=avg_weight))
 
 # downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
-weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
+                                          lr_sig_hub = hyperparameter_list %>% filter(parameter == "lr_sig_hub") %>% pull(avg_weight),
+                                          gr_hub = hyperparameter_list %>% filter(parameter == "gr_hub") %>% pull(avg_weight)) 
 
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+                                                      damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
+                                                      ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
 
 Show some top target genes of the ligand TNF 
@@ -137,12 +146,16 @@ new_gr_network = gr_network %>% filter(source %in% data_sources_to_keep)
 weighted_networks = construct_weighted_networks(lr_network = new_lr_network, sig_network = new_sig_network, gr_network = new_gr_network, source_weights_df = new_source_weights_df)
 
 # downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
-weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
+                                          lr_sig_hub = hyperparameter_list %>% filter(parameter == "lr_sig_hub") %>% pull(avg_weight),
+                                          gr_hub = hyperparameter_list %>% filter(parameter == "gr_hub") %>% pull(avg_weight))
 
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+                                                      damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
+                                                      ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
 
 Show some top target genes of the ligand TNF 
@@ -168,12 +181,16 @@ new_gr_network = gr_network %>% filter(source %in% data_sources_to_keep)
 weighted_networks = construct_weighted_networks(lr_network = new_lr_network, sig_network = new_sig_network, gr_network = new_gr_network, source_weights_df = new_source_weights_df)
 
 # downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
-weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
+                                          lr_sig_hub = hyperparameter_list %>% filter(parameter == "lr_sig_hub") %>% pull(avg_weight),
+                                          gr_hub = hyperparameter_list %>% filter(parameter == "gr_hub") %>% pull(avg_weight))
 
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+                                                      damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
+                                                      ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
 
 Show some top target genes of the ligand TNF 
@@ -209,7 +226,7 @@ First, we will add this new data source to all other data sources. Because this 
 ```{r}
 new_sig_network = sig_network %>% bind_rows(ppi_network)
 
-new_network_weights_df = tibble(source = "harmonizome_hub_ppi", weight = 1)
+new_network_weights_df = tibble(source = "harmonizome_hub_ppi", avg_weight = 1, median_weight = 1)
 new_source_weights_df = optimized_source_weights_df %>% bind_rows(new_network_weights_df)
 ```
 
@@ -217,15 +234,20 @@ Now make this model
 
 ```{r}
 # aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
-weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = new_sig_network, gr_network = gr_network, source_weights_df = new_source_weights_df)
+weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = new_sig_network, gr_network = gr_network,
+                                                source_weights_df = new_source_weights_df %>% select(source, avg_weight) %>% rename(weight=avg_weight))
 
 # downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
-weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
+                                          lr_sig_hub = hyperparameter_list %>% filter(parameter == "lr_sig_hub") %>% pull(avg_weight),
+                                          gr_hub = hyperparameter_list %>% filter(parameter == "gr_hub") %>% pull(avg_weight))
 
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+                                                      damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
+                                                      ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
 
 Show some top target genes of the ligand TNF 
@@ -238,21 +260,26 @@ In some cases, it's possible that you want that your data source will be conside
 ```{r}
 new_sig_network = ppi_network
 
-new_network_weights_df = tibble(source = "harmonizome_hub_ppi", weight = 1)
+new_network_weights_df = tibble(source = "harmonizome_hub_ppi", avg_weight = 1, median_weight = 1)
 new_source_weights_df = optimized_source_weights_df %>% bind_rows(new_network_weights_df)
 ```
 
 ```{r}
 # aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
-weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = new_sig_network, gr_network = gr_network, source_weights_df = new_source_weights_df)
+weighted_networks = construct_weighted_networks(lr_network = lr_network, sig_network = new_sig_network, gr_network = gr_network,
+                                                source_weights_df = new_source_weights_df %>% select(source, avg_weight) %>% rename(weight=avg_weight))
 
 # downweigh the importance of signaling and gene regulatory hubs - use the optimized parameters of this
-weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks, lr_sig_hub = hyperparameter_list$lr_sig_hub, gr_hub = hyperparameter_list$gr_hub)
+weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
+                                          lr_sig_hub = hyperparameter_list %>% filter(parameter == "lr_sig_hub") %>% pull(avg_weight),
+                                          gr_hub = hyperparameter_list %>% filter(parameter == "gr_hub") %>% pull(avg_weight))
 
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR", damping_factor = hyperparameter_list$damping_factor, ltf_cutoff = hyperparameter_list$ltf_cutoff)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+                                                      damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
+                                                      ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
 
 Show some top target genes of the ligand TNF 

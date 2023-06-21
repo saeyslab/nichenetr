@@ -34,7 +34,7 @@ In this example, we will use data from Puram et al. to explore intercellular com
 
 For this analysis, we will first assess the ligand activity of each ligand, or in other words, we will assess how well each CAF-ligand can predict the p-EMT gene set compared to the background of expressed genes. This allows us to prioritize p-EMT-regulating ligands. Then, we will assess how well the prioritized ligands together can predict whether genes belong to the gene set of interest or not.
 
-The used ligand-target matrix and example expression data of interacting cells can be downloaded from Zenodo. [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
+The used [ligand-target matrix](https://doi.org/10.5281/zenodo.7074290) and example [expression data](https://doi.org/10.5281/zenodo.3260758) of interacting cells can be downloaded from Zenodo.
 
 ### Load packages required for this vignette
 
@@ -68,7 +68,7 @@ expressed_genes_malignant = expression[malignant_ids,] %>% apply(2,function(x){1
 ### Load the ligand-target model we want to use
 
 ```{r}
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final.rds"))
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 ```
 
@@ -92,7 +92,7 @@ head(background_expressed_genes)
 In a first step, we will define a set of potentially active ligands. As potentially active ligands, we will use ligands that are 1) expressed by CAFs and 2) can bind a (putative) receptor expressed by malignant cells. Putative ligand-receptor links were gathered from NicheNet's ligand-receptor data sources.
 
 ```{r}
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
 
 ligands = lr_network %>% pull(from) %>% unique()
 expressed_ligands = intersect(ligands,expressed_genes_CAFs)
@@ -110,29 +110,29 @@ Now perform the ligand activity analysis: infer how well NicheNet's ligand-targe
 ligand_activities = predict_ligand_activities(geneset = pemt_geneset, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
 ```
 
-Now, we want to rank the ligands based on their ligand activity. In our validation study, we showed that the pearson correlation between a ligand's target predictions and the observed transcriptional response was the most informative measure to define ligand activity. Therefore, we will rank the ligands based on their pearson correlation coefficient.
+Now, we want to rank the ligands based on their ligand activity. In our validation study, we showed that the AUPR between a ligand's target predictions and the observed transcriptional response was the most informative measure to define ligand activity. Therefore, we will rank the ligands based on their AUPR.
 
 ```{r}
-ligand_activities %>% arrange(-pearson)
-best_upstream_ligands = ligand_activities %>% top_n(20, pearson) %>% arrange(-pearson) %>% pull(test_ligand)
+ligand_activities %>% arrange(-aupr_corrected)
+best_upstream_ligands = ligand_activities %>% top_n(30, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand)
 head(best_upstream_ligands)
 ```
 
-For the top 20 ligands, we will now build a multi-ligand model that uses all top-ranked ligands to predict whether a gene belongs to the p-EMT program of not. This classification model will be trained via cross-validation and returns a probability for every gene. 
+For the top 30 ligands, we will now build a multi-ligand model that uses all top-ranked ligands to predict whether a gene belongs to the p-EMT program of not. This classification model will be trained via cross-validation and returns a probability for every gene. 
 
 ```{r}
 # change rounds and folds here, to two rounds to reduce time: normally: do multiple rounds
 k = 3 # 3-fold
 n = 2 # 2 rounds
 
-pemt_gene_predictions_top20_list = seq(n) %>% lapply(assess_rf_class_probabilities, folds = k, geneset = pemt_geneset, background_expressed_genes = background_expressed_genes, ligands_oi = best_upstream_ligands, ligand_target_matrix = ligand_target_matrix)
+pemt_gene_predictions_top30_list = seq(n) %>% lapply(assess_rf_class_probabilities, folds = k, geneset = pemt_geneset, background_expressed_genes = background_expressed_genes, ligands_oi = best_upstream_ligands, ligand_target_matrix = ligand_target_matrix)
 ```
 
 Evaluate now how well the target gene probabilies accord to the gene set assignments
 
 ```{r}
 # get performance: auroc-aupr-pearson
-target_prediction_performances_cv = pemt_gene_predictions_top20_list %>% lapply(classification_evaluation_continuous_pred_wrapper) %>% bind_rows() %>% mutate(round=seq(1:nrow(.)))
+target_prediction_performances_cv = pemt_gene_predictions_top30_list %>% lapply(classification_evaluation_continuous_pred_wrapper) %>% bind_rows() %>% mutate(round=seq(1:nrow(.)))
 ```
 
 What is the AUROC, AUPR and PCC of this model (averaged over cross-validation rounds)?
@@ -147,7 +147,7 @@ Evaluate now whether genes belonging to the gene set are more likely to be top-p
 
 ```{r}
 # get performance: how many p-EMT genes and non-p-EMT-genes among top 5% predicted targets
-target_prediction_performances_discrete_cv = pemt_gene_predictions_top20_list %>% lapply(calculate_fraction_top_predicted, quantile_cutoff = 0.95) %>% bind_rows() %>% ungroup() %>% mutate(round=rep(1:length(pemt_gene_predictions_top20_list), each = 2))
+target_prediction_performances_discrete_cv = pemt_gene_predictions_top30_list %>% lapply(calculate_fraction_top_predicted, quantile_cutoff = 0.95) %>% bind_rows() %>% ungroup() %>% mutate(round=rep(1:length(pemt_gene_predictions_top30_list), each = 2))
 ```
 
 What is the fraction of p-EMT genes that belongs to the top 5% predicted targets?
@@ -163,7 +163,7 @@ target_prediction_performances_discrete_cv %>% filter(!true_target) %>% .$fracti
 We see that the p-EMT genes are enriched in the top-predicted target genes. To test this, we will now apply a Fisher's exact test for every cross-validation round and report the average p-value.
 
 ```{r}
-target_prediction_performances_discrete_fisher = pemt_gene_predictions_top20_list %>% lapply(calculate_fraction_top_predicted_fisher, quantile_cutoff = 0.95) 
+target_prediction_performances_discrete_fisher = pemt_gene_predictions_top30_list %>% lapply(calculate_fraction_top_predicted_fisher, quantile_cutoff = 0.95) 
 target_prediction_performances_discrete_fisher %>% unlist() %>% mean()
 ```
 
@@ -171,7 +171,7 @@ Finally, we will look at which p-EMT genes are well-predicted in every cross-val
 
 ```{r}
 # get top predicted genes
-top_predicted_genes = seq(length(pemt_gene_predictions_top20_list)) %>% lapply(get_top_predicted_genes,pemt_gene_predictions_top20_list) %>% reduce(full_join, by = c("gene","true_target"))
+top_predicted_genes = seq(length(pemt_gene_predictions_top30_list)) %>% lapply(get_top_predicted_genes,pemt_gene_predictions_top30_list) %>% reduce(full_join, by = c("gene","true_target"))
 top_predicted_genes %>% filter(true_target)
 ```
 

@@ -4,7 +4,7 @@
 \alias{nichenet_seuratobj_aggregate_cluster_de}
 \title{Perform NicheNet analysis on Seurat object: explain DE between two cell clusters from separate conditions}
 \usage{
-nichenet_seuratobj_aggregate_cluster_de(seurat_obj, receiver_affected, receiver_reference, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 20,top_n_targets = 200, cutoff_visualization = 0.33,organism = "human",verbose = TRUE, assay_oi = NULL)
+nichenet_seuratobj_aggregate_cluster_de(seurat_obj, receiver_affected, receiver_reference, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 30,top_n_targets = 200, cutoff_visualization = 0.33,verbose = TRUE, assay_oi = NULL)
 }
 \arguments{
 \item{seurat_obj}{Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.}
@@ -21,11 +21,11 @@ nichenet_seuratobj_aggregate_cluster_de(seurat_obj, receiver_affected, receiver_
 
 \item{sender}{Determine the potential sender cells. Name of cluster identity/identities of cells that presumably affect expression in the receiver cell type. In case you want to look at all possible sender cell types in the data, you can  give this argument the value "all". "all" indicates thus that all cell types in the dataset will be considered as possible sender cells. As final option, you could give this argument the value "undefined"."undefined" won't look at ligands expressed by sender cells, but at all ligands for which a corresponding receptor is expressed. This could be useful if the presumably active sender cell is not profiled. Default: "all".}
 
-\item{ligand_target_matrix}{The NicheNet ligand-target matrix denoting regulatory potential scores between ligands and targets (ligands in columns).}
+\item{ligand_target_matrix}{The NicheNet ligand-target matrix of the organism of interest denoting regulatory potential scores between ligands and targets (ligands in columns).}
 
-\item{lr_network}{The ligand-receptor network (columns that should be present: $from, $to).}
+\item{lr_network}{The ligand-receptor network (columns that should be present: $from, $to) of the organism of interest.}
 
-\item{weighted_networks}{The NicheNet weighted networks denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.}
+\item{weighted_networks}{The NicheNet weighted networks of the organism of interest denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.}
 
 \item{expression_pct}{To determine ligands and receptors expressed by sender and receiver cells, we consider genes expressed if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10}
 
@@ -35,13 +35,11 @@ nichenet_seuratobj_aggregate_cluster_de(seurat_obj, receiver_affected, receiver_
 
 \item{filter_top_ligands}{Indicate whether output tables for ligand-target and ligand-receptor networks should be done for a filtered set of top ligands (TRUE) or for all ligands (FALSE). Default: TRUE.}
 
-\item{top_n_ligands}{Indicate how many ligands should be extracted as top-ligands after ligand activity analysis. Only for these ligands, target genes and receptors will be returned. Default: 20.}
+\item{top_n_ligands}{Indicate how many ligands should be extracted as top-ligands after ligand activity analysis. Only for these ligands, target genes and receptors will be returned. Default: 30.}
 
 \item{top_n_targets}{To predict active, affected targets of the prioritized ligands, consider only DE genes if they also belong to the a priori top n ("top_n_targets") targets of a ligand. Default = 200.}
 
 \item{cutoff_visualization}{Because almost no ligand-target scores have a regulatory potential score of 0, we clarify the heatmap visualization by giving the links with the lowest scores a score of 0. The cutoff_visualization paramter indicates this fraction of links that are given a score of zero. Default = 0.33.}
-
-\item{organism}{Organism from which cells originate."human" (default) or "mouse".}
 
 \item{verbose}{Print out the current analysis stage. Default: TRUE.}
 
@@ -61,9 +59,6 @@ $ligand_expression_dotplot: expression dotplot of the top ligands;
 $ligand_receptor_matrix: matrix of ligand-receptor interactions;
 $ligand_receptor_heatmap: heatmap showing ligand-receptor interactions;
 $ligand_receptor_df: data frame of ligand-receptor interactions;
-$ligand_receptor_matrix_bonafide: ligand-receptor matrix, after filtering out interactions predicted by PPI;
-$ligand_receptor_heatmap_bonafide: heatmap of ligand-receptor interactions after filtering out interactions predicted by PPI;
-$ligand_receptor_df_bonafide: data frame of ligand-receptor interactions, after filtering out interactions predicted by PPI;
 $geneset_oi: a vector containing the set of genes used as input for the ligand activity analysis;
 $background_expressed_genes: the background of genes to which the geneset will be compared in the ligand activity analysis.
 }
@@ -73,9 +68,9 @@ $background_expressed_genes: the background of genes to which the geneset will b
 \examples{
 \dontrun{
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
+weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
 nichenet_seuratobj_aggregate_cluster_de(seurat_obj = seuratObj, receiver_affected = "CD8 T", receiver_reference = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", sender = "Mono", ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks)
 }
 

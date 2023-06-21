@@ -3,9 +3,10 @@
 #' @description \code{scale_quantile_adapted} Normalize values in a vector by quantile scaling. Add a pseudovalue of 0.001 to avoid having a score of 0 for the lowest value.
 #'
 #' @usage
-#' scale_quantile_adapted(x)
+#' scale_quantile_adapted(x, outlier_cutoff = 0)
 #'
 #' @param x A numeric vector.
+#' @param outlier_cutoff The quantile cutoff for outliers (default 0).
 #'
 #' @return A quantile-scaled numeric vector.
 #'
@@ -16,8 +17,8 @@
 #'
 #' @export
 #'
-scale_quantile_adapted = function(x){
-  y = scale_quantile(x,outlier_cutoff = 0)
+scale_quantile_adapted = function(x, outlier_cutoff = 0){
+  y = scale_quantile(x, outlier_cutoff = outlier_cutoff)
   y = y + 0.001
   return(y)
 }
@@ -384,7 +385,7 @@ process_niche_de = function(DE_table, niches, type, expression_pct){
 #'
 #' @param DE_sender_processed Output of `process_niche_de` with `type = receiver`
 #' @param DE_receiver_processed Output of `process_niche_de` with `type = receiver`
-#' @param lr_network Ligand-Receptor Network in tibble format: ligand, receptor, bonafide as columns
+#' @param lr_network Ligand-Receptor Network in tibble format: ligand, receptor as columns
 #' @param specificity_score Defines which score will be used to prioritze ligand-receptor pairs and consider their differential expression. Default and recommended: "min_lfc".
 #' "min_lfc" looks at the minimal logFC of the ligand/receptor between the celltype of interest and all the other celltypes.
 #' Alternatives: "mean_lfc", "min_score", and "mean_score". Mean uses the average/mean instead of minimum.
@@ -587,7 +588,7 @@ get_ligand_activities_targets = function(niche_geneset_list, ligand_target_matri
     print(paste0("Calculate Ligand activities for: ",receiver_oi))
 
     ligand_activities = nichenetr::predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = ligands)
-    ligand_activities = ligand_activities  %>% dplyr::rename(ligand = test_ligand, activity = pearson) %>% dplyr::select(-aupr, -auroc) %>% filter(!is.na(activity))
+    ligand_activities = ligand_activities %>% dplyr::rename(ligand = test_ligand, activity = aupr_corrected) %>% dplyr::select(-pearson, -auroc, -aupr) %>% filter(!is.na(activity))
     ligand_target_df = ligand_activities$ligand %>% unique() %>% lapply(nichenetr::get_weighted_ligand_target_links, geneset_oi, ligand_target_matrix, top_n_target) %>% dplyr::bind_rows()  %>% dplyr::rename(ligand_target_weight = weight)
     ligand_activities = ligand_activities %>% dplyr::inner_join(ligand_target_df, by = c("ligand")) %>% dplyr::mutate(receiver = receiver_oi) %>% dplyr::group_by(receiver) %>% dplyr::mutate(activity_normalized = nichenetr::scaling_zscore(activity))
 
@@ -777,8 +778,7 @@ get_non_spatial_de = function(niches, spatial_info, type, lr_network){
 # "ligand_scaled_receptor_expression_fraction" = 1,
 # "scaled_receptor_score_spatial" = 0,
 # "scaled_activity" = 0,
-# "scaled_activity_normalized" = 1,
-# "bona_fide" = 1)
+# "scaled_activity_normalized" = 1)
 #'
 #' @return A list containing a prioritization table for ligand-receptor interactions, and one for ligand-target interactions
 #'
@@ -794,8 +794,7 @@ get_non_spatial_de = function(niches, spatial_info, type, lr_network){
 # "ligand_scaled_receptor_expression_fraction" = 1,
 # "scaled_receptor_score_spatial" = 0,
 # "scaled_activity" = 0,
-# "scaled_activity_normalized" = 1,
-# "bona_fide" = 1)
+# "scaled_activity_normalized" = 1)
 #' output_nichenet_analysis = list(DE_sender_receiver = DE_sender_receiver, ligand_scaled_receptor_expression_fraction_df = ligand_scaled_receptor_expression_fraction_df, sender_spatial_DE_processed = sender_spatial_DE_processed, receiver_spatial_DE_processed = receiver_spatial_DE_processed,
 # ligand_activities_targets = ligand_activities_targets, DE_receiver_processed_targets = DE_receiver_processed_targets, exprs_tbl_ligand = exprs_tbl_ligand,  exprs_tbl_receptor = exprs_tbl_receptor, exprs_tbl_target = exprs_tbl_target)
 #' prioritization_tables = get_prioritization_tables(output_nichenet_analysis, prioritizing_weights)
@@ -816,13 +815,12 @@ get_prioritization_tables = function(output_nichenet_analysis, prioritizing_weig
 
   # reorder the columns
 
-  combined_information = combined_information %>% mutate(ligand_receptor = paste(ligand, receptor, sep = "--"))  %>%  mutate(bonafide_score = 1) %>%  mutate_cond(bonafide == FALSE, bonafide_score = 0.5)
-
+  combined_information = combined_information %>% mutate(ligand_receptor = paste(ligand, receptor, sep = "--"))
   combined_information = combined_information %>% select(
-    niche, receiver, sender, ligand_receptor, ligand, receptor, bonafide, target,
+    niche, receiver, sender, ligand_receptor, ligand, receptor, target,
     ligand_score,ligand_significant, ligand_present, ligand_expression, ligand_expression_scaled, ligand_fraction, ligand_score_spatial,
     receptor_score, receptor_significant, receptor_present, receptor_expression, receptor_expression_scaled, receptor_fraction, receptor_score_spatial,
-    ligand_scaled_receptor_expression_fraction, avg_score_ligand_receptor, bonafide_score,
+    ligand_scaled_receptor_expression_fraction, avg_score_ligand_receptor,
     target_score, target_significant, target_present, target_expression, target_expression_scaled, target_fraction, ligand_target_weight,
     activity, activity_normalized,
     scaled_ligand_score, scaled_ligand_expression_scaled, scaled_receptor_score, scaled_receptor_expression_scaled, scaled_avg_score_ligand_receptor,
@@ -848,11 +846,10 @@ get_prioritization_tables = function(output_nichenet_analysis, prioritizing_weig
                        (prioritizing_weights["scaled_activity"] * scaled_activity) +
                        (prioritizing_weights["scaled_activity_normalized"] * scaled_activity_normalized) +
                        (prioritizing_weights["ligand_fraction"] * scaled_ligand_fraction_adapted ) +
-                       (prioritizing_weights["receptor_fraction"] * scaled_receptor_fraction_adapted  ) +
-                       (prioritizing_weights["bona_fide"] * bonafide_score)
+                       (prioritizing_weights["receptor_fraction"] * scaled_receptor_fraction_adapted  )
                     )* (1/length(prioritizing_weights))) %>% dplyr::arrange(-prioritization_score)
 
-  prioritization_tbl_ligand_receptor = combined_information_prioritized %>% select(niche, receiver, sender, ligand_receptor, ligand, receptor, bonafide,
+  prioritization_tbl_ligand_receptor = combined_information_prioritized %>% select(niche, receiver, sender, ligand_receptor, ligand, receptor,
                                                                                    ligand_score,ligand_significant, ligand_present, ligand_expression, ligand_expression_scaled, ligand_fraction, ligand_score_spatial,
                                                                                    receptor_score, receptor_significant, receptor_present, receptor_expression, receptor_expression_scaled, receptor_fraction, receptor_score_spatial,
                                                                                    ligand_scaled_receptor_expression_fraction, avg_score_ligand_receptor,
@@ -862,7 +859,7 @@ get_prioritization_tables = function(output_nichenet_analysis, prioritizing_weig
                                                                                    scaled_ligand_fraction_adapted, scaled_receptor_fraction_adapted,
                                                                                    scaled_activity, scaled_activity_normalized,
                                                                                    prioritization_score) %>% distinct()
-  prioritization_tbl_ligand_target = combined_information_prioritized %>% select(niche, receiver, sender, ligand_receptor, ligand, receptor, bonafide, target,
+  prioritization_tbl_ligand_target = combined_information_prioritized %>% select(niche, receiver, sender, ligand_receptor, ligand, receptor, target,
                                                                                  target_score, target_significant, target_present, target_expression, target_expression_scaled, target_fraction, ligand_target_weight,
                                                                                  activity, activity_normalized, scaled_activity, scaled_activity_normalized, prioritization_score) %>% distinct()
 

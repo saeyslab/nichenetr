@@ -29,9 +29,9 @@ could lead to wrong interpretation of the results.
 As example expression data of interacting cells, we will use mouse
 NICHE-seq data from Medaglia et al. to explore intercellular
 communication in the T cell area in the inguinal lymph node before and
-72 hours after lymphocytic choriomeningitis virus (LCMV) infection \[See
-@medaglia\_spatial\_2017\]. We will NicheNet to explore immune cell
-crosstalk in response to this LCMV infection.
+72 hours after lymphocytic choriomeningitis virus (LCMV) infection (See
+Medaglia et al. 2017). We will NicheNet to explore immune cell crosstalk
+in response to this LCMV infection.
 
 In this dataset, differential expression is observed between CD8 T cells
 in steady-state and CD8 T cells after LCMV infection. NicheNet can be
@@ -41,12 +41,10 @@ regulate and induce these observed gene expression changes. NicheNet
 will specifically prioritize ligands from these immune cells and their
 target genes that change in expression upon LCMV infection.
 
-The used NicheNet networks, ligand-target matrix and example expression
-data of interacting cells can be downloaded from Zenodo. The NicheNet
-networks and ligand-target matrix at
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3260758.svg)](https://doi.org/10.5281/zenodo.3260758)
-and the Seurat object of the processed NICHE-seq single-cell data at
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3531889.svg)](https://doi.org/10.5281/zenodo.3531889).
+The used [ligand-target matrix](https://doi.org/10.5281/zenodo.7074290)
+and the [Seurat object of the processed NICHE-seq single-cell
+data](https://doi.org/10.5281/zenodo.3531889) can be downloaded from
+Zenodo.
 
 # Prepare NicheNet analysis
 
@@ -67,51 +65,51 @@ packages after the others.
 ### Read in NicheNet’s ligand-target prior model, ligand-receptor network and weighted integrated networks:
 
 ``` r
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
-##                 CXCL1        CXCL2        CXCL3        CXCL5         PPBP
-## A1BG     3.534343e-04 4.041324e-04 3.729920e-04 3.080640e-04 2.628388e-04
-## A1BG-AS1 1.650894e-04 1.509213e-04 1.583594e-04 1.317253e-04 1.231819e-04
-## A1CF     5.787175e-04 4.596295e-04 3.895907e-04 3.293275e-04 3.211944e-04
-## A2M      6.027058e-04 5.996617e-04 5.164365e-04 4.517236e-04 4.590521e-04
-## A2M-AS1  8.898724e-05 8.243341e-05 7.484018e-05 4.912514e-05 5.120439e-05
+##               2300002M23Rik 2610528A11Rik 9530003J23Rik            a          A2m
+## 0610005C13Rik  0.000000e+00  0.000000e+00  1.311297e-05 0.000000e+00 1.390053e-05
+## 0610009B22Rik  0.000000e+00  0.000000e+00  1.269301e-05 0.000000e+00 1.345536e-05
+## 0610009L18Rik  8.872902e-05  4.977197e-05  2.581909e-04 7.570125e-05 9.802264e-05
+## 0610010F05Rik  2.194046e-03  1.111556e-03  3.142374e-03 1.631658e-03 2.585820e-03
+## 0610010K14Rik  2.271606e-03  9.360769e-04  3.546140e-03 1.697713e-03 2.632082e-03
 
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
+lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
 head(lr_network)
-## # A tibble: 6 x 4
-##   from  to    source         database
-##   <chr> <chr> <chr>          <chr>   
-## 1 CXCL1 CXCR2 kegg_cytokines kegg    
-## 2 CXCL2 CXCR2 kegg_cytokines kegg    
-## 3 CXCL3 CXCR2 kegg_cytokines kegg    
-## 4 CXCL5 CXCR2 kegg_cytokines kegg    
-## 5 PPBP  CXCR2 kegg_cytokines kegg    
-## 6 CXCL6 CXCR2 kegg_cytokines kegg
+## # A tibble: 6 × 4
+##   from          to    database source  
+##   <chr>         <chr> <chr>    <chr>   
+## 1 2300002M23Rik Ddr1  omnipath omnipath
+## 2 2610528A11Rik Gpr15 omnipath omnipath
+## 3 9530003J23Rik Itgal omnipath omnipath
+## 4 a             Atrn  omnipath omnipath
+## 5 a             F11r  omnipath omnipath
+## 6 a             Mc1r  omnipath omnipath
 
-weighted_networks = readRDS(url("https://zenodo.org/record/3260758/files/weighted_networks.rds"))
+weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
 head(weighted_networks$lr_sig) # interactions and their weights in the ligand-receptor + signaling network
-## # A tibble: 6 x 3
-##   from  to     weight
-##   <chr> <chr>   <dbl>
-## 1 A1BG  ABCC6  0.422 
-## 2 A1BG  ACE2   0.101 
-## 3 A1BG  ADAM10 0.0970
-## 4 A1BG  AGO1   0.0525
-## 5 A1BG  AKT1   0.0855
-## 6 A1BG  ANXA7  0.457
+## # A tibble: 6 × 3
+##   from          to     weight
+##   <chr>         <chr>   <dbl>
+## 1 0610010F05Rik App    0.110 
+## 2 0610010F05Rik Cat    0.0673
+## 3 0610010F05Rik H1f2   0.0660
+## 4 0610010F05Rik Lrrc49 0.0829
+## 5 0610010F05Rik Nicn1  0.0864
+## 6 0610010F05Rik Srpk1  0.123
 head(weighted_networks$gr) # interactions and their weights in the gene regulatory network
-## # A tibble: 6 x 3
-##   from  to     weight
-##   <chr> <chr>   <dbl>
-## 1 A1BG  A2M    0.0294
-## 2 AAAS  GFAP   0.0290
-## 3 AADAC CYP3A4 0.0422
-## 4 AADAC IRF8   0.0275
-## 5 AATF  ATM    0.0330
-## 6 AATF  ATR    0.0355
+## # A tibble: 6 × 3
+##   from          to            weight
+##   <chr>         <chr>          <dbl>
+## 1 0610010K14Rik 0610010K14Rik 0.121 
+## 2 0610010K14Rik 2510039O18Rik 0.121 
+## 3 0610010K14Rik 2610021A01Rik 0.0256
+## 4 0610010K14Rik 9130401M01Rik 0.0263
+## 5 0610010K14Rik Alg1          0.127 
+## 6 0610010K14Rik Alox12        0.128
 ```
 
-### Read in the expression data of interacting cells:
+### Read in the expression data of interacting cells
 
 ``` r
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
@@ -167,8 +165,9 @@ method to calculate the differential expression is the standard Seurat
 Wilcoxon test.
 
 The number of top-ranked ligands that are further used to predict active
-target genes and construct an active ligand-receptor network is 20 by
-default.
+target genes and construct an active ligand-receptor network is 30 by
+default, but we will only choose the top 20 to not overcrowd the circos
+plot.
 
 To perform the NicheNet analysis with these specifications, run the
 following:
@@ -183,13 +182,15 @@ nichenet_output = nichenet_seuratobj_aggregate(
   receiver = "CD8 T", 
   condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", 
   sender = sender_celltypes, 
-  ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks, organism = "mouse")
+  ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks,
+  top_n_ligands = 20)
 ## [1] "Read in and process NicheNet's networks"
 ## [1] "Define expressed ligands and receptors in receiver and sender cells"
 ## [1] "Perform DE analysis in receiver cell"
 ## [1] "Perform NicheNet ligand activity analysis"
 ## [1] "Infer active target genes of the prioritized ligands"
 ## [1] "Infer receptors of the prioritized ligands"
+## [1] "Perform DE analysis in sender cells"
 ```
 
 ### Interpret the NicheNet analysis output
@@ -202,20 +203,20 @@ command:
 
 ``` r
 nichenet_output$ligand_activities
-## # A tibble: 44 x 6
-##    test_ligand auroc  aupr pearson  rank bona_fide_ligand
-##    <chr>       <dbl> <dbl>   <dbl> <dbl> <lgl>           
-##  1 Ebi3        0.638 0.234  0.197      1 FALSE           
-##  2 Il15        0.582 0.163  0.0961     2 TRUE            
-##  3 Crlf2       0.549 0.163  0.0758     3 FALSE           
-##  4 App         0.499 0.141  0.0655     4 TRUE            
-##  5 Tgfb1       0.494 0.140  0.0558     5 TRUE            
-##  6 Ptprc       0.536 0.149  0.0554     6 TRUE            
-##  7 H2-M3       0.525 0.157  0.0528     7 TRUE            
-##  8 Icam1       0.543 0.142  0.0486     8 TRUE            
-##  9 Cxcl10      0.531 0.141  0.0408     9 TRUE            
-## 10 Adam17      0.517 0.137  0.0359    10 TRUE            
-## # ... with 34 more rows
+## # A tibble: 70 × 6
+##    test_ligand auroc  aupr aupr_corrected pearson  rank
+##    <chr>       <dbl> <dbl>          <dbl>   <dbl> <dbl>
+##  1 Ebi3        0.658 0.381          0.235   0.293     1
+##  2 Ptprc       0.642 0.305          0.159   0.161     2
+##  3 H2-M3       0.610 0.287          0.142   0.181     3
+##  4 H2-M2       0.614 0.272          0.126   0.147     5
+##  5 H2-T10      0.614 0.272          0.126   0.147     5
+##  6 H2-T22      0.614 0.272          0.126   0.147     5
+##  7 H2-T23      0.614 0.271          0.126   0.147     7
+##  8 H2-K1       0.607 0.258          0.113   0.132     8
+##  9 H2-Q4       0.606 0.258          0.112   0.131    10
+## 10 H2-Q6       0.606 0.258          0.112   0.131    10
+## # … with 60 more rows
 ```
 
 These ligands are expressed by one or more of the input sender cells. To
@@ -300,14 +301,15 @@ names(sender_ligand_assignment)
 
 The top ligands seem to be most strongly expressed by B cells, NK cells,
 monocytes and DCs. We will know also look at which ligands are common
-across multiple cell types (= those that are specific to &gt; 1 cell
-type, or those that were not assigned to a cell type in the previous
-block of code)
+across multiple cell types (= those that are specific to \> 1 cell type,
+or those that were not assigned to a cell type in the previous block of
+code)
 
 Determine now which prioritized ligands are expressed by CAFs and or
 endothelial cells
 
 ``` r
+
 all_assigned_ligands = sender_ligand_assignment %>% lapply(function(x){names(x)}) %>% unlist()
 unique_ligands = all_assigned_ligands %>% table() %>% .[. == 1] %>% names()
 general_ligands = nichenet_output$top_ligands %>% setdiff(unique_ligands)
@@ -598,3 +600,18 @@ dev.off()
 ## png 
 ##   2
 ```
+### References
+
+<div id="refs" class="references csl-bib-body hanging-indent">
+
+<div id="ref-medaglia_spatial_2017" class="csl-entry">
+
+Medaglia, Chiara, Amir Giladi, Liat Stoler-Barak, Marco De Giovanni,
+Tomer Meir Salame, Adi Biram, Eyal David, et al. 2017. “Spatial
+Reconstruction of Immune Niches by Combining Photoactivatable Reporters
+and <span class="nocase">scRNA</span>-Seq.” *Science*, December,
+eaao4277. <https://doi.org/10.1126/science.aao4277>.
+
+</div>
+
+</div>
