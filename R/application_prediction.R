@@ -384,11 +384,13 @@ calculate_fraction_top_predicted = function(affected_gene_predictions, quantile_
 calculate_fraction_top_predicted_fisher = function(affected_gene_predictions, quantile_cutoff = 0.95, p_value_output = TRUE){
   predicted_positive = affected_gene_predictions %>% arrange(-prediction) %>% filter(prediction >= quantile(prediction,quantile_cutoff)) %>% group_by(response) %>% count() %>% rename(positive_prediction = n)
   all = affected_gene_predictions %>% arrange(-prediction)  %>% group_by(response) %>% count()
-  results_df = inner_join(all,predicted_positive, by = "response") %>% mutate(fraction_positive_predicted = positive_prediction/n)
+  results_df = left_join(all, predicted_positive, by="response") %>% mutate(positive_prediction = replace_na(positive_prediction, 0))
+
   tp = results_df %>% filter(response == TRUE) %>% .$positive_prediction
   fp = results_df %>% filter(response == FALSE) %>% .$positive_prediction
   fn = (results_df %>% filter(response == TRUE) %>% .$n) - (results_df %>% filter(response == TRUE) %>% .$positive_prediction)
   tn = (results_df %>% filter(response == FALSE) %>% .$n) - (results_df %>% filter(response == FALSE) %>% .$positive_prediction)
+
   contingency_table = matrix(c(tp,fp,fn,tn), nrow = 2,dimnames = list(c("geneset", "background"), c("top-predicted", "no-top-predicted")))
   summary = fisher.test(contingency_table, alternative = "greater")
   if(p_value_output == TRUE){

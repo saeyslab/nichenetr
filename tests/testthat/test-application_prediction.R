@@ -140,7 +140,7 @@ test_that("Target gene prediction can be predicted by multi-ligand models", {
   target_prediction_performances_discrete_cv = gene_predictions_list %>% lapply(calculate_fraction_top_predicted,quantile_cutoff = 0.66) %>% bind_rows()
   expect_type(target_prediction_performances_discrete_cv,"list")
 
-  target_prediction_performances_fisher_pval = gene_predictions_list %>% lapply(calculate_fraction_top_predicted_fisher,quantile_cutoff = 0.5) %>% unlist() %>% mean()
+  target_prediction_performances_fisher_pval = gene_predictions_list %>% lapply(calculate_fraction_top_predicted_fisher,quantile_cutoff = 0.95) %>% unlist() %>% mean()
   expect_type(target_prediction_performances_fisher_pval,"double")
 
 })
