@@ -199,7 +199,7 @@ DE_table_all = Idents(seuratObj) %>% levels() %>% intersect(sender_celltypes) %>
          expression_pct = 0.10, celltype_col = NULL) %>% reduce(full_join) 
 DE_table_all[is.na(DE_table_all)] = 0
 
-order_ligands <- intersect(make.names(best_upstream_ligands), colnames(active_ligand_target_links)) %>% rev()
+order_ligands <- make.names(best_upstream_ligands) %>% rev()
 
 # ligand activity heatmap
 ligand_aupr_matrix <- ligand_activities %>% select(aupr_corrected) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand) %>%

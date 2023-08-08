@@ -264,25 +264,24 @@ prior_table <- generate_prioritization_tables(processed_expr_table,
 
 prior_table 
 ## # A tibble: 858 × 51
-##    sender receiver ligand receptor lfc_ligand lfc_receptor ligand_receptor_lfc_avg p_val_ligand p_adj_ligand p_val_receptor p_adj_receptor pct_expressed_s… pct_expressed_r… avg_ligand
-##    <chr>  <chr>    <chr>  <chr>         <dbl>        <dbl>                   <dbl>        <dbl>        <dbl>          <dbl>          <dbl>            <dbl>            <dbl>      <dbl>
-##  1 NK     CD8.T    Ptprc  Dpp4          0.527       0.194                    0.527    1.14e-  7    1.54e-  3      1.84e-  4      1   e+  0            0.832            0.133     16.6  
-##  2 Mono   CD8.T    Cxcl10 Dpp4          4.23        0.194                    4.23     1.34e- 80    1.82e- 76      1.84e-  4      1   e+  0            0.744            0.133     54.8  
-##  3 Mono   CD8.T    Ebi3   Il27ra        0.503       0.0580                   0.503    1.14e- 52    1.54e- 48      7.60e-  4      1   e+  0            0.122            0.139      0.546
-##  4 Mono   CD8.T    Cxcl9  Dpp4          4.12        0.194                    4.12     2.18e-121    2.95e-117      1.84e-  4      1   e+  0            0.456            0.133     23.8  
-##  5 B      CD8.T    H2-M3  Cd8a          0.372       1.88                     0.372    1.49e-  3    1   e+  0      1.97e-266      2.67e-262            0.152            0.669      1.59 
-##  6 Mono   CD8.T    Ptprc  Dpp4          0.473       0.194                    0.473    6.18e-  6    8.37e-  2      1.84e-  4      1   e+  0            0.844            0.133     14.9  
-##  7 DC     CD8.T    Ccl22  Dpp4          2.57        0.194                    2.57     3.59e-298    4.87e-294      1.84e-  4      1   e+  0            0.389            0.133      6.37 
-##  8 DC     CD8.T    H2-M2  Cd8a          3.59        1.88                     3.59     0            0              1.97e-266      2.67e-262            0.556            0.669      9.73 
-##  9 DC     CD8.T    H2-D1  Cd8a          1.21        1.88                     1.21     3.65e-  8    4.94e-  4      1.97e-266      2.67e-262            1                0.669     60.7  
-## 10 Mono   CD8.T    Cxcl11 Dpp4          2.17        0.194                    2.17     4.27e-130    5.78e-126      1.84e-  4      1   e+  0            0.256            0.133      4.37 
-## # … with 848 more rows, and 37 more variables: avg_receptor <dbl>, ligand_receptor_prod <dbl>, lfc_pval_ligand <dbl>, p_val_ligand_adapted <dbl>, scaled_lfc_ligand <dbl>,
-## #   scaled_p_val_ligand <dbl>, scaled_lfc_pval_ligand <dbl>, scaled_p_val_ligand_adapted <dbl>, activity <dbl>, rank <dbl>, activity_zscore <dbl>, scaled_activity <dbl>,
-## #   lfc_pval_receptor <dbl>, p_val_receptor_adapted <dbl>, scaled_lfc_receptor <dbl>, scaled_p_val_receptor <dbl>, scaled_lfc_pval_receptor <dbl>,
-## #   scaled_p_val_receptor_adapted <dbl>, scaled_avg_exprs_ligand <dbl>, scaled_avg_exprs_receptor <dbl>, lfc_ligand_group <dbl>, p_val_ligand_group <dbl>,
-## #   lfc_pval_ligand_group <dbl>, p_val_ligand_adapted_group <dbl>, scaled_lfc_ligand_group <dbl>, scaled_p_val_ligand_group <dbl>, scaled_lfc_pval_ligand_group <dbl>,
-## #   scaled_p_val_ligand_adapted_group <dbl>, lfc_receptor_group <dbl>, p_val_receptor_group <dbl>, lfc_pval_receptor_group <dbl>, p_val_receptor_adapted_group <dbl>,
-## #   scaled_lfc_receptor_group <dbl>, scaled_p_val_receptor_group <dbl>, scaled_lfc_pval_receptor_group <dbl>, scaled_p_val_receptor_adapted_group <dbl>, prioritization_score <dbl>
+##    sender receiver ligand receptor lfc_ligand lfc_receptor ligand_receptor_lfc_avg p_val_ligand p_adj_ligand p_val_receptor p_adj_receptor pct_expressed_send… pct_expressed_r… avg_ligand avg_receptor ligand_receptor…
+##    <chr>  <chr>    <chr>  <chr>         <dbl>        <dbl>                   <dbl>        <dbl>        <dbl>          <dbl>          <dbl>               <dbl>            <dbl>      <dbl>        <dbl>            <dbl>
+##  1 NK     CD8.T    Ptprc  Dpp4          0.527       0.194                    0.361    1.14e-  7    1.54e-  3      1.84e-  4      1   e+  0               0.832            0.133     16.6           1.35           22.5  
+##  2 Mono   CD8.T    Cxcl10 Dpp4          4.23        0.194                    2.21     1.34e- 80    1.82e- 76      1.84e-  4      1   e+  0               0.744            0.133     54.8           1.35           74.1  
+##  3 Mono   CD8.T    Ebi3   Il27ra        0.503       0.0580                   0.281    1.14e- 52    1.54e- 48      7.60e-  4      1   e+  0               0.122            0.139      0.546         1.13            0.619
+##  4 Mono   CD8.T    Cxcl9  Dpp4          4.12        0.194                    2.16     2.18e-121    2.95e-117      1.84e-  4      1   e+  0               0.456            0.133     23.8           1.35           32.1  
+##  5 B      CD8.T    H2-M3  Cd8a          0.372       1.88                     1.13     1.49e-  3    1   e+  0      1.97e-266      2.67e-262               0.152            0.669      1.59         10.7            17.0  
+##  6 Mono   CD8.T    Ptprc  Dpp4          0.473       0.194                    0.334    6.18e-  6    8.37e-  2      1.84e-  4      1   e+  0               0.844            0.133     14.9           1.35           20.1  
+##  7 DC     CD8.T    Ccl22  Dpp4          2.57        0.194                    1.38     3.59e-298    4.87e-294      1.84e-  4      1   e+  0               0.389            0.133      6.37          1.35            8.61 
+##  8 DC     CD8.T    H2-M2  Cd8a          3.59        1.88                     2.73     0            0              1.97e-266      2.67e-262               0.556            0.669      9.73         10.7           104.   
+##  9 DC     CD8.T    H2-D1  Cd8a          1.21        1.88                     1.54     3.65e-  8    4.94e-  4      1.97e-266      2.67e-262               1                0.669     60.7          10.7           651.   
+## 10 Mono   CD8.T    Cxcl11 Dpp4          2.17        0.194                    1.18     4.27e-130    5.78e-126      1.84e-  4      1   e+  0               0.256            0.133      4.37          1.35            5.91 
+## # … with 848 more rows, and 35 more variables: lfc_pval_ligand <dbl>, p_val_ligand_adapted <dbl>, scaled_lfc_ligand <dbl>, scaled_p_val_ligand <dbl>, scaled_lfc_pval_ligand <dbl>, scaled_p_val_ligand_adapted <dbl>,
+## #   activity <dbl>, rank <dbl>, activity_zscore <dbl>, scaled_activity <dbl>, lfc_pval_receptor <dbl>, p_val_receptor_adapted <dbl>, scaled_lfc_receptor <dbl>, scaled_p_val_receptor <dbl>,
+## #   scaled_lfc_pval_receptor <dbl>, scaled_p_val_receptor_adapted <dbl>, scaled_avg_exprs_ligand <dbl>, scaled_avg_exprs_receptor <dbl>, lfc_ligand_group <dbl>, p_val_ligand_group <dbl>, lfc_pval_ligand_group <dbl>,
+## #   p_val_ligand_adapted_group <dbl>, scaled_lfc_ligand_group <dbl>, scaled_p_val_ligand_group <dbl>, scaled_lfc_pval_ligand_group <dbl>, scaled_p_val_ligand_adapted_group <dbl>, lfc_receptor_group <dbl>,
+## #   p_val_receptor_group <dbl>, lfc_pval_receptor_group <dbl>, p_val_receptor_adapted_group <dbl>, scaled_lfc_receptor_group <dbl>, scaled_p_val_receptor_group <dbl>, scaled_lfc_pval_receptor_group <dbl>,
+## #   scaled_p_val_receptor_adapted_group <dbl>, prioritization_score <dbl>
 ```
 
 As you can see, the resulting table now show the rankings for
@@ -294,19 +293,19 @@ ranking:
 ``` r
 prior_table %>% select(c('sender', 'receiver', 'ligand', 'receptor', 'scaled_lfc_ligand', 'scaled_lfc_receptor', 'scaled_p_val_ligand_adapted', 'scaled_p_val_receptor_adapted', 'scaled_avg_exprs_ligand', 'scaled_avg_exprs_receptor', 'scaled_lfc_ligand_group', 'scaled_lfc_receptor_group', 'scaled_activity'))
 ## # A tibble: 858 × 13
-##    sender receiver ligand receptor scaled_lfc_ligand scaled_lfc_receptor scaled_p_val_ligand_adap… scaled_p_val_re… scaled_avg_expr… scaled_avg_expr… scaled_lfc_liga… scaled_lfc_rece…
-##    <chr>  <chr>    <chr>  <chr>                <dbl>               <dbl>                     <dbl>            <dbl>            <dbl>            <dbl>            <dbl>            <dbl>
-##  1 NK     CD8.T    Ptprc  Dpp4                 0.824               0.901                     0.843            0.887            1.00             1.00             0.779           0.831 
-##  2 Mono   CD8.T    Cxcl10 Dpp4                 0.997               0.901                     0.957            0.887            1.00             1.00             0.990           0.831 
-##  3 Mono   CD8.T    Ebi3   Il27ra               0.817               0.831                     0.941            0.859            1.00             0.859            0.538           0.0986
-##  4 Mono   CD8.T    Cxcl9  Dpp4                 0.994               0.901                     0.975            0.887            1.00             1.00             0.894           0.831 
-##  5 B      CD8.T    H2-M3  Cd8a                 0.777               1                         0.768            1                1.00             1.00             0.846           0.0845
-##  6 Mono   CD8.T    Ptprc  Dpp4                 0.808               0.901                     0.827            0.887            0.867            1.00             0.779           0.831 
-##  7 DC     CD8.T    Ccl22  Dpp4                 0.974               0.901                     0.996            0.887            1.00             1.00             0.490           0.831 
-##  8 DC     CD8.T    H2-M2  Cd8a                 0.989               1                         1                1                1.00             1.00             0.308           0.0845
-##  9 DC     CD8.T    H2-D1  Cd8a                 0.925               1                         0.853            1                1.00             1.00             0.885           0.0845
-## 10 Mono   CD8.T    Cxcl11 Dpp4                 0.963               0.901                     0.977            0.887            1.00             1.00             0.673           0.831 
-## # … with 848 more rows, and 1 more variable: scaled_activity <dbl>
+##    sender receiver ligand receptor scaled_lfc_ligand scaled_lfc_receptor scaled_p_val_ligand_adapted scaled_p_val_receptor_adapted scaled_avg_exprs_… scaled_avg_expr… scaled_lfc_liga… scaled_lfc_rece… scaled_activity
+##    <chr>  <chr>    <chr>  <chr>                <dbl>               <dbl>                       <dbl>                         <dbl>              <dbl>            <dbl>            <dbl>            <dbl>           <dbl>
+##  1 NK     CD8.T    Ptprc  Dpp4                 0.824               0.901                       0.843                         0.887              1.00             1.00             0.779           0.831            0.741
+##  2 Mono   CD8.T    Cxcl10 Dpp4                 0.997               0.901                       0.957                         0.887              1.00             1.00             0.990           0.831            0.514
+##  3 Mono   CD8.T    Ebi3   Il27ra               0.817               0.831                       0.941                         0.859              1.00             0.859            0.538           0.0986           1.00 
+##  4 Mono   CD8.T    Cxcl9  Dpp4                 0.994               0.901                       0.975                         0.887              1.00             1.00             0.894           0.831            0.485
+##  5 B      CD8.T    H2-M3  Cd8a                 0.777               1                           0.768                         1                  1.00             1.00             0.846           0.0845           0.788
+##  6 Mono   CD8.T    Ptprc  Dpp4                 0.808               0.901                       0.827                         0.887              0.867            1.00             0.779           0.831            0.741
+##  7 DC     CD8.T    Ccl22  Dpp4                 0.974               0.901                       0.996                         0.887              1.00             1.00             0.490           0.831            0.572
+##  8 DC     CD8.T    H2-M2  Cd8a                 0.989               1                           1                             1                  1.00             1.00             0.308           0.0845           0.682
+##  9 DC     CD8.T    H2-D1  Cd8a                 0.925               1                           0.853                         1                  1.00             1.00             0.885           0.0845           0.628
+## 10 Mono   CD8.T    Cxcl11 Dpp4                 0.963               0.901                       0.977                         0.887              1.00             1.00             0.673           0.831            0.518
+## # … with 848 more rows
 ```
 
 Cxcl10 now went up in the rankings due to both the high expression of
@@ -323,7 +322,7 @@ DE_table_all = Idents(seuratObj) %>% levels() %>% intersect(sender_celltypes) %>
          expression_pct = 0.10, celltype_col = NULL) %>% reduce(full_join) 
 DE_table_all[is.na(DE_table_all)] = 0
 
-order_ligands <- intersect(make.names(best_upstream_ligands), colnames(active_ligand_target_links)) %>% rev()
+order_ligands <- make.names(best_upstream_ligands) %>% rev()
 
 # ligand activity heatmap
 ligand_aupr_matrix <- ligand_activities %>% select(aupr_corrected) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand) %>%
@@ -378,7 +377,7 @@ combined_plot <- cowplot::plot_grid(figures_without_legend, legends, nrow = 2, a
 print(combined_plot)
 ```
 
-![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
+![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
 
 ### Extra visualization of ligand-receptor pairs
 
@@ -391,7 +390,7 @@ semicircle corresponds to the scaled mean expression.
 make_mushroom_plot(prior_table, top_n = 30)
 ```
 
-![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-36-1.png)<!-- -->
+![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-38-1.png)<!-- -->
 
 We provide multiple ways to customize this plot, including changing the
 “size” and “fill” values to certain columns from the prioritization
@@ -408,7 +407,7 @@ print(paste0("Column names that you can use are: ", paste0(prior_table %>% selec
 make_mushroom_plot(prior_table, top_n = 30, size = "pct_expressed", color = "scaled_avg_exprs")
 ```
 
-![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
+![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
 
 ``` r
 
@@ -416,7 +415,7 @@ make_mushroom_plot(prior_table, top_n = 30, size = "pct_expressed", color = "sca
 make_mushroom_plot(prior_table, top_n = 30, show_rankings = TRUE, show_all_datapoints = TRUE)
 ```
 
-![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-37-2.png)<!-- -->
+![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-39-2.png)<!-- -->
 
 ``` r
 
@@ -424,7 +423,7 @@ make_mushroom_plot(prior_table, top_n = 30, show_rankings = TRUE, show_all_datap
 make_mushroom_plot(prior_table, top_n = 30, true_color_range = TRUE)
 ```
 
-![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-37-3.png)<!-- -->
+![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-39-3.png)<!-- -->
 
 ### References
 
