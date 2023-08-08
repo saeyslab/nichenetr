@@ -213,7 +213,7 @@ process_table_to_ic = function(table_object, table_type = "expression",
   sender_receiver_table <- sender_receiver_table %>%
     mutate(ligand_receptor_avg = case_when(
                 table_type == "expression" ~ avg_ligand * avg_receptor,
-                grepl("DE$", table_type) ~ (avg_ligand + avg_ligand)/2
+                grepl("DE$", table_type) ~ (avg_ligand + avg_receptor)/2
           )
     )  %>% arrange(-ligand_receptor_avg) %>%
     # Rename columns appropriately
