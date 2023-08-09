@@ -65,7 +65,7 @@ calculate_de = function(seurat_obj, celltype_colname,
   }
 
   # Set celltype as identity class
-  Idents(seurat_obj) <- seuratObj[[celltype_colname, drop=TRUE]]
+  Idents(seurat_obj) <- seurat_obj[[celltype_colname, drop=TRUE]]
 
   DE_table = do.call(FindAllMarkers, FindAllMarkers_args) %>%
                 rename(cluster_id = cluster)
