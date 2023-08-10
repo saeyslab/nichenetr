@@ -6,22 +6,31 @@
 \usage{
 generate_prioritization_tables(sender_receiver_info, sender_receiver_de, ligand_activities, lr_condition_de = NULL,
                                       prioritizing_weights = c("de_ligand" = 1,"de_receptor" = 1,"activity_scaled" = 2,
-                                                               "exprs_ligand" = 2,"exprs_receptor" = 2,
+                                                               "exprs_ligand" = 1,"exprs_receptor" = 1,
                                                                "ligand_condition_specificity" = 0, "receptor_condition_specificity"=0))
 }
 \arguments{
-\item{sender_receiver_info}{Output of `get_exprs_avg` -> `process_table_to_ic`}
+\item{sender_receiver_info}{Output of \code{get_exprs_avg} -> \code{process_table_to_ic}}
 
-\item{sender_receiver_de}{Output of`calculate_de` -> `process_table_to_ic`}
+\item{sender_receiver_de}{Output of\code{calculate_de} -> \code{process_table_to_ic}}
 
-\item{ligand_activities}{Output of `predict_ligand_activities`}
+\item{ligand_activities}{Output of \code{predict_ligand_activities}}
 
-\item{lr_condition_de}{Output of `FindMarkers` -> `process_table_to_ic`}
+\item{lr_condition_de}{Output of \code{FindMarkers} -> \code{process_table_to_ic}}
 
 \item{prioritizing_weights}{Named vector indicating the relative weights of each prioritization criterion}
 }
 \value{
-Data frames of prioritized sender-ligand-receiver-receptor interactions.
+Data frames of prioritized sender-ligand-receiver-receptor interactions. 
+The resulting dataframe contains columns from the input dataframes, but columns from \code{lr_condition_de} are suffixed with \code{_group} (some columns from \code{lr_condition_de} are also not present).
+Additionally, the following columns are added:
+\itemize{
+\item \code{lfc_pval_*}: product of -log10(pval) and the LFC of the ligand/receptor
+\item \code{p_val_*_adapted}: p-value adapted to the sign of the LFC to only consider interactions where the ligand/receptor is upregulated in the sender/receiver
+\item \code{activity_zscore}: z-score of the ligand activity
+\item \code{prioritization_score}: The prioritization score for each interaction, calculated as a weighted sum of the prioritization criteria.
+}
+Moreover, \code{scaled_*} columns are scaled using the corresponding column's ranking or the \code{scale_quantile_adapted} function.
 }
 \description{
 \code{generate_prioritization_tables}  Perform a prioritization of cell-cell interactions (similar to MultiNicheNet).

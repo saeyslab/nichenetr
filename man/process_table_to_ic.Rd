@@ -7,7 +7,7 @@
 process_table_to_ic(table_object, table_type = "expression", lr_network, senders_oi = NULL, receivers_oi = NULL)
 }
 \arguments{
-\item{table_object}{Output of `get_exprs_avg`, `calculate_de`, or `FindMarkers`}
+\item{table_object}{Output of \code{get_exprs_avg}, \code{calculate_de}, or \code{FindMarkers}}
 
 \item{table_type}{"expression", "celltype_DE", or "group_DE": indicates whether the table contains expression, celltype markers, or condition-specific information}
 
