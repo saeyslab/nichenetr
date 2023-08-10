@@ -15,8 +15,6 @@ library(tidyverse)
 
 ### Read in Seurat object
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
-seuratObj$celltype <- make.names(seuratObj$celltype)
-Idents(seuratObj) <- seuratObj$celltype
 ```
 
 In this vignette, we will extend the basic NicheNet analysis analysis
@@ -138,12 +136,12 @@ it is expressed in at least 10% of cells in one cluster.
 ``` r
 # 1. Define a “sender/niche” cell population and a “receiver/target” cell population present in your expression data and determine which genes are expressed in both populations
 ## receiver
-receiver = "CD8.T"
+receiver = "CD8 T"
 expressed_genes_receiver = get_expressed_genes(receiver, seuratObj, pct = 0.10)
 background_expressed_genes = expressed_genes_receiver %>% .[. %in% rownames(ligand_target_matrix)]
 
 ## sender
-sender_celltypes = c("CD4.T","Treg", "Mono", "NK", "B", "DC")
+sender_celltypes = c("CD4 T","Treg", "Mono", "NK", "B", "DC")
 
 list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seuratObj, 0.10) # lapply to get the expressed genes of every sender cell type separately here
 expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
@@ -173,22 +171,371 @@ potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% 
 # 4. Perform NicheNet ligand activity analysis
 ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
 
-ligand_activities = ligand_activities %>% arrange(-pearson) %>% mutate(rank = rank(desc(pearson)))
+ligand_activities = ligand_activities %>% arrange(-aupr_corrected) %>% mutate(rank = rank(desc(aupr_corrected)))
 ligand_activities
 ## # A tibble: 73 × 6
 ##    test_ligand auroc  aupr aupr_corrected pearson  rank
 ##    <chr>       <dbl> <dbl>          <dbl>   <dbl> <dbl>
 ##  1 Ebi3        0.663 0.390          0.244   0.301     1
-##  2 Tgfb1       0.596 0.254          0.108   0.202     2
+##  2 Ptprc       0.642 0.310          0.165   0.167     2
 ##  3 H2-M3       0.608 0.292          0.146   0.179     3
-##  4 Ptprc       0.642 0.310          0.165   0.167     4
-##  5 H2-M2       0.611 0.279          0.133   0.153     6
-##  6 H2-T10      0.611 0.279          0.133   0.153     6
-##  7 H2-T22      0.611 0.279          0.133   0.153     6
-##  8 H2-T23      0.611 0.278          0.132   0.153     8
-##  9 App         0.590 0.248          0.102   0.150     9
-## 10 H2-K1       0.605 0.268          0.122   0.142    10
+##  4 H2-M2       0.611 0.279          0.133   0.153     5
+##  5 H2-T10      0.611 0.279          0.133   0.153     5
+##  6 H2-T22      0.611 0.279          0.133   0.153     5
+##  7 H2-T23      0.611 0.278          0.132   0.153     7
+##  8 H2-K1       0.605 0.268          0.122   0.142     8
+##  9 H2-Q4       0.605 0.268          0.122   0.141    10
+## 10 H2-Q6       0.605 0.268          0.122   0.141    10
 ## # … with 63 more rows
+```
+
+``` r
+nichenet_seuratobj_aggregate
+## function(receiver, seurat_obj, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,
+##                                         expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE ,top_n_ligands = 30,
+##                                         top_n_targets = 200, cutoff_visualization = 0.33,
+##                                         verbose = TRUE, assay_oi = NULL)
+## {
+##   requireNamespace("Seurat")
+##   requireNamespace("dplyr")
+## 
+##   # input check
+##   if(! "RNA" %in% names(seurat_obj@assays)){
+##     if ("Spatial" %in% names(seurat_obj@assays)){
+##       warning("You are going to apply NicheNet on a spatial seurat object. Be sure it's ok to use NicheNet the way you are planning to do it. So this means: you should have changes in gene expression in receiver cells caused by cell-cell interactions. Note that in the case of spatial transcriptomics, you are not dealing with single cells but with 'spots' containing multiple cells of the same of different cell types.")
+## 
+##       if (class(seurat_obj@assays$Spatial@data) != "matrix" & class(seurat_obj@assays$Spatial@data) != "dgCMatrix") {
+##         warning("Spatial Seurat object should contain a matrix of normalized expression data. Check 'seurat_obj@assays$Spatial@data' for default or 'seurat_obj@assays$SCT@data' for when the single-cell transform pipeline was applied")
+##       }
+##       if (sum(dim(seurat_obj@assays$Spatial@data)) == 0) {
+##         stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$Spatial@data'")
+##       }
+##     }} else {
+##       if (class(seurat_obj@assays$RNA@data) != "matrix" &
+##           class(seurat_obj@assays$RNA@data) != "dgCMatrix") {
+##         warning("Seurat object should contain a matrix of normalized expression data. Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data or seurat_obj@assays$SCT@data for when the single-cell transform pipeline was applied")
+##       }
+## 
+##       if ("integrated" %in% names(seurat_obj@assays)) {
+##         if (sum(dim(seurat_obj@assays$RNA@data)) == 0 & sum(dim(seurat_obj@assays$integrated@data)) ==
+##             0)
+##           stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data")
+##       }
+##       else if ("SCT" %in% names(seurat_obj@assays)) {
+##         if (sum(dim(seurat_obj@assays$RNA@data)) == 0 & sum(dim(seurat_obj@assays$SCT@data)) ==
+##             0) {
+##           stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$SCT@data' for data corrected via SCT")
+##         }
+##       }
+##       else {
+##         if (sum(dim(seurat_obj@assays$RNA@data)) == 0) {
+##           stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data'")
+##         }
+##       }
+##     }
+## 
+##   if(!condition_colname %in% colnames(seurat_obj@meta.data))
+##     stop("Your column indicating the conditions/samples of interest should be in the metadata dataframe")
+##   if(sum(condition_oi %in% c(seurat_obj[[condition_colname]] %>% unlist() %>% as.character() %>% unique())) != length(condition_oi))
+##     stop("condition_oi should be in the condition-indicating column")
+##   if(sum(condition_reference %in% c(seurat_obj[[condition_colname]] %>% unlist() %>% as.character() %>% unique())) != length(condition_reference))
+##     stop("condition_reference should be in the condition-indicating column")
+##   if(sum(receiver %in% unique(Idents(seurat_obj))) != length(receiver))
+##     stop("The defined receiver cell type should be an identity class of your seurat object")
+##   if(length(sender) == 1){
+##     if(sender != "all" & sender != "undefined"){
+##       if(sum(sender %in% unique(Idents(seurat_obj))) != length(sender)){
+##         stop("The sender argument should be 'all' or 'undefined' or an identity class of your seurat object")
+##       }
+##     }
+##   } else {
+##     if(sum(sender %in% unique(Idents(seurat_obj))) != length(sender)){
+##       stop("The sender argument should be 'all' or 'undefined' or an identity class of your seurat object")
+##     }
+##   }
+##   if(geneset != "DE" & geneset != "up" & geneset != "down")
+##     stop("geneset should be 'DE', 'up' or 'down'")
+##   if("integrated" %in% names(seurat_obj@assays)){
+##     warning("Seurat object is result from the Seurat integration workflow. Make sure that the way of defining expressed and differentially expressed genes in this wrapper is appropriate for your integrated data.")
+##   }
+##   # Read in and process NicheNet networks, define ligands and receptors
+##   if (verbose == TRUE){print("Read in and process NicheNet's networks")}
+##   weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
+## 
+##   ligands = lr_network %>% pull(from) %>% unique()
+##   receptors = lr_network %>% pull(to) %>% unique()
+##   if (verbose == TRUE){print("Define expressed ligands and receptors in receiver and sender cells")}
+## 
+##   # step1 nichenet analysis: get expressed genes in sender and receiver cells
+## 
+##   ## receiver
+##   list_expressed_genes_receiver = receiver %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+##   names(list_expressed_genes_receiver) = receiver %>% unique()
+##   expressed_genes_receiver = list_expressed_genes_receiver %>% unlist() %>% unique()
+## 
+##   ## sender
+##   if (length(sender) == 1){
+##     if (sender == "all"){
+##       sender_celltypes = Idents(seurat_obj) %>% levels()
+##       list_expressed_genes_sender = sender_celltypes %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+##       names(list_expressed_genes_sender) = sender_celltypes
+##       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
+## 
+##     } else if (sender == "undefined") {
+##       if("integrated" %in% names(seurat_obj@assays)){
+##         expressed_genes_sender = union(seurat_obj@assays$integrated@data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+##       } else {
+##         expressed_genes_sender = union(seurat_obj@assays$RNA@data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
+##         }
+##     } else if (sender != "all" & sender != "undefined") {
+##       sender_celltypes = sender
+##       list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+##       names(list_expressed_genes_sender) = sender_celltypes %>% unique()
+##       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
+##     }
+##   } else {
+##     sender_celltypes = sender
+##     list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+##     names(list_expressed_genes_sender) = sender_celltypes %>% unique()
+##     expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
+##   }
+## 
+##   # step2 nichenet analysis: define background and gene list of interest: here differential expression between two conditions of cell type of interest
+##   if (verbose == TRUE){print("Perform DE analysis in receiver cell")}
+## 
+##   seurat_obj_receiver= subset(seurat_obj, idents = receiver)
+##   seurat_obj_receiver = SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[[condition_colname]])
+##   DE_table_receiver = FindMarkers(object = seurat_obj_receiver, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct) %>% rownames_to_column("gene")
+## 
+##   SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_receiver)
+## 
+##   if(SeuratV4 == TRUE){
+##     if (geneset == "DE"){
+##       geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= lfc_cutoff) %>% pull(gene)
+##     } else if (geneset == "up") {
+##       geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC >= lfc_cutoff) %>% pull(gene)
+##     } else if (geneset == "down") {
+##       geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC <= lfc_cutoff) %>% pull(gene)
+##     }
+##   } else {
+##     if (geneset == "DE"){
+##       geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_logFC) >= lfc_cutoff) %>% pull(gene)
+##     } else if (geneset == "up") {
+##       geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC >= lfc_cutoff) %>% pull(gene)
+##     } else if (geneset == "down") {
+##       geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC <= lfc_cutoff) %>% pull(gene)
+##     }
+##   }
+## 
+## 
+##   geneset_oi = geneset_oi %>% .[. %in% rownames(ligand_target_matrix)]
+##   if (length(geneset_oi) == 0){
+##     stop("No genes were differentially expressed")
+##   }
+##   background_expressed_genes = expressed_genes_receiver %>% .[. %in% rownames(ligand_target_matrix)]
+## 
+##   # step3 nichenet analysis: define potential ligands
+##   expressed_ligands = intersect(ligands,expressed_genes_sender)
+##   expressed_receptors = intersect(receptors,expressed_genes_receiver)
+##   if (length(expressed_ligands) == 0){
+##     stop("No ligands expressed in sender cell")
+##   }
+##   if (length(expressed_receptors) == 0){
+##     stop("No receptors expressed in receiver cell")
+##   }
+##   potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
+##   if (length(potential_ligands) == 0){
+##     stop("No potentially active ligands")
+##   }
+## 
+## 
+##   if (verbose == TRUE){print("Perform NicheNet ligand activity analysis")}
+## 
+##   # step4 perform NicheNet's ligand activity analysis
+##   ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+##   ligand_activities = ligand_activities %>%
+##     arrange(-aupr_corrected) %>%
+##     mutate(rank = rank(desc(aupr_corrected)))
+## 
+##   if(filter_top_ligands == TRUE){
+##     best_upstream_ligands = ligand_activities %>% top_n(top_n_ligands, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand) %>% unique()
+##   } else {
+##     best_upstream_ligands = ligand_activities %>% arrange(-aupr_corrected) %>% pull(test_ligand) %>% unique()
+##   }
+## 
+##   if (verbose == TRUE){print("Infer active target genes of the prioritized ligands")}
+## 
+##   # step5 infer target genes of the top-ranked ligands
+##   active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = top_n_targets) %>% bind_rows() %>% drop_na()
+##   if(nrow(active_ligand_target_links_df) > 0){
+##     active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = cutoff_visualization)
+##     order_ligands = intersect(best_upstream_ligands, colnames(active_ligand_target_links)) %>% rev() %>% make.names()
+##     order_targets = active_ligand_target_links_df$target %>% unique() %>% intersect(rownames(active_ligand_target_links)) %>% make.names()
+##     rownames(active_ligand_target_links) = rownames(active_ligand_target_links) %>% make.names()
+##     colnames(active_ligand_target_links) = colnames(active_ligand_target_links) %>% make.names()
+## 
+##     order_targets = order_targets %>% intersect(rownames(active_ligand_target_links))
+##     order_ligands = order_ligands %>% intersect(colnames(active_ligand_target_links))
+## 
+##     vis_ligand_target = active_ligand_target_links[order_targets,order_ligands,drop=FALSE] %>% t()
+##     p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized ligands","Predicted target genes", color = "purple",legend_position = "top", x_axis_position = "top",legend_title = "Regulatory potential")  + theme(axis.text.x = element_text(face = "italic")) #+ scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.006,0.012))
+##   } else {
+##     vis_ligand_target = NULL
+##     p_ligand_target_network = NULL
+##     print("no highly likely active targets found for top ligands")
+##   }
+##   # combined heatmap: overlay ligand activities
+##   ligand_aupr_matrix = ligand_activities %>% select(aupr_corrected) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
+## 
+##   rownames(ligand_aupr_matrix) = rownames(ligand_aupr_matrix) %>% make.names()
+##   colnames(ligand_aupr_matrix) = colnames(ligand_aupr_matrix) %>% make.names()
+## 
+##   vis_ligand_aupr = ligand_aupr_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("AUPR")
+##   p_ligand_aupr = vis_ligand_aupr %>% make_heatmap_ggplot("Prioritized ligands","Ligand activity", color = "darkorange",legend_position = "top", x_axis_position = "top", legend_title = "AUPR\n(target gene prediction ability)") + theme(legend.text = element_text(size = 9))
+##   p_ligand_aupr
+## 
+##   figures_without_legend = cowplot::plot_grid(
+##     p_ligand_aupr + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
+##     p_ligand_target_network + theme(legend.position = "none", axis.ticks = element_blank()) + ylab(""),
+##     align = "hv",
+##     nrow = 1,
+##     rel_widths = c(ncol(vis_ligand_aupr)+10, ncol(vis_ligand_target)))
+##   legends = cowplot::plot_grid(
+##     ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_aupr)),
+##     ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_target_network)),
+##     nrow = 1,
+##     align = "h")
+## 
+##   combined_plot = cowplot::plot_grid(figures_without_legend,
+##                                      legends,
+##                                      rel_heights = c(10,2), nrow = 2, align = "hv")
+## 
+##   # ligand-receptor plot
+##   # get the ligand-receptor network of the top-ranked ligands
+##   if (verbose == TRUE){print("Infer receptors of the prioritized ligands")}
+## 
+##   lr_network_top = lr_network %>% filter(from %in% best_upstream_ligands & to %in% expressed_receptors) %>% distinct(from,to)
+##   best_upstream_receptors = lr_network_top %>% pull(to) %>% unique()
+## 
+##   lr_network_top_df_large = weighted_networks_lr %>% filter(from %in% best_upstream_ligands & to %in% best_upstream_receptors)
+## 
+##   lr_network_top_df = lr_network_top_df_large %>% spread("from","weight",fill = 0)
+##   lr_network_top_matrix = lr_network_top_df %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df$to)
+## 
+##   if (nrow(lr_network_top_matrix) > 1){
+##     dist_receptors = dist(lr_network_top_matrix, method = "binary")
+##     hclust_receptors = hclust(dist_receptors, method = "ward.D2")
+##     order_receptors = hclust_receptors$labels[hclust_receptors$order]
+##   } else {
+##     order_receptors = rownames(lr_network_top_matrix)
+##   }
+##   if (ncol(lr_network_top_matrix) > 1) {
+##     dist_ligands = dist(lr_network_top_matrix %>% t(), method = "binary")
+##     hclust_ligands = hclust(dist_ligands, method = "ward.D2")
+##     order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
+##   } else {
+##     order_ligands_receptor = colnames(lr_network_top_matrix)
+##   }
+## 
+##   order_receptors = order_receptors %>% intersect(rownames(lr_network_top_matrix))
+##   order_ligands_receptor = order_ligands_receptor %>% intersect(colnames(lr_network_top_matrix))
+## 
+##   vis_ligand_receptor_network = lr_network_top_matrix[order_receptors, order_ligands_receptor]
+##   dim(vis_ligand_receptor_network) = c(length(order_receptors), length(order_ligands_receptor))
+##   rownames(vis_ligand_receptor_network) = order_receptors %>% make.names()
+##   colnames(vis_ligand_receptor_network) = order_ligands_receptor %>% make.names()
+## 
+##   p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential")
+## 
+##   # DE analysis for each sender cell type -- of course only possible when having sender cell types
+##   if (length(sender) > 1){
+##     are_there_senders = TRUE
+##   }
+##   if(length(sender) == 1){
+##     if(sender != "undefined"){
+##       are_there_senders = TRUE
+##     } else {
+##       are_there_senders = FALSE
+##     }
+##   }
+## 
+##   if (are_there_senders == TRUE){
+##     if (verbose == TRUE){print("Perform DE analysis in sender cells")}
+##     seurat_obj = subset(seurat_obj, features= potential_ligands)
+## 
+##     DE_table_all = Idents(seurat_obj) %>% levels() %>% intersect(sender_celltypes) %>% lapply(get_lfc_celltype, seurat_obj = seurat_obj, condition_colname = condition_colname, condition_oi = condition_oi, condition_reference = condition_reference, expression_pct = expression_pct, celltype_col = NULL) %>% reduce(full_join, by = "gene") # use this if cell type labels are the identities of your Seurat object -- if not: indicate the celltype_col properly
+##     DE_table_all[is.na(DE_table_all)] = 0
+## 
+##     # Combine ligand activities with DE information
+##     ligand_activities_de = ligand_activities %>% select(test_ligand, pearson) %>% rename(ligand = test_ligand) %>% left_join(DE_table_all %>% rename(ligand = gene), by = "ligand")
+##     ligand_activities_de[is.na(ligand_activities_de)] = 0
+## 
+##     # make LFC heatmap
+##     lfc_matrix = ligand_activities_de  %>% select(-ligand, -pearson) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities_de$ligand)
+##     rownames(lfc_matrix) = rownames(lfc_matrix) %>% make.names()
+## 
+##     order_ligands = order_ligands[order_ligands %in% rownames(lfc_matrix)]
+##     vis_ligand_lfc = lfc_matrix[order_ligands,]
+##     vis_ligand_lfc = vis_ligand_lfc %>% as.matrix(ncol = length(Idents(seurat_obj) %>% levels() %>% intersect(sender_celltypes)))
+##     colnames(vis_ligand_lfc) = vis_ligand_lfc %>% colnames() %>% make.names()
+## 
+##     p_ligand_lfc = vis_ligand_lfc %>% make_threecolor_heatmap_ggplot("Prioritized ligands","LFC in Sender", low_color = "midnightblue",mid_color = "white", mid = median(vis_ligand_lfc), high_color = "red",legend_position = "top", x_axis_position = "top", legend_title = "LFC") + theme(axis.text.y = element_text(face = "italic"))
+## 
+##     # ligand expression Seurat dotplot
+##     real_makenames_conversion = lr_network$from %>% unique() %>% magrittr::set_names(lr_network$from %>% unique() %>% make.names())
+##     order_ligands_adapted = real_makenames_conversion[order_ligands]
+##     names(order_ligands_adapted) = NULL
+## 
+##     seurat_obj_subset = seurat_obj %>% subset(idents = sender_celltypes)
+##     seurat_obj_subset = SetIdent(seurat_obj_subset, value = seurat_obj_subset[[condition_colname]]) %>% subset(idents = condition_oi) ## only shows cells of the condition of interest
+##     rotated_dotplot = DotPlot(seurat_obj %>% subset(cells = Cells(seurat_obj_subset)), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
+##     rm(seurat_obj_subset)
+## 
+##     # combined plot
+##     figures_without_legend = cowplot::plot_grid(
+##       p_ligand_aupr + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
+##       rotated_dotplot + theme(legend.position = "none", axis.ticks = element_blank(), axis.title.x = element_text(size = 12), axis.text.y = element_text(face = "italic", size = 9), axis.text.x = element_text(size = 9,  angle = 90,hjust = 0)) + ylab("Expression in Sender") + xlab("") + scale_y_discrete(position = "right"),
+##       p_ligand_lfc + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()) + ylab(""),
+##       p_ligand_target_network + theme(legend.position = "none", axis.ticks = element_blank()) + ylab(""),
+##       align = "hv",
+##       nrow = 1,
+##       rel_widths = c(ncol(vis_ligand_aupr)+6, ncol(vis_ligand_lfc) + 7, ncol(vis_ligand_lfc) + 8, ncol(vis_ligand_target)))
+## 
+##     legends = cowplot::plot_grid(
+##       ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_aupr)),
+##       ggpubr::as_ggplot(ggpubr::get_legend(rotated_dotplot)),
+##       ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_lfc)),
+##       ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_target_network)),
+##       nrow = 1,
+##       align = "h", rel_widths = c(1.5, 1, 1, 1))
+## 
+##     combined_plot = cowplot::plot_grid(figures_without_legend, legends, rel_heights = c(10,5), nrow = 2, align = "hv")
+##     combined_plot
+## 
+##   } else {
+##     rotated_dotplot = NULL
+##     p_ligand_lfc = NULL
+##   }
+## 
+##   return(list(
+##     ligand_activities = ligand_activities,
+##     top_ligands = best_upstream_ligands,
+##     top_targets = active_ligand_target_links_df$target %>% unique(),
+##     top_receptors = lr_network_top_df_large$to %>% unique(),
+##     ligand_target_matrix = vis_ligand_target,
+##     ligand_target_heatmap = p_ligand_target_network,
+##     ligand_target_df = active_ligand_target_links_df,
+##     ligand_expression_dotplot = rotated_dotplot,
+##     ligand_differential_expression_heatmap = p_ligand_lfc,
+##     ligand_activity_target_heatmap = combined_plot,
+##     ligand_receptor_matrix = vis_ligand_receptor_network,
+##     ligand_receptor_heatmap = p_ligand_receptor_network,
+##     ligand_receptor_df = lr_network_top_df_large %>% rename(ligand = from, receptor = to),
+##     geneset_oi = geneset_oi,
+##     background_expressed_genes = background_expressed_genes
+##   ))
+## }
+## <environment: namespace:nichenetr>
 ```
 
 ## Perform prioritization of ligand-receptor pairs
@@ -212,7 +559,7 @@ Note that the first four criteria are calculated only in the condition
 of interest.
 
 ``` r
-# Default weights
+# By default, ligand_condition_specificty and receptor_condition_specificty are 0
 prioritizing_weights = c("de_ligand" = 1,
                           "de_receptor" = 1,
                           "activity_scaled" = 2,
@@ -253,29 +600,39 @@ processed_expr_table <- process_table_to_ic(expression_info, table_type = "expre
 processed_condition_markers <- process_table_to_ic(condition_markers, table_type = "group_DE", lr_network_renamed)
 ```
 
-Finally we generate the prioritization table.
+Finally we generate the prioritization table. The `lfc_ligand` and
+`lfc_receptor` columns are based on the differences between cell types
+within your condition of interest. This is equivalent to subsetting your
+Seurat object to only the condition of interest and running
+`Seurat::FindAllMarkers`.
+
+The columns that refer to differential expression between conditions are
+those with the \_group suffix, e.g., `lfc_ligand_group` and
+`lfc_receptor_group.` These are celltype agnostic: they are calculated
+by using `Seurat::FindMarkers` between two conditions across all cell
+types.
 
 ``` r
 prior_table <- generate_prioritization_tables(processed_expr_table,
                                processed_DE_table,
                                ligand_activities,
                                processed_condition_markers,
-                               prioritizing_weights)
+                               prioritizing_weights = prioritizing_weights)
 
 prior_table 
 ## # A tibble: 858 × 51
 ##    sender receiver ligand receptor lfc_ligand lfc_receptor ligand_receptor_lfc_avg p_val_ligand p_adj_ligand p_val_receptor p_adj_receptor pct_expressed_send… pct_expressed_r… avg_ligand avg_receptor ligand_receptor…
 ##    <chr>  <chr>    <chr>  <chr>         <dbl>        <dbl>                   <dbl>        <dbl>        <dbl>          <dbl>          <dbl>               <dbl>            <dbl>      <dbl>        <dbl>            <dbl>
-##  1 NK     CD8.T    Ptprc  Dpp4          0.527       0.194                    0.361    1.14e-  7    1.54e-  3      1.84e-  4      1   e+  0               0.832            0.133     16.6           1.35           22.5  
-##  2 Mono   CD8.T    Cxcl10 Dpp4          4.23        0.194                    2.21     1.34e- 80    1.82e- 76      1.84e-  4      1   e+  0               0.744            0.133     54.8           1.35           74.1  
-##  3 Mono   CD8.T    Ebi3   Il27ra        0.503       0.0580                   0.281    1.14e- 52    1.54e- 48      7.60e-  4      1   e+  0               0.122            0.139      0.546         1.13            0.619
-##  4 Mono   CD8.T    Cxcl9  Dpp4          4.12        0.194                    2.16     2.18e-121    2.95e-117      1.84e-  4      1   e+  0               0.456            0.133     23.8           1.35           32.1  
-##  5 B      CD8.T    H2-M3  Cd8a          0.372       1.88                     1.13     1.49e-  3    1   e+  0      1.97e-266      2.67e-262               0.152            0.669      1.59         10.7            17.0  
-##  6 Mono   CD8.T    Ptprc  Dpp4          0.473       0.194                    0.334    6.18e-  6    8.37e-  2      1.84e-  4      1   e+  0               0.844            0.133     14.9           1.35           20.1  
-##  7 DC     CD8.T    Ccl22  Dpp4          2.57        0.194                    1.38     3.59e-298    4.87e-294      1.84e-  4      1   e+  0               0.389            0.133      6.37          1.35            8.61 
-##  8 DC     CD8.T    H2-M2  Cd8a          3.59        1.88                     2.73     0            0              1.97e-266      2.67e-262               0.556            0.669      9.73         10.7           104.   
-##  9 DC     CD8.T    H2-D1  Cd8a          1.21        1.88                     1.54     3.65e-  8    4.94e-  4      1.97e-266      2.67e-262               1                0.669     60.7          10.7           651.   
-## 10 Mono   CD8.T    Cxcl11 Dpp4          2.17        0.194                    1.18     4.27e-130    5.78e-126      1.84e-  4      1   e+  0               0.256            0.133      4.37          1.35            5.91 
+##  1 NK     CD8 T    Ptprc  Dpp4          0.527       0.194                    0.361     1.14e- 7     1.54e- 3      1.84e-  4      1   e+  0               0.832            0.133     16.6           1.35           22.5  
+##  2 Mono   CD8 T    Ptprc  Dpp4          0.473       0.194                    0.334     6.18e- 6     8.37e- 2      1.84e-  4      1   e+  0               0.844            0.133     14.9           1.35           20.1  
+##  3 Mono   CD8 T    Ebi3   Il27ra        0.503       0.0580                   0.281     1.14e-52     1.54e-48      7.60e-  4      1   e+  0               0.122            0.139      0.546         1.13            0.619
+##  4 Mono   CD8 T    Cxcl10 Dpp4          4.23        0.194                    2.21      1.34e-80     1.82e-76      1.84e-  4      1   e+  0               0.744            0.133     54.8           1.35           74.1  
+##  5 DC     CD8 T    H2-M2  Cd8a          3.59        1.88                     2.73      0            0             1.97e-266      2.67e-262               0.556            0.669      9.73         10.7           104.   
+##  6 B      CD8 T    H2-M3  Cd8a          0.372       1.88                     1.13      1.49e- 3     1   e+ 0      1.97e-266      2.67e-262               0.152            0.669      1.59         10.7            17.0  
+##  7 Treg   CD8 T    Ptprc  Dpp4          0.241       0.194                    0.218     3.39e- 2     1   e+ 0      1.84e-  4      1   e+  0               0.643            0.133     13.2           1.35           17.9  
+##  8 DC     CD8 T    H2-D1  Cd8a          1.21        1.88                     1.54      3.65e- 8     4.94e- 4      1.97e-266      2.67e-262               1                0.669     60.7          10.7           651.   
+##  9 B      CD8 T    Ptprc  Dpp4          0.222       0.194                    0.208     5.93e- 3     1   e+ 0      1.84e-  4      1   e+  0               0.647            0.133     12.3           1.35           16.6  
+## 10 Mono   CD8 T    H2-T22 Cd8a          0.373       1.88                     1.13      7.81e- 4     1   e+ 0      1.97e-266      2.67e-262               0.7              0.669     10.4          10.7           111.   
 ## # … with 848 more rows, and 35 more variables: lfc_pval_ligand <dbl>, p_val_ligand_adapted <dbl>, scaled_lfc_ligand <dbl>, scaled_p_val_ligand <dbl>, scaled_lfc_pval_ligand <dbl>, scaled_p_val_ligand_adapted <dbl>,
 ## #   activity <dbl>, rank <dbl>, activity_zscore <dbl>, scaled_activity <dbl>, lfc_pval_receptor <dbl>, p_val_receptor_adapted <dbl>, scaled_lfc_receptor <dbl>, scaled_p_val_receptor <dbl>,
 ## #   scaled_lfc_pval_receptor <dbl>, scaled_p_val_receptor_adapted <dbl>, scaled_avg_exprs_ligand <dbl>, scaled_avg_exprs_receptor <dbl>, lfc_ligand_group <dbl>, p_val_ligand_group <dbl>, lfc_pval_ligand_group <dbl>,
@@ -295,16 +652,16 @@ prior_table %>% select(c('sender', 'receiver', 'ligand', 'receptor', 'scaled_lfc
 ## # A tibble: 858 × 13
 ##    sender receiver ligand receptor scaled_lfc_ligand scaled_lfc_receptor scaled_p_val_ligand_adapted scaled_p_val_receptor_adapted scaled_avg_exprs_… scaled_avg_expr… scaled_lfc_liga… scaled_lfc_rece… scaled_activity
 ##    <chr>  <chr>    <chr>  <chr>                <dbl>               <dbl>                       <dbl>                         <dbl>              <dbl>            <dbl>            <dbl>            <dbl>           <dbl>
-##  1 NK     CD8.T    Ptprc  Dpp4                 0.824               0.901                       0.843                         0.887              1.00             1.00             0.779           0.831            0.741
-##  2 Mono   CD8.T    Cxcl10 Dpp4                 0.997               0.901                       0.957                         0.887              1.00             1.00             0.990           0.831            0.514
-##  3 Mono   CD8.T    Ebi3   Il27ra               0.817               0.831                       0.941                         0.859              1.00             0.859            0.538           0.0986           1.00 
-##  4 Mono   CD8.T    Cxcl9  Dpp4                 0.994               0.901                       0.975                         0.887              1.00             1.00             0.894           0.831            0.485
-##  5 B      CD8.T    H2-M3  Cd8a                 0.777               1                           0.768                         1                  1.00             1.00             0.846           0.0845           0.788
-##  6 Mono   CD8.T    Ptprc  Dpp4                 0.808               0.901                       0.827                         0.887              0.867            1.00             0.779           0.831            0.741
-##  7 DC     CD8.T    Ccl22  Dpp4                 0.974               0.901                       0.996                         0.887              1.00             1.00             0.490           0.831            0.572
-##  8 DC     CD8.T    H2-M2  Cd8a                 0.989               1                           1                             1                  1.00             1.00             0.308           0.0845           0.682
-##  9 DC     CD8.T    H2-D1  Cd8a                 0.925               1                           0.853                         1                  1.00             1.00             0.885           0.0845           0.628
-## 10 Mono   CD8.T    Cxcl11 Dpp4                 0.963               0.901                       0.977                         0.887              1.00             1.00             0.673           0.831            0.518
+##  1 NK     CD8 T    Ptprc  Dpp4                 0.824               0.901                       0.843                         0.887              1.00             1.00             0.779           0.831            0.862
+##  2 Mono   CD8 T    Ptprc  Dpp4                 0.808               0.901                       0.827                         0.887              0.867            1.00             0.779           0.831            0.862
+##  3 Mono   CD8 T    Ebi3   Il27ra               0.817               0.831                       0.941                         0.859              1.00             0.859            0.538           0.0986           1.00 
+##  4 Mono   CD8 T    Cxcl10 Dpp4                 0.997               0.901                       0.957                         0.887              1.00             1.00             0.990           0.831            0.431
+##  5 DC     CD8 T    H2-M2  Cd8a                 0.989               1                           1                             1                  1.00             1.00             0.308           0.0845           0.664
+##  6 B      CD8 T    H2-M3  Cd8a                 0.777               1                           0.768                         1                  1.00             1.00             0.846           0.0845           0.748
+##  7 Treg   CD8 T    Ptprc  Dpp4                 0.726               0.901                       0.707                         0.887              0.741            1.00             0.779           0.831            0.862
+##  8 DC     CD8 T    H2-D1  Cd8a                 0.925               1                           0.853                         1                  1.00             1.00             0.885           0.0845           0.593
+##  9 B      CD8 T    Ptprc  Dpp4                 0.713               0.901                       0.745                         0.887              0.666            1.00             0.779           0.831            0.862
+## 10 Mono   CD8 T    H2-T22 Cd8a                 0.779               1                           0.778                         1                  1.00             1.00             0.981           0.0845           0.664
 ## # … with 848 more rows
 ```
 
@@ -377,7 +734,7 @@ combined_plot <- cowplot::plot_grid(figures_without_legend, legends, nrow = 2, a
 print(combined_plot)
 ```
 
-![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
+![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ### Extra visualization of ligand-receptor pairs
 
@@ -390,7 +747,7 @@ semicircle corresponds to the scaled mean expression.
 make_mushroom_plot(prior_table, top_n = 30)
 ```
 
-![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-38-1.png)<!-- -->
+![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 We provide multiple ways to customize this plot, including changing the
 “size” and “fill” values to certain columns from the prioritization
@@ -407,7 +764,7 @@ print(paste0("Column names that you can use are: ", paste0(prior_table %>% selec
 make_mushroom_plot(prior_table, top_n = 30, size = "pct_expressed", color = "scaled_avg_exprs")
 ```
 
-![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-39-1.png)<!-- -->
+![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
 
@@ -415,7 +772,7 @@ make_mushroom_plot(prior_table, top_n = 30, size = "pct_expressed", color = "sca
 make_mushroom_plot(prior_table, top_n = 30, show_rankings = TRUE, show_all_datapoints = TRUE)
 ```
 
-![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-39-2.png)<!-- -->
+![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-11-2.png)<!-- -->
 
 ``` r
 
@@ -423,7 +780,7 @@ make_mushroom_plot(prior_table, top_n = 30, show_rankings = TRUE, show_all_datap
 make_mushroom_plot(prior_table, top_n = 30, true_color_range = TRUE)
 ```
 
-![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-39-3.png)<!-- -->
+![](seurat_steps_prioritization_files/figure-gfm/unnamed-chunk-11-3.png)<!-- -->
 
 ### References
 

@@ -402,7 +402,9 @@ lfc_plot_spatial = make_ligand_receptor_lfc_spatial_plot(receiver_oi, prioritize
 lfc_plot_spatial
 ```
 
-From this plot, you can see that some KC-niche ligands like Dll4 (by LSEC) and Il34 (by Stellate cells) are higher expressed in the periportal LSEC/stellate cells vs the pericentral ones. This can be interesting information knowing that KCs are mainly located periportally. However, other ligands like Gdf2 (by Stellate cells) are not preferentially expressed by periportal stellate cells, but this does not mean they cannot be interesting. As you can see in the following figure, this ligand has one of the highest ligand activities, meaning that there is a strong enrichment of its target genes among the KC-specific genes. 
+From this plot, you can see that some KC-niche ligands like Il34 (by Stellate cells) are higher expressed in the
+periportal stellate cells vs the pericentral ones. This can be interesting information knowing that KCs are mainly located
+periportally. However, the fact that other ligands are not preferentially expressed by periportal cell does not mean they cannot be interesting.
 
 ## Ligand expression, activity and target genes
 
@@ -413,9 +415,18 @@ Now: visualization of ligand activity and ligand-target links
 ```{r, fig.height= 12, fig.width=30}
 exprs_activity_target_plot = make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi,  prioritization_tables$prioritization_tbl_ligand_receptor,  prioritization_tables$prioritization_tbl_ligand_target, output$exprs_tbl_ligand,  output$exprs_tbl_target, lfc_cutoff, ligand_target_matrix, plot_legend = FALSE, heights = NULL, widths = NULL)
 exprs_activity_target_plot$combined_plot
+# exprs_activity_target_plot$legends # for legends
 ```
 
-On this plot, we can see that some strongly DE ligand-receptor pairs in the KC niche, have also high scaled ligand activity on KCs - making them strong predictions for further validation. An example of this is Gdf2 and Bmp10, who bind the receptor Acvrl1 (ALK1). The role of Gdf2/Bmp10-Acvrl1 in KC development was experimentally validated in the Guilliams et al paper. 
+In this plot, we see that only a few ligands in the 'scaled ligand activity' column has a high expression. This is due to the presence of some really well-performing outliers which can mask other also potentially interesting ligands. For the sake of visualization, we will change the color scale to only those within 1.5*interquartile range of the values (cf. whiskers in the boxplot) by setting `scaled_ligand_activity_limits = "IQR"`. Any outliers will be "squished" to the limits.
+
+```{r, fig.height= 12, fig.width=30}
+exprs_activity_target_plot = make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi,  prioritization_tables$prioritization_tbl_ligand_receptor, 
+                                                                    prioritization_tables$prioritization_tbl_ligand_target, output$exprs_tbl_ligand,  output$exprs_tbl_target, lfc_cutoff, ligand_target_matrix,
+                                                                    scaled_ligand_activity_limits = "IQR", plot_legend = FALSE, heights = NULL, widths = NULL)
+exprs_activity_target_plot$combined_plot
+```
+In this plot, some strongly DE ligand-receptor pairs in the KC niche, have also high scaled ligand activity on KCs - making them strong predictions for further validation.
 
 **important: ligand-receptor pairs with both high differential expression and ligand activity (=target gene enrichment) are very interesting predictions as key regulators of your intercellular communication process of interest !**
 
@@ -426,8 +437,9 @@ filtered_ligands = ligand_prioritized_tbl_oi %>% filter(receiver == receiver_oi)
 
 prioritized_tbl_oi = prioritization_tables$prioritization_tbl_ligand_receptor %>% filter(ligand %in% filtered_ligands) %>% select(niche, sender, receiver, ligand,  receptor, ligand_receptor, prioritization_score) %>% distinct() %>% inner_join(top_ligand_receptor_niche_df) %>% group_by(ligand) %>% filter(receiver == receiver_oi) %>% top_n(2, prioritization_score) %>% ungroup() 
 
-exprs_activity_target_plot = make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi,  prioritization_tables$prioritization_tbl_ligand_receptor,  prioritization_tables$prioritization_tbl_ligand_target, output$exprs_tbl_ligand,  output$exprs_tbl_target, lfc_cutoff, ligand_target_matrix, plot_legend = FALSE, heights = NULL, widths = NULL)
+exprs_activity_target_plot = make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi,  prioritization_tables$prioritization_tbl_ligand_receptor,  prioritization_tables$prioritization_tbl_ligand_target, output$exprs_tbl_ligand,  output$exprs_tbl_target, lfc_cutoff, ligand_target_matrix, scaled_ligand_activity_limits = "IQR", plot_legend = FALSE, heights = NULL, widths = NULL)
 exprs_activity_target_plot$combined_plot
+
 ```
 
 ## Circos plot of prioritized ligand-receptor pairs

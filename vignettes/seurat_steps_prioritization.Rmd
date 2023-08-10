@@ -31,8 +31,6 @@ library(tidyverse)
 
 ### Read in Seurat object
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
-seuratObj$celltype <- make.names(seuratObj$celltype)
-Idents(seuratObj) <- seuratObj$celltype
 
 ```
 
@@ -78,12 +76,12 @@ We will consider a gene to be expressed when it is expressed in at least 10% of 
 ```{r}
 # 1. Define a “sender/niche” cell population and a “receiver/target” cell population present in your expression data and determine which genes are expressed in both populations
 ## receiver
-receiver = "CD8.T"
+receiver = "CD8 T"
 expressed_genes_receiver = get_expressed_genes(receiver, seuratObj, pct = 0.10)
 background_expressed_genes = expressed_genes_receiver %>% .[. %in% rownames(ligand_target_matrix)]
 
 ## sender
-sender_celltypes = c("CD4.T","Treg", "Mono", "NK", "B", "DC")
+sender_celltypes = c("CD4 T","Treg", "Mono", "NK", "B", "DC")
 
 list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seuratObj, 0.10) # lapply to get the expressed genes of every sender cell type separately here
 expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
@@ -113,10 +111,13 @@ potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% 
 # 4. Perform NicheNet ligand activity analysis
 ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
 
-ligand_activities = ligand_activities %>% arrange(-pearson) %>% mutate(rank = rank(desc(pearson)))
+ligand_activities = ligand_activities %>% arrange(-aupr_corrected) %>% mutate(rank = rank(desc(aupr_corrected)))
 ligand_activities
 ```
 
+```{r}
+nichenet_seuratobj_aggregate
+```
 
 ## Perform prioritization of ligand-receptor pairs
 
@@ -129,10 +130,10 @@ In addition to the NicheNet ligand activity (`activity_scaled`), you can priorit
 * Condition-specificity of the ligand across all cell types: `ligand_condition_specificity`
 * Condition-specificity of the receptor across all cell types: `receptor_condition_specificity`
 
-Note that the first four criteria are calculated only in the condition of interest.
+Note that the first four criteria are calculated only in the condition of interest. 
 
 ```{r}
-# Default weights
+# By default, ligand_condition_specificty and receptor_condition_specificty are 0
 prioritizing_weights = c("de_ligand" = 1,
                           "de_receptor" = 1,
                           "activity_scaled" = 2,
@@ -171,13 +172,16 @@ processed_expr_table <- process_table_to_ic(expression_info, table_type = "expre
 processed_condition_markers <- process_table_to_ic(condition_markers, table_type = "group_DE", lr_network_renamed)
 ```
 
-Finally we generate the prioritization table.
+Finally we generate the prioritization table. The `lfc_ligand` and `lfc_receptor` columns are based on the differences between cell types within your condition of interest. This is equivalent to subsetting your Seurat object to only the condition of interest and running `Seurat::FindAllMarkers`.
+
+The columns that refer to differential expression between conditions are those with the _group suffix, e.g., `lfc_ligand_group` and `lfc_receptor_group.` These are celltype agnostic: they are calculated by using `Seurat::FindMarkers` between two conditions across all cell types.
+
 ```{r}
 prior_table <- generate_prioritization_tables(processed_expr_table,
                                processed_DE_table,
                                ligand_activities,
                                processed_condition_markers,
-                               prioritizing_weights)
+                               prioritizing_weights = prioritizing_weights)
 
 prior_table 
 ```
