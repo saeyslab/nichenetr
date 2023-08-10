@@ -197,7 +197,8 @@ prioritization_score_plot = function(plot_data){
 #' @description \code{make_ligand_activity_target_exprs_plot} Plot the ligand expression in senders plus their activity and target genes in receivers
 #'
 #' @usage
-#' make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, ligand_target_matrix, plot_legend = TRUE, heights = NULL, widths = NULL)
+#' make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target,
+#' exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, ligand_target_matrix, scaled_ligand_activity_limits = "abs_max", plot_legend = TRUE, heights = NULL, widths = NULL)
 #'
 #' @param receiver_oi Name of the receiver cell type of interest
 #' @param prioritized_tbl_oi Dataframe with the ligand-receptor interactions that should be visualized
@@ -207,6 +208,7 @@ prioritization_score_plot = function(plot_data){
 #' @param exprs_tbl_target Dataframe with the expression values for the targets in the receiver cell types
 #' @param lfc_cutoff Cutoff used on the logFC value
 #' @param ligand_target_matrix ligand-target matrix
+#' @param scaled_ligand_activity_limits limits used in the heatmap for the scaled ligand activity, one of "abs_max" (-+ absolute maximum), "min_max" (minimum and maximum), or "IQR" (cf. boxplot, outliers are squished to the limits)
 #' @param plot_legend TRUE (default): add legend to the plot. FALSE: do not add legend.
 #' @param heights automatic determination if default NULL. If not NULL: number given by the user to indicate the requested heights, which are the height proportions of the different row panels in the plot.
 #' @param widths automatic determination if default NULL. If not NULL: number given by the user to indicate the requested widths, which are the width proportions of the different columns (side-by-side heatmaps) in the plot.
@@ -215,12 +217,12 @@ prioritization_score_plot = function(plot_data){
 #'
 #' @examples
 #' \dontrun{
-#' make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, ligand_target_matrix, plot_legend = TRUE, heights = NULL, widths = NULL)
+#' make_ligand_activity_target_exprs_plot(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, ligand_target_matrix, scaled_ligand_activity_limits = "abs_max", plot_legend = TRUE, heights = NULL, widths = NULL)
 #' }
 #'
 #' @export
 #'
-make_ligand_activity_target_exprs_plot = function(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, ligand_target_matrix, plot_legend = TRUE, heights = NULL, widths = NULL){
+make_ligand_activity_target_exprs_plot = function(receiver_oi, prioritized_tbl_oi, prioritization_tbl_ligand_receptor, prioritization_tbl_ligand_target, exprs_tbl_ligand, exprs_tbl_target, lfc_cutoff, ligand_target_matrix, scaled_ligand_activity_limits = "abs_max", plot_legend = TRUE, heights = NULL, widths = NULL){
   requireNamespace("dplyr")
   requireNamespace("ggplot2")
 
@@ -382,11 +384,20 @@ make_ligand_activity_target_exprs_plot = function(receiver_oi, prioritized_tbl_o
   vis_ligand_pearson = ligand_pearson_matrix[order_ligands %>% generics::intersect(rownames(ligand_pearson_matrix)), order_receivers  %>% make.names()] #%>% as.matrix(ncol = 3) %>% magrittr::set_colnames("Pearson")
   p_ligand_pearson = vis_ligand_pearson %>% nichenetr::make_heatmap_ggplot("Prioritized ligands","Scaled Ligand activity", color = "purple",legend_position = "top", x_axis_position = "top", legend_title = "Scaled\nLigand\nActivity") + theme(legend.text = element_text(size = 9))
 
-  # limits = c(min(vis_ligand_pearson, na.rm =TRUE), max(vis_ligand_pearson, na.rm =TRUE))
-  limits = c(-max(abs(vis_ligand_pearson), na.rm = TRUE), max(abs(vis_ligand_pearson), na.rm = TRUE))
+  if (scaled_ligand_activity_limits == "min_max"){
+    limits = c(min(vis_ligand_pearson, na.rm =TRUE), max(vis_ligand_pearson, na.rm =TRUE))
+  } else if (scaled_ligand_activity_limits == "IQR") {
+    limits = c(quantile(vis_ligand_pearson, 0.25, na.rm=TRUE) - (1.5*IQR(vis_ligand_pearson, na.rm=TRUE)), quantile(vis_ligand_pearson, 0.75, na.rm=TRUE) + (1.5*IQR(vis_ligand_pearson, na.rm=TRUE)))
+  } else {
+    if (scaled_ligand_activity_limits != "abs_max") {
+      warning("scaled_ligand_activity_limits not recognized. Using default abs_max")
+    }
+    limits = c(-max(abs(vis_ligand_pearson), na.rm = TRUE), max(abs(vis_ligand_pearson), na.rm = TRUE))
+  }
+
   # print(limits)
 
-  custom_scale_fill = scale_fill_gradientn(colours = c("white",RColorBrewer::brewer.pal(n = 7, name = "PuRd")),values = c(0, 0.50, 0.55, 0.625, 0.70, 0.80, 0.90, 1),  limits = limits)
+  custom_scale_fill = scale_fill_gradientn(colours = c("white",RColorBrewer::brewer.pal(n = 7, name = "PuRd")),values = c(0, 0.50, 0.55, 0.625, 0.70, 0.80, 0.90, 1),  limits = limits, oob = scales::squish)
   p_ligand_pearson_scaled = p_ligand_pearson + custom_scale_fill
   p_ligand_pearson_scaled
 
