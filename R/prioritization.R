@@ -55,10 +55,6 @@ calculate_de = function(seurat_obj, celltype_colname,
     stop("Please input both condition_colname and condition_oi")
   }
 
-  # Check names
-  sapply(c(celltype_colname, condition_oi, condition_colname) %>% .[!is.na(.)], check_names)
-  sapply(celltype_colname, check_names, seurat_obj)
-
   # Subset seurat obj to condition of interest
   if (!is.na(condition_oi)) {
     seurat_obj = seurat_obj[,seurat_obj[[condition_colname]] == condition_oi]
@@ -114,10 +110,6 @@ get_exprs_avg = function(seurat_obj, celltype_colname,
     stop("Please input both condition_colname and condition_oi")
   }
 
-  # Check names
-  sapply(c(celltype_colname, condition_oi, condition_colname) %>% .[!is.na(.)], check_names)
-  sapply(celltype_colname, check_names, seurat_obj)
-
   # Subset seurat object
   if (!is.na(condition_oi)) {
     seurat_obj = seurat_obj[,seurat_obj[[condition_colname]] == condition_oi]
@@ -125,7 +117,7 @@ get_exprs_avg = function(seurat_obj, celltype_colname,
 
   seurat_obj <- NormalizeData(seurat_obj, verbose = FALSE)
   avg_celltype <- AverageExpression(seurat_obj, assays = "RNA", slot = "data", group.by = celltype_colname) %>%
-                    .$RNA %>% data.frame() %>% rownames_to_column("gene") %>%
+                    .$RNA %>% data.frame(check.names=FALSE) %>% rownames_to_column("gene") %>%
                     pivot_longer(!gene, names_to = "cluster_id", values_to = "avg_expr")
 
   return (avg_celltype)
@@ -138,7 +130,7 @@ get_exprs_avg = function(seurat_obj, celltype_colname,
 #' @description \code{process_table_to_ic} First, only keep information of ligands for senders_oi, and information of receptors for receivers_oi.
 #' Then, combine information for senders and receivers by linking ligands to receptors based on the prior knowledge ligand-receptor network.
 #' @usage process_table_to_ic(table_object, table_type = "expression", lr_network, senders_oi = NULL, receivers_oi = NULL)
-#' @param table_object Output of `get_exprs_avg`, `calculate_de`, or `FindMarkers`
+#' @param table_object Output of \code{get_exprs_avg}, \code{calculate_de}, or \code{FindMarkers}
 #' @param table_type "expression", "celltype_DE", or "group_DE": indicates whether the table contains expression, celltype markers, or condition-specific information
 #' @param lr_network Prior knowledge Ligand-Receptor network (columns: ligand, receptor)
 #' @param senders_oi Default NULL: all celltypes will be considered as senders. If you want to select specific senders of interest: you can add this here as character vector.
@@ -232,16 +224,25 @@ process_table_to_ic = function(table_object, table_type = "expression",
 #' User can choose the importance attached to each of the following prioritization criteria: differential expression of ligand and receptor, cell-type specificity of expression of ligand and receptor, NicheNet ligand activity
 #' @usage generate_prioritization_tables(sender_receiver_info, sender_receiver_de, ligand_activities, lr_condition_de = NULL,
 #'                                       prioritizing_weights = c("de_ligand" = 1,"de_receptor" = 1,"activity_scaled" = 2,
-#'                                                                "exprs_ligand" = 2,"exprs_receptor" = 2,
+#'                                                                "exprs_ligand" = 1,"exprs_receptor" = 1,
 #'                                                                "ligand_condition_specificity" = 0, "receptor_condition_specificity"=0))
 #'
-#' @param sender_receiver_info Output of `get_exprs_avg` -> `process_table_to_ic`
-#' @param sender_receiver_de Output of`calculate_de` -> `process_table_to_ic`
-#' @param ligand_activities Output of `predict_ligand_activities`
-#' @param lr_condition_de Output of `FindMarkers` -> `process_table_to_ic`
+#' @param sender_receiver_info Output of \code{get_exprs_avg} -> \code{process_table_to_ic}
+#' @param sender_receiver_de Output of\code{calculate_de} -> \code{process_table_to_ic}
+#' @param ligand_activities Output of \code{predict_ligand_activities}
+#' @param lr_condition_de Output of \code{FindMarkers} -> \code{process_table_to_ic}
 #' @param prioritizing_weights Named vector indicating the relative weights of each prioritization criterion
 #'
 #' @return Data frames of prioritized sender-ligand-receiver-receptor interactions.
+#' The resulting dataframe contains columns from the input dataframes, but columns from \code{lr_condition_de} are suffixed with \code{_group} (some columns from \code{lr_condition_de} are also not present).
+#' Additionally, the following columns are added:
+#' \itemize{
+#' \item \code{lfc_pval_*}: product of -log10(pval) and the LFC of the ligand/receptor
+#' \item \code{p_val_*_adapted}: p-value adapted to the sign of the LFC to only consider interactions where the ligand/receptor is upregulated in the sender/receiver
+#' \item \code{activity_zscore}: z-score of the ligand activity
+#' \item \code{prioritization_score}: The prioritization score for each interaction, calculated as a weighted sum of the prioritization criteria.
+#' }
+#' Moreover, \code{scaled_*} columns are scaled using the corresponding column's ranking or the \code{scale_quantile_adapted} function.
 #'
 #' @import dplyr
 #'
@@ -302,7 +303,7 @@ process_table_to_ic = function(table_object, table_type = "expression",
 #'
 #'
 generate_prioritization_tables = function(sender_receiver_info, sender_receiver_de, ligand_activities, lr_condition_de = NULL,
-                                          prioritizing_weights = c("de_ligand" = 1,"de_receptor" = 1,"activity_scaled" = 2,"exprs_ligand" = 2,"exprs_receptor" = 2,
+                                          prioritizing_weights = c("de_ligand" = 1,"de_receptor" = 1,"activity_scaled" = 2, "exprs_ligand" = 1,"exprs_receptor" = 1,
                                                                    "ligand_condition_specificity" = 0, "receptor_condition_specificity"=0)){
 
   requireNamespace("dplyr")
@@ -328,21 +329,21 @@ generate_prioritization_tables = function(sender_receiver_info, sender_receiver_
                                                                                         scaled_p_val_receptor_adapted = rank(p_val_receptor_adapted, ties.method = "average", na.last = FALSE)/max(rank(p_val_receptor_adapted, ties.method = "average", na.last = FALSE))) %>% dplyr::arrange(-lfc_pval_receptor)
 
   # Ligand activity prioritization
-  ligand_activity_prioritization = ligand_activities %>% select(test_ligand, pearson, rank) %>% rename(activity = pearson, ligand=test_ligand) %>%
+  ligand_activity_prioritization = ligand_activities %>% select(test_ligand, aupr_corrected, rank) %>% rename(activity=aupr_corrected, ligand=test_ligand) %>%
                                       dplyr::mutate(activity_zscore = nichenetr::scaling_zscore(activity),
                                                     scaled_activity = scale_quantile_adapted(activity, outlier_cutoff = 0.01)) %>% dplyr::arrange(-activity_zscore)
 
 
-  # Cell-type specificity of expression of ligand:  per ligand: score each sender combination based on expression
+  # Cell-type specificity of expression of ligand:  per ligand scale across cell types
   ligand_celltype_specificity_prioritization = sender_receiver_info %>% dplyr::select(sender, ligand, avg_ligand) %>% dplyr::distinct() %>% dplyr::group_by(ligand) %>%
                                                dplyr::mutate(scaled_avg_exprs_ligand = scale_quantile_adapted(avg_ligand)) %>% dplyr::arrange(-scaled_avg_exprs_ligand)
 
-  # Cell-type specificity of expression of receptor:  per receptor: score each receiver combination based on expression
+  # Cell-type specificity of expression of receptor:  per receptor scale across cell types
   receptor_celltype_specificity_prioritization = sender_receiver_info %>% dplyr::select(receiver, receptor, avg_receptor) %>% dplyr::distinct() %>% dplyr::group_by(receptor) %>%
-    dplyr::mutate(scaled_avg_exprs_receptor = scale_quantile_adapted(avg_receptor)) %>% dplyr::arrange(-scaled_avg_exprs_receptor)
+                                               dplyr::mutate(scaled_avg_exprs_receptor = scale_quantile_adapted(avg_receptor)) %>% dplyr::arrange(-scaled_avg_exprs_receptor)
 
   if (!is.null(lr_condition_de)){
-    # Condition specificity of ligand
+    # Condition specificity of ligand (upregulation)
     ligand_condition_prioritization = lr_condition_de %>% dplyr::ungroup() %>% dplyr::select(ligand, lfc_ligand, p_val_ligand) %>% dplyr::distinct() %>%
       dplyr::mutate(lfc_pval_ligand = -log10(p_val_ligand)*lfc_ligand,
                     p_val_ligand_adapted = -log10(p_val_ligand)*sign(lfc_ligand))
@@ -352,7 +353,7 @@ generate_prioritization_tables = function(sender_receiver_info, sender_receiver_
                                                                                         scaled_p_val_ligand_adapted = rank(p_val_ligand_adapted, ties.method = "average", na.last = FALSE)/max(rank(p_val_ligand_adapted, ties.method = "average", na.last = FALSE))) %>%
       dplyr::arrange(-lfc_pval_ligand) %>% rename_with(.fn = function(column_name) paste0(column_name, "_group"), .cols = -ligand)
 
-    # Condition specificity of receptor
+    # Condition specificity of receptor (upregulation)
     receptor_condition_prioritization = lr_condition_de %>% dplyr::ungroup() %>% dplyr::select(receptor, lfc_receptor, p_val_receptor) %>% dplyr::distinct() %>%
       dplyr::mutate(lfc_pval_receptor = -log10(p_val_receptor)*lfc_receptor,
                     p_val_receptor_adapted = -log10(p_val_receptor)*sign(lfc_receptor))
@@ -367,7 +368,6 @@ generate_prioritization_tables = function(sender_receiver_info, sender_receiver_
       stop("No lr_condition_de table given, yet the relevant weights are nonzero.\nEither set weights of 'ligand_condition_specificity' and 'receptor_condition_specificity' to zero or provide lr_condition_de.")
     }
   }
-
 
   weights <- prioritizing_weights
   # final group-based prioritization
