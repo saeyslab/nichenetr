@@ -115,10 +115,6 @@ ligand_activities = ligand_activities %>% arrange(-aupr_corrected) %>% mutate(ra
 ligand_activities
 ```
 
-```{r}
-nichenet_seuratobj_aggregate
-```
-
 ## Perform prioritization of ligand-receptor pairs
 
 In addition to the NicheNet ligand activity (`activity_scaled`), you can prioritize based on:
