@@ -100,7 +100,7 @@ predict_ligand_activities = function(geneset,background_expressed_genes,ligand_t
 }
 #' @title Infer weighted active ligand-target links between a possible ligand and target genes of interest
 #'
-#' @description \code{get_weighted_ligand_target_links} Infer active ligand target links between possible lignands and genes belonging to a gene set of interest: consider the intersect between the top n targets of a ligand and the gene set.
+#' @description \code{get_weighted_ligand_target_links} Infer active ligand target links between possible ligands and genes belonging to a gene set of interest: consider the intersect between the top n targets of a ligand and the gene set.
 #'
 #' @usage
 #' get_weighted_ligand_target_links(ligand, geneset,ligand_target_matrix,n = 250)
@@ -217,6 +217,89 @@ prepare_ligand_target_visualization = function(ligand_target_df, ligand_target_m
   return(vis_ligand_target_network)
 
 }
+
+#' @title Get the weighted ligand-receptor links between a possible ligand and its receptors
+#' @description \code{get_weighted_ligand_receptor_links} Get the weighted ligand-receptor links between a possible ligand and its receptors
+#'
+#' @param best_upstream_ligands Character vector containing ligands of interest.
+#' @param expressed_receptors Character vector of receptors expressed in the cell type of interest.
+#' @param lr_network A data frame with two columns, \code{from} and \code{to}, containing the ligand-receptor interactions.
+#' @param weighted_networks_lr_sig A data frame with three columns, \code{from}, \code{to} and \code{weight}, containing the ligand-receptor interactions and their weights.
+#'
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   ligand_receptor_links_df <- get_weighted_ligand_receptor_links(best_upstream_ligands, expressed_receptors, lr_network, weighted_networks$lr_sig)
+#' }
+#'
+get_weighted_ligand_receptor_links = function(best_upstream_ligands, expressed_receptors, lr_network, weighted_networks_lr_sig) {
+
+  lr_network <- lr_network %>% distinct(from, to)
+  weighted_networks_lr <- inner_join(weighted_networks_lr_sig, lr_network, by = c("from","to"))
+
+  lr_network_top <- lr_network %>% filter(from %in% best_upstream_ligands & to %in% expressed_receptors) %>% distinct(from,to)
+  best_upstream_receptors <- lr_network_top %>% pull(to) %>% unique()
+
+  lr_network_top_df_long <- weighted_networks_lr %>% filter(from %in% best_upstream_ligands & to %in% best_upstream_receptors)
+
+  return(lr_network_top_df_long)
+
+}
+
+#' @title Prepare ligand-receptor visualization
+#' @description \code{prepare_ligand_receptor_visualization} Prepare a matrix of ligand-receptor interactions for visualization.
+#'
+#' @param lr_network_top_df_long A data frame with three columns, \code{from}, \code{to} and \code{weight}, containing the ligand-receptor interactions and their weights.
+#' @param best_upstream_ligands Character vector of ligands of interest. This will only be used if \code{order_hclust = "receptors"} or \code{order_hclust = "none"}.
+#' @param order_hclust "both", "ligands", "receptors", or "none". If "both", the ligands and receptors are ordered by hierarchical clustering. If "ligands" or "receptors" only the ligands or receptors are ordered hierarchically. If "none", no hierarchical clustering is performed, and the ligands are ordered based on \code{best_upstream_ligands}, and the receptors are ordered alphabetically.
+#'
+#' @return A matrix of ligand-receptor interactions for visualization.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' ligand_receptor_network = prepare_ligand_receptor_visualization(best_upstream_ligands = best_upstream_ligands, expressed_receptors = expressed_receptors, lr_network = lr_network, weighted_networks_lr_sig = weighted_networks_lr_sig, order_hclust = TRUE)
+#' }
+#'
+prepare_ligand_receptor_visualization = function(lr_network_top_df_long, best_upstream_ligands, order_hclust = "both") {
+
+  lr_network_top_df <- lr_network_top_df_long %>% spread("from","weight",fill = 0)
+  lr_network_top_matrix = lr_network_top_df %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df$to)
+
+  if (order_hclust == "both" | order_hclust == "receptors") {
+    dist_receptors = dist(lr_network_top_matrix, method = "binary")
+    hclust_receptors = hclust(dist_receptors, method = "ward.D2")
+    order_receptors = hclust_receptors$labels[hclust_receptors$order]
+  }
+
+  if (order_hclust == "both" | order_hclust == "ligands") {
+    dist_ligands = dist(lr_network_top_matrix %>% t(), method = "binary")
+    hclust_ligands = hclust(dist_ligands, method = "ward.D2")
+    order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
+  }
+
+  if (order_hclust == "none" | order_hclust == "receptors") {
+    order_ligands_receptor = rev(best_upstream_ligands)
+  }
+
+  if (order_hclust == "none" | order_hclust == "ligands") {
+    order_receptors = rownames(lr_network_top_matrix)
+  }
+
+  order_receptors = order_receptors %>% intersect(rownames(lr_network_top_matrix))
+  order_ligands_receptor = order_ligands_receptor %>% intersect(colnames(lr_network_top_matrix))
+
+  vis_ligand_receptor_network = lr_network_top_matrix[order_receptors, order_ligands_receptor]
+  rownames(vis_ligand_receptor_network) <- order_receptors
+  colnames(vis_ligand_receptor_network) <- order_ligands_receptor
+
+  return(vis_ligand_receptor_network)
+
+}
+
 #' @title Assess probability that a target gene belongs to the geneset based on a multi-ligand random forest model
 #'
 #' @description \code{assess_rf_class_probabilities} Assess probability that a target gene belongs to the geneset based on a multi-ligand random forest model (with cross-validation). Target genes and background genes will be split in different groups in a stratified way.
@@ -1984,7 +2067,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 #' @param condition_oi Condition of interest. Should be a name present in the "condition_colname" column of the metadata.
 #' @param condition_reference The second condition (e.g. reference or steady-state condition). Should be a name present in the "condition_colname" column of the metadata.
 #' @param celltype_col Metadata colum name where the cell type identifier is stored. Default: "celltype". If this is NULL, the Idents() of the seurat object will be considered as your cell type identifier.
-#' @param expression_pct To consider only genes if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10
+#' @param ... Additional arguments passed to \code{\link{FindMarkers}}.
 #'
 #' @return A tbl with the log fold change values of genes. Positive lfc values: higher in condition_oi compared to condition_reference.
 #'
@@ -1999,7 +2082,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 #' }
 #' @export
 #'
-get_lfc_celltype = function(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, celltype_col = "celltype", expression_pct = 0.10){
+get_lfc_celltype = function(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, celltype_col = "celltype", ...){
   requireNamespace("Seurat")
   requireNamespace("dplyr")
   if(!is.null(celltype_col)){
@@ -2011,7 +2094,7 @@ get_lfc_celltype = function(celltype_oi, seurat_obj, condition_colname, conditio
 
   }
   seuratObj_sender = SetIdent(seuratObj_sender, value = seuratObj_sender[[condition_colname]])
-  DE_table_sender = FindMarkers(object = seuratObj_sender, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct, logfc.threshold = 0.05) %>% rownames_to_column("gene")
+  DE_table_sender = FindMarkers(object = seuratObj_sender, ident.1 = condition_oi, ident.2 = condition_reference, logfc.threshold = 0, ...) %>% rownames_to_column("gene")
 
   SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_sender)
 
