@@ -327,7 +327,7 @@ best_upstream_ligands = ligand_activities %>% top_n(20, aupr_corrected) %>% arra
 # DE analysis for each sender cell type
 DE_table_all = Idents(seuratObj) %>% levels() %>% intersect(sender_celltypes) %>%
   lapply(get_lfc_celltype, seurat_obj = seuratObj, condition_colname = "aggregate", condition_oi = condition_oi, condition_reference = condition_reference,
-         expression_pct = 0.10, celltype_col = NULL) %>% reduce(full_join) 
+         min.pct = 0.10, celltype_col = NULL) %>% reduce(full_join) 
 DE_table_all[is.na(DE_table_all)] = 0
 
 order_ligands <- make.names(best_upstream_ligands) %>% rev()
