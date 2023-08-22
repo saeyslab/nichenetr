@@ -19,7 +19,7 @@ get_weighted_ligand_target_links(ligand, geneset,ligand_target_matrix,n = 250)
 A tibble with columns ligand, target and weight (i.e. regulatory potential score).
 }
 \description{
-\code{get_weighted_ligand_target_links} Infer active ligand target links between possible lignands and genes belonging to a gene set of interest: consider the intersect between the top n targets of a ligand and the gene set.
+\code{get_weighted_ligand_target_links} Infer active ligand target links between possible ligands and genes belonging to a gene set of interest: consider the intersect between the top n targets of a ligand and the gene set.
 }
 \examples{
 \dontrun{
