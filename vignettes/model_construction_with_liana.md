@@ -1,26 +1,29 @@
----
-title: "Using LIANA ligand-receptor databases to construct the ligand-target model"
-author: "Chananchida Sang-aram"
-date: '2023-08-23'
-output: html_document
-vignette: >
-  %\VignetteIndexEntry{Using LIANA ligand-receptor databases to construct the ligand-target model}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
+Using LIANA ligand-receptor databases to construct the ligand-target
+model
+================
+Chananchida Sang-aram
+2023-08-23
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+Following the [Construction of NicheNet’s ligand-target
+model](model_construction.md) vignette, we will now demonstrate how to
+use ligand-receptor reactions from LIANA to build the ligand-target
+model. LIANA is a framework that combines both resources and
+computational tools for ligand-receptor cell-cell communication
+inference (Dimitrov et al., 2022). As the NicheNet prior model is built
+by integrating ligand-receptor, signaling , and gene regulatory
+databases, each part can be replaced with external data sources. We will
+show how the first part, the ligand-receptor database, can be replaced
+with those from LIANA, and how to run the model afterward.
 
-Following the [Construction of NicheNet's ligand-target model](model_construction.md) vignette, we will now demonstrate how to use ligand-receptor reactions from LIANA to build the ligand-target model. LIANA is a framework that combines both resources and computational tools for ligand-receptor cell-cell communication inference (Dimitrov et al., 2022). As the NicheNet prior model is built by integrating ligand-receptor, signaling , and gene regulatory databases, each part can be replaced with external data sources. We will show how the first part, the ligand-receptor database, can be replaced with those from LIANA, and how to run the model afterward.
-
-**Important**: Since LIANA also offers functions to calculate ligand-receptor interactions of interest, it is also possible to use them to select which ligands are of interest to do the ligand activity analysis. This is explained further in the [LIANA vignette](https://saezlab.github.io/liana/articles/liana_nichenet.html).
-
+**Important**: Since LIANA also offers functions to calculate
+ligand-receptor interactions of interest, it is also possible to use
+them to select which ligands are of interest to do the ligand activity
+analysis. This is explained further in the [LIANA
+vignette](https://saezlab.github.io/liana/articles/liana_nichenet.html).
 
 First, we will install LIANA:
 
-```{r message=FALSE}
+``` r
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
@@ -31,22 +34,33 @@ remotes::install_github('saezlab/liana')
 ```
 
 Load necessary packages.
-```{r}
+
+``` r
 library(liana)
 library(nichenetr)
 library(tidyverse)
 library(Seurat)
 ```
 
-To check which resources are present in LIANA, we can use the `show_resources()` function. These are then accessed via `select_resource()`.
+To check which resources are present in LIANA, we can use the
+`show_resources()` function. These are then accessed via
+`select_resource()`.
 
-```{r}
+``` r
 show_resources()
 ```
 
-Next, we will calculate how much overlap there is between the receptors in the LIANA and the signaling network in NicheNet. The `decomplexify()` function of LIANA is crucial in this case, as we would like to separate receptor subunits. If the overlap is too low, integration will probably not work very well. We will also use the `convert_alias_to_symbols` function of NicheNet. 
+    ##  [1] "Default"          "Consensus"        "Baccin2019"       "CellCall"         "CellChatDB"       "Cellinker"        "CellPhoneDB"      "CellTalkDB"       "connectomeDB2020" "EMBRACE"          "Guide2Pharma"     "HPMR"            
+    ## [13] "ICELLNET"         "iTALK"            "Kirouac2010"      "LRdb"             "Ramilowski2015"   "OmniPath"         "MouseConsensus"
 
-```{r}
+Next, we will calculate how much overlap there is between the receptors
+in the LIANA and the signaling network in NicheNet. The `decomplexify()`
+function of LIANA is crucial in this case, as we would like to separate
+receptor subunits. If the overlap is too low, integration will probably
+not work very well. We will also use the `convert_alias_to_symbols`
+function of NicheNet.
+
+``` r
 # Load signaling networks of NicheNet
 lr_network_human <- readRDS("~/Documents/nichenet/multinichenet_files/lr_network_human_21122021.rds")
 lr_network_mouse <- readRDS("~/Documents/nichenet/multinichenet_files/lr_network_mouse_21122021.rds")
@@ -73,14 +87,45 @@ overlap_df <- lapply(show_resources()[-1], function(resource) {
 }) %>% do.call(rbind, .)
 
 overlap_df
-
 ```
 
-On average, ~90% of the ligands and receptors of LIANA databases are in the NicheNet LR network (`frac_ligands_overlap`, `frac_receptors_overlap_lr`). Furthermore, almost all of the receptors in LIANA databases are present in the NicheNet signaling network (`frac_receptors_overlap_sig`). When using the "Consensus" database of LIANA, there are ~100 ligands that are not present in NicheNet (in contrast, there are 303 ligands in NicheNet that are not present in the LIANA consensus database).
+    ##                  n_ligands n_receptors n_ligands_overlap n_receptors_overlap_lr n_receptors_overlap_sig frac_ligands_overlap frac_receptors_overlap_lr frac_receptors_overlap_sig
+    ## Consensus             1032         934               923                    794                     927            0.8943798                 0.8501071                  0.9925054
+    ## Baccin2019             650         612               550                    535                     611            0.8461538                 0.8741830                  0.9983660
+    ## CellCall               276         195               272                    193                     195            0.9855072                 0.9897436                  1.0000000
+    ## CellChatDB             531         450               515                    430                     447            0.9698682                 0.9555556                  0.9933333
+    ## Cellinker             1216        1010               879                    817                    1003            0.7228618                 0.8089109                  0.9930693
+    ## CellPhoneDB            500         461               479                    415                     458            0.9580000                 0.9002169                  0.9934924
+    ## CellTalkDB             812         780               741                    683                     776            0.9125616                 0.8756410                  0.9948718
+    ## connectomeDB2020       813         681               768                    640                     678            0.9446494                 0.9397944                  0.9955947
+    ## EMBRACE                462         473               435                    436                     473            0.9415584                 0.9217759                  1.0000000
+    ## Guide2Pharma           293         243               289                    242                     243            0.9863481                 0.9958848                  1.0000000
+    ## HPMR                   365         492               260                    407                     492            0.7123288                 0.8272358                  1.0000000
+    ## ICELLNET               318         252               313                    246                     252            0.9842767                 0.9761905                  1.0000000
+    ## iTALK                  714         699               666                    625                     697            0.9327731                 0.8941345                  0.9971388
+    ## Kirouac2010            143          81               135                     80                      81            0.9440559                 0.9876543                  1.0000000
+    ## LRdb                   801         745               726                    662                     742            0.9063670                 0.8885906                  0.9959732
+    ## Ramilowski2015         639         589               607                    564                     588            0.9499218                 0.9575552                  0.9983022
+    ## OmniPath              1219         907               956                    773                     901            0.7842494                 0.8522602                  0.9933848
+    ## MouseConsensus         874         796               763                    685                     789            0.8729977                 0.8605528                  0.9912060
 
-To build the ligand-target model, we can use a very similar code to the [Construction of NicheNet's ligand-target model](model_construction.md) vignette. Users can choose between replacing the NicheNet LR database entirely with LIANA's (`replace_nichenet_lr = TRUE`), or just adding the LIANA database as an additional data source (which may contain a lot of redundant information).
+On average, ~90% of the ligands and receptors of LIANA databases are in
+the NicheNet LR network (`frac_ligands_overlap`,
+`frac_receptors_overlap_lr`). Furthermore, almost all of the receptors
+in LIANA databases are present in the NicheNet signaling network
+(`frac_receptors_overlap_sig`). When using the “Consensus” database of
+LIANA, there are ~100 ligands that are not present in NicheNet (in
+contrast, there are 303 ligands in NicheNet that are not present in the
+LIANA consensus database).
 
-```{r}
+To build the ligand-target model, we can use a very similar code to the
+[Construction of NicheNet’s ligand-target model](model_construction.md)
+vignette. Users can choose between replacing the NicheNet LR database
+entirely with LIANA’s (`replace_nichenet_lr = TRUE`), or just adding the
+LIANA database as an additional data source (which may contain a lot of
+redundant information).
+
+``` r
 # Load liana consensus LR network, and rename columns to be compatible with nichenet function
 # Users can choose here whether or not to replace the NicheNet LR network entirely, or just add the LIANA db to it
 replace_nichenet_lr <- TRUE
@@ -111,14 +156,23 @@ ligands <- list("TNF",c("TNF","IL6"))
 ligand_target_matrix_liana <- construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
                                                       damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
                                                       ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
-
 ```
 
 ### Running NicheNet on the LIANA ligand-target model
 
-In this section compare the results between using the LIANA LR network and NicheNet one in a typical [NicheNet analysis](seurat_steps.md). As this is mouse scRNA-seq data, we will build the model using mouse networks ("MouseConsensus" resource in LIANA). Furthermore, instead of using the same source weights for all data sources as in the previous section, we will use the optimized data source weights. Here, we will use the same data source weight for the LIANA model as the one that was computed for the NicheNet LR network. This may not be the optimum weight, but it requires a lot of runtime to optimize this parameter (see [Parameter optimization vignette](parameter_optimization.md) for more information).
+In this section compare the results between using the LIANA LR network
+and NicheNet one in a typical [NicheNet analysis](seurat_steps.md). As
+this is mouse scRNA-seq data, we will build the model using mouse
+networks (“MouseConsensus” resource in LIANA). Furthermore, instead of
+using the same source weights for all data sources as in the previous
+section, we will use the optimized data source weights. Here, we will
+use the same data source weight for the LIANA model as the one that was
+computed for the NicheNet LR network. This may not be the optimum
+weight, but it requires a lot of runtime to optimize this parameter (see
+[Parameter optimization vignette](parameter_optimization.md) for more
+information).
 
-```{r}
+``` r
 # Typical nichenet analysis
 # Load seurat object
 seuratObj = readRDS("~/Documents/nichenet/nichenet_files/seuratObj.rds")
@@ -153,7 +207,12 @@ expressed_ligands <- intersect(ligands,expressed_genes_sender)
 expressed_receptors <- intersect(receptors,expressed_genes_receiver)
 potential_ligands = lr_network_liana %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
 potential_ligands
+```
 
+    ##  [1] "Adam10" "Adam23" "Icosl"  "Thy1"   "H2-K1"  "App"    "Itgb2"  "Icam1"  "Lck"    "Fcer2a" "Cd48"   "Icam2"  "H2-M3"  "Vcam1"  "Cd22"   "Cd86"   "B2m"    "Sirpa"  "Adam17" "Selplg" "Btla"   "F11r"   "Fn1"    "Ebi3"   "Hp"     "Tgfb1"  "Lgals1"
+    ## [28] "Vcan"   "Mif"    "Il15"   "Copa"   "Ybx1"   "Fam3c"  "Ccl2"   "Crlf2"  "Ccl22"  "Cxcl10" "Cxcl16" "Cd72"   "Txlna"  "Psen1"  "F13a1"  "C1qb"   "Gnai2"  "Tgm2"   "Gnas"   "Ccl5"   "Mia"    "H2-T23" "Lyz1"   "Lyz2"
+
+``` r
 # Constructing the ligand-target matrix
 gr_network_mouse <- readRDS("~/Documents/nichenet/multinichenet_files/gr_network_mouse_21122021.rds")
 
@@ -174,7 +233,12 @@ weighted_networks_liana <- apply_hub_corrections(weighted_networks = weighted_ne
 ligand_target_matrix_liana <- construct_ligand_target_matrix(weighted_networks = weighted_networks_liana, ligands = as.list(potential_ligands), algorithm = "PPR",
                                                        damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
                                                        ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
+```
 
+    ## Warning in construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff, : One or more ligands of interest not present in the ligand-receptor network 'lr_network'. You can possibly ignore this warning if you provided your own ligand_receptor
+    ## network to the weighted networks.
+
+``` r
 # Filter background genes and the gene set of interest to only the ones in the ligand-target matrix
 background_expressed_genes <- expressed_genes_receiver %>% .[. %in% rownames(ligand_target_matrix_liana)]
 geneset_oi <- geneset_oi %>% .[. %in% rownames(ligand_target_matrix_liana)]
@@ -186,11 +250,26 @@ ligand_activities <- ligand_activities %>% arrange(-aupr_corrected) %>% mutate(r
 ligand_activities
 ```
 
+    ## # A tibble: 51 × 6
+    ##    test_ligand auroc  aupr aupr_corrected pearson  rank
+    ##    <chr>       <dbl> <dbl>          <dbl>   <dbl> <dbl>
+    ##  1 Ebi3        0.663 0.389          0.244  0.300      1
+    ##  2 H2-M3       0.608 0.293          0.147  0.179      2
+    ##  3 H2-T23      0.611 0.278          0.133  0.154      3
+    ##  4 Lck         0.621 0.268          0.122  0.103      4
+    ##  5 H2-K1       0.605 0.268          0.122  0.142      5
+    ##  6 Sirpa       0.613 0.263          0.117  0.143      6
+    ##  7 Cd48        0.613 0.259          0.113  0.0866     7
+    ##  8 Tgfb1       0.597 0.254          0.108  0.202      8
+    ##  9 Ccl22       0.605 0.250          0.104  0.125      9
+    ## 10 Ccl5        0.606 0.248          0.102  0.0343    10
+    ## # ℹ 41 more rows
+
 #### Compare results with NicheNet ligand-target model
 
 Run NicheNet using the wrapper function.
 
-```{r}
+``` r
 # Use the aggregate function
 ligand_target_matrix = readRDS("~/Documents/nichenet/multinichenet_files/ligand_target_matrix_nsga2r_final_mouse.rds")
 weighted_networks = readRDS("~/Documents/nichenet/multinichenet_files/weighted_networks_nsga2r_final_mouse.rds")
@@ -204,19 +283,51 @@ nichenet_output = nichenet_seuratobj_aggregate(
   ligand_target_matrix = ligand_target_matrix,
   lr_network = lr_network_mouse,
   weighted_networks = weighted_networks)
+```
 
+    ## [1] "Read in and process NicheNet's networks"
+    ## [1] "Define expressed ligands and receptors in receiver and sender cells"
+    ## [1] "Perform DE analysis in receiver cell"
+    ## [1] "Perform NicheNet ligand activity analysis"
+    ## [1] "Infer active target genes of the prioritized ligands"
+    ## [1] "Infer receptors of the prioritized ligands"
+    ## [1] "Perform DE analysis in sender cells"
+
+``` r
 nichenet_output$ligand_activities
 ```
 
-Compare the results between LIANA and NicheNet. Here we see that half of the top 20 ligands between the two are the same.
+    ## # A tibble: 73 × 6
+    ##    test_ligand auroc  aupr aupr_corrected pearson  rank
+    ##    <chr>       <dbl> <dbl>          <dbl>   <dbl> <dbl>
+    ##  1 Ebi3        0.663 0.390          0.244   0.301     1
+    ##  2 Ptprc       0.642 0.310          0.165   0.167     2
+    ##  3 H2-M3       0.608 0.292          0.146   0.179     3
+    ##  4 H2-M2       0.611 0.279          0.133   0.153     5
+    ##  5 H2-T10      0.611 0.279          0.133   0.153     5
+    ##  6 H2-T22      0.611 0.279          0.133   0.153     5
+    ##  7 H2-T23      0.611 0.278          0.132   0.153     7
+    ##  8 H2-K1       0.605 0.268          0.122   0.142     8
+    ##  9 H2-Q4       0.605 0.268          0.122   0.141    10
+    ## 10 H2-Q6       0.605 0.268          0.122   0.141    10
+    ## # ℹ 63 more rows
 
-```{r}
+Compare the results between LIANA and NicheNet. Here we see that half of
+the top 20 ligands between the two are the same.
+
+``` r
 intersect(ligand_activities[1:20,]$test_ligand, nichenet_output$ligand_activities[1:20,]$test_ligand)
 ```
 
-Below is a comparison of the rankings. Some of the NicheNet top-ranked ligands are not present in the LIANA LR network, such as Ptprc and some H2- ligands. Nonetheless, the LIANA network seems to have made some new links that results in new ligands appearing, such as Lck, Ccl5, and Crlf2.
+    ##  [1] "Ebi3"   "H2-M3"  "H2-T23" "H2-K1"  "Sirpa"  "Cd48"   "Tgfb1"  "Ccl22"  "App"    "Selplg" "Cxcl10" "Btla"
 
-```{r fig.width=9, fig.height=6}
+Below is a comparison of the rankings. Some of the NicheNet top-ranked
+ligands are not present in the LIANA LR network, such as Ptprc and some
+H2- ligands. Nonetheless, the LIANA network seems to have made some new
+links that results in new ligands appearing, such as Lck, Ccl5, and
+Crlf2.
+
+``` r
 #
 rankings_df <- bind_rows(ligand_activities %>% select(test_ligand, rank) %>% mutate(db = "LIANA"),
                          nichenet_output$ligand_activities %>% select(test_ligand, rank) %>% mutate(db = "NicheNet"))
@@ -250,6 +361,13 @@ p2 <- ggplot(rankings_df, aes(x=db, y=new_rank, label=test_ligand, group = test_
 cowplot::plot_grid(p1, p2)
 ```
 
+![](model_construction_with_liana_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
 ## References
 
-Dimitrov, D., Türei, D., Garrido-Rodriguez M., Burmedi P.L., Nagai, J.S., Boys, C., Flores, R.O.R., Kim, H., Szalai, B., Costa, I.G., Valdeolivas, A., Dugourd, A. and Saez-Rodriguez, J. Comparison of methods and resources for cell-cell communication inference from single-cell RNA-Seq data. Nat Commun 13, 3224 (2022). https://doi.org/10.1038/s41467-022-30755-0
+Dimitrov, D., Türei, D., Garrido-Rodriguez M., Burmedi P.L., Nagai,
+J.S., Boys, C., Flores, R.O.R., Kim, H., Szalai, B., Costa, I.G.,
+Valdeolivas, A., Dugourd, A. and Saez-Rodriguez, J. Comparison of
+methods and resources for cell-cell communication inference from
+single-cell RNA-Seq data. Nat Commun 13, 3224 (2022).
+<https://doi.org/10.1038/s41467-022-30755-0>
