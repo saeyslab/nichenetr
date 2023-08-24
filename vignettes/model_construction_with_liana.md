@@ -53,12 +53,7 @@ show_resources()
     ##  [1] "Default"          "Consensus"        "Baccin2019"       "CellCall"         "CellChatDB"       "Cellinker"        "CellPhoneDB"      "CellTalkDB"       "connectomeDB2020" "EMBRACE"          "Guide2Pharma"     "HPMR"            
     ## [13] "ICELLNET"         "iTALK"            "Kirouac2010"      "LRdb"             "Ramilowski2015"   "OmniPath"         "MouseConsensus"
 
-Next, we will calculate how much overlap there is between the receptors
-in the LIANA and the signaling network in NicheNet. The `decomplexify()`
-function of LIANA is crucial in this case, as we would like to separate
-receptor subunits. If the overlap is too low, integration will probably
-not work very well. We will also use the `convert_alias_to_symbols`
-function of NicheNet.
+Next, we will calculate how much overlap there is between the ligands and receptors in the LIANA and NicheNet databases. If the overlap between LIANA receptors and NicheNet signaling network is too low, the integration will probably not work very well. Furthermore, The `decomplexify()` function of LIANA is crucial in our case, as we would like to separate receptors into their respective subunits.
 
 ``` r
 # Load signaling networks of NicheNet
@@ -109,14 +104,7 @@ overlap_df
     ## OmniPath              1219         907               956                    773                     901            0.7842494                 0.8522602                  0.9933848
     ## MouseConsensus         874         796               763                    685                     789            0.8729977                 0.8605528                  0.9912060
 
-On average, ~90% of the ligands and receptors of LIANA databases are in
-the NicheNet LR network (`frac_ligands_overlap`,
-`frac_receptors_overlap_lr`). Furthermore, almost all of the receptors
-in LIANA databases are present in the NicheNet signaling network
-(`frac_receptors_overlap_sig`). When using the “Consensus” database of
-LIANA, there are ~100 ligands that are not present in NicheNet (in
-contrast, there are 303 ligands in NicheNet that are not present in the
-LIANA consensus database).
+On average, ~90% of the ligands and receptors of LIANA databases are in the NicheNet LR network (`frac_ligands_overlap`, `frac_receptors_overlap_lr`), and almost all of the receptors in LIANA databases are present in the NicheNet signaling network (`frac_receptors_overlap_sig`). When using the "Consensus" database of LIANA, there are ~100 ligands that are not present in NicheNet; in contrast, there are 303 ligands in NicheNet that are not present in the LIANA consensus database.
 
 To build the ligand-target model, we can use a very similar code to the
 [Construction of NicheNet’s ligand-target model](model_construction.md)
@@ -328,7 +316,6 @@ links that results in new ligands appearing, such as Lck, Ccl5, and
 Crlf2.
 
 ``` r
-#
 rankings_df <- bind_rows(ligand_activities %>% select(test_ligand, rank) %>% mutate(db = "LIANA"),
                          nichenet_output$ligand_activities %>% select(test_ligand, rank) %>% mutate(db = "NicheNet"))
 rankings_df <- rankings_df %>% group_by(db) %>% mutate(new_rank = 1:n()) %>%
