@@ -170,8 +170,6 @@ names(sender_ligand_assignment)
 
 The top ligands seem to be most strongly expressed by B cells, NK cells, monocytes and DCs. We will know also look at which ligands are common across multiple cell types (= those that are specific to > 1 cell type, or those that were not assigned to a cell type in the previous block of code)
 
-Determine now which prioritized ligands are expressed by CAFs and or endothelial cells
-
 ```{r}
 
 all_assigned_ligands = sender_ligand_assignment %>% lapply(function(x){names(x)}) %>% unlist()
