@@ -29,6 +29,8 @@ make_mushroom_plot(prioritization_table, top_n = 30, show_ranking = FALSE, show_
 
 \item{unranked_receptor_fill_colors}{A vector of the low and high colors to use for the unkraed receptors when show_all_datapoints is TRUE (default: c(alpha("#FFFFFF", alpha=0.2), alpha("#252525", alpha=0.2)))}
 
+\item{...}{Additional arguments passed to \code{\link{ggplot2::theme}}. As there are often issues with the scales legend, it is recommended to change legend sizes and positions using this argument, i.e., \code{legend.key.height}, \code{legend.key.width}, \code{legend.title}, and \code{legend.text}.}
+
 \item{show_ranking}{A logical indicating whether to show the ranking of the ligand-receptor pairs (default: FALSE)}
 }
 \value{
@@ -52,4 +54,6 @@ make_mushroom_plot(prior_table, show_all_datapoints = TRUE, true_color_range = T
 # Change the size and color columns
 make_mushroom_plot(prior_table, size = "pct_expressed", color = "scaled_avg_exprs")
 }
+
+
 }

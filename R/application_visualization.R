@@ -11,6 +11,7 @@
 #' @param top_n_regulators The number of top regulators that should be included in the ligand-target signaling network. Top regulators are regulators that score both high for being upstream of the target gene(s) and high for being downstream of the ligand. Default: 4.
 #' @param weighted_networks A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)
 #' @param ligands_position Indicate whether the ligands in the ligand-target matrix are in the rows ("rows") or columns ("cols"). Default: "cols".
+#' @param minmax_scaling Indicate whether the weights of both dataframes should be min-max scaled between 0.75 and 1. Default: FALSE.
 #'
 #' @return A list containing 2 elements (sig and gr): the integrated weighted ligand-signaling and gene regulatory networks data frame / tibble format with columns: from, to, weight
 #'
@@ -27,7 +28,7 @@
 #' }
 #' @export
 #'
-get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all, top_n_regulators = 4, weighted_networks, ligands_position = "cols"){
+get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all, top_n_regulators = 4, weighted_networks, ligands_position = "cols", minmax_scaling = FALSE){
 
   if (!is.list(weighted_networks))
     stop("weighted_networks must be a list object")
@@ -69,6 +70,11 @@ get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all,
     filter(from %in% c(ligands_all,tf_nodes) & to %in% tf_nodes) %>% group_by(from,to) %>% mutate(weight = sum(weight)) %>% ungroup() %>% distinct()
   tf_regulatory = weighted_networks$gr %>%
     filter(from %in% final_combined_df$TF & to %in% targets_all)  %>% ungroup() %>% distinct()
+
+  if (minmax_scaling){
+    tf_signaling <- tf_signaling %>% mutate(weight = ((weight-min(weight))/(max(weight)-min(weight))) + 0.75)
+    tf_regulatory <- tf_regulatory %>% mutate(weight = ((weight-min(weight))/(max(weight)-min(weight))) + 0.75)
+  }
 
   return(list(sig = tf_signaling, gr = tf_regulatory))
 }
@@ -562,6 +568,7 @@ make_heatmap_bidir_lt_ggplot = function(matrix, y_name, x_name, y_axis = TRUE, x
 #' @param receptor_fill_colors A vector of the low and high colors to use for the receptor semicircle fill gradient (default: c("#FEE0D2", "#A50F15"))
 #' @param unranked_ligand_fill_colors A vector of the low and high colors to use for the unranked ligands when show_all_datapoints is TRUE (default: c(alpha("#FFFFFF", alpha=0.2), alpha("#252525", alpha=0.2)))
 #' @param unranked_receptor_fill_colors A vector of the low and high colors to use for the unkraed receptors when show_all_datapoints is TRUE (default: c(alpha("#FFFFFF", alpha=0.2), alpha("#252525", alpha=0.2)))
+#' @param ... Additional arguments passed to \code{\link{ggplot2::theme}}. As there are often issues with the scales legend, it is recommended to change legend sizes and positions using this argument, i.e., \code{legend.key.height}, \code{legend.key.width}, \code{legend.title}, and \code{legend.text}.
 #'
 #' @return A ggplot object
 #'
@@ -586,15 +593,18 @@ make_heatmap_bidir_lt_ggplot = function(matrix, y_name, x_name, y_axis = TRUE, x
 #' # Change the size and color columns
 #' make_mushroom_plot(prior_table, size = "pct_expressed", color = "scaled_avg_exprs")
 #' }
+#'
+#'
 #' @export
 #'
-make_mushroom_plot = function(prioritization_table, top_n = 30, show_rankings = FALSE,
+make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings = FALSE,
                               show_all_datapoints = FALSE, true_color_range = FALSE,
                               size = "scaled_avg_exprs", color = "scaled_lfc",
                               ligand_fill_colors = c("#DEEBF7", "#08306B"),
                               receptor_fill_colors = c("#FEE0D2", "#A50F15"),
                               unranked_ligand_fill_colors = c(alpha("#FFFFFF", alpha=0.2), alpha("#252525", alpha=0.2)),
-                              unranked_receptor_fill_colors = c( alpha("#FFFFFF", alpha=0.2), alpha("#252525", alpha=0.2))){
+                              unranked_receptor_fill_colors = c( alpha("#FFFFFF", alpha=0.2), alpha("#252525", alpha=0.2)),
+                              ...){
   size_ext <-  c("ligand", "receptor"); color_ext <- c("ligand", "receptor")
   if (size == "pct_expressed") size_ext <- c("sender", "receiver")
   if (color == "pct_expressed") color_ext <- c("sender", "receiver")
@@ -605,7 +615,7 @@ make_mushroom_plot = function(prioritization_table, top_n = 30, show_rankings = 
     stop(paste(paste0("`", cols_to_use %>% .[!. %in% colnames(prioritization_table)], "`", collapse =", "), "column not in prioritization table"))
   }
   if(!is.logical(show_rankings) | length(show_rankings) != 1)
-       stop("show_rankings should be a TRUE or FALSE")
+    stop("show_rankings should be a TRUE or FALSE")
   if(!is.logical(show_all_datapoints) | length(show_all_datapoints) != 1)
     stop("show_all_datapoints should be a TRUE or FALSE")
   if(!is.logical(true_color_range) | length(true_color_range) != 1)
@@ -658,6 +668,38 @@ make_mushroom_plot = function(prioritization_table, top_n = 30, show_rankings = 
   if (true_color_range) color_lims <- NULL
 
   scale <- 0.5
+
+  ncelltypes <- length(celltypes_vec)
+  n_interactions <- length(lr_interaction_vec)
+  legend2_df <- data.frame(values = c(0.25, 0.5, 0.75, 1), x=(ncelltypes+2.5):(ncelltypes+5.5), y=rep(floor(n_interactions/3), 4), start=-pi)
+  axis_rect <- data.frame(xmin=0, xmax=ncelltypes+1, ymin=0, ymax=n_interactions+1)
+  panel_grid_y <- data.frame(x = rep(seq(from = 0.5, to = ncelltypes+0.5, by = 1), each=2),
+                             y = c(n_interactions+1, 0), group = rep(1:(ncelltypes+1), each=2))
+  panel_grid_x <- data.frame(y = rep(seq(from = 0.5, to = n_interactions+0.5, by = 1), each=2),
+                             x = c(ncelltypes+1, 0), group = rep(1:(n_interactions+1), each=2))
+
+  theme_args <- list(panel.grid.major = element_blank(),
+                     legend.box = "horizontal",
+                     panel.background = element_blank())
+
+  theme_args[names(list(...))] <- list(...)
+
+  # Check if legend.title is in the extra arguments
+    # Multiply by ratio of 5/14: see https://stackoverflow.com/questions/25061822/ggplot-geom-text-font-size-control
+  scale_legend_title_size <- ifelse("legend.title" %in% names(theme_args), theme_args$legend.title$size*(5/14), GeomLabel$default_aes$size)
+  # Check if legend.text is in the extra arguments
+  scale_legend_text_size <- ifelse("legend.text" %in% names(theme_args), theme_args$legend.text$size*(5/14), GeomLabel$default_aes$size)
+
+  # Check if legend.justification is in the extra arguments
+  if (!"legend.justification" %in% names(theme_args)) {
+    theme_args$legend.justification <- c(1, 0.7)
+  }
+
+  # Check if legend.position is in the extra arguments
+  if (!"legend.position" %in% names(theme_args)){
+    theme_args$legend.position <- c(1, 0.7)
+  }
+
   p1 <- ggplot() +
     # Draw ligand semicircle
     geom_arc_bar(data = filtered_table %>% filter(type=="ligand",  prioritization_rank <= top_n),
@@ -673,34 +715,54 @@ make_mushroom_plot = function(prioritization_table, top_n = 30, show_rankings = 
                  aes(x0 = x, y0 = y, r0 = 0, r = sqrt(size)*scale,
                      start = start, end = start + pi, fill=color),
                  color = "white") +
+    # Size legend
+    geom_arc_bar(data = legend2_df, aes(x0=x, y0=y, r0=0, r=sqrt(values)*scale, start=start, end=start+pi), fill="black") +
+    geom_rect(data = legend2_df, aes(xmin=x-0.5, xmax=x+0.5, ymin=y-0.5, ymax=y+0.5), color="gray90", fill=NA) +
+    geom_text(data = legend2_df, aes(label=values, x=x, y=y-0.6), vjust=1, size = scale_legend_text_size) +
+    geom_text(data = data.frame(x = (ncelltypes+4), y = floor(n_interactions/3)+1, label = size_title), aes(x=x, y=y, label=label), size = scale_legend_title_size) +
+    # Panel grid
+    geom_line(data = panel_grid_y, aes(x=x, y=y, group=group), color = "gray90") +
+    geom_line(data = panel_grid_x, aes(x=x, y=y, group=group), color = "gray90") +
+    # Draw box to represent x and y "axis"
+    geom_rect(data = axis_rect, aes(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax), color = "black", fill = "transparent") +
+    # Other plot information
     scale_fill_gradient(low = receptor_fill_colors[1], high=receptor_fill_colors[2] , limits=color_lims, oob=scales::squish,
                         name=paste0(color_title,  " (", color_ext[2], ")") %>% str_wrap(width=15)) +
-    # Other plot information
-    scale_y_continuous(breaks=length(lr_interaction_vec):1, labels=names(lr_interaction_vec)) +
-    scale_x_continuous(breaks=1:length(celltypes_vec), labels=names(celltypes_vec), position="top") +
+    scale_y_continuous(breaks=n_interactions:1, labels=names(lr_interaction_vec), expand = expansion(add=c(0,0))) +
+    scale_x_continuous(breaks=1:ncelltypes, labels=names(celltypes_vec), position="top", expand = expansion(add=c(0,0))) +
     xlab("Sender cell types") + ylab("Ligand-receptor interaction") +
     coord_fixed() +
-    theme_bw() +
-    theme(panel.grid.major = element_blank(),
-          legend.box = "horizontal")
-
+    do.call(theme, theme_args)
 
   # Add unranked ligand and receptor semicircles if requested
   if (show_all_datapoints){
+
+    # Limits will depend on true_color_range
+    unranked_ligand_lims <- c(0,1); unranked_receptor_lims <- c(0,1)
+    if (true_color_range){
+      # Follow limits of the top_n lr pairs
+      unranked_ligand_lims <- filtered_table %>% filter(type=="ligand",  prioritization_rank <= top_n) %>%
+        select(color) %>% range
+      unranked_receptor_lims <- filtered_table %>% filter(type=="receptor",  prioritization_rank <= top_n) %>%
+        select(color) %>% range
+    }
+
     p1 <- p1 + new_scale_fill() +
       geom_arc_bar(data = filtered_table %>% filter(type=="ligand", prioritization_rank > top_n),
                    aes(x0 = x, y0 = y, r0 = 0, r = sqrt(size)*scale,
                        start = start, end = start + pi, fill=color),
                    color = "white") +
       scale_fill_gradient(low = unranked_ligand_fill_colors[1], high=unranked_ligand_fill_colors[2],
-                          limits=color_lims, oob=scales::squish, guide = "none") +
+                          limits=unranked_ligand_lims, oob = scales::oob_squish,
+                          guide = "none") +
       new_scale_fill() +
       geom_arc_bar(data = filtered_table %>% filter(type=="receptor", prioritization_rank > top_n),
                    aes(x0 = x, y0 = y, r0 = 0, r = sqrt(size)*scale,
                        start = start, end = start + pi, fill=color),
                    color = "white") +
       scale_fill_gradient(low=unranked_receptor_fill_colors[1], high=unranked_receptor_fill_colors[2],
-                          limits=color_lims, oob=scales::squish, guide = "none")
+                          limits=unranked_receptor_lims, oob = scales::oob_squish,
+                          guide = "none")
   }
 
   # Add ranking numbers if requested
@@ -709,33 +771,9 @@ make_mushroom_plot = function(prioritization_table, top_n = 30, show_rankings = 
                                aes(x=x, y=y, label=prioritization_rank))
   }
 
-  legend1 <- ggpubr::as_ggplot(ggpubr::get_legend(p1))
-
-  # For the size legend, create a new plot
-  legend2 <- ggplot(data.frame(values = c(0.25, 0.5, 0.75, 1), x=1:4, y=1, start=-pi)) +
-    geom_rect(aes(xmin=x-0.5, xmax=x+0.5, ymin=y-0.5, ymax=y+0.5), color="gray80", fill=NA) +
-    geom_arc_bar(aes(x0=x, y0=y, r0=0, r=sqrt(values)*scale, start=start, end=start+pi), fill="black") +
-    geom_text(aes(label=values, x=x, y=y-0.6), vjust=1) +
-    labs(tag = size_title) +
-    scale_x_continuous(breaks = 1:4, labels=c(0.25, 0.5, 0.75, 1)) +
-    scale_y_continuous(limits=c(-0.5, 1.5)) +
-    labs(x="Percent expressed") +
-    coord_fixed() +  theme_classic() +
-    theme(panel.background = element_blank(),
-          plot.background = element_blank(),
-          plot.margin = margin(0, 0, 10, 0),
-          plot.tag.position = "top",
-          plot.tag = element_text(margin=margin(0, 0, 5,0), size=10),
-          axis.text = element_blank(),
-          axis.line = element_blank(),
-          axis.ticks = element_blank(),
-          axis.title = element_blank())
-
-  # Combine the two legends
-  legends <- cowplot::plot_grid(NULL, legend1, legend2, NULL, nrow=4, scale=c(1,1,0.5,1),
-                                rel_heights = c(2, 1, 2, 2), align = "v", axis="tb")
-  cowplot::plot_grid(p1 + theme(legend.position="none"), legends)
+  p1
 }
+
 
 ## Circos plot functions
 #' @title Assign ligands to cell types
