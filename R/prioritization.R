@@ -45,8 +45,10 @@ calculate_de = function(seurat_obj, celltype_colname,
                         ...){
 
   # Default settings to return all genes with their p-val and LFC
-  FindAllMarkers_args = list(object = seurat_obj, assay = assay_oi,
-                             features = NULL, min.pct = 0, logfc.threshold = 0, return.thresh = 1)
+  FindAllMarkers_args = list(assay = assay_oi,
+                             features = NULL, min.pct = 0,
+                             logfc.threshold = 0,
+                             return.thresh = 1)
 
   # Replace this with user arguments
   FindAllMarkers_args[names(list(...))] =  list(...)
@@ -63,7 +65,8 @@ calculate_de = function(seurat_obj, celltype_colname,
   # Set celltype as identity class
   Idents(seurat_obj) <- seurat_obj[[celltype_colname, drop=TRUE]]
 
-  DE_table = do.call(FindAllMarkers, FindAllMarkers_args) %>%
+  FindAllMarkers_args$object <- seurat_obj
+  DE_table <- do.call(FindAllMarkers, FindAllMarkers_args) %>%
                 rename(cluster_id = cluster)
 
   SeuratV4 = c("avg_log2FC") %in% colnames(DE_table)
