@@ -269,6 +269,11 @@ prepare_ligand_receptor_visualization = function(lr_network_top_df_long, best_up
   lr_network_top_df <- lr_network_top_df_long %>% spread("from","weight",fill = 0)
   lr_network_top_matrix = lr_network_top_df %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df$to)
 
+  # Check if order_hclust is valid
+  if (!(order_hclust %in% c("both", "ligands", "receptors", "none"))) {
+    stop("order_hclust must be one of 'both', 'ligands', 'receptors', or 'none'")
+  }
+
   if (order_hclust == "both" | order_hclust == "receptors") {
     dist_receptors = dist(lr_network_top_matrix, method = "binary")
     hclust_receptors = hclust(dist_receptors, method = "ward.D2")
@@ -482,6 +487,58 @@ calculate_fraction_top_predicted_fisher = function(affected_gene_predictions, qu
     return(summary)
   }
 }
+
+#' @title Run ligand activity analysis with bootstrap
+#' @description \code{bootstrap_ligand_activity_analysis} Randomly sample a gene set from all expressed genes in the receiver cell type, then perform ligand activity analysis on this gene set. This 'null gene set' has equal length to the gene set of interest.
+#' @usage bootstrap_ligand_activity_analysis(expressed_genes_receiver, geneset_oi, background_expressed_genes, ligand_target_matrix, potential_ligands, n_iter = 10)
+#' @param expressed_genes_receiver Genes expressed in the receiver cell type
+#' @inheritParams predict_ligand_activities
+#' @param n_iter Number of iterations to perform (Default: 10)
+#' @return List of n_iter elements, each element containing the output of predict_ligand_activities for a random gene set
+#' @examples
+#' \dontrun{
+#' permutations <- bootstrap_ligand_activity_analysis(expressed_genes_receiver, geneset_oi, background_expressed_genes,
+#'                            ligand_target_matrix, potential_ligands, n_iter = 10)
+#' }
+#' @export
+bootstrap_ligand_activity_analysis <- function(expressed_genes_receiver, geneset_oi, background_expressed_genes,
+                            ligand_target_matrix, potential_ligands, n_iter = 10){
+  lapply(1:n_iter, function (i){
+    random_geneset <- sample(expressed_genes_receiver, size = length(geneset_oi))
+    predict_ligand_activities(geneset = random_geneset, background_expressed_genes = background_expressed_genes,
+                             ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+  })
+
+}
+
+#' @title Calculate ligand p-values from the bootstrapped ligand activity analysis
+#' @description \code{calculate_p_value_bootstrap} Calculate the p-value for each ligand from the bootstrapped ligand activity analysis
+#' @usage calculate_p_value_bootstrap(bootstrap_results, ligand_activities, metric = "aupr_corrected")
+#' @param bootstrap_results Output of \code{\link{bootstrap_ligand_activity_analysis}}
+#' @param ligand_activities Output of \code{\link{predict_ligand_activities}}
+#' @param metric Metric to use (Default: "aupr_corrected")
+#' @return Data frame with the ligand name, the number of times the bootstrapped value had a higher score than the observed (\code{total}), and the p-value for each ligand, calculated as \code{total/length(bootstrap_results)}
+#' @examples
+#' \dontrun{
+#' permutations <- bootstrap_ligand_activity_analysis(expressed_genes_receiver, geneset_oi, background_expressed_genes,
+#'                            ligand_target_matrix, potential_ligands, n_iter = 10)
+#' p_values <- calculate_p_value_bootstrap(permutations, ligand_activities, metric = "aupr_corrected")
+#' }
+#' @export
+calculate_p_value_bootstrap <- function(bootstrap_results, ligand_activities, metric = "aupr_corrected"){
+  n_iter <- length(bootstrap_results)
+  bootstrap_results %>% bind_rows(.id = "round") %>% group_by(test_ligand) %>%
+    select(round, test_ligand, all_of(metric)) %>% arrange(test_ligand) %>% rename(null_metric = metric) %>%
+    # Merge with observed values
+    inner_join(ligand_activities %>% select(test_ligand, all_of(metric)) %>% rename(observed_metric = metric), by = "test_ligand") %>%
+    # Calculate fraction of permutations with higher AUPR
+    mutate(null_is_larger = null_metric > observed_metric) %>%
+    summarise(total = sum(null_is_larger)) %>%
+    mutate(pval = total/n_iter)
+
+}
+
+
 #' @title Cut off outer quantiles and rescale to a [0, 1] range
 #'
 #' @description \code{scale_quantile} Cut off outer quantiles and rescale to a [0, 1] range
