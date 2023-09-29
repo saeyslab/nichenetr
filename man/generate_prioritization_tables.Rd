@@ -21,7 +21,7 @@ generate_prioritization_tables(sender_receiver_info, sender_receiver_de, ligand_
 \item{prioritizing_weights}{Named vector indicating the relative weights of each prioritization criterion}
 }
 \value{
-Data frames of prioritized sender-ligand-receiver-receptor interactions. 
+Data frames of prioritized sender-ligand-receiver-receptor interactions.
 The resulting dataframe contains columns from the input dataframes, but columns from \code{lr_condition_de} are suffixed with \code{_group} (some columns from \code{lr_condition_de} are also not present).
 Additionally, the following columns are added:
 \itemize{
