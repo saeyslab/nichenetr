@@ -10,7 +10,7 @@ use ligand-receptor reactions from LIANA to build the ligand-target
 model. LIANA is a framework that combines both resources and
 computational tools for ligand-receptor cell-cell communication
 inference (Dimitrov et al., 2022). As the NicheNet prior model is built
-by integrating ligand-receptor, signaling , and gene regulatory
+by integrating ligand-receptor, signaling, and gene regulatory
 databases, each part can be replaced with external data sources. We will
 show how the first part, the ligand-receptor database, can be replaced
 with those from LIANA, and how to run the model afterward.
@@ -57,11 +57,11 @@ Next, we will calculate how much overlap there is between the ligands and recept
 
 ``` r
 # Load signaling networks of NicheNet
-lr_network_human <- readRDS("~/Documents/nichenet/multinichenet_files/lr_network_human_21122021.rds")
-lr_network_mouse <- readRDS("~/Documents/nichenet/multinichenet_files/lr_network_mouse_21122021.rds")
+lr_network_human <- readRDS("~/Documents/nichenet/nichenet_v2/lr_network_human_21122021.rds")
+lr_network_mouse <- readRDS("~/Documents/nichenet/nichenet_v2/lr_network_mouse_21122021.rds")
 
-sig_network_human <- readRDS("~/Documents/nichenet/multinichenet_files/signaling_network_human_21122021.rds")
-sig_network_mouse <- readRDS("~/Documents/nichenet/multinichenet_files/signaling_network_mouse_21122021.rds")
+sig_network_human <- readRDS("~/Documents/nichenet/nichenet_v2/signaling_network_human_21122021.rds")
+sig_network_mouse <- readRDS("~/Documents/nichenet/nichenet_v2/signaling_network_mouse_21122021.rds")
 
 overlap_df <- lapply(show_resources()[-1], function(resource) {
   db <- select_resource(resource)[[1]] %>% decomplexify()
@@ -126,7 +126,7 @@ source_weights <- source_weights_df %>%
   add_row(source = "liana", weight = 1, .before = 1)
 
 # Load the gene regulatory network
-gr_network_human = readRDS("~/Documents/nichenet/multinichenet_files/gr_network_human_21122021.rds")
+gr_network_human = readRDS("~/Documents/nichenet/nichenet_v2/gr_network_human_21122021.rds")
 
 # Aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
 weighted_networks <- construct_weighted_networks(lr_network = liana_db,
@@ -202,7 +202,7 @@ potential_ligands
 
 ``` r
 # Constructing the ligand-target matrix
-gr_network_mouse <- readRDS("~/Documents/nichenet/multinichenet_files/gr_network_mouse_21122021.rds")
+gr_network_mouse <- readRDS("~/Documents/nichenet/nichenet_v2/gr_network_mouse_21122021.rds")
 
 # Define optimum weight as the one calculated for the NicheNet LR network
 optim_weight <- optimized_source_weights_df %>% filter(source == "nichenet_verschueren") %>% pull(avg_weight) # 0.2788104
@@ -259,8 +259,8 @@ Run NicheNet using the wrapper function.
 
 ``` r
 # Use the aggregate function
-ligand_target_matrix = readRDS("~/Documents/nichenet/multinichenet_files/ligand_target_matrix_nsga2r_final_mouse.rds")
-weighted_networks = readRDS("~/Documents/nichenet/multinichenet_files/weighted_networks_nsga2r_final_mouse.rds")
+ligand_target_matrix = readRDS("~/Documents/nichenet/nichenet_v2/ligand_target_matrix_nsga2r_final_mouse.rds")
+weighted_networks = readRDS("~/Documents/nichenet/nichenet_v2/weighted_networks_nsga2r_final_mouse.rds")
 lr_network = lr_network %>% distinct(from, to)
 
 nichenet_output = nichenet_seuratobj_aggregate(
