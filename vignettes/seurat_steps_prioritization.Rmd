@@ -31,7 +31,6 @@ library(tidyverse)
 
 ### Read in Seurat object
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
-
 ```
 
 In this vignette, we will extend the basic NicheNet analysis analysis from [Perform NicheNet analysis starting from a Seurat object: step-by-step analysis](seurat_steps.md) by incorporating gene expression as part of the prioritization This is a generalization of the [Differential NicheNet](differential_nichenet.md) and [MultiNicheNet](https://github.com/saeyslab/multinichenetr) approach. While the original NicheNet only ranks ligands based on the ligand activity analysis, it is now also possible to prioritize ligands based on upregulation of the ligand/receptor, and the cell-type and condition specificity of hte ligand and receptor.
@@ -88,7 +87,7 @@ expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
 # 2. Define a gene set of interest: these are the genes in the “receiver/target” cell population that are potentially affected by ligands expressed by interacting cells (e.g. genes differentially expressed upon cell-cell interaction)
 
-seurat_obj_receiver= subset(seuratObj, idents = receiver)
+seurat_obj_receiver = subset(seuratObj, idents = receiver)
 seurat_obj_receiver = SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[["aggregate"]])
 
 condition_oi = "LCMV"
@@ -191,7 +190,7 @@ prior_table %>% select(c('sender', 'receiver', 'ligand', 'receptor', 'scaled_lfc
 Cxcl10 now went up in the rankings due to both the high expression of its potential receptor Dpp4 and its high celltype specificity (`scaled_lfc_ligand`). You can also see this in the dotplot and heatmap below.
 
 ```{r fig.width = 15, fig.height = 10}
-best_upstream_ligands = ligand_activities %>% top_n(20, aupr_corrected) %>% arrange(desc(aupr_corrected)) %>% pull(test_ligand) %>% unique()
+best_upstream_ligands = ligand_activities %>% top_n(30, aupr_corrected) %>% arrange(desc(aupr_corrected)) %>% pull(test_ligand) %>% unique()
 
 # DE analysis for each sender cell type
 DE_table_all = Idents(seuratObj) %>% levels() %>% intersect(sender_celltypes) %>%
@@ -256,26 +255,29 @@ print(combined_plot)
 
 ### Extra visualization of ligand-receptor pairs
 
-We provide the function `make_mushroom_plot` which allows you to display expression of ligand-receptor pairs in semicircles. By default, the fill gradient shows the LFC between cell types, while the size of the semicircle corresponds to the scaled mean expression.
+We provide the function `make_mushroom_plot` which allows you to display expression of ligand-receptor pairs in semicircles. By default, the fill gradient shows the LFC between cell types, while the size of the semicircle corresponds to the scaled mean expression. You can also choose to show the rankings of each ligand-receptor-sender pair with `show_rankings`, as well as show all data points for context (`show_all_datapoints`). `true_color_range = TRUE` will adjust the limits of the color gradient to the min-max of the values, instead of the limit being from 0 to 1.
 
-```{r fig.height=8, fig.width=6}
-make_mushroom_plot(prior_table, top_n = 30)
+```{r fig.height=8, fig.width=8}
+legend_adjust <- c(0.8, 0.7)
+make_mushroom_plot(prior_table, top_n = 30, 
+                   true_color_range = TRUE,
+                   show_rankings = TRUE,
+                   show_all_datapoints = TRUE) +
+  theme(legend.justification = legend_adjust,
+        axis.title.x = element_text(hjust = 0.25))
 ```
 
-We provide multiple ways to customize this plot, including changing the "size" and "fill" values to certain columns from the prioritization table (but without the `_ligand` or `_receptor` suffix). In addition, you can also choose to show the rankings of each ligand-receptor-sender pair, as well as show all data points for context.
+Furthermore, you can change the "size" and "fill" values to certain columns from the prioritization table (those with the `_ligand` or `_receptor` suffix).
 
 ```{r fig.height=8, fig.width=6}
 print(paste0("Column names that you can use are: ", paste0(prior_table %>% select(ends_with(c("_ligand", "_receptor", "_sender", "_receiver"))) %>% colnames() %>%
   str_remove("_ligand|_receptor|_sender|_receiver") %>% unique, collapse = ", ")))
 
 # Change size and color columns
-make_mushroom_plot(prior_table, top_n = 30, size = "pct_expressed", color = "scaled_avg_exprs")
+make_mushroom_plot(prior_table, top_n = 30, size = "pct_expressed", color = "scaled_avg_exprs") +
+  theme(legend.justification = legend_adjust,
+        axis.title.x = element_text(hjust = 0.25))
 
-# Show rankings and other datapoints
-make_mushroom_plot(prior_table, top_n = 30, show_rankings = TRUE, show_all_datapoints = TRUE)
-
-# Show true limits instead of having it from 0 to 1
-make_mushroom_plot(prior_table, top_n = 30, true_color_range = TRUE)
 ```
 
 ### References
