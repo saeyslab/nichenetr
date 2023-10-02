@@ -1,7 +1,7 @@
 Perform NicheNet analysis starting from a Seurat object
 ================
 Robin Browaeys
-2019-11-08
+2023-10-02
 
 <!-- github markdown built using 
 rmarkdown::render("vignettes/seurat_wrapper.Rmd", output_format = "github_document")
@@ -75,8 +75,9 @@ genes of these prioritized ligands.
 ### Load Packages:
 
 ``` r
-library(nichenetr)
-library(Seurat) # please update to Seurat V4
+library(nichenetr) # Please update to v2.0.4
+library(Seurat)
+library(SeuratObject)
 library(tidyverse)
 ```
 
@@ -86,7 +87,6 @@ packages after the others.
 ### Read in NicheNet’s ligand-target prior model, ligand-receptor network and weighted integrated networks:
 
 ``` r
-options(timeout=600)
 organism = "mouse"
 
 if(organism == "human"){
@@ -155,6 +155,10 @@ loss of gene names.
 
 ``` r
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
+
+# For newer Seurat versions, you may need to run the following
+seuratObj <- UpdateSeuratObject(seuratObj)
+
 seuratObj = alias_to_symbol_seurat(seuratObj, "mouse") # convert gene names
 seuratObj@meta.data %>% head()
 ##         nGene nUMI orig.ident aggregate res.0.6 celltype nCount_RNA nFeature_RNA
@@ -301,7 +305,7 @@ nichenet_output$ligand_activities
 ##  8 H2-K1       0.605 0.268          0.122   0.142     8
 ##  9 H2-Q4       0.605 0.268          0.122   0.141    10
 ## 10 H2-Q6       0.605 0.268          0.122   0.141    10
-## # … with 63 more rows
+## # ℹ 63 more rows
 ```
 
 The different ligand activity measures (auroc, aupr, pearson correlation
@@ -319,8 +323,8 @@ To get a list of the 30 top-ranked ligands: run the following command
 
 ``` r
 nichenet_output$top_ligands
-##  [1] "Ebi3"   "Ptprc"  "H2-M3"  "H2-M2"  "H2-T10" "H2-T22" "H2-T23" "H2-K1"  "H2-Q4"  "H2-Q6"  "H2-Q7"  "H2-D1"  "Sirpa"  "Cd48"   "Tgfb1"  "Ccl22"  "App"    "Selplg" "Cxcl10" "Btla"   "Adam17" "Icam1"  "Cxcl11"
-## [24] "Tgm2"   "B2m"    "Cxcl9"  "Cd72"   "Hp"     "Itgb2"  "Vcan"
+##  [1] "Ebi3"   "Ptprc"  "H2-M3"  "H2-M2"  "H2-T10" "H2-T22" "H2-T23" "H2-K1"  "H2-Q4"  "H2-Q6"  "H2-Q7"  "H2-D1"  "Sirpa"  "Cd48"   "Tgfb1"  "Ccl22"  "App"    "Selplg" "Cxcl10" "Btla"   "Adam17" "Icam1"  "Cxcl11" "Tgm2"   "B2m"   
+## [26] "Cxcl9"  "Cd72"   "Hp"     "Itgb2"  "Vcan"
 ```
 
 These ligands are expressed by one or more of the input sender cells. To
@@ -410,7 +414,7 @@ nichenet_output$ligand_target_df # weight column = regulatory potential
 ##  8 Ebi3   Dhx58   0.0406
 ##  9 Ebi3   Dtx3l   0.0405
 ## 10 Ebi3   Eif2ak2 0.0400
-## # … with 500 more rows
+## # ℹ 500 more rows
 ```
 
 To get a list of the top-predicted target genes of the 30 top-ranked
@@ -418,10 +422,10 @@ ligands: run the following command
 
 ``` r
 nichenet_output$top_targets
-##  [1] "Bst2"     "Cd274"    "Cxcl10"   "Cxcr4"    "Ddit4"    "Ddx58"    "Ddx60"    "Dhx58"    "Dtx3l"    "Eif2ak2"  "Gbp7"     "H2-D1"    "H2-K1"    "H2-M3"    "H2-Q6"    "H2-Q7"    "Ifi35"    "Ifit1bl1"
-## [19] "Ifit3"    "Ifit3b"   "Irf1"     "Irf7"     "Irf9"     "Isg15"    "Lcp1"     "Lgals3bp" "Mx1"      "Mx2"      "Nampt"    "Nmi"      "Oas1a"    "Oas2"     "Oas3"     "Parp14"   "Parp9"    "Pml"     
-## [37] "Psmb9"    "Rsad2"    "Stat1"    "Stat2"    "Tap1"     "Xaf1"     "Zbp1"     "Cd69"     "H3f3b"    "Id3"      "Ifi44"    "Ifih1"    "H2-T10"   "H2-T22"   "H2-T23"   "Vim"      "Ifit2"    "Isg20"   
-## [55] "Gbp3"     "Hspa5"    "Ifit1"    "Nt5c3"    "Igfbp4"   "Gbp2"     "Ifi203"   "Ifi206"   "Ifi208"   "Ifi209"   "Ifi213"   "Mndal"    "Ube2l6"
+##  [1] "Bst2"     "Cd274"    "Cxcl10"   "Cxcr4"    "Ddit4"    "Ddx58"    "Ddx60"    "Dhx58"    "Dtx3l"    "Eif2ak2"  "Gbp7"     "H2-D1"    "H2-K1"    "H2-M3"    "H2-Q6"    "H2-Q7"    "Ifi35"    "Ifit1bl1" "Ifit3"    "Ifit3b"  
+## [21] "Irf1"     "Irf7"     "Irf9"     "Isg15"    "Lcp1"     "Lgals3bp" "Mx1"      "Mx2"      "Nampt"    "Nmi"      "Oas1a"    "Oas2"     "Oas3"     "Parp14"   "Parp9"    "Pml"      "Psmb9"    "Rsad2"    "Stat1"    "Stat2"   
+## [41] "Tap1"     "Xaf1"     "Zbp1"     "Cd69"     "H3f3b"    "Id3"      "Ifi44"    "Ifih1"    "H2-T10"   "H2-T22"   "H2-T23"   "Vim"      "Ifit2"    "Isg20"    "Gbp3"     "Hspa5"    "Ifit1"    "Nt5c3"    "Igfbp4"   "Gbp2"    
+## [61] "Ifi203"   "Ifi206"   "Ifi208"   "Ifi209"   "Ifi213"   "Mndal"    "Ube2l6"
 ```
 
 You can visualize the expression of these as well. Because we only focus
@@ -515,7 +519,7 @@ nichenet_output$ligand_receptor_df # weight column accords to number of data sou
 ##  8 Ccl22  Dpp4      0.717
 ##  9 Cd48   Cd2       0.964
 ## 10 Cd72   Cd5       0.786
-## # … with 43 more rows
+## # ℹ 43 more rows
 ```
 
 To get a list of the receptors of the 20 top-ranked ligands: run the
@@ -523,8 +527,8 @@ following command
 
 ``` r
 nichenet_output$top_receptors
-##  [1] "Notch1" "Cd74"   "Klrd1"  "Tap1"   "Tap2"   "Cd247"  "Ccr7"   "Dpp4"   "Cd2"    "Cd5"    "Il27ra" "Cd8a"   "Itgb2"  "Ezr"    "Il2rg"  "Itgal"  "Msn"    "Spn"    "Cd82"   "Thy1"   "Sell"   "Cd47"   "Cd69"  
-## [24] "Tgfbr2" "Itga4"  "Selplg"
+##  [1] "Notch1" "Cd74"   "Klrd1"  "Tap1"   "Tap2"   "Cd247"  "Ccr7"   "Dpp4"   "Cd2"    "Cd5"    "Il27ra" "Cd8a"   "Itgb2"  "Ezr"    "Il2rg"  "Itgal"  "Msn"    "Spn"    "Cd82"   "Thy1"   "Sell"   "Cd47"   "Cd69"   "Tgfbr2" "Itga4" 
+## [26] "Selplg"
 ```
 
 You can visualize the expression of these as well. Because we only focus
@@ -542,27 +546,24 @@ genes) was used during the ligand activity analysis:
 
 ``` r
 nichenet_output$geneset_oi
-##   [1] "Ifi27l2b"      "Irf7"          "Ly6a"          "Stat1"         "Ly6c2"         "Ifit3"         "Ifit1"         "Ly6c1"         "Bst2"          "B2m"           "Rnf213"        "Ifit1bl1"     
-##  [13] "Plac8"         "Slfn1"         "Ifi209"        "Isg15"         "Igtp"          "Ifi206"        "Shisa5"        "Ms4a4c"        "H2-K1"         "Zbp1"          "Oasl2"         "Isg20"        
-##  [25] "Samhd1"        "Ifi208"        "Ms4a6b"        "Trim30a"       "Usp18"         "Mndal"         "H2-T23"        "Slfn8"         "Gbp2"          "Ifi203"        "Iigp1"         "Tmsb4x"       
-##  [37] "H2-T22"        "Rsad2"         "Ly6e"          "Rtp4"          "Ifit3b"        "Zfas1"         "Ifit2"         "Phf11b"        "Xaf1"          "Smchd1"        "Daxx"          "Alb"          
-##  [49] "Samd9l"        "Actb"          "Parp9"         "Gbp4"          "Lgals3bp"      "Mx1"           "Ifi213"        "Irgm1"         "2410006H16Rik" "Gbp7"          "Cmpk2"         "Dtx3l"        
-##  [61] "Slfn5"         "H2-D1"         "Oasl1"         "Herc6"         "Ifih1"         "Rpsa"          "P2ry13"        "Irgm2"         "Tapbp"         "Rps8"          "Stat2"         "Ifi44"        
-##  [73] "Phf11c"        "Rpl8"          "Psmb8"         "Gm12250"       "Igfbp4"        "Rplp2-ps1"     "Ddx58"         "Rac2"          "Trafd1"        "Sp100"         "Gbp9"          "Pml"          
-##  [85] "Oas2"          "Slfn2"         "Psme1"         "Apoe"          "Gas5"          "H2-Q7"         "Basp1"         "Ms4a4b"        "Rps27a"        "Cd52"          "Znfx1"         "Rpl13"        
-##  [97] "Oas3"          "Nt5c3"         "Rnf114"        "Tap1"          "Rps28"         "Oas1a"         "Rplp0"         "Ddx60"         "Vim"           "Gbp6"          "Ifi35"         "Itm2b"        
-## [109] "Ctss"          "Tgtp1"         "Pabpc1"        "H2-Q6"         "Parp14"        "Hspa8"         "Tor3a"         "Rpl23"         "Mx2"           "Tmbim6"        "Thy1"          "Ncoa7"        
-## [121] "Dhx58"         "Rps10"         "Rps19"         "Psmb9"         "Il2rg"         "Etnk1"         "Irf9"          "Rps3a1"        "Gbp10"         "1600014C10Rik" "Parp12"        "Trim30d"      
-## [133] "Eif2ak2"       "Eef1b2"        "Eef2"          "Npc2"          "Rps2"          "Rps3"          "Sp110"         "Ube2l6"        "Nmi"           "Uba7"          "Psmb10"        "Cxcl10"       
-## [145] "Rpl13a"        "Trim30c"       "Nhp2"          "Tbrg1"         "Jaml"          "Usp25"         "Tor1aip2"      "Adar"          "Gzma"          "Gm2000"        "Rps18-ps5"     "Cd53"         
-## [157] "Phf11"         "Hspa5"         "Cfl1"          "Crip1"         "Slco3a1"       "Tlr7"          "Trim21"        "Gbp8"          "Rpl10"         "Mycbp2"        "Rps16"         "Nlrc5"        
-## [169] "Rplp2"         "Acadl"         "Trim12c"       "Rps4x"         "Irf1"          "Psma2"         "Nme2"          "Tut4"          "Apobec3"       "Snord12"       "Phip"          "Ifitm3"       
-## [181] "Sp140"         "Dusp2"         "Mrpl30"        "Malat1"        "H2-M3"         "Gbp3"          "Tmsb10"        "Dtx1"          "Eef1g"         "Rbl1"          "Epb41l4aos"    "Xpo1"         
-## [193] "Rgcc"          "Gm9844"        "Rpl35"         "Rps26"         "Cxcr4"         "Eif3m"         "Treml2"        "Rpl35a"        "Pdcd4"         "Arrb2"         "Ubc"           "Clic4"        
-## [205] "H2-T10"        "Rpl10a"        "Lcp1"          "Cd274"         "Ddit4"         "Cnn2"          "Nampt"         "Ascc3"         "Cd47"          "Snord49b"      "Ilrun"         "Calhm6"       
-## [217] "Psme2b"        "Hcst"          "Myh9"          "Rps27"         "Mov10"         "Gm15772"       "Arf4"          "Arhgdib"       "Ppib"          "Ubb"           "Trim25"        "Tspo"         
-## [229] "Id3"           "Snord35a"      "Rnf8"          "Casp8"         "Ptpn7"         "Itk"           "Rps27rt"       "Cd69"          "H3f3b"         "Nop10"         "Anxa6"         "Hk1"          
-## [241] "Prkcb"         "Iqgap1"        "Keap1"         "Rpl7"          "Parp10"
+##   [1] "Ifi27l2b"      "Irf7"          "Ly6a"          "Stat1"         "Ly6c2"         "Ifit3"         "Ifit1"         "Ly6c1"         "Bst2"          "B2m"           "Rnf213"        "Ifit1bl1"      "Plac8"         "Slfn1"        
+##  [15] "Ifi209"        "Isg15"         "Igtp"          "Ifi206"        "Shisa5"        "Ms4a4c"        "H2-K1"         "Zbp1"          "Oasl2"         "Isg20"         "Samhd1"        "Ifi208"        "Ms4a6b"        "Trim30a"      
+##  [29] "Usp18"         "Mndal"         "H2-T23"        "Slfn8"         "Gbp2"          "Ifi203"        "Iigp1"         "Tmsb4x"        "H2-T22"        "Rsad2"         "Ly6e"          "Rtp4"          "Ifit3b"        "Zfas1"        
+##  [43] "Ifit2"         "Phf11b"        "Xaf1"          "Smchd1"        "Daxx"          "Alb"           "Samd9l"        "Actb"          "Parp9"         "Gbp4"          "Lgals3bp"      "Mx1"           "Ifi213"        "Irgm1"        
+##  [57] "2410006H16Rik" "Gbp7"          "Cmpk2"         "Dtx3l"         "Slfn5"         "H2-D1"         "Oasl1"         "Herc6"         "Ifih1"         "Rpsa"          "P2ry13"        "Irgm2"         "Tapbp"         "Rps8"         
+##  [71] "Stat2"         "Ifi44"         "Phf11c"        "Rpl8"          "Psmb8"         "Gm12250"       "Igfbp4"        "Rplp2-ps1"     "Ddx58"         "Rac2"          "Trafd1"        "Sp100"         "Gbp9"          "Pml"          
+##  [85] "Oas2"          "Slfn2"         "Psme1"         "Apoe"          "Gas5"          "H2-Q7"         "Basp1"         "Ms4a4b"        "Rps27a"        "Cd52"          "Znfx1"         "Rpl13"         "Oas3"          "Nt5c3"        
+##  [99] "Rnf114"        "Tap1"          "Rps28"         "Oas1a"         "Rplp0"         "Ddx60"         "Vim"           "Gbp6"          "Ifi35"         "Itm2b"         "Ctss"          "Tgtp1"         "Pabpc1"        "H2-Q6"        
+## [113] "Parp14"        "Hspa8"         "Tor3a"         "Rpl23"         "Mx2"           "Tmbim6"        "Thy1"          "Ncoa7"         "Dhx58"         "Rps10"         "Rps19"         "Psmb9"         "Il2rg"         "Etnk1"        
+## [127] "Irf9"          "Rps3a1"        "Gbp10"         "1600014C10Rik" "Parp12"        "Trim30d"       "Eif2ak2"       "Eef1b2"        "Eef2"          "Npc2"          "Rps2"          "Rps3"          "Sp110"         "Ube2l6"       
+## [141] "Nmi"           "Uba7"          "Psmb10"        "Cxcl10"        "Rpl13a"        "Trim30c"       "Nhp2"          "Tbrg1"         "Jaml"          "Usp25"         "Tor1aip2"      "Adar"          "Gzma"          "Gm2000"       
+## [155] "Rps18-ps5"     "Cd53"          "Phf11"         "Hspa5"         "Cfl1"          "Crip1"         "Slco3a1"       "Tlr7"          "Trim21"        "Gbp8"          "Rpl10"         "Mycbp2"        "Rps16"         "Nlrc5"        
+## [169] "Rplp2"         "Acadl"         "Trim12c"       "Rps4x"         "Irf1"          "Psma2"         "Nme2"          "Tut4"          "Apobec3"       "Snord12"       "Phip"          "Ifitm3"        "Sp140"         "Dusp2"        
+## [183] "Mrpl30"        "Malat1"        "H2-M3"         "Gbp3"          "Tmsb10"        "Dtx1"          "Eef1g"         "Rbl1"          "Epb41l4aos"    "Xpo1"          "Rgcc"          "Gm9844"        "Rpl35"         "Rps26"        
+## [197] "Cxcr4"         "Eif3m"         "Treml2"        "Rpl35a"        "Pdcd4"         "Arrb2"         "Ubc"           "Clic4"         "H2-T10"        "Rpl10a"        "Lcp1"          "Cd274"         "Ddit4"         "Cnn2"         
+## [211] "Nampt"         "Ascc3"         "Cd47"          "Snord49b"      "Ilrun"         "Calhm6"        "Psme2b"        "Hcst"          "Myh9"          "Rps27"         "Mov10"         "Gm15772"       "Arf4"          "Arhgdib"      
+## [225] "Ppib"          "Ubb"           "Trim25"        "Tspo"          "Id3"           "Snord35a"      "Rnf8"          "Casp8"         "Ptpn7"         "Itk"           "Rps27rt"       "Cd69"          "H3f3b"         "Nop10"        
+## [239] "Anxa6"         "Hk1"           "Prkcb"         "Iqgap1"        "Keap1"         "Rpl7"          "Parp10"
 nichenet_output$background_expressed_genes %>% length()
 ## [1] 1662
 ```
@@ -678,8 +679,7 @@ common_ligands = intersect(nichenet_output$`CD4 T`$top_ligands, nichenet_output$
 print("common ligands are: ")
 ## [1] "common ligands are: "
 print(common_ligands)
-##  [1] "Ebi3"   "Ptprc"  "H2-M3"  "H2-M2"  "H2-T10" "H2-T22" "H2-T23" "Sirpa"  "H2-K1"  "H2-Q4"  "H2-Q6"  "H2-Q7"  "H2-D1"  "Ccl22"  "Cd48"   "App"    "Tgfb1"  "Selplg" "Icam1"  "Btla"   "Cd72"   "B2m"    "Hp"    
-## [24] "Itgb2"
+##  [1] "Ebi3"   "Ptprc"  "H2-M3"  "H2-M2"  "H2-T10" "H2-T22" "H2-T23" "Sirpa"  "H2-K1"  "H2-Q4"  "H2-Q6"  "H2-Q7"  "H2-D1"  "Ccl22"  "Cd48"   "App"    "Tgfb1"  "Selplg" "Icam1"  "Btla"   "Cd72"   "B2m"    "Hp"     "Itgb2"
 
 cd4_ligands = nichenet_output$`CD4 T`$top_ligands %>% setdiff(nichenet_output$`CD8 T`$top_ligands)
 cd8_ligands = nichenet_output$`CD8 T`$top_ligands %>% setdiff(nichenet_output$`CD4 T`$top_ligands)

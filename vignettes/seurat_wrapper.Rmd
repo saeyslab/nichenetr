@@ -1,7 +1,7 @@
 ---
 title: "Perform NicheNet analysis starting from a Seurat object"
 author: "Robin Browaeys"
-date: "2019-11-08"
+date: "2023-10-02"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Perform NicheNet analysis starting from a Seurat object}
@@ -45,8 +45,9 @@ The NicheNet ligand-receptor network and weighted networks are necessary to defi
 ### Load Packages:
 
 ```{r}
-library(nichenetr)
-library(Seurat) # please update to Seurat V4
+library(nichenetr) # Please update to v2.0.4
+library(Seurat)
+library(SeuratObject)
 library(tidyverse)
 ```
 
@@ -55,7 +56,6 @@ If you would use and load other packages, we recommend to load these 3 packages 
 ### Read in NicheNet's ligand-target prior model, ligand-receptor network and weighted integrated networks:
 
 ```{r}
-options(timeout=600)
 organism = "mouse"
 
 if(organism == "human"){
@@ -84,6 +84,10 @@ The dataset used here is publicly available single-cell data from immune cells i
 
 ```{r}
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
+
+# For newer Seurat versions, you may need to run the following
+seuratObj <- UpdateSeuratObject(seuratObj)
+
 seuratObj = alias_to_symbol_seurat(seuratObj, "mouse") # convert gene names
 seuratObj@meta.data %>% head()
 ```

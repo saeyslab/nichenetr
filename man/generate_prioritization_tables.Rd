@@ -21,7 +21,7 @@ generate_prioritization_tables(sender_receiver_info, sender_receiver_de, ligand_
 \item{prioritizing_weights}{Named vector indicating the relative weights of each prioritization criterion}
 }
 \value{
-Data frames of prioritized sender-ligand-receiver-receptor interactions. 
+Data frames of prioritized sender-ligand-receiver-receptor interactions.
 The resulting dataframe contains columns from the input dataframes, but columns from \code{lr_condition_de} are suffixed with \code{_group} (some columns from \code{lr_condition_de} are also not present).
 Additionally, the following columns are added:
 \itemize{
@@ -54,7 +54,7 @@ rownames(ligand_target_matrix) = ligand_target_matrix \%>\% rownames() \%>\% con
 ligand_target_matrix = ligand_target_matrix \%>\% .[!is.na(rownames(ligand_target_matrix)), !is.na(colnames(ligand_target_matrix))]
 
 # Ligand activity analysis
-seurat_obj_receiver = subset(seurat_obj, idents = receiver) \%>\% SetIdent(value = .[["aggregate"]])
+seurat_obj_receiver = subset(seurat_obj, idents = receiver) \%>\% SetIdent(value = .[["aggregate", drop = TRUE]])
 geneset_oi = FindMarkers(object = seurat_obj_receiver, ident.1 = "LCMV, ident.2 = "SS, min.pct = 0.10) \%>\% rownames_to_column("gene") \%>\%
      filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= 0.25) \%>\% pull(gene) \%>\% .[. \%in\% rownames(ligand_target_matrix)]
 expressed_genes_sender = sender_celltypes \%>\% unique() \%>\% lapply(get_expressed_genes, seurat_obj, 0.10) \%>\% unlist() \%>\% unique()

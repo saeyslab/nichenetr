@@ -847,7 +847,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   if (verbose == TRUE){print("Perform DE analysis in receiver cell")}
 
   seurat_obj_receiver= subset(seurat_obj, idents = receiver)
-  seurat_obj_receiver = SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[[condition_colname]])
+  seurat_obj_receiver = SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[[condition_colname, drop=TRUE]])
   DE_table_receiver = FindMarkers(object = seurat_obj_receiver, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct) %>% rownames_to_column("gene")
 
   SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_receiver)
@@ -1030,7 +1030,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     names(order_ligands_adapted) = NULL
 
     seurat_obj_subset = seurat_obj %>% subset(idents = sender_celltypes)
-    seurat_obj_subset = SetIdent(seurat_obj_subset, value = seurat_obj_subset[[condition_colname]]) %>% subset(idents = condition_oi) ## only shows cells of the condition of interest
+    seurat_obj_subset = SetIdent(seurat_obj_subset, value = seurat_obj_subset[[condition_colname, drop=TRUE]]) %>% subset(idents = condition_oi) ## only shows cells of the condition of interest
     rotated_dotplot = DotPlot(seurat_obj %>% subset(cells = Cells(seurat_obj_subset)), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
     rm(seurat_obj_subset)
 
@@ -1782,11 +1782,11 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   if (verbose == TRUE){print("Perform DE analysis between two receiver cell clusters")}
 
   seurat_obj_receiver_affected= subset(seurat_obj, idents = receiver_affected)
-  seurat_obj_receiver_affected = SetIdent(seurat_obj_receiver_affected, value = seurat_obj_receiver_affected[[condition_colname]])
+  seurat_obj_receiver_affected = SetIdent(seurat_obj_receiver_affected, value = seurat_obj_receiver_affected[[condition_colname, drop=TRUE]])
   seurat_obj_receiver_affected= subset(seurat_obj_receiver_affected, idents = condition_oi)
 
   seurat_obj_receiver_reference= subset(seurat_obj, idents = receiver_reference)
-  seurat_obj_receiver_reference = SetIdent(seurat_obj_receiver_reference, value = seurat_obj_receiver_reference[[condition_colname]])
+  seurat_obj_receiver_reference = SetIdent(seurat_obj_receiver_reference, value = seurat_obj_receiver_reference[[condition_colname, drop=TRUE]])
   seurat_obj_receiver_reference= subset(seurat_obj_receiver_reference, idents = condition_reference)
 
   seurat_obj_receiver = merge(seurat_obj_receiver_affected, seurat_obj_receiver_reference)
@@ -2003,14 +2003,14 @@ get_lfc_celltype = function(celltype_oi, seurat_obj, condition_colname, conditio
   requireNamespace("Seurat")
   requireNamespace("dplyr")
   if(!is.null(celltype_col)){
-    seurat_obj_celltype = SetIdent(seurat_obj, value = seurat_obj[[celltype_col]])
+    seurat_obj_celltype = SetIdent(seurat_obj, value = seurat_obj[[celltype_col, drop=TRUE]])
     seuratObj_sender = subset(seurat_obj_celltype, idents = celltype_oi)
 
   } else {
     seuratObj_sender = subset(seurat_obj, idents = celltype_oi)
 
   }
-  seuratObj_sender = SetIdent(seuratObj_sender, value = seuratObj_sender[[condition_colname]])
+  seuratObj_sender = SetIdent(seuratObj_sender, value = seuratObj_sender[[condition_colname, drop=TRUE]])
   DE_table_sender = FindMarkers(object = seuratObj_sender, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct, logfc.threshold = 0.05) %>% rownames_to_column("gene")
 
   SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_sender)

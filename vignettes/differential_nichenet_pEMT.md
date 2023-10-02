@@ -103,7 +103,7 @@ seurat_obj@meta.data$celltype_aggregate %>% table() %>% sort(decreasing = TRUE)
 
 ``` r
 celltype_id = "celltype_aggregate" # metadata column name of the cell type of interest
-seurat_obj = SetIdent(seurat_obj, value = seurat_obj[[celltype_id]])
+seurat_obj = SetIdent(seurat_obj, value = seurat_obj[[celltype_id, drop=TRUE]])
 ```
 
 ## Read in the NicheNet ligand-receptor network and ligand-target matrix
