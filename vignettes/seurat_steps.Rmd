@@ -1,7 +1,7 @@
 ---
 title: "Perform NicheNet analysis starting from a Seurat object: step-by-step analysis"
 author: "Robin Browaeys"
-date: "2019-11-12"
+date: "2023-10-02"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Perform NicheNet analysis starting from a Seurat object: step-by-step analysis}
@@ -45,8 +45,9 @@ The NicheNet ligand-receptor network and weighted networks are necessary to defi
 ### Load Packages:
 
 ```{r}
-library(nichenetr)
-library(Seurat) # please update to Seurat V4
+library(nichenetr) # Please update to v2.0.4
+library(Seurat)
+library(SeuratObject)
 library(tidyverse)
 ```
 
@@ -58,7 +59,11 @@ The dataset used here is publicly available single-cell data from immune cells i
 
 ```{r}
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
+
 seuratObj@meta.data %>% head()
+
+# For newer Seurat versions, you may need to run the following
+seuratObj <- UpdateSeuratObject(seuratObj)
 ```
 
 Visualize which cell populations are present: CD4 T cells (including regulatory T cells), CD8 T cells, B cells, NK cells, dendritic cells (DCs) and  inflammatory monocytes
@@ -139,7 +144,7 @@ Here, the gene set of interest are the genes differentially expressed in CD8 T c
 
 ```{r}
 seurat_obj_receiver= subset(seuratObj, idents = receiver)
-seurat_obj_receiver = SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[["aggregate"]])
+seurat_obj_receiver = SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[["aggregate", drop=TRUE]])
 
 condition_oi = "LCMV"
 condition_reference = "SS" 
@@ -298,9 +303,7 @@ p_ligand_aupr = vis_ligand_aupr %>% make_heatmap_ggplot("Prioritized ligands","L
 
 ```{r}
 # ligand expression Seurat dotplot
-order_ligands_adapted = order_ligands
-order_ligands_adapted[order_ligands_adapted == "H2.M3"] = "H2-M3" # cf required use of make.names for heatmap visualization | this is not necessary if these ligands are not in the list of prioritized ligands!
-order_ligands_adapted[order_ligands_adapted == "H2.T23"] = "H2-T23" # cf required use of make.names for heatmap visualization | this is not necessary if these ligands are not in the list of prioritized ligands!
+order_ligands_adapted <- str_replace_all(order_ligands, "\\.", "-")
 rotated_dotplot = DotPlot(seuratObj %>% subset(celltype %in% sender_celltypes), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
 ```
 
@@ -331,6 +334,10 @@ combined_plot
 # Remarks
 
 Top-ranked ligands and target genes shown here differ from the predictions shown in the respective case study in the NicheNet paper because 1) a different definition of expressed genes was used, and 2) we have updated the ligand-target matrix to include more data sources.
+
+```{r}
+sessionInfo()
+```
 
 # References
 

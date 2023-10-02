@@ -1,7 +1,7 @@
 ---
 title: "Seurat Wrapper + Circos visualization"
 author: "Robin Browaeys"
-date: "18-1-2021"
+date: "2023-10-02"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Seurat Wrapper + Circos visualization}
@@ -41,8 +41,9 @@ The used [ligand-target matrix](https://doi.org/10.5281/zenodo.7074290) and the 
 ### Load Packages:
 
 ```{r}
-library(nichenetr)
-library(Seurat) # Please update to Seurat v4
+library(nichenetr) # Please update to v2.0.4
+library(Seurat)
+library(SeuratObject)
 library(tidyverse)
 library(circlize)
 ```
@@ -68,6 +69,9 @@ head(weighted_networks$gr) # interactions and their weights in the gene regulato
 
 ```{r}
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
+# For newer Seurat versions, you may need to run the following
+seuratObj <- UpdateSeuratObject(seuratObj)
+
 seuratObj@meta.data %>% head()
 ```
 

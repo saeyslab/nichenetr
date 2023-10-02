@@ -1,7 +1,7 @@
 ---
 title: "Perform NicheNet analysis with prioritization"
 author: "Robin Browaeys & Chananchida Sang-aram"
-date: "2023-07-20"
+date: "2023-10-02"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Perform NicheNet analysis starting from a Seurat object: step-by-step analysis with prioritization}
@@ -25,13 +25,16 @@ knitr::opts_chunk$set(
 
 ```{r}
 ### Load Packages
-library(nichenetr)
-library(Seurat) # please update to Seurat V4
+library(nichenetr) # Please update to v2.0.4
+library(Seurat)
+library(SeuratObject)
 library(tidyverse)
 
 ### Read in Seurat object
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
 
+# For newer Seurat versions, you may need to run the following
+seuratObj <- UpdateSeuratObject(seuratObj)
 ```
 
 In this vignette, we will extend the basic NicheNet analysis analysis from [Perform NicheNet analysis starting from a Seurat object: step-by-step analysis](seurat_steps.md) by incorporating gene expression as part of the prioritization This is a generalization of the [Differential NicheNet](differential_nichenet.md) and [MultiNicheNet](https://github.com/saeyslab/multinichenetr) approach. While the original NicheNet only ranks ligands based on the ligand activity analysis, it is now also possible to prioritize ligands based on upregulation of the ligand/receptor, and the cell-type and condition specificity of hte ligand and receptor.
@@ -52,6 +55,7 @@ The NicheNet ligand-receptor network and weighted networks are necessary to defi
 lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
 ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
 weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
+
 lr_network = lr_network %>% distinct(from, to)
 head(lr_network)
 ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
@@ -89,7 +93,7 @@ expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 # 2. Define a gene set of interest: these are the genes in the “receiver/target” cell population that are potentially affected by ligands expressed by interacting cells (e.g. genes differentially expressed upon cell-cell interaction)
 
 seurat_obj_receiver= subset(seuratObj, idents = receiver)
-seurat_obj_receiver = SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[["aggregate"]])
+seurat_obj_receiver = SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[["aggregate", drop=TRUE]])
 
 condition_oi = "LCMV"
 condition_reference = "SS" 
@@ -276,6 +280,10 @@ make_mushroom_plot(prior_table, top_n = 30, show_rankings = TRUE, show_all_datap
 
 # Show true limits instead of having it from 0 to 1
 make_mushroom_plot(prior_table, top_n = 30, true_color_range = TRUE)
+```
+
+```{r}
+sessionInfo()
 ```
 
 ### References
