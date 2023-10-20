@@ -231,7 +231,6 @@ these different dataframes so they are compatible with the
 `generate_prioritization_tables` function.
 
 ``` r
-celltypes <- unique(seuratObj$celltype)
 lr_network_renamed <- lr_network %>% rename(ligand=from, receptor=to)
 
 # Only calculate DE for LCMV condition, with genes that are in the ligand-receptor network
