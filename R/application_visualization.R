@@ -1146,4 +1146,150 @@ draw_circos_plot <- function(vis_circos_obj, transparency = FALSE, args.circos.t
   circos.clear()
 }
 
+#' @title Make a line plot
+#' @usage make_line_plot(ligand_activities, potential_ligands, ranking_range = c(1, 20))
+#' @description Make a line plot comparing the ranking of ligands based on their activities in the sender-agnostic and sender-focused approaches
+#' @param ligand_activities Dataframe containing the ligand activities from the sender-agnostic approach
+#' @param potential_ligands Character vector containing the ligands that are expressed in the sender cell type (i.e. the ligands that are used in the sender-focused approach)
+#' @param ranking_range Numeric vector of length 2 indicating the range of the rankings to be displayed (default: c(1, 20))
+#' @param agnostic_color Color representing ligands only inthe sender-agnostic approach (default: "tomato")
+#' @param focused_color Color representing expressed ligands from the sender-focused approach (default: "black")
+#' @param tied_color Color to shade ligands that are tied in the same rank (default: "gray75")
+#' @return A ggplot object showing the distribution of sender-focused ligands, as well as a line plot inset comparing the rankings between the two approaches
+#' @examples \dontrun{
+#' # Default
+#' make_line_plot(ligand_activities, potential_ligands)
+#' }
+#' @export
+
+make_line_plot <- function(ligand_activities, potential_ligands, ranking_range = c(1, 20),
+                           agnostic_color = "tomato", focused_color = "black", tied_color = "gray75") {
+  # Check if all potential ligands are in ligand_activities
+  if (!all(potential_ligands %in% ligand_activities$test_ligand)) stop("Not all potential ligands are in ligand_activities")
+
+  # Check if ranking_range is small -> large
+  if (ranking_range[1] >= ranking_range[2]) stop("Starting range should be smaller than ending range")
+
+  # Add rank to ligand_activities if it doesn't exist
+  if (!"rank" %in% names(ligand_activities)) ligand_activities$rank <- rank(rev(ligand_activities$aupr_corrected))
+
+  # x position of "sender-agnostic" ligands
+  inset_x <- 3.25
+
+  # Create dataframe of the two approaches
+  rankings_df <- bind_rows(ligand_activities %>% select(test_ligand, rank) %>% mutate(type = "agnostic"),
+                          ligand_activities %>% filter(test_ligand %in% potential_ligands) %>%
+                            select(test_ligand, rank) %>% mutate(type = "focused")) %>%
+    group_by(type) %>% mutate(new_rank = 1:n(),
+                              x = case_when(type == "agnostic" ~ inset_x,
+                                            type == "focused" ~ inset_x+1.5)) %>%
+    # Ligands that are expressed
+    group_by(test_ligand) %>% mutate(expressed = (n() > 1)) %>% ungroup()
+
+  # Define some variables
+  start_n <- ranking_range[1]
+  end_n <- ranking_range[2]
+  n_ligands <- max(rankings_df$new_rank)
+  margin <- 1/10                                                    # Leave 1/10 of plot empty at top and bottom
+  by_n <- ((n_ligands*margin*9)-(n_ligands*margin))/(end_n-start_n) # Space between each rank
+  cutoff <- by_n*(end_n-start_n+3)
+
+  # Set index to 1 for the start_n ligand
+  rankings_df <- rankings_df %>%
+    group_by(type) %>%
+          mutate(index = (-start_n+2):(n()-start_n+1),
+          y = (n_ligands*margin)+(by_n*(index-1)))
+
+
+  # Line segments that go beyond the inset
+  line_df <- rankings_df %>% filter(expressed) %>% select(-c(rank, new_rank, index, expressed)) %>%
+    pivot_wider(names_from = type, values_from = c(x, y)) %>%
+    rename(x1 = x_agnostic, y1 = y_agnostic, x2 = x_focused, y2 = y_focused) %>%
+    # Use equation of a line to find the x value at the cutoff
+    # Different lines for the top and bottom cutoff
+    mutate(m = (y2-y1)/(x2-x1), x0 = case_when(y2 > by_n ~ ((cutoff-y1)/m)+x1,
+                                              y2 <= by_n ~ ((by_n-y1)/m)+x1))
+
+  # Highlight ties
+  ties_df <- rankings_df %>% group_by(type, rank) %>%
+    mutate(ties = n() > 1) %>% filter(ties == TRUE) %>%
+    ungroup() %>% group_split(type) %>% lapply(., function(group) {
+      group %>% split(f = .$rank) %>%
+        sapply(., function (k) data.frame(range(k$y))) %>% bind_cols %>% t() %>% data.frame() %>%
+        `colnames<-`(c("ystart", "yend")) %>% `rownames<-`(NULL) %>%
+        mutate(xstart = case_when(unique(group$type) == "agnostic" ~ inset_x,
+                                  unique(group$type) == "focused" ~ inset_x+1.5),
+              xend = xstart)
+    }) %>% bind_rows() %>%
+    # Clip the lines to the cutoff
+    filter(ystart < cutoff, yend > by_n) %>% mutate(yend = case_when(yend > cutoff ~ cutoff,
+                                                        TRUE ~ yend),
+                                                    ystart = case_when(ystart <= by_n ~ by_n*2,
+                                                        TRUE ~ ystart))
+
+  # Subset the dataframe to the range of interest
+  rankings_df_subset <- rankings_df %>% filter(new_rank <= end_n, new_rank >= start_n)
+
+  ggplot() +
+    # BAR PLOT
+    # Base + expressed ligands drawn as line segments
+    geom_rect(aes(ymin=1, ymax=n_ligands, xmin=0.5, xmax=1.5), fill = agnostic_color) +
+    geom_segment(data = rankings_df %>% filter(type == "agnostic", expressed),
+                aes(y=new_rank, yend=new_rank, x=0.5, xend=1.5), color = focused_color) +
+    # y-axis + ticks
+    geom_segment(aes(y=0, yend=max(labeling::extended(0, n_ligands, 5)), x=0.3, xend=0.3)) +
+    geom_segment(data = (axis_df <- data.frame(x=0.3, xend=0.25, y=labeling::extended(0, n_ligands, 5),
+                                  yend=labeling::extended(0, n_ligands, 5))),
+                aes(y=y, yend=yend, x=x, xend=xend)) +
+    # y-axis ticklabels + title
+    geom_text(data=axis_df, aes(x=xend-0.05, y=y, label=y, hjust=1), size=3) +
+    geom_text(aes(x=0, y=n_ligands/2, label="Ligand rankings", vjust=-0.25), angle=90) +
+    # Title
+    geom_text(aes(x=1, y=0, label = "Distribution of expressed ligands\nacross all sender-agnostic ligands"), nudge_y=by_n) +
+    # ELBOW CONNECTORS
+    # Top, vertical line, bottom, horizontal line connecting to inset
+    geom_segment(data = data.frame(x = c(1.6, 1.65, 1.65, 1.65),
+                                  xend = c(1.65, 1.65, 1.60, inset_x-1.25),
+                                  y=c(min(rankings_df_subset$new_rank), min(rankings_df_subset$new_rank), max(rankings_df_subset$new_rank), ((end_n-start_n)/2)+start_n-1),
+                                  yend=c(min(rankings_df_subset$new_rank), max(rankings_df_subset$new_rank), max(rankings_df_subset$new_rank), ((end_n-start_n)/2)+start_n-1)),
+                aes(x=x, xend=xend, y=y, yend=yend)) +
+    # LINE PLOT
+    # Ties
+    geom_segment(data = ties_df, aes(x=xstart, y=ystart, xend=xend, yend=yend),
+                color = tied_color, linewidth=3, lineend="round") +
+    # Line segment from focused -> agnostic
+    geom_segment(data = line_df %>% filter(x0 > inset_x, y2 < cutoff, y2 > by_n*2), aes(x=x2, y=y2, xend=x0, yend=cutoff)) +
+    # Line segment from agnostic -> focused
+    geom_segment(data = line_df %>% filter(x0 > inset_x, y1 < cutoff, y1 > by_n*2), aes(x=x1, y=y1, xend=x0, yend=by_n*2)) +
+    # Line segment within range
+    geom_line(data = rankings_df_subset, aes(x=x, y=y, group = test_ligand)) +
+    # Points
+    geom_point(data = rankings_df_subset, aes(x=x, y=y, color = expressed)) +
+    # Ligand names
+    geom_text(data = rankings_df_subset %>% filter(type == "agnostic"), aes(x=x, y=y, label = test_ligand, hjust = "right", color = expressed), nudge_x = -0.05) +
+    geom_text(data = rankings_df_subset %>% filter(type == "focused"), aes(x=x, y=y, label = test_ligand, hjust = "left",  color = expressed), nudge_x = 0.05) +
+    # Ranking labels
+    geom_text(data = rankings_df_subset, aes(x=inset_x-0.75, y=y, label=new_rank)) +
+    # Outer rectangle
+    geom_rect(aes(ymin=0, ymax=n_ligands*(margin*19/2), xmin=inset_x-1.25, xmax = inset_x+2.25), fill=NA, color="black") +
+     # Heading
+    geom_text(data = data.frame(x = c(inset_x-0.75, inset_x, inset_x+1.5),
+                                y = n_ligands*(margin/2), label = c("Rank", "Sender-agnostic", "Sender-focused")),
+                                aes(x=x, y=y, label=label)) +
+    # PLOT SETTINGS
+    scale_color_manual(values = c("TRUE" = focused_color, "FALSE" = agnostic_color), breaks=c(TRUE, FALSE), labels = c("Only agnostic", "Tied")) +
+    scale_y_reverse() +
+    xlim(0, inset_x+2.5) +
+    labs(y = "Ligand rankings") +
+    guides(color = guide_legend(override.aes = list(shape = c(19, 15), size = c(2, 4), color = c(agnostic_color, tied_color)))) +
+    theme_classic() +
+    theme(axis.title = element_blank(), axis.text = element_blank(),
+          axis.line = element_blank(), axis.ticks = element_blank(),
+          legend.title = element_blank(), legend.direction = "horizontal",
+          legend.position = c(0.5, 0.05),
+          legend.background = element_blank(),
+          legend.text = element_text(size = 12),
+          plot.title = element_text(hjust = 0.5))
+
+}
 
