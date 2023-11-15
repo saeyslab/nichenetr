@@ -72,7 +72,7 @@ test_that("Seurat wrapper works", {
   nichenet_output = nichenet_seuratobj_cluster_de(seurat_obj = seurat_object_lite, receiver_affected = "CD8 T", receiver_reference = "Mono", sender = "undefined", ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network)
   expect_type(nichenet_output,"list")
 
-  lfc_output = get_lfc_celltype(seurat_obj = seurat_object_lite, celltype_oi = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", min.pct = 0.10)
+  lfc_output = get_lfc_celltype(seurat_obj = seurat_object_lite, celltype_oi = "CD8 T", condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", min.pct = 0.10, logfc.threshold = 0)
   expect_type(lfc_output,"list")
 
 

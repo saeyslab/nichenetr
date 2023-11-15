@@ -4,7 +4,7 @@
 \alias{get_lfc_celltype}
 \title{Get log fold change values of genes in cell type of interest}
 \usage{
-get_lfc_celltype(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, celltype_col = "celltype", expression_pct = 0.10)
+get_lfc_celltype(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, celltype_col = "celltype")
 #'
 }
 \arguments{
