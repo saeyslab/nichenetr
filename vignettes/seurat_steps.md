@@ -2,7 +2,7 @@ Perform NicheNet analysis starting from a Seurat object: step-by-step
 analysis
 ================
 Robin Browaeys
-2019-11-12
+2023-10-02
 
 <!-- github markdown built using 
 rmarkdown::render("vignettes/seurat_steps.Rmd", output_format = "github_document")
@@ -76,7 +76,8 @@ genes of these prioritized ligands.
 
 ``` r
 library(nichenetr)
-library(Seurat) # please update to Seurat V4
+library(Seurat)
+library(SeuratObject)
 library(tidyverse)
 ```
 
@@ -94,6 +95,7 @@ mouse/human gene symbol.
 
 ``` r
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
+
 seuratObj@meta.data %>% head()
 ##         nGene nUMI orig.ident aggregate res.0.6 celltype nCount_RNA nFeature_RNA
 ## W380370   880 1611      LN_SS        SS       1    CD8 T       1607          876
@@ -102,6 +104,9 @@ seuratObj@meta.data %>% head()
 ## W380378   847 1546      LN_SS        SS       1    CD8 T       1537          838
 ## W380379   839 1606      LN_SS        SS       0    CD4 T       1603          836
 ## W380381   517  844      LN_SS        SS       0    CD4 T        840          513
+
+# For newer Seurat versions, you may need to run the following
+seuratObj <- UpdateSeuratObject(seuratObj)
 ```
 
 Visualize which cell populations are present: CD4 T cells (including
@@ -242,7 +247,7 @@ Seurat Wilcoxon test, but this can be changed if necessary.
 
 ``` r
 seurat_obj_receiver= subset(seuratObj, idents = receiver)
-seurat_obj_receiver = SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[["aggregate"]])
+seurat_obj_receiver = SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[["aggregate", drop=TRUE]])
 
 condition_oi = "LCMV"
 condition_reference = "SS" 
@@ -291,7 +296,7 @@ ligand_activities
 ##  8 H2-K1       0.605 0.268          0.122   0.142     8
 ##  9 H2-Q4       0.605 0.268          0.122   0.141    10
 ## 10 H2-Q6       0.605 0.268          0.122   0.141    10
-## # … with 63 more rows
+## # ℹ 63 more rows
 ```
 
 The different ligand activity measures (auroc, aupr, pearson correlation
@@ -456,9 +461,7 @@ p_ligand_aupr = vis_ligand_aupr %>% make_heatmap_ggplot("Prioritized ligands","L
 
 ``` r
 # ligand expression Seurat dotplot
-order_ligands_adapted = order_ligands
-order_ligands_adapted[order_ligands_adapted == "H2.M3"] = "H2-M3" # cf required use of make.names for heatmap visualization | this is not necessary if these ligands are not in the list of prioritized ligands!
-order_ligands_adapted[order_ligands_adapted == "H2.T23"] = "H2-T23" # cf required use of make.names for heatmap visualization | this is not necessary if these ligands are not in the list of prioritized ligands!
+order_ligands_adapted <- str_replace_all(order_ligands, "\\.", "-")
 rotated_dotplot = DotPlot(seuratObj %>% subset(celltype %in% sender_celltypes), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
 ```
 
@@ -493,6 +496,54 @@ Top-ranked ligands and target genes shown here differ from the
 predictions shown in the respective case study in the NicheNet paper
 because 1) a different definition of expressed genes was used, and 2) we
 have updated the ligand-target matrix to include more data sources.
+
+``` r
+sessionInfo()
+## R version 4.3.1 (2023-06-16)
+## Platform: x86_64-redhat-linux-gnu (64-bit)
+## Running under: CentOS Stream 8
+## 
+## Matrix products: default
+## BLAS/LAPACK: /usr/lib64/libopenblaso-r0.3.15.so;  LAPACK version 3.9.0
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8     LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8    LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C             LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## time zone: Europe/Brussels
+## tzcode source: system (glibc)
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+##  [1] forcats_0.5.1      stringr_1.5.0      dplyr_1.1.2        purrr_1.0.2        readr_2.1.2        tidyr_1.3.0        tibble_3.2.1       ggplot2_3.4.3      tidyverse_1.3.1    Seurat_4.4.0       nichenetr_2.0.3    testthat_3.1.2    
+## [13] SeuratObject_4.1.4 sp_2.0-0          
+## 
+## loaded via a namespace (and not attached):
+##   [1] fs_1.5.2               matrixStats_1.0.0      spatstat.sparse_3.0-2  bitops_1.0-7           devtools_2.4.3         lubridate_1.8.0        httr_1.4.2             RColorBrewer_1.1-2     doParallel_1.0.17     
+##  [10] tools_4.3.1            sctransform_0.4.0      backports_1.4.1        utf8_1.2.2             R6_2.5.1               lazyeval_0.2.2         uwot_0.1.16            GetoptLong_1.0.5       withr_2.5.0           
+##  [19] prettyunits_1.1.1      gridExtra_2.3          fdrtool_1.2.17         progressr_0.14.0       cli_3.6.1              DiceKriging_1.6.0      spatstat.explore_3.2-1 labeling_0.4.2         spatstat.data_3.0-1   
+##  [28] randomForest_4.7-1.1   proxy_0.4-27           ggridges_0.5.3         pbapply_1.5-0          foreign_0.8-84         smoof_1.6.0.3          parallelly_1.30.0      sessioninfo_1.2.2      limma_3.56.2          
+##  [37] readxl_1.3.1           rstudioapi_0.13        visNetwork_2.1.2       generics_0.1.2         shape_1.4.6            ica_1.0-2              spatstat.random_3.1-5  car_3.1-2              Matrix_1.6-1          
+##  [46] S4Vectors_0.38.1       fansi_1.0.2            abind_1.4-5            lifecycle_1.0.3        yaml_2.2.2             carData_3.0-5          recipes_1.0.7          Rtsne_0.15             grid_4.3.1            
+##  [55] promises_1.2.0.1       crayon_1.5.0           miniUI_0.1.1.1         lattice_0.21-8         haven_2.4.3            cowplot_1.1.1          mlr_2.19.1             pillar_1.9.0           knitr_1.37            
+##  [64] ComplexHeatmap_2.16.0  rjson_0.2.21           future.apply_1.8.1     codetools_0.2-19       fastmatch_1.1-3        leiden_0.3.9           glue_1.6.2             ParamHelpers_1.14.1    data.table_1.14.2     
+##  [73] remotes_2.4.2          vctrs_0.6.3            png_0.1-7              cellranger_1.1.0       gtable_0.3.0           assertthat_0.2.1       cachem_1.0.6           gower_1.0.1            xfun_0.40             
+##  [82] mime_0.12              prodlim_2023.03.31     survival_3.5-5         timeDate_4022.108      iterators_1.0.14       hardhat_1.3.0          lava_1.7.2.1           DiagrammeR_1.0.10      ellipsis_0.3.2        
+##  [91] fitdistrplus_1.1-6     ROCR_1.0-11            ipred_0.9-14           nlme_3.1-162           usethis_2.2.2          RcppAnnoy_0.0.19       rprojroot_2.0.2        irlba_2.3.5            KernSmooth_2.23-21    
+## [100] rpart_4.1.19           DBI_1.1.2              BiocGenerics_0.46.0    colorspace_2.0-2       Hmisc_5.1-0            nnet_7.3-19            tidyselect_1.2.0       processx_3.5.2         compiler_4.3.1        
+## [109] parallelMap_1.5.1      rvest_1.0.2            htmlTable_2.4.1        xml2_1.3.3             desc_1.4.2             plotly_4.10.0          shadowtext_0.1.2       checkmate_2.2.0        scales_1.2.1          
+## [118] caTools_1.18.2         lmtest_0.9-39          callr_3.7.0            digest_0.6.29          goftest_1.2-3          spatstat.utils_3.0-3   rmarkdown_2.11         htmltools_0.5.6        pkgconfig_2.0.3       
+## [127] base64enc_0.1-3        lhs_1.1.6              highr_0.9              dbplyr_2.1.1           fastmap_1.1.0          rlang_1.1.1            GlobalOptions_0.1.2    htmlwidgets_1.6.2      shiny_1.7.1           
+## [136] BBmisc_1.13            farver_2.1.0           zoo_1.8-9              jsonlite_1.7.3         mlrMBO_1.1.5.1         ModelMetrics_1.2.2.2   magrittr_2.0.2         Formula_1.2-5          patchwork_1.1.1       
+## [145] munsell_0.5.0          Rcpp_1.0.11            ggnewscale_0.4.9       reticulate_1.24        stringi_1.7.6          pROC_1.18.4            brio_1.1.3             MASS_7.3-60            plyr_1.8.6            
+## [154] pkgbuild_1.3.1         parallel_4.3.1         listenv_0.8.0          ggrepel_0.9.3          deldir_1.0-6           splines_4.3.1          tensor_1.5             hms_1.1.1              circlize_0.4.15       
+## [163] ps_1.6.0               igraph_1.5.1           ggpubr_0.6.0           spatstat.geom_3.2-4    ggsignif_0.6.4         reshape2_1.4.4         stats4_4.3.1           pkgload_1.2.4          reprex_2.0.1          
+## [172] evaluate_0.14          modelr_0.1.8           tweenr_2.0.2           tzdb_0.4.0             foreach_1.5.2          httpuv_1.6.5           RANN_2.6.1             polyclip_1.10-0        clue_0.3-64           
+## [181] future_1.23.0          scattermore_1.2        ggforce_0.4.1          broom_0.7.12           xtable_1.8-4           emoa_0.5-0.2           e1071_1.7-13           rstatix_0.7.2          later_1.3.0           
+## [190] viridisLite_0.4.0      class_7.3-22           IRanges_2.34.1         memoise_2.0.1          cluster_2.1.4          globals_0.14.0         caret_6.0-94
+```
 
 # References
 

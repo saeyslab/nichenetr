@@ -1,7 +1,7 @@
 Seurat Wrapper + Circos visualization
 ================
 Robin Browaeys
-18-1-2021
+2023-10-02
 
 <!-- github markdown built using 
 rmarkdown::render("vignettes/seurat_wrapper_circos.Rmd", output_format = "github_document")
@@ -53,8 +53,9 @@ Zenodo.
 ### Load Packages:
 
 ``` r
-library(nichenetr)
-library(Seurat) # Please update to Seurat v4
+library(nichenetr) # Please update to v2.0.4
+library(Seurat)
+library(SeuratObject)
 library(tidyverse)
 library(circlize)
 ```
@@ -113,6 +114,9 @@ head(weighted_networks$gr) # interactions and their weights in the gene regulato
 
 ``` r
 seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
+# For newer Seurat versions, you may need to run the following
+seuratObj <- UpdateSeuratObject(seuratObj)
+
 seuratObj@meta.data %>% head()
 ##         nGene nUMI orig.ident aggregate res.0.6 celltype nCount_RNA nFeature_RNA
 ## W380370   880 1611      LN_SS        SS       1    CD8 T       1607          876
@@ -216,7 +220,7 @@ nichenet_output$ligand_activities
 ##  8 H2-K1       0.607 0.258          0.113   0.132     8
 ##  9 H2-Q4       0.606 0.258          0.112   0.131    10
 ## 10 H2-Q6       0.606 0.258          0.112   0.131    10
-## # … with 60 more rows
+## # ℹ 60 more rows
 ```
 
 These ligands are expressed by one or more of the input sender cells. To
@@ -415,7 +419,7 @@ gaps = c(
 
 Render the circos plot (all links same transparancy). Only the widths of
 the blocks that indicate each target gene is proportional the
-ligand-target regulatory potential (\~prior knowledge supporting the
+ligand-target regulatory potential (~prior knowledge supporting the
 regulatory interaction).
 
 ``` r
@@ -542,7 +546,7 @@ gaps = c(
 
 Render the circos plot (all links same transparancy). Only the widths of
 the blocks that indicate each receptor is proportional the
-ligand-receptor interaction weight (\~prior knowledge supporting the
+ligand-receptor interaction weight (~prior knowledge supporting the
 interaction).
 
 ``` r
@@ -600,6 +604,7 @@ dev.off()
 ## png 
 ##   2
 ```
+
 ### References
 
 <div id="refs" class="references csl-bib-body hanging-indent">

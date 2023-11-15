@@ -11,7 +11,7 @@ test_that("Differential NicheNet pipeline works", {
   seurat_object_lite@meta.data$celltype_aggregate = paste(seurat_object_lite@meta.data$celltype, seurat_object_lite@meta.data$aggregate,sep = "_") # user adaptation required on own dataset
 
   celltype_id = "celltype_aggregate" # metadata column name of the cell type of interest
-  seurat_obj = SetIdent(seurat_object_lite, value = seurat_object_lite[[celltype_id]])
+  seurat_obj = SetIdent(seurat_object_lite, value = seurat_object_lite[[celltype_id, drop=TRUE]])
 
   niches = list(
     "LCMV_niche" = list(
@@ -90,7 +90,7 @@ test_that("Differential NicheNet pipeline works", {
   length(geneset_niche2)
 
   top_n_target = 250
- 
+
   niche_geneset_list = list(
     "LCMV_niche" = list(
       "receiver" = niches[[1]]$receiver,

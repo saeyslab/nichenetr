@@ -54,7 +54,7 @@ rownames(ligand_target_matrix) = ligand_target_matrix \%>\% rownames() \%>\% con
 ligand_target_matrix = ligand_target_matrix \%>\% .[!is.na(rownames(ligand_target_matrix)), !is.na(colnames(ligand_target_matrix))]
 
 # Ligand activity analysis
-seurat_obj_receiver = subset(seurat_obj, idents = receiver) \%>\% SetIdent(value = .[["aggregate"]])
+seurat_obj_receiver = subset(seurat_obj, idents = receiver) \%>\% SetIdent(value = .[["aggregate", drop = TRUE]])
 geneset_oi = FindMarkers(object = seurat_obj_receiver, ident.1 = "LCMV, ident.2 = "SS, min.pct = 0.10) \%>\% rownames_to_column("gene") \%>\%
      filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= 0.25) \%>\% pull(gene) \%>\% .[. \%in\% rownames(ligand_target_matrix)]
 expressed_genes_sender = sender_celltypes \%>\% unique() \%>\% lapply(get_expressed_genes, seurat_obj, 0.10) \%>\% unlist() \%>\% unique()

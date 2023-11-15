@@ -247,6 +247,23 @@ alias_to_symbol_seurat = function(seurat_obj, organism) {
         rownames(RNA@scale.data) = newnames
       }
     }
+
+    if (length(RNA@var.features) > 0){
+      newnames = convert_alias_to_symbols(RNA@var.features, organism = organism, verbose = FALSE)
+      doubles =  newnames %>% table() %>% .[. > 1] %>% names()
+      genes_remove = (names(newnames[newnames %in% doubles]) != (newnames[newnames %in% doubles])) %>%  .[. == TRUE] %>% names()
+      newnames[genes_remove] = genes_remove # set the doubles back to their old names
+      RNA@var.features = newnames
+    }
+
+    if (nrow(RNA@meta.features) > 0){
+      newnames = convert_alias_to_symbols(rownames(RNA@meta.features), organism = organism, verbose = FALSE)
+      doubles =  newnames %>% table() %>% .[. > 1] %>% names()
+      genes_remove = (names(newnames[newnames %in% doubles]) != (newnames[newnames %in% doubles])) %>%  .[. == TRUE] %>% names()
+      newnames[genes_remove] = genes_remove # set the doubles back to their old names
+      rownames(RNA@meta.features) = newnames
+    }
+
   } else {"Unequal gene sets: nrow(seurat_obj@assays$RNA) != nrow(newnames)"}
 
   if(!is.null(RNA@counts)){
@@ -275,6 +292,28 @@ alias_to_symbol_seurat = function(seurat_obj, organism) {
     dim_after = dim(RNA@scale.data)
     if(sum(dim_before != dim_after) > 0){
       print("dim scale.data assay changed")
+      print(paste0("before: ",dim_before))
+      print(paste0("after: ",dim_before))
+    }
+  }
+
+  if (length(RNA@var.features) > 0){
+    dim_before = length(RNA@var.features)
+    RNA@var.features = RNA@var.features %>% .[!is.na(.)]
+    dim_after = length(RNA@var.features)
+    if(dim_before != dim_after){
+      print("length of var.features changed")
+      print(paste0("before: ",dim_before))
+      print(paste0("after: ",dim_before))
+    }
+  }
+
+  if (nrow(RNA@meta.features) > 0){
+    dim_before = dim(RNA@meta.features)
+    RNA@meta.features = RNA@meta.features %>% .[!is.na(rownames(.)), ]
+    dim_after = dim(RNA@meta.features)
+    if(sum(dim_before != dim_after) > 0){
+      print("length of meta.features changed")
       print(paste0("before: ",dim_before))
       print(paste0("after: ",dim_before))
     }
@@ -313,6 +352,23 @@ alias_to_symbol_seurat = function(seurat_obj, organism) {
           rownames(SCT@scale.data) = newnames
         }
       }
+
+      if (length(SCT@var.features) > 0){
+        newnames = convert_alias_to_symbols(SCT@var.features, organism = organism, verbose = FALSE)
+        doubles =  newnames %>% table() %>% .[. > 1] %>% names()
+        genes_remove = (names(newnames[newnames %in% doubles]) != (newnames[newnames %in% doubles])) %>%  .[. == TRUE] %>% names()
+        newnames[genes_remove] = genes_remove # set the doubles back to their old names
+        SCT@var.features = newnames
+      }
+
+      if (nrow(SCT@meta.features) > 0){
+        newnames = convert_alias_to_symbols(rownames(SCT@meta.features), organism = organism, verbose = FALSE)
+        doubles =  newnames %>% table() %>% .[. > 1] %>% names()
+        genes_remove = (names(newnames[newnames %in% doubles]) != (newnames[newnames %in% doubles])) %>%  .[. == TRUE] %>% names()
+        newnames[genes_remove] = genes_remove # set the doubles back to their old names
+        rownames(SCT@meta.features) = newnames
+      }
+
     } else {"Unequal gene sets: nrow(seurat_obj@assays$SCT) != nrow(newnames)"}
 
     if(!is.null(SCT@counts)){
@@ -345,6 +401,30 @@ alias_to_symbol_seurat = function(seurat_obj, organism) {
         print(paste0("after: ",dim_before))
       }
     }
+
+    if (length(SCT@var.features) > 0){
+      dim_before = length(SCT@var.features)
+      SCT@var.features = SCT@var.features %>% .[!is.na(.)]
+      dim_after = length(SCT@var.features)
+      if(dim_before != dim_after){
+        print("length of var.features changed")
+        print(paste0("before: ",dim_before))
+        print(paste0("after: ",dim_before))
+      }
+    }
+
+
+    if (nrow(SCT@meta.features) > 0){
+      dim_before = dim(SCT@meta.features)
+      SCT@meta.features = SCT@meta.features %>% .[!is.na(rownames(.)), ]
+      dim_after = dim(SCT@meta.features)
+      if(sum(dim_before != dim_after) > 0){
+        print("length of meta.features changed")
+        print(paste0("before: ",dim_before))
+        print(paste0("after: ",dim_before))
+      }
+    }
+
     seurat_obj@assays$SCT = SCT
   }
 
@@ -383,6 +463,23 @@ alias_to_symbol_seurat = function(seurat_obj, organism) {
           rownames(integrated@scale.data) = newnames
         }
       }
+
+      if (length(integrated@var.features) > 0){
+        newnames = convert_alias_to_symbols(integrated@var.features, organism = organism, verbose = FALSE)
+        doubles =  newnames %>% table() %>% .[. > 1] %>% names()
+        genes_remove = (names(newnames[newnames %in% doubles]) != (newnames[newnames %in% doubles])) %>%  .[. == TRUE] %>% names()
+        newnames[genes_remove] = genes_remove # set the doubles back to their old names
+        integrated@var.features = newnames
+      }
+
+      if (nrow(integrated@meta.features) > 0){
+        newnames = convert_alias_to_symbols(rownames(integrated@meta.features), organism = organism, verbose = FALSE)
+        doubles =  newnames %>% table() %>% .[. > 1] %>% names()
+        genes_remove = (names(newnames[newnames %in% doubles]) != (newnames[newnames %in% doubles])) %>%  .[. == TRUE] %>% names()
+        newnames[genes_remove] = genes_remove # set the doubles back to their old names
+        rownames(integrated@meta.features) = newnames
+      }
+
     } else {"Unequal gene sets: nrow(seurat_obj@assays$integrated) != nrow(newnames)"}
 
     if(!is.null(integrated@counts)){
@@ -415,6 +512,29 @@ alias_to_symbol_seurat = function(seurat_obj, organism) {
         print(paste0("after: ",dim_before))
       }
     }
+
+    if (length(integrated@var.features) > 0){
+      dim_before = length(integrated@var.features)
+      integrated@var.features = integrated@var.features %>% .[!is.na(.)]
+      dim_after = length(integrated@var.features)
+      if(dim_before != dim_after){
+        print("length of var.features changed")
+        print(paste0("before: ",dim_before))
+        print(paste0("after: ",dim_before))
+      }
+    }
+
+    if (nrow(integrated@meta.features) > 0){
+      dim_before = dim(integrated@meta.features)
+      integrated@meta.features = integrated@meta.features %>% .[!is.na(rownames(.)), ]
+      dim_after = dim(integrated@meta.features)
+      if(sum(dim_before != dim_after) > 0){
+        print("length of meta.features changed")
+        print(paste0("before: ",dim_before))
+        print(paste0("after: ",dim_before))
+      }
+    }
+
     seurat_obj@assays$integrated = integrated
   }
 
