@@ -660,9 +660,9 @@ make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings =
   # Rename size and color columns to be more human-readable
   keywords_adj <- c("LFC", "p-val", "product", "mean", "adjusted", "expression") %>% setNames(c("lfc", "pval", "prod", "avg", "adj", "exprs"))
   size_title <- sapply(stringr::str_split(size, "_")[[1]], function(k) ifelse(is.na(keywords_adj[k]), k, keywords_adj[k])) %>%
-    paste0(., collapse = " ") %>%  R.utils::capitalize()
+    paste0(., collapse = " ") %>%  stringr::str_replace("^\\w{1}", toupper)
   color_title <- sapply(stringr::str_split(color, "_")[[1]], function(k) ifelse(is.na(keywords_adj[k]), k, keywords_adj[k])) %>%
-    paste0(., collapse = " ") %>% R.utils::capitalize()
+    paste0(., collapse = " ") %>% stringr::str_replace("^\\w{1}", toupper)
 
   color_lims <- c(0,1)
   if (true_color_range) color_lims <- NULL
