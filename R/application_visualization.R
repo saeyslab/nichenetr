@@ -1152,7 +1152,7 @@ draw_circos_plot <- function(vis_circos_obj, transparency = FALSE, args.circos.t
 }
 
 #' @title Make a line plot
-#' @usage make_line_plot(ligand_activities, potential_ligands, ranking_range = c(1, 20))
+#' @usage make_line_plot(ligand_activities, potential_ligands, ranking_range = c(1, 20), agnostic_color = "tomato", focused_color = "black", tied_color = "gray75", inset_scale = 1)
 #' @description Make a line plot comparing the ranking of ligands based on their activities in the sender-agnostic and sender-focused approaches
 #' @param ligand_activities Dataframe containing the ligand activities from the sender-agnostic approach
 #' @param potential_ligands Character vector containing the ligands that are expressed in the sender cell type (i.e. the ligands that are used in the sender-focused approach)

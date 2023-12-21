@@ -4,7 +4,7 @@
 \alias{make_line_plot}
 \title{Make a line plot}
 \usage{
-make_line_plot(ligand_activities, potential_ligands, ranking_range = c(1, 20))
+make_line_plot(ligand_activities, potential_ligands, ranking_range = c(1, 20), agnostic_color = "tomato", focused_color = "black", tied_color = "gray75", inset_scale = 1)
 }
 \arguments{
 \item{ligand_activities}{Dataframe containing the ligand activities from the sender-agnostic approach}
