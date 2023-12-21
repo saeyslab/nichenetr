@@ -4,10 +4,12 @@
 \alias{bootstrap_ligand_activity_analysis}
 \title{Run ligand activity analysis with bootstrap}
 \usage{
-bootstrap_ligand_activity_analysis(expressed_genes_receiver, geneset_oi, background_expressed_genes, ligand_target_matrix, potential_ligands, n_iter = 10)
+bootstrap_ligand_activity_analysis(expressed_genes_receiver, geneset_oi, background_expressed_genes, ligand_target_matrix, potential_ligands, n_iter = 10, n_cores = 1, parallel_func = "mclapply")
 }
 \arguments{
 \item{expressed_genes_receiver}{Genes expressed in the receiver cell type}
+
+\item{geneset_oi}{Character vector of the gene symbols of genes of which the expression is potentially affected by ligands from the interacting cell.}
 
 \item{background_expressed_genes}{Character vector of gene symbols of the background, non-affected, genes (can contain the symbols of the affected genes as well).}
 
@@ -16,6 +18,10 @@ bootstrap_ligand_activity_analysis(expressed_genes_receiver, geneset_oi, backgro
 \item{potential_ligands}{Character vector giving the gene symbols of the potentially active ligands you want to define ligand activities for.}
 
 \item{n_iter}{Number of iterations to perform (Default: 10)}
+
+\item{n_cores}{Number of cores to use for parallelization (Default: 1)}
+
+\item{parallel_func}{Parallelization function to use from "mclapply", "pbmclapply", or "parLapply" (Default: "mclapply")}
 }
 \value{
 List of n_iter elements, each element containing the output of predict_ligand_activities for a random gene set
@@ -26,6 +32,6 @@ List of n_iter elements, each element containing the output of predict_ligand_ac
 \examples{
 \dontrun{
 permutations <- bootstrap_ligand_activity_analysis(expressed_genes_receiver, geneset_oi, background_expressed_genes,
-                           ligand_target_matrix, potential_ligands, n_iter = 10)
+                           ligand_target_matrix, potential_ligands, n_iter = 10, n_cores = 1, parallel_func = "mclapply")
 }
 }

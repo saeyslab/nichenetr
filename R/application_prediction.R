@@ -490,26 +490,71 @@ calculate_fraction_top_predicted_fisher = function(affected_gene_predictions, qu
 
 #' @title Run ligand activity analysis with bootstrap
 #' @description \code{bootstrap_ligand_activity_analysis} Randomly sample a gene set from all expressed genes in the receiver cell type, then perform ligand activity analysis on this gene set. This 'null gene set' has equal length to the gene set of interest.
-#' @usage bootstrap_ligand_activity_analysis(expressed_genes_receiver, geneset_oi, background_expressed_genes, ligand_target_matrix, potential_ligands, n_iter = 10)
+#' @usage bootstrap_ligand_activity_analysis(expressed_genes_receiver, geneset_oi, background_expressed_genes, ligand_target_matrix, potential_ligands, n_iter = 10, n_cores = 1, parallel_func = "mclapply")
 #' @param expressed_genes_receiver Genes expressed in the receiver cell type
 #' @inheritParams predict_ligand_activities
 #' @param n_iter Number of iterations to perform (Default: 10)
+#' @param geneset_oi Character vector of the gene symbols of genes of which the expression is potentially affected by ligands from the interacting cell.
+#' @param n_cores Number of cores to use for parallelization (Default: 1)
+#' @param parallel_func Parallelization function to use from "mclapply", "pbmclapply", or "parLapply" (Default: "mclapply")
 #' @return List of n_iter elements, each element containing the output of predict_ligand_activities for a random gene set
 #' @examples
 #' \dontrun{
 #' permutations <- bootstrap_ligand_activity_analysis(expressed_genes_receiver, geneset_oi, background_expressed_genes,
-#'                            ligand_target_matrix, potential_ligands, n_iter = 10)
+#'                            ligand_target_matrix, potential_ligands, n_iter = 10, n_cores = 1, parallel_func = "mclapply")
 #' }
 #' @export
 bootstrap_ligand_activity_analysis <- function(expressed_genes_receiver, geneset_oi, background_expressed_genes,
-                            ligand_target_matrix, potential_ligands, n_iter = 10){
-  lapply(1:n_iter, function (i){
-    random_geneset <- sample(expressed_genes_receiver, size = length(geneset_oi))
-    predict_ligand_activities(geneset = random_geneset, background_expressed_genes = background_expressed_genes,
-                             ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
-  })
+                                               ligand_target_matrix, potential_ligands, n_iter = 10,
+                                               n_cores=1, parallel_func = "mclapply"){
+
+  # Check if parallel function is valid
+  if (!(parallel_func %in% c("mclapply", "pbmclapply", "parLapply"))) {
+    stop("parallel_func must be one of 'mclapply', 'pbmclapply', or 'parLapply'")
+  }
+
+  # Check if parallel function is mclapply/pbmclapply that they are not on Windows
+  if (Sys.info()[['sysname']] == "Windows" && parallel_func %in% c("mclapply", "pbmclapply")){
+    if (n_cores > 1){
+      warning("Setting 'n_cores' to 1 as Windows OS cannot make use of mclapply and pbmclapply parallelization. Consider using 'parLapply' instead.")
+      n_cores = 1
+    }
+  }
+
+  if (parallel_func %in% c("mclapply", "pbmclapply")){
+    parFunc <- ifelse(parallel_func == "mclapply", parallel::mclapply, pbmcapply::pbmclapply)
+
+    perms <- parFunc(1:n_iter, function (i){
+      random_geneset <- sample(expressed_genes_receiver, size = length(geneset_oi))
+      predict_ligand_activities(geneset = random_geneset, background_expressed_genes = background_expressed_genes,
+                                ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+    }, mc.cores = n_cores)
+
+  } else if (parallel_func == "parLapply"){
+    if(Sys.info()[['sysname']] == "Windows"){
+      # STILL HAS TO BE TESTED ON WINDOWS
+      clust <- parallel::makeCluster(n_cores)
+      parallel::clusterExport(clust, c("expressed_genes_receiver", "geneset_oi","background_expressed_genes","ligand_target_matrix","potential_ligands"), envir = environment())
+      parallel::clusterEvalQ(clust, library(nichenetr))
+      parallel::clusterEvalQ(clust, library(tidyverse))
+
+    } else {
+      clust <- parallel::makeCluster(n_cores, type="FORK")
+    }
+
+    on.exit(parallel::stopCluster(clust))
+    perms <- parallel::parLapply(clust, 1:n_iter, function (i){
+      random_geneset <- sample(expressed_genes_receiver, size = length(geneset_oi))
+      predict_ligand_activities(geneset = random_geneset, background_expressed_genes = background_expressed_genes,
+                                ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+    })
+
+  }
+
+  return(perms)
 
 }
+
 
 #' @title Calculate ligand p-values from the bootstrapped ligand activity analysis
 #' @description \code{calculate_p_value_bootstrap} Calculate the p-value for each ligand from the bootstrapped ligand activity analysis
