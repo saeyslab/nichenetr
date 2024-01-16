@@ -812,7 +812,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   # step1 nichenet analysis: get expressed genes in sender and receiver cells
 
   ## receiver
-  list_expressed_genes_receiver = receiver %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+  list_expressed_genes_receiver = lapply(unique(receiver), function(receiver_ct) get_expressed_genes(seurat_obj, receiver_ct, assay_oi = assay_oi, pct = expression_pct))
   names(list_expressed_genes_receiver) = receiver %>% unique()
   expressed_genes_receiver = list_expressed_genes_receiver %>% unlist() %>% unique()
 
@@ -820,7 +820,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   if (length(sender) == 1){
     if (sender == "all"){
       sender_celltypes = Idents(seurat_obj) %>% levels()
-      list_expressed_genes_sender = sender_celltypes %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+      list_expressed_genes_sender = lapply(sender_celltypes, function(sender_ct) get_expressed_genes(seurat_obj, sender_ct, pct = expression_pct, assay_oi = assay_oi))
       names(list_expressed_genes_sender) = sender_celltypes
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
@@ -832,13 +832,13 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
         }
     } else if (sender != "all" & sender != "undefined") {
       sender_celltypes = sender
-      list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+      list_expressed_genes_sender = lapply(unique(sender_celltypes), function(sender_ct) get_expressed_genes(seurat_obj, sender_ct, pct = expression_pct, assay_oi = assay_oi))
       names(list_expressed_genes_sender) = sender_celltypes %>% unique()
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
     }
   } else {
     sender_celltypes = sender
-    list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+    list_expressed_genes_sender = lapply(unique(sender_celltypes), function(sender_ct) get_expressed_genes(seurat_obj, sender_ct, pct = expression_pct, assay_oi = assay_oi))
     names(list_expressed_genes_sender) = sender_celltypes %>% unique()
     expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
   }
@@ -1078,163 +1078,143 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     background_expressed_genes = background_expressed_genes
   ))
 }
-#' @title Determine expressed genes of a cell type from a Seurat object single-cell RNA seq dataset or Seurat spatial transcriptomics dataset
-#'
-#' @description \code{get_expressed_genes} Return the genes that are expressed in a given cell cluster based on the fraction of cells in that cluster that should express the cell.
-#' @usage
-#' get_expressed_genes(ident, seurat_obj, pct = 0.10, assay_oi = NULL)
-#'
-#' @param ident Name of cluster identity/identities of cells
-#' @param seurat_obj Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.
-#' @param pct We consider genes expressed if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10. Choice of this parameter is important and depends largely on the used sequencing platform. We recommend to require a lower fraction (like the default 0.10) for 10X data than for e.g. Smart-seq2 data.
-#' @param assay_oi If wanted: specify yourself which assay to look for. Default this value is NULL and as a consequence the 'most advanced' assay will be used to define expressed genes.
+#' @title Determine expressed genes of a cell type from an input object
+#' @description Return the genes that are expressed in given cell cluster(s) based on the fraction of cells in the cluster(s) that should express the cell.
+#' @param pct We consider genes expressed if they are expressed in at least a specific fraction of cells of the given cluster(s). This number indicates this fraction. Default: 0.10. Choice of this parameter is important and depends largely on the used sequencing platform. We recommend to require a lower fraction (like the default 0.10) for 10X data than for e.g. Smart-seq2 data.
+#' @param object Input matrix with rows as genes and columns as cells
+#' @param ... Additional arguments
 #'
 #' @return A character vector with the gene symbols of the expressed genes
+#'
+#' @rdname get_expressed_genes
+#' @export
+get_expressed_genes <- function(object, pct = 0.1, ...) {
+  UseMethod("get_expressed_genes")
+}
+
+#' @param celltype_annot Vector of cell type annotations
+#' @param celltype_oi Cell type(s) to be considered
+#' @import dplyr
+#' @rdname get_expressed_genes
+#' @export
+get_expressed_genes.default <- function(object, celltype_annot, celltype_oi, pct = 0.1) {
+  requireNamespace("dplyr")
+
+  # Check that length of metadata is equal to number of cells
+  if (length(celltype_annot) != ncol(object)) {
+    stop("Length of metadata is not equal to number of cells")
+  }
+
+  # Check that celltype_oi is in metadata
+  if (!celltype_oi %in% celltype_metadata) {
+    stop("Cell type of interest is not in celltype_annot")
+  }
+
+  exprs_mat <- object %>% .[, celltype_annot == celltype_oi]
+
+  # Get cells of interest in matrix
+  n_cells_oi_in_matrix <- ncol(exprs_mat)
+
+  if (n_cells_oi_in_matrix < 5000) {
+    genes <- exprs_mat %>% apply(1, function(x) {
+      sum(x > 0)/n_cells_oi_in_matrix
+    }) %>% .[. >= pct] %>% names()
+  }
+  else {
+    splits <- split(1:nrow(exprs_mat), ceiling(seq_along(1:nrow(exprs_mat))/100))
+    genes <- splits %>% lapply(function(genes_indices) {
+      begin_i <- genes_indices[1]
+      end_i <- genes_indices[length(genes_indices)]
+      exprs <- exprs_mat[begin_i:end_i, , drop = FALSE]
+      genes <- exprs %>% apply(1, function(x) {
+        sum(x > 0)/n_cells_oi_in_matrix
+      }) %>% .[. >= pct] %>% names()
+    }) %>% unlist() %>%
+      unname()
+  }
+  return(genes)
+
+}
+
+#' @param ident Name of cluster identity/identities of cells
+#' @param seurat_obj Single-cell expression or spatial dataset as Seurat object
+#' @param assay_oi If wanted: specify yourself which assay to look for. If not (NULL), the \code{DefaultAssay} of the Seurat object is used.
+#' @param ... additional parameters passed to \code{GetAssayData} (in case the slot/layer needs to be specified)
 #'
 #' @import Seurat
 #' @import dplyr
 #'
 #' @examples
 #' \dontrun{
-#' get_expressed_genes(ident = "CD8 T", seurat_obj = seuratObj, pct = 0.10)
+#' get_expressed_genes(seurat_obj = seuratObj, ident = "CD8 T", pct = 0.10)
 #' }
 #'
+#' @rdname get_expressed_genes
 #' @export
 #'
-get_expressed_genes = function(ident, seurat_obj, pct = 0.1, assay_oi = NULL){
+get_expressed_genes.Seurat = function(seurat_obj, ident, assay_oi = NULL, pct = 0.1, ...){
   requireNamespace("Seurat")
   requireNamespace("dplyr")
 
-  # input check
+  # If assay_oi is not specified, use DefaultAssay
+  if (is.null(assay_oi)){
+    assay_oi <- DefaultAssay(seurat_obj)
+  } else {
+    # Check that assay exists in Seurat object
+    if (!assay_oi %in% Seurat::Assays(seurat_obj)){
+      stop("assay_oi not found in Seurat object")
+    }
+    # Set assay_oi to DefaultAssay
+    DefaultAssay(seurat_obj) <- assay_oi
 
+  }
 
-  if (!"RNA" %in% names(seurat_obj@assays)) {
-    if ("Spatial" %in% names(seurat_obj@assays)) {
-      if (class(seurat_obj@assays$Spatial@data) != "matrix" &
-          class(seurat_obj@assays$Spatial@data) != "dgCMatrix") {
-        warning("Spatial Seurat object should contain a matrix of normalized expression data. Check 'seurat_obj@assays$Spatial@data' for default or 'seurat_obj@assays$SCT@data' for when the single-cell transform pipeline was applied")
-      }
-      if (sum(dim(seurat_obj@assays$Spatial@data)) == 0) {
-        stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$Spatial@data'")
-      }
-    }
+  # If assay_oi is Spatial, give warning
+  if (assay_oi == "Spatial"){
+    warning("The Spatial assay will be used to define expressed gene. If the spatial data is spot-based (mixture of cells) and not single-cell resolution, we recommend against directly using nichenetr on because you want to look at cell-cell interactions, and not at spot-spot interactions! ;-) ")
   }
-  else {
-    if (class(seurat_obj@assays$RNA@data) != "matrix" &
-        class(seurat_obj@assays$RNA@data) != "dgCMatrix") {
-      warning("Seurat object should contain a matrix of normalized expression data. Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data or seurat_obj@assays$SCT@data for when the single-cell transform pipeline was applied")
-    }
-    if ("integrated" %in% names(seurat_obj@assays)) {
-      if (sum(dim(seurat_obj@assays$RNA@data)) == 0 & sum(dim(seurat_obj@assays$integrated@data)) ==
-          0)
-        stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data")
-    }
-    else if ("SCT" %in% names(seurat_obj@assays)) {
-      if (sum(dim(seurat_obj@assays$RNA@data)) == 0 & sum(dim(seurat_obj@assays$SCT@data)) ==
-          0) {
-        stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$SCT@data' for data corrected via SCT")
-      }
-    }
-    else {
-      if (sum(dim(seurat_obj@assays$RNA@data)) == 0) {
-        stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data'")
-      }
-    }
-  }
-  if (sum(ident %in% unique(Idents(seurat_obj))) != length(ident)) {
+
+  # Check that ident is in Seurat object
+  if (!all(ident %in% unique(Idents(seurat_obj)))) {
     stop("One or more provided cell clusters is not part of the 'Idents' of your Seurat object")
   }
 
-  if(!is.null(assay_oi)){
-    if(! assay_oi %in% Seurat::Assays(seurat_obj)){
-      stop("assay_oi should be an assay of your Seurat object")
-    }
-  }
-
   # Get cell identities of cluster of interest
+  cells_oi <- Idents(seurat_obj) %>% .[. %in% ident] %>% names()
 
+  # Get expression matrix from assay_oi
+  #cells_oi_in_matrix <- intersect(colnames(seurat_obj[[assay_oi]]@data), cells_oi)
+  #exprs_mat = seurat_obj[[assay_oi]]@data %>% .[, cells_oi_in_matrix]
 
-  cells_oi = Idents(seurat_obj) %>% .[Idents(seurat_obj) %in%
-                                        ident] %>% names()
+  exprs_mat <- subset(seurat_obj, idents = ident) %>%
+    GetAssayData(assay = assay_oi, ...)
 
-  # Get exprs matrix: from assay oi or from most advanced assay if assay oi not specifcied
-
-  if(!is.null(assay_oi)){
-    cells_oi_in_matrix = intersect(colnames(seurat_obj[[assay_oi]]@data), cells_oi)
-    exprs_mat = seurat_obj[[assay_oi]]@data %>% .[, cells_oi_in_matrix]
-  } else {
-    if ("integrated" %in% names(seurat_obj@assays)) {
-      warning("Seurat object is result from the Seurat integration workflow. The expressed genes are now defined based on the integrated slot. You can change this via the assay_oi parameter of the get_expressed_genes() functions. Recommended assays: RNA or SCT")
-      cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$integrated@data),
-                                     cells_oi)
-      if (length(cells_oi_in_matrix) != length(cells_oi))
-        stop("Not all cells of interest are in your expression matrix (seurat_obj@assays$integrated@data). Please check that the expression matrix contains cells in columns and genes in rows.")
-      exprs_mat = seurat_obj@assays$integrated@data %>% .[,
-                                                          cells_oi_in_matrix]
-    }
-    else if ("SCT" %in% names(seurat_obj@assays) & !"Spatial" %in%
-             names(seurat_obj@assays)) {
-      warning("Seurat object is result from the Seurat single-cell transform workflow. The expressed genes are defined based on the SCT slot. You can change this via the assay_oi parameter of the get_expressed_genes() functions. Recommended assays: RNA or SCT")
-      cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$SCT@data),
-                                     cells_oi)
-      if (length(cells_oi_in_matrix) != length(cells_oi))
-        stop("Not all cells of interest are in your expression matrix (seurat_obj@assays$SCT@data). Please check that the expression matrix contains cells in columns and genes in rows.")
-      exprs_mat = seurat_obj@assays$SCT@data %>% .[, cells_oi_in_matrix]
-    }
-    else if ("Spatial" %in% names(seurat_obj@assays) &
-             !"SCT" %in% names(seurat_obj@assays)) {
-      warning("Seurat object is result from the Seurat spatial object. The expressed genes are defined based on the Spatial slot. If the spatial data is spot-based (mixture of cells) and not single-cell resolution, we recommend against directly using nichenetr on spot-based data (because you want to look at cell-cell interactions, and not at spot-spot interactions! ;-) )")
-      cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$Spatial@data),
-                                     cells_oi)
-      if (length(cells_oi_in_matrix) != length(cells_oi))
-        stop("Not all cells of interest are in your expression matrix (seurat_obj@assays$Spatial@data). Please check that the expression matrix contains cells in columns and genes in rows.")
-      exprs_mat = seurat_obj@assays$Spatial@data %>% .[, cells_oi_in_matrix]
-    }
-    else if ("Spatial" %in% names(seurat_obj@assays) &
-             "SCT" %in% names(seurat_obj@assays)) {
-      warning("Seurat object is result from the Seurat spatial object, followed by the SCT workflow. If the spatial data is spot-based (mixture of cells) and not single-cell resolution, we recommend against directly using nichenetr on spot-based data (because you want to look at cell-cell interactions, and not at spot-spot interactions! The expressed genes are defined based on the SCT slot, but this can be changed via the assay_oi parameter.")
-      cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$SCT@data),
-                                     cells_oi)
-      if (length(cells_oi_in_matrix) != length(cells_oi))
-        stop("Not all cells of interest are in your expression matrix (seurat_obj@assays$Spatial@data). Please check that the expression matrix contains cells in columns and genes in rows.")
-      exprs_mat = seurat_obj@assays$SCT@data %>% .[, cells_oi_in_matrix]
-    }
-    else {
-      if (sum(cells_oi %in% colnames(seurat_obj@assays$RNA@data)) ==
-          0)
-        stop("None of the cells are in colnames of 'seurat_obj@assays$RNA@data'. The expression matrix should contain cells in columns and genes in rows.")
-      cells_oi_in_matrix = intersect(colnames(seurat_obj@assays$RNA@data),
-                                     cells_oi)
-      if (length(cells_oi_in_matrix) != length(cells_oi))
-        stop("Not all cells of interest are in your expression matrix (seurat_obj@assays$RNA@data). Please check that the expression matrix contains cells in columns and genes in rows.")
-      exprs_mat = seurat_obj@assays$RNA@data %>% .[, cells_oi_in_matrix]
-    }
-
+  if (length(cells_oi) != ncol(exprs_mat)){
+    warning("Not all cells of interest are in your expression matrix.")
   }
 
-  # use defined cells and exprs matrix to get expressed genes
-
-  n_cells_oi_in_matrix = length(cells_oi_in_matrix)
+  # Use defined cells and exprs matrix to get expressed genes
+  n_cells_oi_in_matrix <-  ncol(exprs_mat)
   if (n_cells_oi_in_matrix < 5000) {
-    genes = exprs_mat %>% apply(1, function(x) {
+    genes <- exprs_mat %>% apply(1, function(x) {
       sum(x > 0)/n_cells_oi_in_matrix
     }) %>% .[. >= pct] %>% names()
   }
   else {
-    splits = split(1:nrow(exprs_mat), ceiling(seq_along(1:nrow(exprs_mat))/100))
-    genes = splits %>% lapply(function(genes_indices, exprs,
-                                       pct, n_cells_oi_in_matrix) {
-      begin_i = genes_indices[1]
-      end_i = genes_indices[length(genes_indices)]
-      exprs = exprs[begin_i:end_i, , drop = FALSE]
-      genes = exprs %>% apply(1, function(x) {
+    splits <- split(1:nrow(exprs_mat), ceiling(seq_along(1:nrow(exprs_mat))/100))
+    genes <- splits %>% lapply(function(genes_indices) {
+      begin_i <- genes_indices[1]
+      end_i <- genes_indices[length(genes_indices)]
+      exprs <- exprs_mat[begin_i:end_i, , drop = FALSE]
+      genes <- exprs %>% apply(1, function(x) {
         sum(x > 0)/n_cells_oi_in_matrix
       }) %>% .[. >= pct] %>% names()
-    }, exprs_mat, pct, n_cells_oi_in_matrix) %>% unlist() %>%
+    }) %>% unlist() %>%
       unname()
   }
   return(genes)
 }
+
 #' @title Perform NicheNet analysis on Seurat object: explain DE between two cell clusters
 #'
 #' @description \code{nichenet_seuratobj_cluster_de} Perform NicheNet analysis on Seurat object: explain differential expression (DE) between two 'receiver' cell clusters by ligands expressed by neighboring cells.
@@ -1372,12 +1352,12 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 
   ## receiver
   # expressed genes: only in steady state population (for determining receptors)
-  list_expressed_genes_receiver_ss = c(receiver_reference) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+  list_expressed_genes_receiver_ss = lapply(unique(c(receiver_reference)), function(receiver_ct) get_expressed_genes(seurat_obj, receiver_ct, pct = expression_pct, assay_oi = assay_oi))
   names(list_expressed_genes_receiver_ss) = c(receiver_reference) %>% unique()
   expressed_genes_receiver_ss = list_expressed_genes_receiver_ss %>% unlist() %>% unique()
 
   # expressed genes: both in steady state and affected population (for determining background of expressed genes)
-  list_expressed_genes_receiver = c(receiver_reference,receiver_affected) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+  list_expressed_genes_receiver = lapply(unique(c(receiver_reference,receiver_affected)), function(receiver_ct) get_expressed_genes(seurat_obj, receiver_ct, pct = expression_pct, assay_oi = assay_oi))
   names(list_expressed_genes_receiver) = c(receiver_reference,receiver_affected) %>% unique()
   expressed_genes_receiver = list_expressed_genes_receiver %>% unlist() %>% unique()
 
@@ -1385,7 +1365,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   if (length(sender) == 1){
     if (sender == "all"){
       sender_celltypes = Idents(seurat_obj) %>% levels()
-      list_expressed_genes_sender = sender_celltypes %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+      list_expressed_genes_sender = lapply(sender_celltypes, function(sender_ct) get_expressed_genes(seurat_obj, sender_ct, pct = expression_pct, assay_oi = assay_oi))
       names(list_expressed_genes_sender) = sender_celltypes
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
@@ -1397,13 +1377,13 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
         }
     } else if (sender != "all" & sender != "undefined") {
       sender_celltypes = sender
-      list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+      list_expressed_genes_sender = lapply(unique(sender_celltypes), function(sender_ct) get_expressed_genes(seurat_obj, sender_ct, pct = expression_pct, assay_oi = assay_oi))
       names(list_expressed_genes_sender) = sender_celltypes %>% unique()
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
     }
   } else {
     sender_celltypes = sender
-    list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+    list_expressed_genes_sender = lapply(unique(sender_celltypes), function(sender_ct) get_expressed_genes(seurat_obj, sender_ct, pct = expression_pct, assay_oi = assay_oi))
     names(list_expressed_genes_sender) = sender_celltypes %>% unique()
     expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
   }
@@ -1740,12 +1720,12 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 
   ## receiver
   # expressed genes: only in steady state population (for determining receptors)
-  list_expressed_genes_receiver_ss = c(receiver_reference) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+  list_expressed_genes_receiver_ss = lapply(unique(c(receiver_reference)), function(receiver_ct) get_expressed_genes(seurat_obj, receiver_ct, pct = expression_pct, assay_oi = assay_oi))
   names(list_expressed_genes_receiver_ss) = c(receiver_reference) %>% unique()
   expressed_genes_receiver_ss = list_expressed_genes_receiver_ss %>% unlist() %>% unique()
 
   # expressed genes: both in steady state and affected population (for determining background of expressed genes)
-  list_expressed_genes_receiver = c(receiver_reference,receiver_affected) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+  list_expressed_genes_receiver = lapply(unique(c(receiver_reference,receiver_affected)), function(receiver_ct) get_expressed_genes(seurat_obj, receiver_ct, pct = expression_pct, assay_oi = assay_oi))
   names(list_expressed_genes_receiver) = c(receiver_reference,receiver_affected) %>% unique()
   expressed_genes_receiver = list_expressed_genes_receiver %>% unlist() %>% unique()
 
@@ -1753,7 +1733,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   if (length(sender) == 1){
     if (sender == "all"){
       sender_celltypes = Idents(seurat_obj) %>% levels()
-      list_expressed_genes_sender = sender_celltypes %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+      list_expressed_genes_sender = lapply(sender_celltypes, function(sender_ct) get_expressed_genes(seurat_obj, sender_ct, pct = expression_pct, assay_oi = assay_oi))
       names(list_expressed_genes_sender) = sender_celltypes
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
@@ -1767,13 +1747,13 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 
     } else if (sender != "all" & sender != "undefined") {
       sender_celltypes = sender
-      list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+      list_expressed_genes_sender = lapply(unique(sender_celltypes), function(sender_ct) get_expressed_genes(seurat_obj, sender_ct, pct = expression_pct, assay_oi = assay_oi))
       names(list_expressed_genes_sender) = sender_celltypes %>% unique()
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
     }
   } else {
     sender_celltypes = sender
-    list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
+    list_expressed_genes_sender = lapply(unique(sender_celltypes), function(sender_ct) get_expressed_genes(seurat_obj, sender_ct, pct = expression_pct, assay_oi = assay_oi))
     names(list_expressed_genes_sender) = sender_celltypes %>% unique()
     expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
   }
