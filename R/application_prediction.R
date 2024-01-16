@@ -1106,7 +1106,7 @@ get_expressed_genes.default <- function(object, celltype_annot, celltype_oi, pct
   }
 
   # Check that celltype_oi is in metadata
-  if (!celltype_oi %in% celltype_metadata) {
+  if (!celltype_oi %in% celltype_annot) {
     stop("Cell type of interest is not in celltype_annot")
   }
 
