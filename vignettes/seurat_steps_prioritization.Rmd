@@ -25,7 +25,7 @@ knitr::opts_chunk$set(
 
 ```{r}
 ### Load Packages
-library(nichenetr) # Please update to v2.0.4
+library(nichenetr) # Please update to v2.0.5
 library(Seurat)
 library(SeuratObject)
 library(tidyverse)
@@ -81,13 +81,14 @@ We will consider a gene to be expressed when it is expressed in at least 10% of 
 # 1. Define a “sender/niche” cell population and a “receiver/target” cell population present in your expression data and determine which genes are expressed in both populations
 ## receiver
 receiver = "CD8 T"
-expressed_genes_receiver = get_expressed_genes(receiver, seuratObj, pct = 0.10)
+expressed_genes_receiver = get_expressed_genes(seurat_obj = seuratObj, ident = receiver, pct = 0.10)
 background_expressed_genes = expressed_genes_receiver %>% .[. %in% rownames(ligand_target_matrix)]
 
 ## sender
 sender_celltypes = c("CD4 T","Treg", "Mono", "NK", "B", "DC")
 
-list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seuratObj, 0.10) # lapply to get the expressed genes of every sender cell type separately here
+# lapply to get the expressed genes of every sender cell type separately here
+list_expressed_genes_sender = lapply(unique(sender_celltypes), function(sender_ct) get_expressed_genes(seurat_obj = seuratObj, ident = sender_ct, pct=0.10))
 expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
 # 2. Define a gene set of interest: these are the genes in the “receiver/target” cell population that are potentially affected by ligands expressed by interacting cells (e.g. genes differentially expressed upon cell-cell interaction)
