@@ -8,6 +8,8 @@ test_that("Differential NicheNet pipeline works", {
   lr_network = lr_network %>% dplyr::rename(ligand = from, receptor = to) %>% distinct(ligand, receptor)
 
   seurat_object_lite = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
+  seurat_object_lite = Seurat::UpdateSeuratObject(seurat_object_lite)
+
   seurat_object_lite@meta.data$celltype_aggregate = paste(seurat_object_lite@meta.data$celltype, seurat_object_lite@meta.data$aggregate,sep = "_") # user adaptation required on own dataset
 
   celltype_id = "celltype_aggregate" # metadata column name of the cell type of interest
