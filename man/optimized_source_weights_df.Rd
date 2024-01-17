@@ -8,13 +8,14 @@
 A data frame/tibble
 \describe{
   \item{source}{name of data source}
-  \item{weight}{weight associated to a data source}
+  \item{avg_weight}{weight associated to a data source, averaged over cross-validation folds}
+  \item{median_weight}{weight associated to a data source, averaged over cross-validation folds}
   }
 }
 \usage{
 optimized_source_weights_df
 }
 \description{
-A data.frame/tibble describing weight associated to each data source. These weights will be used for weighted aggregagion of source networks and were determined via parameter optimization (see NicheNet paper).
+A data.frame/tibble describing weight associated to each data source. These weights will be used for weighted aggregation of source networks and were determined via parameter optimization (see NicheNet paper).
 }
 \keyword{datasets}
