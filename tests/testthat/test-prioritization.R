@@ -5,6 +5,7 @@ test_that("Prioritization scheme works", {
     lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
     weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
     seurat_obj_test = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
+    seurat_obj_test = Seurat::UpdateSeuratObject(seurat_obj_test)
 
     lr_network = lr_network %>% distinct(from, to)
     weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network, by = c("from","to"))
