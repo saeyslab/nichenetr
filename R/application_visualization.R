@@ -856,10 +856,10 @@ assign_ligands_to_celltype <- function(seuratObj, ligands, celltype_col, func.ag
 #' @title Get ligand-target links of interest
 #' @usage get_ligand_target_links_oi(ligand_type_indication_df, active_ligand_target_links_df, cutoff = 0.40)
 #' @description Filter ligand-target links based on a cutoff
-#' @param ligand_type_indication_df Dataframe with column names \code{ligand_type}) and \code{ligand}, from the function \code{\link{assign_ligands_to_celltype}}
+#' @param ligand_type_indication_df Dataframe with column names \code{ligand_type} and \code{ligand}, from the function \code{\link{assign_ligands_to_celltype}}
 #' @param active_ligand_target_links_df Dataframe with weighted ligand-target links from the function \code{\link{get_ligand_target_links}}, and an additional column \code{target_type} that indicates the grouping of target genes
 #' @param cutoff Quantile to filter ligand-target links (default = 0.40, meaning 40\% of the lowest weighted ligand-target links are removed)
-#' @return A dataframe with ligand-target links with weights above a certain cutoff
+#' @return A dataframe with ligand-target links with weights above a certain cutoff. This dataframe also contains the attribute \code{cutoff_include_all_ligands}, which is the cutoff value of regulatory potential used at \code{cutoff} quantile.
 #' @export
 #' @examples \dontrun{
 #' active_ligand_target_links_df <- lapply(best_upstream_ligands, get_weighted_ligand_target_links,
@@ -871,6 +871,7 @@ assign_ligands_to_celltype <- function(seuratObj, ligands, celltype_col, func.ag
 #' circos_links <- get_ligand_target_links_oi(ligand_type_indication_df,
 #'                                            active_ligand_target_links_df %>% mutate(target_type = "LCMV-DE"),
 #'                                            cutoff = 0.40)
+#' attr(circos_links, "cutoff_include_all_ligands") # This is the cutoff value of regulatory potential used
 #' }
 #'
 get_ligand_target_links_oi <- function(ligand_type_indication_df, active_ligand_target_links_df, cutoff = 0.40){

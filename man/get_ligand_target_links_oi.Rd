@@ -7,14 +7,14 @@
 get_ligand_target_links_oi(ligand_type_indication_df, active_ligand_target_links_df, cutoff = 0.40)
 }
 \arguments{
-\item{ligand_type_indication_df}{Dataframe with column names \code{ligand_type}) and \code{ligand}, from the function \code{\link{assign_ligands_to_celltype}}}
+\item{ligand_type_indication_df}{Dataframe with column names \code{ligand_type} and \code{ligand}, from the function \code{\link{assign_ligands_to_celltype}}}
 
 \item{active_ligand_target_links_df}{Dataframe with weighted ligand-target links from the function \code{\link{get_ligand_target_links}}, and an additional column \code{target_type} that indicates the grouping of target genes}
 
 \item{cutoff}{Quantile to filter ligand-target links (default = 0.40, meaning 40\% of the lowest weighted ligand-target links are removed)}
 }
 \value{
-A dataframe with ligand-target links with weights above a certain cutoff
+A dataframe with ligand-target links with weights above a certain cutoff. This dataframe also contains the attribute \code{cutoff_include_all_ligands}, which is the cutoff value of regulatory potential used at \code{cutoff} quantile.
 }
 \description{
 Filter ligand-target links based on a cutoff
@@ -30,6 +30,7 @@ ligand_type_indication_df <- assign_ligands_to_celltype(seuratObj = seuratObj, l
 circos_links <- get_ligand_target_links_oi(ligand_type_indication_df,
                                            active_ligand_target_links_df \%>\% mutate(target_type = "LCMV-DE"),
                                            cutoff = 0.40)
+attr(circos_links, "cutoff_include_all_ligands") # This is the cutoff value of regulatory potential used
 }
 
 }
