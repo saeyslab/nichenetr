@@ -26,7 +26,7 @@ construct the models which we will evaluate during the optimization
 procedure.
 
 ``` r
-devtools::load_all("~/nichenetr/")
+library(nichenetr)
 library(tidyverse)
 library(nsga2R)
 
@@ -143,8 +143,8 @@ output of each fold and combine the results together. By default,
 `get_optimized_parameters_nsga2r` will retrieve the value of the
 parameters at the final iteration. However, in genetic algorithms it may
 be possible that equally good or better solution could have existed in
-some iterations or populations. Thus, we also allow users to set
-`search_all_iterations = TRUE`. The `top_n` values will then select the
+earlier iterations or populations. Thus, we also allow users to set
+`search_all_iterations = TRUE`. The `top_n` value will then select the
 top number of populations that have the best value (based on the
 geometric mean of the objective functions).
 
