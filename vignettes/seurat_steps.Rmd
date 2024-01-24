@@ -121,7 +121,7 @@ We first define a "receiver/target" cell population and determine which genes ar
 
 ```{r}
 receiver = "CD8 T"
-expressed_genes_receiver <- get_expressed_genes(seuratObj, receiver, pct = 0.05)
+expressed_genes_receiver <- get_expressed_genes(receiver, seuratObj, pct = 0.05)
 ```
 
 Get a list of all receptors available in the ligand-receptor network, and define expressed receptors as genes that are in the ligand-receptor network and expressed in the receiver. Then, define the potential ligands as all ligands whose cognate receptors are expressed.

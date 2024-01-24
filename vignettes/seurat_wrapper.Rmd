@@ -103,7 +103,6 @@ Visualize the data to see to which condition cells belong. The metadata column t
 ```{r}
 seuratObj@meta.data$aggregate %>% table()
 DimPlot(seuratObj, reduction = "tsne", group.by = "aggregate")
-nichenet_seuratobj_cluster_de
 ```
 
 # Perform the NicheNet analysis

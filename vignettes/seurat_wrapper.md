@@ -111,7 +111,6 @@ ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
 ## 0610010F05Rik  2.194046e-03  1.111556e-03  3.142374e-03 1.631658e-03 2.585820e-03
 ## 0610010K14Rik  2.271606e-03  9.360769e-04  3.546140e-03 1.697713e-03 2.632082e-03
 
-weighted_networks_lr <- weighted_networks$lr_sig %>% inner_join(lr_network, by = c("from","to"))
 head(weighted_networks$lr_sig) # interactions and their weights in the ligand-receptor + signaling network
 ## # A tibble: 6 × 3
 ##   from          to     weight
@@ -175,7 +174,7 @@ seuratObj@meta.data$celltype %>% table()
 DimPlot(seuratObj, reduction = "tsne")
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-57-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 Visualize the data to see to which condition cells belong. The metadata
 column that denotes the condition (steady-state or after LCMV infection)
@@ -189,316 +188,7 @@ seuratObj@meta.data$aggregate %>% table()
 DimPlot(seuratObj, reduction = "tsne", group.by = "aggregate")
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-58-1.png)<!-- -->
-
-``` r
-nichenet_seuratobj_cluster_de
-## function(seurat_obj, receiver_affected, receiver_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,
-##                                         expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 30,
-##                                         top_n_targets = 200, cutoff_visualization = 0.33,
-##                                         verbose = TRUE, assay_oi = NULL)
-## {
-##   requireNamespace("Seurat")
-##   requireNamespace("dplyr")
-## 
-##   # input check
-##   # input check
-##   if(! "RNA" %in% names(seurat_obj@assays)){
-##     if ("Spatial" %in% names(seurat_obj@assays)){
-##       warning("You are going to apply NicheNet on a spatial seurat object. Be sure it's ok to use NicheNet the way you are planning to do it. So this means: you should have changes in gene expression in receiver cells caused by cell-cell interactions. Note that in the case of spatial transcriptomics, you are not dealing with single cells but with 'spots' containing multiple cells of the same of different cell types.")
-## 
-##       if (class(seurat_obj@assays$Spatial@data) != "matrix" & class(seurat_obj@assays$Spatial@data) != "dgCMatrix") {
-##         warning("Spatial Seurat object should contain a matrix of normalized expression data. Check 'seurat_obj@assays$Spatial@data' for default or 'seurat_obj@assays$SCT@data' for when the single-cell transform pipeline was applied")
-##       }
-##       if (sum(dim(seurat_obj@assays$Spatial@data)) == 0) {
-##         stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$Spatial@data'")
-##       }
-##     }} else {
-##       if (class(seurat_obj@assays$RNA@data) != "matrix" &
-##           class(seurat_obj@assays$RNA@data) != "dgCMatrix") {
-##         warning("Seurat object should contain a matrix of normalized expression data. Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data or seurat_obj@assays$SCT@data for when the single-cell transform pipeline was applied")
-##       }
-## 
-##       if ("integrated" %in% names(seurat_obj@assays)) {
-##         if (sum(dim(seurat_obj@assays$RNA@data)) == 0 & sum(dim(seurat_obj@assays$integrated@data)) ==
-##             0)
-##           stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data")
-##       }
-##       else if ("SCT" %in% names(seurat_obj@assays)) {
-##         if (sum(dim(seurat_obj@assays$RNA@data)) == 0 & sum(dim(seurat_obj@assays$SCT@data)) ==
-##             0) {
-##           stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$SCT@data' for data corrected via SCT")
-##         }
-##       }
-##       else {
-##         if (sum(dim(seurat_obj@assays$RNA@data)) == 0) {
-##           stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data'")
-##         }
-##       }
-##     }
-## 
-## 
-##   if(sum(receiver_affected %in% unique(Idents(seurat_obj))) != length(receiver_affected))
-##     stop("The defined receiver_affected cell type should be an identity class of your seurat object")
-##   if(sum(receiver_reference %in% unique(Idents(seurat_obj))) != length(receiver_reference))
-##     stop("The defined receiver_reference cell type should be an identity class of your seurat object")
-##   if(length(sender) == 1){
-##     if(sender != "all" & sender != "undefined"){
-##       if(sum(sender %in% unique(Idents(seurat_obj))) != length(sender)){
-##         stop("The sender argument should be 'all' or 'undefined' or an identity class of your seurat object")
-##       }
-##     }
-##   } else {
-##     if(sum(sender %in% unique(Idents(seurat_obj))) != length(sender)){
-##       stop("The sender argument should be 'all' or 'undefined' or an identity class of your seurat object")
-##     }
-##   }
-##   if(geneset != "DE" & geneset != "up" & geneset != "down")
-##     stop("geneset should be 'DE', 'up' or 'down'")
-## 
-##   if("integrated" %in% names(seurat_obj@assays)){
-##     warning("Seurat object is result from the Seurat integration workflow. Make sure that the way of defining expressed and differentially expressed genes in this wrapper is appropriate for your integrated data.")
-##   }
-## 
-##   # Read in and process NicheNet networks, define ligands and receptors
-##   if (verbose == TRUE){print("Read in and process NicheNet's networks")}
-##   weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
-## 
-##   ligands = lr_network %>% pull(from) %>% unique()
-##   receptors = lr_network %>% pull(to) %>% unique()
-## 
-##   if (verbose == TRUE){print("Define expressed ligands and receptors in receiver and sender cells")}
-## 
-##   # step1 nichenet analysis: get expressed genes in sender and receiver cells
-## 
-##   ## receiver
-##   # expressed genes: only in steady state population (for determining receptors)
-##   list_expressed_genes_receiver_ss = c(receiver_reference) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
-##   names(list_expressed_genes_receiver_ss) = c(receiver_reference) %>% unique()
-##   expressed_genes_receiver_ss = list_expressed_genes_receiver_ss %>% unlist() %>% unique()
-## 
-##   # expressed genes: both in steady state and affected population (for determining background of expressed genes)
-##   list_expressed_genes_receiver = c(receiver_reference,receiver_affected) %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
-##   names(list_expressed_genes_receiver) = c(receiver_reference,receiver_affected) %>% unique()
-##   expressed_genes_receiver = list_expressed_genes_receiver %>% unlist() %>% unique()
-## 
-##   ## sender
-##   if (length(sender) == 1){
-##     if (sender == "all"){
-##       sender_celltypes = Idents(seurat_obj) %>% levels()
-##       list_expressed_genes_sender = sender_celltypes %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
-##       names(list_expressed_genes_sender) = sender_celltypes
-##       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
-## 
-##     } else if (sender == "undefined") {
-##       if("integrated" %in% names(seurat_obj@assays)){
-##         expressed_genes_sender = union(seurat_obj@assays$integrated@data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
-##       } else {
-##         expressed_genes_sender = union(seurat_obj@assays$RNA@data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
-##         }
-##     } else if (sender != "all" & sender != "undefined") {
-##       sender_celltypes = sender
-##       list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
-##       names(list_expressed_genes_sender) = sender_celltypes %>% unique()
-##       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
-##     }
-##   } else {
-##     sender_celltypes = sender
-##     list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
-##     names(list_expressed_genes_sender) = sender_celltypes %>% unique()
-##     expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
-##   }
-## 
-##   # step2 nichenet analysis: define background and gene list of interest: here differential expression between two conditions of cell type of interest
-##   if (verbose == TRUE){print("Perform DE analysis between two receiver cell clusters")}
-## 
-##   DE_table_receiver = FindMarkers(object = seurat_obj, ident.1 = receiver_affected, ident.2 = receiver_reference, min.pct = expression_pct) %>% rownames_to_column("gene")
-## 
-##   SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_receiver)
-## 
-##   if(SeuratV4 == TRUE){
-##     if (geneset == "DE"){
-##       geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= lfc_cutoff) %>% pull(gene)
-##     } else if (geneset == "up") {
-##       geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC >= lfc_cutoff) %>% pull(gene)
-##     } else if (geneset == "down") {
-##       geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC <= lfc_cutoff) %>% pull(gene)
-##     }
-##   } else {
-##     if (geneset == "DE"){
-##       geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_logFC) >= lfc_cutoff) %>% pull(gene)
-##     } else if (geneset == "up") {
-##       geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC >= lfc_cutoff) %>% pull(gene)
-##     } else if (geneset == "down") {
-##       geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC <= lfc_cutoff) %>% pull(gene)
-##     }
-##   }
-## 
-## 
-## 
-##   geneset_oi = geneset_oi %>% .[. %in% rownames(ligand_target_matrix)]
-##   if (length(geneset_oi) == 0){
-##     stop("No genes were differentially expressed")
-##   }
-##   background_expressed_genes = expressed_genes_receiver %>% .[. %in% rownames(ligand_target_matrix)]
-## 
-##   # step3 nichenet analysis: define potential ligands
-##   expressed_ligands = intersect(ligands,expressed_genes_sender)
-##   expressed_receptors = intersect(receptors,expressed_genes_receiver)
-##   if (length(expressed_ligands) == 0){
-##     stop("No ligands expressed in sender cell")
-##   }
-##   if (length(expressed_receptors) == 0){
-##     stop("No receptors expressed in receiver cell")
-##   }
-##   potential_ligands = lr_network %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
-##   if (length(potential_ligands) == 0){
-##     stop("No potentially active ligands")
-##   }
-## 
-##   if (verbose == TRUE){print("Perform NicheNet ligand activity analysis")}
-## 
-##   # step4 perform NicheNet's ligand activity analysis
-##   ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = background_expressed_genes, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
-##   ligand_activities = ligand_activities %>%
-##     arrange(-aupr_corrected) %>%
-##     mutate(rank = rank(desc(aupr_corrected)))
-## 
-##   if(filter_top_ligands == TRUE){
-##     best_upstream_ligands = ligand_activities %>% top_n(top_n_ligands, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand) %>% unique()
-##   } else {
-##     best_upstream_ligands = ligand_activities %>% arrange(-aupr_corrected) %>% pull(test_ligand) %>% unique()
-##   }
-##   if (verbose == TRUE){print("Infer active target genes of the prioritized ligands")}
-## 
-##   # step5 infer target genes of the top-ranked ligands
-##   active_ligand_target_links_df = best_upstream_ligands %>% lapply(get_weighted_ligand_target_links,geneset = geneset_oi, ligand_target_matrix = ligand_target_matrix, n = top_n_targets) %>% bind_rows() %>% drop_na()
-## 
-##   if(nrow(active_ligand_target_links_df) > 0){
-##     active_ligand_target_links = prepare_ligand_target_visualization(ligand_target_df = active_ligand_target_links_df, ligand_target_matrix = ligand_target_matrix, cutoff = cutoff_visualization)
-##     order_ligands = intersect(best_upstream_ligands, colnames(active_ligand_target_links)) %>% rev() %>% make.names()
-##     order_targets = active_ligand_target_links_df$target %>% unique() %>% intersect(rownames(active_ligand_target_links)) %>% make.names()
-##     rownames(active_ligand_target_links) = rownames(active_ligand_target_links) %>% make.names()
-##     colnames(active_ligand_target_links) = colnames(active_ligand_target_links) %>% make.names()
-## 
-##     order_targets = order_targets %>% intersect(rownames(active_ligand_target_links))
-##     order_ligands = order_ligands %>% intersect(colnames(active_ligand_target_links))
-## 
-##     vis_ligand_target = active_ligand_target_links[order_targets,order_ligands] %>% t()
-##     p_ligand_target_network = vis_ligand_target %>% make_heatmap_ggplot("Prioritized ligands","Predicted target genes", color = "purple",legend_position = "top", x_axis_position = "top",legend_title = "Regulatory potential")  + theme(axis.text.x = element_text(face = "italic")) #+ scale_fill_gradient2(low = "whitesmoke",  high = "purple", breaks = c(0,0.006,0.012))
-##   } else {
-##     vis_ligand_target = NULL
-##     p_ligand_target_network = NULL
-##     print("no highly likely active targets found for top ligands")
-##   }
-## 
-##   # combined heatmap: overlay ligand activities
-##   ligand_aupr_matrix = ligand_activities %>% select(aupr_corrected) %>% as.matrix() %>% magrittr::set_rownames(ligand_activities$test_ligand)
-## 
-##   rownames(ligand_aupr_matrix) = rownames(ligand_aupr_matrix) %>% make.names()
-##   colnames(ligand_aupr_matrix) = colnames(ligand_aupr_matrix) %>% make.names()
-## 
-##   vis_ligand_aupr = ligand_aupr_matrix[order_ligands, ] %>% as.matrix(ncol = 1) %>% magrittr::set_colnames("AUPR")
-##   p_ligand_aupr = vis_ligand_aupr %>% make_heatmap_ggplot("Prioritized ligands","Ligand activity", color = "darkorange",legend_position = "top", x_axis_position = "top", legend_title = "AUPR\n(target gene prediction ability)") + theme(legend.text = element_text(size = 9))
-##   p_ligand_aupr
-## 
-##   figures_without_legend = cowplot::plot_grid(
-##     p_ligand_aupr + theme(legend.position = "none", axis.ticks = element_blank()) + theme(axis.title.x = element_text()),
-##     p_ligand_target_network + theme(legend.position = "none", axis.ticks = element_blank()) + ylab(""),
-##     align = "hv",
-##     nrow = 1,
-##     rel_widths = c(ncol(vis_ligand_aupr)+10, ncol(vis_ligand_target)))
-##   legends = cowplot::plot_grid(
-##     ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_aupr)),
-##     ggpubr::as_ggplot(ggpubr::get_legend(p_ligand_target_network)),
-##     nrow = 1,
-##     align = "h")
-## 
-##   combined_plot = cowplot::plot_grid(figures_without_legend,
-##                                      legends,
-##                                      rel_heights = c(10,2), nrow = 2, align = "hv")
-## 
-##   # ligand-receptor plot
-##   # get the ligand-receptor network of the top-ranked ligands
-##   if (verbose == TRUE){print("Infer receptors of the prioritized ligands")}
-## 
-##   lr_network_top = lr_network %>% filter(from %in% best_upstream_ligands & to %in% expressed_receptors) %>% distinct(from,to)
-##   best_upstream_receptors = lr_network_top %>% pull(to) %>% unique()
-## 
-##   lr_network_top_df_large = weighted_networks_lr %>% filter(from %in% best_upstream_ligands & to %in% best_upstream_receptors)
-## 
-##   lr_network_top_df = lr_network_top_df_large %>% spread("from","weight",fill = 0)
-##   lr_network_top_matrix = lr_network_top_df %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df$to)
-## 
-##   if (nrow(lr_network_top_matrix) > 1){
-##     dist_receptors = dist(lr_network_top_matrix, method = "binary")
-##     hclust_receptors = hclust(dist_receptors, method = "ward.D2")
-##     order_receptors = hclust_receptors$labels[hclust_receptors$order]
-##   } else {
-##     order_receptors = rownames(lr_network_top_matrix)
-##   }
-##   if (ncol(lr_network_top_matrix) > 1) {
-##     dist_ligands = dist(lr_network_top_matrix %>% t(), method = "binary")
-##     hclust_ligands = hclust(dist_ligands, method = "ward.D2")
-##     order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
-##   } else {
-##     order_ligands_receptor = colnames(lr_network_top_matrix)
-##   }
-## 
-##   order_receptors = order_receptors %>% intersect(rownames(lr_network_top_matrix))
-##   order_ligands_receptor = order_ligands_receptor %>% intersect(colnames(lr_network_top_matrix))
-## 
-##   vis_ligand_receptor_network = lr_network_top_matrix[order_receptors, order_ligands_receptor]
-##   dim(vis_ligand_receptor_network) = c(length(order_receptors), length(order_ligands_receptor))
-## 
-##   rownames(vis_ligand_receptor_network) = order_receptors %>% make.names()
-##   colnames(vis_ligand_receptor_network) = order_ligands_receptor %>% make.names()
-## 
-##   p_ligand_receptor_network = vis_ligand_receptor_network %>% t() %>% make_heatmap_ggplot("Ligands","Receptors", color = "mediumvioletred", x_axis_position = "top",legend_title = "Prior interaction potential")
-## 
-##   # ligand expression Seurat dotplot
-##   if (length(sender) > 1){
-##     are_there_senders = TRUE
-##   }
-##   if(length(sender) == 1){
-##     if(sender != "undefined"){
-##       are_there_senders = TRUE
-##     } else {
-##       are_there_senders = FALSE
-##     }
-##   }
-## 
-##   if (are_there_senders == TRUE){
-##     real_makenames_conversion = lr_network$from %>% unique() %>% magrittr::set_names(lr_network$from %>% unique() %>% make.names())
-##     order_ligands_adapted = real_makenames_conversion[order_ligands]
-##     names(order_ligands_adapted) = NULL
-##     rotated_dotplot = DotPlot(seurat_obj %>% subset(idents = sender_celltypes), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
-## 
-##   } else {
-##     rotated_dotplot = NULL
-##   }
-## 
-## 
-##   return(list(
-##     ligand_activities = ligand_activities,
-##     top_ligands = best_upstream_ligands,
-##     top_targets = active_ligand_target_links_df$target %>% unique(),
-##     top_receptors = lr_network_top_df_large$to %>% unique(),
-##     ligand_target_matrix = vis_ligand_target,
-##     ligand_target_heatmap = p_ligand_target_network,
-##     ligand_target_df = active_ligand_target_links_df,
-##     ligand_expression_dotplot = rotated_dotplot,
-##     ligand_activity_target_heatmap = combined_plot,
-##     ligand_receptor_matrix = vis_ligand_receptor_network,
-##     ligand_receptor_heatmap = p_ligand_receptor_network,
-##     ligand_receptor_df = lr_network_top_df_large %>% rename(ligand = from, receptor = to),
-##     geneset_oi = geneset_oi,
-##     background_expressed_genes = background_expressed_genes
-## 
-##   ))
-## }
-## <environment: namespace:nichenetr>
-```
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 # Perform the NicheNet analysis
 
@@ -618,8 +308,10 @@ We will investigate the output of the sender-focused approach.
 
 ``` r
 names(nichenet_output)
-##  [1] "ligand_activities"                      "top_ligands"                            "top_targets"                            "top_receptors"                          "ligand_target_matrix"                   "ligand_target_heatmap"                 
-##  [7] "ligand_target_df"                       "ligand_expression_dotplot"              "ligand_differential_expression_heatmap" "ligand_activity_target_heatmap"         "ligand_receptor_matrix"                 "ligand_receptor_heatmap"               
+##  [1] "ligand_activities"                      "top_ligands"                            "top_targets"                           
+##  [4] "top_receptors"                          "ligand_target_matrix"                   "ligand_target_heatmap"                 
+##  [7] "ligand_target_df"                       "ligand_expression_dotplot"              "ligand_differential_expression_heatmap"
+## [10] "ligand_activity_target_heatmap"         "ligand_receptor_matrix"                 "ligand_receptor_heatmap"               
 ## [13] "ligand_receptor_df"                     "geneset_oi"                             "background_expressed_genes"
 ```
 
@@ -658,8 +350,9 @@ To get a list of the top 30 ligands:
 
 ``` r
 nichenet_output$top_ligands
-##  [1] "Il27"    "Ebi3"    "Tnf"     "Ptprc"   "H2-Eb1"  "Vsig10"  "H2-M3"   "Clcf1"   "H2-M2"   "H2-T-ps" "H2-T10"  "H2-T22"  "H2-T24"  "H2-T23"  "H2-K1"   "H2-Q4"   "H2-Q6"   "H2-Q7"   "H2-D1"   "H2-Oa"   "Il18bp"  "Sirpa"   "Cd48"    "App"    
-## [25] "Ccl22"   "Siglech" "Ccl5"    "Siglec1" "Cd320"   "Adam17"
+##  [1] "Il27"    "Ebi3"    "Tnf"     "Ptprc"   "H2-Eb1"  "Vsig10"  "H2-M3"   "Clcf1"   "H2-M2"   "H2-T-ps" "H2-T10"  "H2-T22"  "H2-T24"  "H2-T23" 
+## [15] "H2-K1"   "H2-Q4"   "H2-Q6"   "H2-Q7"   "H2-D1"   "H2-Oa"   "Il18bp"  "Sirpa"   "Cd48"    "App"     "Ccl22"   "Siglech" "Ccl5"    "Siglec1"
+## [29] "Cd320"   "Adam17"
 ```
 
 Below we will show visualizations that are in the output object. In some
@@ -681,7 +374,7 @@ ligands:
 nichenet_output$ligand_expression_dotplot
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-64-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 As you can see, most op the top-ranked ligands seem to be mainly
 expressed by dendritic cells and monocytes.
@@ -693,7 +386,7 @@ differentially expressed after LCMV infection.
 nichenet_output$ligand_differential_expression_heatmap
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-65-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 Although this ligand differential expression is not used for
 prioritization and ranking of the ligands (the ranking is only
@@ -713,7 +406,7 @@ differentially expressed genes:
 nichenet_output$ligand_target_heatmap
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-66-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 This is a normal ggplot object that can be adapted accordingly. For
 example if you want to change the color code to blue instead of purple,
@@ -726,7 +419,7 @@ nichenet_output$ligand_target_heatmap +
   xlab("anti-LCMV response genes in CD8 T cells") + ylab("Prioritized immmune cell ligands")
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-67-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 If you want, you can also extract the ligand-target links and their
 regulatory potential scores in matrix or data frame format (e.g. for
@@ -770,11 +463,14 @@ ligands:
 
 ``` r
 nichenet_output$top_targets
-##  [1] "Adar"     "B2m"      "Bst2"     "Calhm6"   "Cd274"    "Cxcl10"   "Cxcr4"    "Ddx58"    "Ddx60"    "Dtx3l"    "Eif2ak2"  "Gbp2"     "Gbp3"     "Gbp7"     "H2-D1"    "H2-K1"    "H2-M3"    "H2-Q6"    "H2-Q7"    "H2-T10"   "H2-T22"   "H2-T23"  
-## [23] "Ifi203"   "Ifi206"   "Ifi208"   "Ifi209"   "Ifi213"   "Ifi35"    "Ifi44"    "Ifih1"    "Ifit1bl1" "Ifit2"    "Ifit3"    "Ifit3b"   "Ifitm3"   "Irf1"     "Irf7"     "Irf9"     "Lgals3bp" "Ly6e"     "Mndal"    "Mx1"      "Mx2"      "Nampt"   
-## [45] "Nlrc5"    "Nmi"      "Oas2"     "Oas3"     "Parp12"   "Parp14"   "Parp9"    "Pml"      "Psmb8"    "Psmb9"    "Psme1"    "Psme2b"   "Rnf213"   "Samhd1"   "Sp110"    "Stat1"    "Stat2"    "Tap1"     "Tapbp"    "Tnfsf10"  "Trafd1"   "Ube2l6"  
-## [67] "Xaf1"     "Ddit4"    "Dhx58"    "Gzmb"     "Isg15"    "Lcp1"     "Oas1a"    "Oas1g"    "Rsad2"    "Zbp1"     "Cd47"     "Ctss"     "Trim21"   "Cd69"     "H3f3b"    "Id3"      "Vim"      "Isg20"    "Oasl1"    "Hspa5"    "Ifit1"    "Nt5c3"   
-## [89] "Usp18"    "Basp1"    "Plac8"    "Sp100"    "Sp140"    "Ubc"
+##  [1] "Adar"     "B2m"      "Bst2"     "Calhm6"   "Cd274"    "Cxcl10"   "Cxcr4"    "Ddx58"    "Ddx60"    "Dtx3l"    "Eif2ak2"  "Gbp2"     "Gbp3"    
+## [14] "Gbp7"     "H2-D1"    "H2-K1"    "H2-M3"    "H2-Q6"    "H2-Q7"    "H2-T10"   "H2-T22"   "H2-T23"   "Ifi203"   "Ifi206"   "Ifi208"   "Ifi209"  
+## [27] "Ifi213"   "Ifi35"    "Ifi44"    "Ifih1"    "Ifit1bl1" "Ifit2"    "Ifit3"    "Ifit3b"   "Ifitm3"   "Irf1"     "Irf7"     "Irf9"     "Lgals3bp"
+## [40] "Ly6e"     "Mndal"    "Mx1"      "Mx2"      "Nampt"    "Nlrc5"    "Nmi"      "Oas2"     "Oas3"     "Parp12"   "Parp14"   "Parp9"    "Pml"     
+## [53] "Psmb8"    "Psmb9"    "Psme1"    "Psme2b"   "Rnf213"   "Samhd1"   "Sp110"    "Stat1"    "Stat2"    "Tap1"     "Tapbp"    "Tnfsf10"  "Trafd1"  
+## [66] "Ube2l6"   "Xaf1"     "Ddit4"    "Dhx58"    "Gzmb"     "Isg15"    "Lcp1"     "Oas1a"    "Oas1g"    "Rsad2"    "Zbp1"     "Cd47"     "Ctss"    
+## [79] "Trim21"   "Cd69"     "H3f3b"    "Id3"      "Vim"      "Isg20"    "Oasl1"    "Hspa5"    "Ifit1"    "Nt5c3"    "Usp18"    "Basp1"    "Plac8"   
+## [92] "Sp100"    "Sp140"    "Ubc"
 ```
 
 You can visualize the expression of these target genes as well (only the
@@ -788,13 +484,13 @@ DotPlot(seuratObj %>% subset(idents = "CD8 T"), features = nichenet_output$top_t
           rev(), split.by = "aggregate") + coord_flip()
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-71-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 ``` r
-VlnPlot(seuratObj %>% subset(idents = "CD8 T"), features = c("Zbp1","Ifit3","Irf7"), split.by = "aggregate", pt.size = 0, combine = TRUE)
+VlnPlot(seuratObj %>% subset(idents = "CD8 T"), features = c("Ptprc", "H2-M3", "Cxcl10"), split.by = "aggregate", pt.size = 0, combine = TRUE)
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-72-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 The display the combined plot of ligand activities, expression,
 differential expression and target genes of ligands:
@@ -803,7 +499,7 @@ differential expression and target genes of ligands:
 nichenet_output$ligand_activity_target_heatmap
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-73-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 **Important: the above figure can be considered as one of the most
 important summary figures of the NicheNet analysis. Here you can see
@@ -822,7 +518,7 @@ the ligand-receptor links:
 nichenet_output$ligand_receptor_heatmap
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-74-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 If you want, you can also extract the ligand-receptor links and their
 interaction confidence scores in matrix or data frame format (e.g. for
@@ -865,7 +561,8 @@ To get a list of the receptors of the 30 top-ranked ligands:
 
 ``` r
 nichenet_output$top_receptors
-##  [1] "Il6ra"    "Itgb1"    "Notch1"   "Cd74"     "Sorl1"    "Ccr7"     "Dpp4"     "Cxcr3"    "Jaml"     "Tmem167"  "Cd2"      "Il6st"    "Il27ra"   "Cd8a"     "Klrd1"    "Cd4"      "Cd247"    "Cd47"     "Ptprc"    "Spn"      "Cd69"     "Tnfrsf1b"
+##  [1] "Il6ra"    "Itgb1"    "Notch1"   "Cd74"     "Sorl1"    "Ccr7"     "Dpp4"     "Cxcr3"    "Jaml"     "Tmem167"  "Cd2"      "Il6st"    "Il27ra"  
+## [14] "Cd8a"     "Klrd1"    "Cd4"      "Cd247"    "Cd47"     "Ptprc"    "Spn"      "Cd69"     "Tnfrsf1b"
 ```
 
 You can visualize the expression of these as well. Because we only focus
@@ -878,31 +575,42 @@ DotPlot(seuratObj %>% subset(idents = "CD8 T"),
   coord_flip()
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-78-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
 If you are interested in checking which geneset (and background set of
 genes) was used during the ligand activity analysis:
 
 ``` r
 nichenet_output$geneset_oi
-##   [1] "Ifi27l2b"      "Irf7"          "Ly6a"          "Stat1"         "Ly6c2"         "Ifit3"         "Ifit1"         "Ly6c1"         "Bst2"          "B2m"           "Rnf213"        "Ifit1bl1"      "Plac8"         "Slfn1"         "Ifi209"       
-##  [16] "Isg15"         "Igtp"          "Ifi206"        "Shisa5"        "Ms4a4c"        "H2-K1"         "Zbp1"          "Oasl2"         "Isg20"         "Samhd1"        "Ifi208"        "Ms4a6b"        "Trim30a"       "Usp18"         "Mndal"        
-##  [31] "H2-T23"        "Slfn8"         "Gbp2"          "Ifi203"        "Iigp1"         "Tmsb4x"        "H2-T22"        "Rsad2"         "Ly6e"          "Rtp4"          "Ifit3b"        "Zfas1"         "Ifit2"         "Phf11b"        "Xaf1"         
-##  [46] "Smchd1"        "Daxx"          "Alb"           "Samd9l"        "Actb"          "Parp9"         "Gbp4"          "Lgals3bp"      "Mx1"           "Ifi213"        "Irgm1"         "2410006H16Rik" "Gbp7"          "Cmpk2"         "Dtx3l"        
-##  [61] "Slfn5"         "H2-D1"         "Oasl1"         "Herc6"         "Ifih1"         "Rpsa"          "P2ry13"        "Apoa2"         "Irgm2"         "Tapbp"         "Rps8"          "Stat2"         "Ifi44"         "Phf11c"        "Rpl8"         
-##  [76] "Psmb8"         "Gm12250"       "Igfbp4"        "Rplp2-ps1"     "Ddx58"         "Rac2"          "Trafd1"        "Sp100"         "Gbp9"          "Pml"           "Oas2"          "Slfn2"         "Psme1"         "Apoe"          "Gas5"         
-##  [91] "H2-Q7"         "Basp1"         "Ms4a4b"        "Rps27a"        "Cd52"          "Znfx1"         "Rpl13"         "Ahsg"          "Oas3"          "Nt5c3"         "Rnf114"        "Tap1"          "Rps28"         "Oas1a"         "Rplp0"        
-## [106] "Ddx60"         "Vim"           "Gbp6"          "Ifi35"         "Itm2b"         "Ctss"          "Tgtp1"         "Trf"           "Pabpc1"        "H2-Q6"         "Parp14"        "Hspa8"         "Tor3a"         "Rpl23"         "Mx2"          
-## [121] "Tmbim6"        "Thy1"          "Ncoa7"         "Dhx58"         "Rps10"         "Rps19"         "Psmb9"         "Il2rg"         "Etnk1"         "Irf9"          "Rps3a1"        "Gbp10"         "1600014C10Rik" "Parp12"        "Trim30d"      
-## [136] "Eif2ak2"       "Eef1b2"        "Eef2"          "Ncf2"          "Npc2"          "Rps2"          "Rps3"          "Sp110"         "Ube2l6"        "Nmi"           "Uba7"          "Psmb10"        "Cxcl10"        "Rpl13a"        "Trim30c"      
-## [151] "Nhp2"          "Tbrg1"         "Jaml"          "Usp25"         "Tor1aip2"      "Adar"          "Gzma"          "Gm2000"        "Rps18-ps5"     "Cd53"          "Phf11"         "Hspa5"         "Cfl1"          "Crip1"         "Slco3a1"      
-## [166] "Tlr7"          "Trim21"        "Gbp8"          "Rpl10"         "Mycbp2"        "Rps16"         "Nlrc5"         "Rplp2"         "Acadl"         "Trim12c"       "Rps4x"         "Irf1"          "Psma2"         "Nme2"          "Tut4"         
-## [181] "Apobec3"       "Snord12"       "Phip"          "Gzmb"          "Ifitm3"        "Sp140"         "Dusp2"         "Mrpl30"        "Malat1"        "H2-M3"         "Gbp3"          "Tmsb10"        "Dtx1"          "Tmem184b"      "Eef1g"        
-## [196] "Rbl1"          "Epb41l4aos"    "Xpo1"          "Rgcc"          "Gm9844"        "Rpl35"         "Rps26"         "Il18bp"        "Sdc3"          "Cxcr4"         "Eif3m"         "Treml2"        "Rpl35a"        "Lgals8"        "Pdcd4"        
-## [211] "Arrb2"         "Ubc"           "Clic4"         "H2-T10"        "Rpl10a"        "Lcp1"          "Cd274"         "Ddit4"         "Cnn2"          "Nampt"         "Ascc3"         "Ms4a6d"        "Cd47"          "Ogfrl1"        "Snord49b"     
-## [226] "Ilrun"         "Calhm6"        "Psme2b"        "Hcst"          "Myh9"          "Rps27"         "Mov10"         "Gm15772"       "Arf4"          "Arhgdib"       "Ppib"          "Ubb"           "Trim25"        "Tspo"          "Id3"          
-## [241] "Snord35a"      "Zup1"          "Oas1g"         "Ms4a6c"        "Rnf8"          "Casp8"         "Tnfsf10"       "Ptpn7"         "Itk"           "Rps27rt"       "Cd69"          "H3f3b"         "Nop10"         "Anxa6"         "Hk1"          
-## [256] "Prkcb"         "Iqgap1"        "Keap1"         "Rpl7"          "Parp10"
+##   [1] "Ifi27l2b"      "Irf7"          "Ly6a"          "Stat1"         "Ly6c2"         "Ifit3"         "Ifit1"         "Ly6c1"         "Bst2"         
+##  [10] "B2m"           "Rnf213"        "Ifit1bl1"      "Plac8"         "Slfn1"         "Ifi209"        "Isg15"         "Igtp"          "Ifi206"       
+##  [19] "Shisa5"        "Ms4a4c"        "H2-K1"         "Zbp1"          "Oasl2"         "Isg20"         "Samhd1"        "Ifi208"        "Ms4a6b"       
+##  [28] "Trim30a"       "Usp18"         "Mndal"         "H2-T23"        "Slfn8"         "Gbp2"          "Ifi203"        "Iigp1"         "Tmsb4x"       
+##  [37] "H2-T22"        "Rsad2"         "Ly6e"          "Rtp4"          "Ifit3b"        "Zfas1"         "Ifit2"         "Phf11b"        "Xaf1"         
+##  [46] "Smchd1"        "Daxx"          "Alb"           "Samd9l"        "Actb"          "Parp9"         "Gbp4"          "Lgals3bp"      "Mx1"          
+##  [55] "Ifi213"        "Irgm1"         "2410006H16Rik" "Gbp7"          "Cmpk2"         "Dtx3l"         "Slfn5"         "H2-D1"         "Oasl1"        
+##  [64] "Herc6"         "Ifih1"         "Rpsa"          "P2ry13"        "Apoa2"         "Irgm2"         "Tapbp"         "Rps8"          "Stat2"        
+##  [73] "Ifi44"         "Phf11c"        "Rpl8"          "Psmb8"         "Gm12250"       "Igfbp4"        "Rplp2-ps1"     "Ddx58"         "Rac2"         
+##  [82] "Trafd1"        "Sp100"         "Gbp9"          "Pml"           "Oas2"          "Slfn2"         "Psme1"         "Apoe"          "Gas5"         
+##  [91] "H2-Q7"         "Basp1"         "Ms4a4b"        "Rps27a"        "Cd52"          "Znfx1"         "Rpl13"         "Ahsg"          "Oas3"         
+## [100] "Nt5c3"         "Rnf114"        "Tap1"          "Rps28"         "Oas1a"         "Rplp0"         "Ddx60"         "Vim"           "Gbp6"         
+## [109] "Ifi35"         "Itm2b"         "Ctss"          "Tgtp1"         "Trf"           "Pabpc1"        "H2-Q6"         "Parp14"        "Hspa8"        
+## [118] "Tor3a"         "Rpl23"         "Mx2"           "Tmbim6"        "Thy1"          "Ncoa7"         "Dhx58"         "Rps10"         "Rps19"        
+## [127] "Psmb9"         "Il2rg"         "Etnk1"         "Irf9"          "Rps3a1"        "Gbp10"         "1600014C10Rik" "Parp12"        "Trim30d"      
+## [136] "Eif2ak2"       "Eef1b2"        "Eef2"          "Ncf2"          "Npc2"          "Rps2"          "Rps3"          "Sp110"         "Ube2l6"       
+## [145] "Nmi"           "Uba7"          "Psmb10"        "Cxcl10"        "Rpl13a"        "Trim30c"       "Nhp2"          "Tbrg1"         "Jaml"         
+## [154] "Usp25"         "Tor1aip2"      "Adar"          "Gzma"          "Gm2000"        "Rps18-ps5"     "Cd53"          "Phf11"         "Hspa5"        
+## [163] "Cfl1"          "Crip1"         "Slco3a1"       "Tlr7"          "Trim21"        "Gbp8"          "Rpl10"         "Mycbp2"        "Rps16"        
+## [172] "Nlrc5"         "Rplp2"         "Acadl"         "Trim12c"       "Rps4x"         "Irf1"          "Psma2"         "Nme2"          "Tut4"         
+## [181] "Apobec3"       "Snord12"       "Phip"          "Gzmb"          "Ifitm3"        "Sp140"         "Dusp2"         "Mrpl30"        "Malat1"       
+## [190] "H2-M3"         "Gbp3"          "Tmsb10"        "Dtx1"          "Tmem184b"      "Eef1g"         "Rbl1"          "Epb41l4aos"    "Xpo1"         
+## [199] "Rgcc"          "Gm9844"        "Rpl35"         "Rps26"         "Il18bp"        "Sdc3"          "Cxcr4"         "Eif3m"         "Treml2"       
+## [208] "Rpl35a"        "Lgals8"        "Pdcd4"         "Arrb2"         "Ubc"           "Clic4"         "H2-T10"        "Rpl10a"        "Lcp1"         
+## [217] "Cd274"         "Ddit4"         "Cnn2"          "Nampt"         "Ascc3"         "Ms4a6d"        "Cd47"          "Ogfrl1"        "Snord49b"     
+## [226] "Ilrun"         "Calhm6"        "Psme2b"        "Hcst"          "Myh9"          "Rps27"         "Mov10"         "Gm15772"       "Arf4"         
+## [235] "Arhgdib"       "Ppib"          "Ubb"           "Trim25"        "Tspo"          "Id3"           "Snord35a"      "Zup1"          "Oas1g"        
+## [244] "Ms4a6c"        "Rnf8"          "Casp8"         "Tnfsf10"       "Ptpn7"         "Itk"           "Rps27rt"       "Cd69"          "H3f3b"        
+## [253] "Nop10"         "Anxa6"         "Hk1"           "Prkcb"         "Iqgap1"        "Keap1"         "Rpl7"          "Parp10"
 nichenet_output$background_expressed_genes %>% length()
 ## [1] 3476
 ```
@@ -914,7 +622,7 @@ nichenet_output$background_expressed_genes %>% length()
 nichenet_output_agnostic$ligand_activity_target_heatmap
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-80-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 As you can see in this analysis result, many genes DE in CD8 T cells
 after LCMV infection are strongly predicted type I interferon targets.
@@ -975,7 +683,8 @@ common_ligands <- intersect(nichenet_output$`CD4 T`$top_ligands, nichenet_output
 print("Common ligands:")
 ## [1] "Common ligands:"
 print(common_ligands)
-##  [1] "Ebi3"   "Ptprc"  "H2-M3"  "H2-M2"  "H2-T10" "H2-T22" "H2-T23" "Sirpa"  "H2-K1"  "H2-Q4"  "H2-Q6"  "H2-Q7"  "H2-D1"  "Ccl22"  "Cd48"   "App"    "Tgfb1"  "Selplg" "Icam1"  "Btla"   "Cd72"   "B2m"    "Hp"     "Itgb2"
+##  [1] "Ebi3"   "Ptprc"  "H2-M3"  "H2-M2"  "H2-T10" "H2-T22" "H2-T23" "Sirpa"  "H2-K1"  "H2-Q4"  "H2-Q6"  "H2-Q7"  "H2-D1"  "Ccl22"  "Cd48"   "App"   
+## [17] "Tgfb1"  "Selplg" "Icam1"  "Btla"   "Cd72"   "B2m"    "Hp"     "Itgb2"
 
 cd4_ligands <- nichenet_output$`CD4 T`$top_ligands %>% setdiff(nichenet_output$`CD8 T`$top_ligands)
 cd8_ligands <- nichenet_output$`CD8 T`$top_ligands %>% setdiff(nichenet_output$`CD4 T`$top_ligands)
@@ -1018,8 +727,10 @@ dataset such that it can be used in this setting.
 seuratObj <- SetIdent(seuratObj, value = paste(seuratObj$celltype, seuratObj$aggregate, sep = "_"))
 Idents(seuratObj) %>% table()
 ## .
-##   CD8 T_SS   CD4 T_SS    Treg_SS       B_SS      NK_SS    Mono_SS      DC_SS CD8 T_LCMV CD4 T_LCMV     B_LCMV  Treg_LCMV    NK_LCMV  Mono_LCMV    DC_LCMV 
-##        393        601         53         38         37         15          4       1252       1961        344        146         94         75         14
+##   CD8 T_SS   CD4 T_SS    Treg_SS       B_SS      NK_SS    Mono_SS      DC_SS CD8 T_LCMV CD4 T_LCMV     B_LCMV  Treg_LCMV    NK_LCMV  Mono_LCMV 
+##        393        601         53         38         37         15          4       1252       1961        344        146         94         75 
+##    DC_LCMV 
+##         14
 ```
 
 Now perform the NicheNet analysis to explain differential expression
@@ -1051,7 +762,7 @@ Check the top-ranked ligands and their target genes:
 nichenet_output$ligand_activity_target_heatmap
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-85-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 Check the expression of the top-ranked ligands:
 
@@ -1060,7 +771,7 @@ DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), cols = "RdY
   RotatedAxis()
 ```
 
-![](seurat_wrapper_files/figure-gfm/unnamed-chunk-86-1.png)<!-- -->
+![](seurat_wrapper_files/figure-gfm/unnamed-chunk-33-1.png)<!-- -->
 
 It could be interesting to check which top-ranked ligands are
 differentially expressed in monocytes after LCMV infection:
@@ -1089,6 +800,82 @@ print(Mono_upregulated_ligands)
     object: step-by-step analysis](seurat_steps.md) and tweak the
     differential expression step there (and perform the analysis e.g.,
     as discussed in <https://github.com/HelenaLC/muscat>).
+
+``` r
+sessionInfo()
+## R version 4.3.2 (2023-10-31)
+## Platform: x86_64-redhat-linux-gnu (64-bit)
+## Running under: CentOS Stream 8
+## 
+## Matrix products: default
+## BLAS/LAPACK: /usr/lib64/libopenblaso-r0.3.15.so;  LAPACK version 3.9.0
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8     LC_MONETARY=en_US.UTF-8   
+##  [6] LC_MESSAGES=en_US.UTF-8    LC_PAPER=en_US.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## time zone: Asia/Bangkok
+## tzcode source: system (glibc)
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+##  [1] forcats_1.0.0      stringr_1.5.0      dplyr_1.1.4        purrr_1.0.2        readr_2.1.2        tidyr_1.3.0        tibble_3.2.1      
+##  [8] ggplot2_3.4.4      tidyverse_1.3.1    SeuratObject_5.0.1 Seurat_4.4.0       nichenetr_2.0.4    testthat_3.2.1    
+## 
+## loaded via a namespace (and not attached):
+##   [1] IRanges_2.34.1              R.methodsS3_1.8.1           progress_1.2.3              ParamHelpers_1.14.1         nnet_7.3-19                
+##   [6] goftest_1.2-3               vctrs_0.6.5                 spatstat.random_3.2-2       digest_0.6.33               png_0.1-8                  
+##  [11] shape_1.4.6                 proxy_0.4-27                OmnipathR_3.9.6             ggrepel_0.9.4               deldir_2.0-2               
+##  [16] parallelly_1.36.0           MASS_7.3-60                 reprex_2.0.1                reshape2_1.4.4              httpuv_1.6.13              
+##  [21] foreach_1.5.2               BiocGenerics_0.46.0         withr_2.5.2                 ggrastr_1.0.2               xfun_0.41                  
+##  [26] ggpubr_0.6.0                ellipsis_0.3.2              survival_3.5-7              memoise_2.0.1               ggbeeswarm_0.7.2           
+##  [31] zoo_1.8-12                  GlobalOptions_0.1.2         pbapply_1.7-2               R.oo_1.24.0                 prettyunits_1.2.0          
+##  [36] Formula_1.2-5               promises_1.2.1              httr_1.4.7                  rstatix_0.7.2               globals_0.16.2             
+##  [41] fitdistrplus_1.1-11         rstudioapi_0.15.0           miniUI_0.1.1.1              generics_0.1.3              base64enc_0.1-3            
+##  [46] dir.expiry_1.8.0            curl_5.2.0                  S4Vectors_0.38.1            zlibbioc_1.46.0             ScaledMatrix_1.8.1         
+##  [51] polyclip_1.10-6             BBmisc_1.13                 randomForest_4.7-1.1        GenomeInfoDbData_1.2.10     xtable_1.8-4               
+##  [56] desc_1.4.3                  doParallel_1.0.17           evaluate_0.23               S4Arrays_1.2.0              hms_1.1.3                  
+##  [61] GenomicRanges_1.52.0        irlba_2.3.5.1               colorspace_2.1-0            filelock_1.0.2              visNetwork_2.1.2           
+##  [66] ROCR_1.0-11                 smoof_1.6.0.3               reticulate_1.34.0           readxl_1.4.3                spatstat.data_3.0-3        
+##  [71] magrittr_2.0.3              lmtest_0.9-40               later_1.3.2                 mlrMBO_1.1.5.1              lattice_0.21-9             
+##  [76] spatstat.geom_3.2-7         future.apply_1.11.0         lhs_1.1.6                   scuttle_1.10.2              scattermore_1.2            
+##  [81] shadowtext_0.1.2            cowplot_1.1.2               matrixStats_1.2.0           RcppAnnoy_0.0.21            class_7.3-22               
+##  [86] Hmisc_5.1-0                 pillar_1.9.0                nlme_3.1-163                emoa_0.5-0.2                iterators_1.0.14           
+##  [91] beachmat_2.16.0             caTools_1.18.2              compiler_4.3.2              stringi_1.7.6               gower_1.0.1                
+##  [96] tensor_1.5                  SummarizedExperiment_1.30.2 lubridate_1.9.3             devtools_2.4.3              plyr_1.8.9                 
+## [101] crayon_1.5.2                abind_1.4-5                 parallelMap_1.5.1           locfit_1.5-9.8              haven_2.4.3                
+## [106] sp_2.1-2                    modelr_0.1.8                fastmatch_1.1-4             codetools_0.2-19            recipes_1.0.7              
+## [111] BiocSingular_1.16.0         e1071_1.7-14                GetoptLong_1.0.5            plotly_4.10.0               mime_0.12                  
+## [116] splines_4.3.2               circlize_0.4.15             Rcpp_1.0.11                 basilisk_1.12.1             sparseMatrixStats_1.12.2   
+## [121] dbplyr_2.1.1                cellranger_1.1.0            knitr_1.45                  utf8_1.2.4                  clue_0.3-64                
+## [126] fs_1.6.3                    listenv_0.9.0               checkmate_2.3.1             DelayedMatrixStats_1.22.5   logger_0.2.2               
+## [131] pkgbuild_1.4.3              ggsignif_0.6.4              Matrix_1.6-4                statmod_1.5.0               tzdb_0.4.0                 
+## [136] tweenr_2.0.2                pkgconfig_2.0.3             DiceKriging_1.6.0           tools_4.3.2                 cachem_1.0.8               
+## [141] viridisLite_0.4.2           rvest_1.0.2                 DBI_1.1.3                   fastmap_1.1.1               rmarkdown_2.11             
+## [146] scales_1.3.0                grid_4.3.2                  usethis_2.2.2               ica_1.0-3                   liana_0.1.12               
+## [151] broom_0.7.12                patchwork_1.1.3             dotCall64_1.1-1             carData_3.0-5               RANN_2.6.1                 
+## [156] rpart_4.1.21                farver_2.1.1                yaml_2.3.8                  MatrixGenerics_1.12.3       DiagrammeR_1.0.10          
+## [161] foreign_0.8-85              cli_3.6.2                   stats4_4.3.2                leiden_0.3.9                lifecycle_1.0.4            
+## [166] caret_6.0-94                uwot_0.1.16                 Biobase_2.60.0              mlr_2.19.1                  bluster_1.10.0             
+## [171] lava_1.7.3                  sessioninfo_1.2.2           backports_1.4.1             BiocParallel_1.34.2         timechange_0.2.0           
+## [176] gtable_0.3.4                rjson_0.2.21                ggridges_0.5.5              progressr_0.14.0            parallel_4.3.2             
+## [181] pROC_1.18.5                 limma_3.56.2                edgeR_3.42.4                jsonlite_1.8.8              bitops_1.0-7               
+## [186] assertthat_0.2.1            brio_1.1.4                  Rtsne_0.17                  BiocNeighbors_1.18.0        spatstat.utils_3.0-4       
+## [191] highr_0.10                  metapod_1.8.0               dqrng_0.3.2                 R.utils_2.11.0              timeDate_4032.109          
+## [196] lazyeval_0.2.2              shiny_1.7.1                 htmltools_0.5.7             sctransform_0.4.0           rappdirs_0.3.3             
+## [201] basilisk.utils_1.12.1       glue_1.6.2                  spam_2.10-0                 XVector_0.40.0              RCurl_1.98-1.12            
+## [206] rprojroot_2.0.4             scran_1.28.2                gridExtra_2.3               igraph_1.2.11               R6_2.5.1                   
+## [211] SingleCellExperiment_1.22.0 fdrtool_1.2.17              labeling_0.4.3              cluster_2.1.4               pkgload_1.3.3              
+## [216] GenomeInfoDb_1.36.1         ipred_0.9-14                vipor_0.4.5                 DelayedArray_0.26.7         tidyselect_1.2.0           
+## [221] htmlTable_2.4.1             ggforce_0.4.1               xml2_1.3.6                  car_3.1-2                   future_1.33.0              
+## [226] ModelMetrics_1.2.2.2        rsvd_1.0.5                  munsell_0.5.0               KernSmooth_2.23-22          data.table_1.14.10         
+## [231] htmlwidgets_1.6.2           ComplexHeatmap_2.16.0       RColorBrewer_1.1-3          rlang_1.1.2                 spatstat.sparse_3.0-3      
+## [236] spatstat.explore_3.2-1      remotes_2.4.2               ggnewscale_0.4.9            fansi_1.0.6                 hardhat_1.3.0              
+## [241] beeswarm_0.4.0              prodlim_2023.08.28
+```
 
 # References
 
