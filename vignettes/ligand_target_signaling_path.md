@@ -40,50 +40,62 @@ signaling paths between ligand and target genes of interest.
 library(nichenetr)
 library(tidyverse)
 
-weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final.rds"))
-ligand_tf_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_tf_matrix_nsga2r_final.rds"))
+weighted_networks <- readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final.rds"))
+ligand_tf_matrix <- readRDS(url("https://zenodo.org/record/7074291/files/ligand_tf_matrix_nsga2r_final.rds"))
 
-lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
-sig_network = readRDS(url("https://zenodo.org/record/7074291/files/signaling_network_human_21122021.rds"))
-gr_network = readRDS(url("https://zenodo.org/record/7074291/files/gr_network_human_21122021.rds"))
+lr_network <- readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
+sig_network <- readRDS(url("https://zenodo.org/record/7074291/files/signaling_network_human_21122021.rds"))
+gr_network <- readRDS(url("https://zenodo.org/record/7074291/files/gr_network_human_21122021.rds"))
 ```
 
-As example, we will infer signaling paths between the CAF-ligand TGFB3
-and its top-predicted p-EMT target genes TGFBI, LAMC2 and TNC.
+As an example, we will infer signaling paths between the CAF-ligand
+TGFB2 and its top-predicted p-EMT target genes SERPINE1 and COL1A1. For
+better visualization of edge weights, we will also normalize edge
+weights to make them comparable between signaling and gene regulatory
+interactions (`minmax_scaling = TRUE`).
 
 ``` r
-ligands_all = "TGFB3" # this can be a list of multiple ligands if required
-targets_all = c("TGFBI","LAMC2","TNC")
+ligands_oi <- "TGFB2" # this can be a list of multiple ligands if required
+targets_oi <- c("SERPINE1","COL1A1")
 
-active_signaling_network = get_ligand_signaling_path(ligand_tf_matrix = ligand_tf_matrix, ligands_all = ligands_all, targets_all = targets_all, weighted_networks = weighted_networks)
+active_signaling_network <- get_ligand_signaling_path(ligands_all = ligands_oi,
+                                                      targets_all = targets_oi,
+                                                      weighted_networks = weighted_networks,
+                                                      ligand_tf_matrix = ligand_tf_matrix,
+                                                      top_n_regulators = 4,
+                                                      minmax_scaling = TRUE) 
 
-# For better visualization of edge weigths: normalize edge weights to make them comparable between signaling and gene regulatory interactions
-active_signaling_network_min_max = active_signaling_network
-active_signaling_network_min_max$sig = active_signaling_network_min_max$sig %>% mutate(weight = ((weight-min(weight))/(max(weight)-min(weight))) + 0.75)
-active_signaling_network_min_max$gr = active_signaling_network_min_max$gr %>% mutate(weight = ((weight-min(weight))/(max(weight)-min(weight))) + 0.75)
 
-graph_min_max = diagrammer_format_signaling_graph(signaling_graph_list = active_signaling_network_min_max, ligands_all = ligands_all, targets_all = targets_all, sig_color = "indianred", gr_color = "steelblue")
+graph_min_max <- diagrammer_format_signaling_graph(signaling_graph_list = active_signaling_network,
+                                                   ligands_all = ligands_oi, targets_all = targets_oi,
+                                                   sig_color = "indianred", gr_color = "steelblue")
 
-# To render the graph: uncomment following line of code
+# To render the graph in RStudio Viewer, uncomment following line of code
 # DiagrammeR::render_graph(graph_min_max, layout = "tree")
+
+# To export/draw the svg, you need to install DiagrammeRsvg
+graph_svg <- DiagrammeRsvg::export_svg(DiagrammeR::render_graph(graph_min_max, layout = "tree", output = "graph"))
+cowplot::ggdraw() + cowplot::draw_image(charToRaw(graph_svg))
 ```
-![](tgfb3_targets_signaling_path.png)
+
+![](ligand_target_signaling_path_files/figure-gfm/signaling-graph-1.png)<!-- -->
 
 We will now look which of the collected data sources support the
 interactions in this network.
 
 ``` r
-data_source_network = infer_supporting_datasources(signaling_graph_list = active_signaling_network,lr_network = lr_network, sig_network = sig_network, gr_network = gr_network)
+data_source_network <- infer_supporting_datasources(signaling_graph_list = active_signaling_network,
+                                                    lr_network = lr_network, sig_network = sig_network, gr_network = gr_network)
 head(data_source_network) 
 ## # A tibble: 6 × 5
-##   from  to    source                  database       layer     
-##   <chr> <chr> <chr>                   <chr>          <chr>     
-## 1 PTEN  LAMC2 KnockTF                 KnockTF        regulatory
-## 2 PTEN  TGFBI harmonizome_GEO_GENE    harmonizome_gr regulatory
-## 3 PTEN  TGFBI harmonizome_MSIGDB_GENE harmonizome_gr regulatory
-## 4 PTEN  TGFBI KnockTF                 KnockTF        regulatory
-## 5 SMAD1 TGFBI regnetwork_source       regnetwork     regulatory
-## 6 SMAD1 TGFBI Remap_1                 Remap          regulatory
+##   from  to       source            database   layer     
+##   <chr> <chr>    <chr>             <chr>      <chr>     
+## 1 NFKB1 COL1A1   regnetwork_source regnetwork regulatory
+## 2 NFKB1 COL1A1   trrust            trrust     regulatory
+## 3 NFKB1 COL1A1   omnipath_ABC      omnipath   regulatory
+## 4 NFKB1 SERPINE1 trrust            trrust     regulatory
+## 5 NFKB1 SERPINE1 omnipath_ABC      omnipath   regulatory
+## 6 SMAD3 COL1A1   regnetwork_source regnetwork regulatory
 ```
 
 For information of all mentioned data sources in the source column (link
@@ -95,29 +107,32 @@ information](data_sources.xlsx)
 Export the following to e.g. Cytoscape for exploration of the networks
 
 ``` r
-output_path = ""
-write_output = FALSE # change to TRUE for writing output
+output_path <- ""
+write_output <- FALSE # change to TRUE for writing output
 
 # weighted networks ('import network' in Cytoscape)
 if(write_output){
-  bind_rows(active_signaling_network$sig %>% mutate(layer = "signaling"), active_signaling_network$gr %>% mutate(layer = "regulatory")) %>% write_tsv(paste0(output_path,"weighted_signaling_network.txt")) 
+  bind_rows(active_signaling_network$sig %>% mutate(layer = "signaling"),
+            active_signaling_network$gr %>% mutate(layer = "regulatory")) %>%
+    write_tsv(paste0(output_path,"weighted_signaling_network.txt")) 
 }
 
 # networks with information of supporting data sources ('import network' in Cytoscape)
 if(write_output){
-data_source_network %>% write_tsv(paste0(output_path,"data_source_network.txt"))
+  data_source_network %>% write_tsv(paste0(output_path,"data_source_network.txt"))
 }
 
 # Node annotation table ('import table' in Cytoscape)
-specific_annotation_tbl = bind_rows(
-  tibble(gene = ligands_all, annotation = "ligand"),
-  tibble(gene = targets_all, annotation = "target"),
-  tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% setdiff(c(targets_all,ligands_all)) %>% intersect(lr_network$to %>% unique()), annotation = "receptor"),
-  tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% setdiff(c(targets_all,ligands_all)) %>% intersect(gr_network$from %>% unique()) %>% setdiff(c(data_source_network$from, data_source_network$to) %>% unique() %>% intersect(lr_network$to %>% unique())),annotation = "transcriptional regulator")
+specific_annotation_tbl <- bind_rows(
+  tibble(gene = ligands_oi, annotation = "ligand"),
+  tibble(gene = targets_oi, annotation = "target"),
+  tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% setdiff(c(targets_oi,ligands_oi)) %>% intersect(lr_network$to %>% unique()), annotation = "receptor"),
+  tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% setdiff(c(targets_oi,ligands_oi)) %>% intersect(gr_network$from %>% unique()) %>% setdiff(c(data_source_network$from, data_source_network$to) %>% unique() %>% intersect(lr_network$to %>% unique())),annotation = "transcriptional regulator")
 )
-non_specific_annotation_tbl = tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% setdiff(specific_annotation_tbl$gene), annotation = "signaling mediator")
+non_specific_annotation_tbl <- tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% setdiff(specific_annotation_tbl$gene), annotation = "signaling mediator")
 
 if(write_output){
-bind_rows(specific_annotation_tbl,non_specific_annotation_tbl) %>% write_tsv(paste0(output_path,"annotation_table.txt"))
+  bind_rows(specific_annotation_tbl, non_specific_annotation_tbl) %>%
+    write_tsv(paste0(output_path,"annotation_table.txt"))
 }
 ```
