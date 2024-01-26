@@ -47,8 +47,9 @@ library(circlize)
 ```{r}
 ligand_target_matrix <- readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
 lr_network <- readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
-head(lr_network)
 weighted_networks <- readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
+head(lr_network)
+
 ```
 
 ### Read in the expression data of interacting cells
@@ -101,7 +102,7 @@ nichenet_output$ligand_activities
 
 These ligands are expressed by one or more of the input sender cells. To see which cell population expresses which of these top-ranked ligands, you can run the following:
 
-```{r, fig.width=12}
+```{r dotplot, fig.width=12}
 nichenet_output$ligand_expression_dotplot
 ```
 
@@ -109,11 +110,11 @@ As you can see, most of the top-ranked ligands seem to be mainly expressed by de
 
 It could also be interesting to see whether some of these ligands are differentially expressed after LCMV infection.
 
-```{r, fig.width=12}
+```{r lfc-heatmap, fig.width=12}
 nichenet_output$ligand_differential_expression_heatmap
 ```
 
-```{r}
+```{r violin-plot}
 VlnPlot(seuratObj, features = c("Ptprc", "H2-M3", "Cxcl10"), split.by = "aggregate", pt.size = 0, combine = TRUE)
 ```
 
@@ -121,7 +122,7 @@ VlnPlot(seuratObj, features = c("Ptprc", "H2-M3", "Cxcl10"), split.by = "aggrega
 
 NicheNet also infers active target genes of these top-ranked ligands. To see which top-ranked ligands are predicted to have regulated the expression of which differentially expressed genes, you can run following command for a heatmap visualization:
 
-```{r}
+```{r ligand-target-heatmap}
 nichenet_output$ligand_target_heatmap
 ```
 
@@ -175,7 +176,7 @@ vis_circos_obj <- prepare_circos_visualization(circos_links,
 
 Render the circos plot where all links have the same transparency.  Here, only the widths of the blocks that indicate each target gene is proportional the ligand-target regulatory potential (~prior knowledge supporting the regulatory interaction). 
 
-```{r, fig.width=8, fig.height=8}
+```{r ligand-target-circos, fig.width=8, fig.height=8}
 
 draw_circos_plot(vis_circos_obj, transparency = FALSE,  args.circos.text = list(cex = 0.5)) 
 
@@ -183,13 +184,13 @@ draw_circos_plot(vis_circos_obj, transparency = FALSE,  args.circos.text = list(
 
 Render the circos plot where the degree of transparency determined by the regulatory potential value of a ligand-target interaction.
 
-```{r, fig.width=8, fig.height=8}
+```{r ligand-target-circos-transparent, fig.width=8, fig.height=8}
 draw_circos_plot(vis_circos_obj, transparency = TRUE,  args.circos.text = list(cex = 0.5)) 
 ```
 
 To create a legend for the circos plot, we can use the `ComplexHeatmap::Legend` function and creating a gTree object from it with `grid::grid.grabExpr`. As the circos plot is drawn on base R graphics (i.e., it is not a ggplot object), we will get the plot using `recordPlot()`.
 
-```{r, fig.show='hide'}
+```{r ligand-target-circos-unused, fig.show='hide'}
 par(bg = "transparent")
 
 # Default celltype order
@@ -202,24 +203,24 @@ circos_legend <- ComplexHeatmap::Legend(
   type = "point",
   grid_height = unit(3, "mm"),
   grid_width = unit(3, "mm"),
-  labels_gp = gpar(fontsize = 8)
+  labels_gp = grid::gpar(fontsize = 8)
   )
 
-circos_legend_grob <- grid::grid.grabExpr(draw(circos_legend))
+circos_legend_grob <- grid::grid.grabExpr(ComplexHeatmap::draw(circos_legend))
 
 draw_circos_plot(vis_circos_obj, transparency = TRUE, args.circos.text = list(cex = 0.5))
 p_circos_no_legend <- recordPlot()
 ```
 
 We can combine the circos plot and the legend using `cowplot::plot_grid`.
-```{r fig.width=8, fig.height=8}
+```{r ligand-target-circos-with-legend, fig.width=8, fig.height=8}
 cowplot::plot_grid(p_circos_no_legend, circos_legend_grob, rel_widths = c(1, 0.1))
 ```
 
 
 We can save this plot to an svg file.
 
-```{r}
+```{r eval=FALSE}
 svg("ligand_target_circos.svg", width = 10, height = 10)
 cowplot::plot_grid(p_circos_no_legend, circos_legend_grob, rel_widths = c(1, 0.1))
 dev.off()
@@ -244,7 +245,7 @@ vis_circos_receptor_obj <- prepare_circos_visualization(lr_network_top_df,
 
 When drawing the plot, the argument `link.visible` = TRUE is also necessary for making all links visible, since no cutoff is used to filter out ligand-receptor interactions.
 
-```{r}
+```{r ligand-receptor-circos}
 draw_circos_plot(vis_circos_receptor_obj, transparency = FALSE,
                  link.visible = TRUE,  args.circos.text = list(cex = 0.8)) 
 ```
@@ -253,7 +254,7 @@ Just as above, if `transparency = TRUE`, the degree of transparency is determine
 
 ### FAQ: How to draw a double circos plot of ligand-receptor-target links?
 
-Please check the [Circos plot visualization to show active ligand-target links between interacting cells](circos_plot.md) for the demonstration.
+Please check the [HNSCC case study + double circos visualization](circos_plot.md) for the demonstration.
 
 
 ```{r}

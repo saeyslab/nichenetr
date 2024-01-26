@@ -27,7 +27,7 @@ input data: the potential ligands, the gene set of interest, and the
 background gene set. This vignette will extract each feature as
 described in this flowchart:
 
-<img src="figure2.svg" style="width:50.0%" />
+<img src="images/figure2.svg" style="width:70.0%" />
 
 As example expression data of interacting cells, we will use mouse
 NICHE-seq data to explore intercellular communication in the T cell area
@@ -111,7 +111,7 @@ seuratObj@meta.data$celltype %>% table()
 DimPlot(seuratObj, reduction = "tsne")
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/umap-1-1.png)<!-- -->
 
 Visualize the data to see to which condition cells belong. The metadata
 column that denotes the condition (steady-state or after LCMV infection)
@@ -125,7 +125,7 @@ seuratObj@meta.data$aggregate %>% table()
 DimPlot(seuratObj, reduction = "tsne", group.by = "aggregate")
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/umap-2-1.png)<!-- -->
 
 ### Read in NicheNet’s networks
 
@@ -376,7 +376,7 @@ p_hist_lig_activity <- ggplot(ligand_activities, aes(x=aupr_corrected)) +
 p_hist_lig_activity
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/histogram-1.png)<!-- -->
 
 ``` r
 best_upstream_ligands <- ligand_activities %>% top_n(30, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand)
@@ -395,7 +395,7 @@ vis_ligand_aupr <- ligand_activities %>% filter(test_ligand %in% best_upstream_l
     theme(axis.text.x.top = element_blank()))  
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/agnostic-ligand-activity-heatmap-1.png)<!-- -->
 
 ## 5. Infer target genes and receptors of top-ranked ligands
 
@@ -473,7 +473,7 @@ make_heatmap_ggplot(vis_ligand_target, "Prioritized ligands", "Predicted target 
   scale_fill_gradient2(low = "whitesmoke",  high = "purple")
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/ligand-target-heatmap-1.png)<!-- -->
 
 The rows of the heatmap are ordered based on the rankings of the
 ligands, and the columns are ordered alphabetically. We see a lot of
@@ -518,12 +518,13 @@ vis_ligand_receptor_network <- prepare_ligand_receptor_visualization(
                      color = "mediumvioletred", legend_title = "Prior interaction potential"))
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-19-1.png)<!-- --> \## 6.
-Sender-focused approach
+![](seurat_steps_files/figure-gfm/ligand-receptor-heatmap-1.png)<!-- -->
+
+## 6. Sender-focused approach
 
 To perform the sender-focused approach, simply subset the ligand
 activities to only contain expressed ligands from all populations
-(calculated in Step 1. We can then perform target gene and receptor
+(calculated in Step 1). We can then perform target gene and receptor
 inference as above.
 
 ``` r
@@ -548,7 +549,7 @@ p_ligand_aupr <- make_heatmap_ggplot(vis_ligand_aupr,
 p_ligand_aupr
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/focused-ligand-activity-heatmap-1.png)<!-- -->
 
 ``` r
 # Target gene plot
@@ -576,7 +577,7 @@ p_ligand_target <- make_heatmap_ggplot(vis_ligand_target, "Prioritized ligands",
 p_ligand_target
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/focused-ligand-target-heatmap-1.png)<!-- -->
 
 ``` r
 # Receptor plot
@@ -596,7 +597,7 @@ p_ligand_receptor <- make_heatmap_ggplot(t(vis_ligand_receptor_network),
 p_ligand_receptor
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/focused-ligand-receptor-heatmap-1.png)<!-- -->
 
 Here, we instead observe that the top-ranked ligands consist of many H2
 genes (which encode MHC-II proteins), and not IFN genes as in the
@@ -619,7 +620,7 @@ ligands. First, we can simply check which sender cell population
 expresses which of these top-ranked ligands.
 
 ``` r
-# Dotplot of sender-agnostic approach
+# Dotplot of sender-focused approach
 p_dotplot <- DotPlot(subset(seuratObj, celltype %in% sender_celltypes),
         features = rev(best_upstream_ligands), cols = "RdYlBu") + 
   coord_flip() +
@@ -628,7 +629,7 @@ p_dotplot <- DotPlot(subset(seuratObj, celltype %in% sender_celltypes),
 p_dotplot
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/dotplot-1.png)<!-- -->
 
 As you can see, most of the top-ranked ligands seem to be mainly
 expressed by dendritic cells and monocytes.
@@ -673,7 +674,7 @@ p_lfc <- make_threecolor_heatmap_ggplot(vis_ligand_lfc,
 p_lfc
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/lfc-heatmap-1.png)<!-- -->
 
 We see that most of the top-ranked ligands also seem to be upregulated
 themselves in monocytes after viral infection. This is nice additional
@@ -690,7 +691,7 @@ in the sender-focused approach because they are not expressed.
    theme(plot.title = element_text(size=11, hjust=0.1, margin=margin(0, 0, -5, 0))))
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/lineplot-1.png)<!-- -->
 
 ## 7. Summary visualizations of the NicheNet analysis
 
@@ -734,7 +735,7 @@ combined_plot <-  cowplot::plot_grid(figures_without_legend, legends, rel_height
 combined_plot
 ```
 
-![](seurat_steps_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
+![](seurat_steps_files/figure-gfm/summary-vis-1.png)<!-- -->
 
 ## Other follow-up analyses:
 
@@ -778,42 +779,40 @@ sessionInfo()
 ## 
 ## other attached packages:
 ##  [1] forcats_1.0.0      stringr_1.5.0      dplyr_1.1.4        purrr_1.0.2        readr_2.1.2        tidyr_1.3.0        tibble_3.2.1      
-##  [8] ggplot2_3.4.4      tidyverse_1.3.1    SeuratObject_5.0.1 Seurat_4.4.0       nichenetr_2.0.4    testthat_3.2.1    
+##  [8] ggplot2_3.4.4      tidyverse_1.3.1    SeuratObject_5.0.1 Seurat_4.4.0       nichenetr_2.0.4   
 ## 
 ## loaded via a namespace (and not attached):
 ##   [1] fs_1.6.3               matrixStats_1.2.0      spatstat.sparse_3.0-3  bitops_1.0-7           devtools_2.4.3         lubridate_1.9.3       
-##   [7] doParallel_1.0.17      httr_1.4.7             RColorBrewer_1.1-3     tools_4.3.2            sctransform_0.4.0      backports_1.4.1       
-##  [13] utf8_1.2.4             R6_2.5.1               uwot_0.1.16            lazyeval_0.2.2         GetoptLong_1.0.5       withr_2.5.2           
-##  [19] sp_2.1-2               gridExtra_2.3          fdrtool_1.2.17         progressr_0.14.0       cli_3.6.2              DiceKriging_1.6.0     
-##  [25] spatstat.explore_3.2-1 labeling_0.4.3         spatstat.data_3.0-3    randomForest_4.7-1.1   proxy_0.4-27           ggridges_0.5.5        
-##  [31] pbapply_1.7-2          foreign_0.8-85         smoof_1.6.0.3          parallelly_1.36.0      sessioninfo_1.2.2      limma_3.56.2          
-##  [37] readxl_1.4.3           rstudioapi_0.15.0      shape_1.4.6            visNetwork_2.1.2       generics_0.1.3         spatstat.random_3.2-2 
-##  [43] ica_1.0-3              car_3.1-2              Matrix_1.6-4           S4Vectors_0.38.1       fansi_1.0.6            abind_1.4-5           
-##  [49] lifecycle_1.0.4        yaml_2.3.8             carData_3.0-5          recipes_1.0.7          Rtsne_0.17             grid_4.3.2            
-##  [55] promises_1.2.1         crayon_1.5.2           miniUI_0.1.1.1         lattice_0.21-9         haven_2.4.3            cowplot_1.1.2         
-##  [61] ComplexHeatmap_2.16.0  mlr_2.19.1             pillar_1.9.0           knitr_1.45             rjson_0.2.21           future.apply_1.11.0   
-##  [67] codetools_0.2-19       fastmatch_1.1-4        leiden_0.3.9           glue_1.6.2             ParamHelpers_1.14.1    data.table_1.14.10    
-##  [73] remotes_2.4.2          vctrs_0.6.5            png_0.1-8              spam_2.10-0            cellranger_1.1.0       gtable_0.3.4          
-##  [79] assertthat_0.2.1       cachem_1.0.8           gower_1.0.1            xfun_0.41              mime_0.12              prodlim_2023.08.28    
-##  [85] survival_3.5-7         timeDate_4032.109      iterators_1.0.14       hardhat_1.3.0          lava_1.7.3             DiagrammeR_1.0.10     
-##  [91] ellipsis_0.3.2         fitdistrplus_1.1-11    ROCR_1.0-11            ipred_0.9-14           nlme_3.1-163           usethis_2.2.2         
-##  [97] RcppAnnoy_0.0.21       rprojroot_2.0.4        irlba_2.3.5.1          KernSmooth_2.23-22     rpart_4.1.21           BiocGenerics_0.46.0   
-## [103] colorspace_2.1-0       DBI_1.1.3              Hmisc_5.1-0            nnet_7.3-19            tidyselect_1.2.0       compiler_4.3.2        
-## [109] parallelMap_1.5.1      rvest_1.0.2            htmlTable_2.4.1        xml2_1.3.6             desc_1.4.3             plotly_4.10.0         
-## [115] shadowtext_0.1.2       checkmate_2.3.1        scales_1.3.0           caTools_1.18.2         lmtest_0.9-40          goftest_1.2-3         
-## [121] digest_0.6.33          spatstat.utils_3.0-4   rmarkdown_2.11         htmltools_0.5.7        pkgconfig_2.0.3        base64enc_0.1-3       
-## [127] lhs_1.1.6              highr_0.10             dbplyr_2.1.1           fastmap_1.1.1          GlobalOptions_0.1.2    rlang_1.1.2           
-## [133] htmlwidgets_1.6.2      shiny_1.7.1            BBmisc_1.13            farver_2.1.1           zoo_1.8-12             jsonlite_1.8.8        
-## [139] mlrMBO_1.1.5.1         ModelMetrics_1.2.2.2   magrittr_2.0.3         Formula_1.2-5          dotCall64_1.1-1        patchwork_1.1.3       
-## [145] munsell_0.5.0          Rcpp_1.0.11            ggnewscale_0.4.9       reticulate_1.34.0      stringi_1.7.6          pROC_1.18.5           
-## [151] brio_1.1.4             MASS_7.3-60            plyr_1.8.9             pkgbuild_1.4.3         parallel_4.3.2         listenv_0.9.0         
-## [157] ggrepel_0.9.4          deldir_2.0-2           splines_4.3.2          tensor_1.5             circlize_0.4.15        hms_1.1.3             
-## [163] igraph_1.2.11          ggpubr_0.6.0           spatstat.geom_3.2-7    ggsignif_0.6.4         reshape2_1.4.4         stats4_4.3.2          
-## [169] pkgload_1.3.3          reprex_2.0.1           evaluate_0.23          modelr_0.1.8           tweenr_2.0.2           tzdb_0.4.0            
-## [175] foreach_1.5.2          httpuv_1.6.13          RANN_2.6.1             polyclip_1.10-6        clue_0.3-64            future_1.33.0         
-## [181] scattermore_1.2        ggforce_0.4.1          broom_0.7.12           xtable_1.8-4           emoa_0.5-0.2           e1071_1.7-14          
-## [187] rstatix_0.7.2          later_1.3.2            viridisLite_0.4.2      class_7.3-22           IRanges_2.34.1         memoise_2.0.1         
-## [193] cluster_2.1.4          timechange_0.2.0       globals_0.16.2         caret_6.0-94
+##   [7] httr_1.4.7             RColorBrewer_1.1-3     doParallel_1.0.17      tools_4.3.2            sctransform_0.4.0      backports_1.4.1       
+##  [13] utf8_1.2.4             R6_2.5.1               lazyeval_0.2.2         uwot_0.1.16            GetoptLong_1.0.5       withr_2.5.2           
+##  [19] sp_2.1-2               gridExtra_2.3          fdrtool_1.2.17         progressr_0.14.0       cli_3.6.2              spatstat.explore_3.2-1
+##  [25] labeling_0.4.3         spatstat.data_3.0-3    randomForest_4.7-1.1   proxy_0.4-27           ggridges_0.5.5         pbapply_1.7-2         
+##  [31] foreign_0.8-85         sessioninfo_1.2.2      parallelly_1.36.0      limma_3.56.2           readxl_1.4.3           rstudioapi_0.15.0     
+##  [37] visNetwork_2.1.2       generics_0.1.3         shape_1.4.6            ica_1.0-3              spatstat.random_3.2-2  car_3.1-2             
+##  [43] Matrix_1.6-4           fansi_1.0.6            S4Vectors_0.38.1       abind_1.4-5            lifecycle_1.0.4        yaml_2.3.8            
+##  [49] carData_3.0-5          recipes_1.0.7          Rtsne_0.17             grid_4.3.2             promises_1.2.1         crayon_1.5.2          
+##  [55] miniUI_0.1.1.1         lattice_0.21-9         haven_2.4.3            cowplot_1.1.2          pillar_1.9.0           knitr_1.45            
+##  [61] ComplexHeatmap_2.16.0  rjson_0.2.21           future.apply_1.11.0    codetools_0.2-19       leiden_0.3.9           glue_1.6.2            
+##  [67] remotes_2.4.2          data.table_1.14.10     vctrs_0.6.5            png_0.1-8              spam_2.10-0            cellranger_1.1.0      
+##  [73] gtable_0.3.4           assertthat_0.2.1       cachem_1.0.8           gower_1.0.1            xfun_0.41              mime_0.12             
+##  [79] prodlim_2023.08.28     survival_3.5-7         timeDate_4032.109      iterators_1.0.14       hardhat_1.3.0          lava_1.7.3            
+##  [85] DiagrammeR_1.0.10      ellipsis_0.3.2         fitdistrplus_1.1-11    ROCR_1.0-11            ipred_0.9-14           nlme_3.1-163          
+##  [91] usethis_2.2.2          RcppAnnoy_0.0.21       irlba_2.3.5.1          KernSmooth_2.23-22     rpart_4.1.21           colorspace_2.1-0      
+##  [97] BiocGenerics_0.46.0    DBI_1.1.3              Hmisc_5.1-0            nnet_7.3-19            tidyselect_1.2.0       compiler_4.3.2        
+## [103] rvest_1.0.2            htmlTable_2.4.1        xml2_1.3.6             plotly_4.10.0          shadowtext_0.1.2       checkmate_2.3.1       
+## [109] scales_1.3.0           caTools_1.18.2         lmtest_0.9-40          digest_0.6.33          goftest_1.2-3          spatstat.utils_3.0-4  
+## [115] rmarkdown_2.11         htmltools_0.5.7        pkgconfig_2.0.3        base64enc_0.1-3        highr_0.10             dbplyr_2.1.1          
+## [121] fastmap_1.1.1          rlang_1.1.2            GlobalOptions_0.1.2    htmlwidgets_1.6.2      shiny_1.7.1            farver_2.1.1          
+## [127] zoo_1.8-12             jsonlite_1.8.8         ModelMetrics_1.2.2.2   magrittr_2.0.3         Formula_1.2-5          dotCall64_1.1-1       
+## [133] patchwork_1.1.3        munsell_0.5.0          Rcpp_1.0.11            ggnewscale_0.4.9       reticulate_1.34.0      stringi_1.7.6         
+## [139] pROC_1.18.5            MASS_7.3-60            pkgbuild_1.4.3         plyr_1.8.9             parallel_4.3.2         listenv_0.9.0         
+## [145] ggrepel_0.9.4          deldir_2.0-2           splines_4.3.2          tensor_1.5             hms_1.1.3              circlize_0.4.15       
+## [151] igraph_1.2.11          ggpubr_0.6.0           spatstat.geom_3.2-7    ggsignif_0.6.4         pkgload_1.3.3          reshape2_1.4.4        
+## [157] stats4_4.3.2           reprex_2.0.1           evaluate_0.23          modelr_0.1.8           tzdb_0.4.0             foreach_1.5.2         
+## [163] tweenr_2.0.2           httpuv_1.6.13          RANN_2.6.1             polyclip_1.10-6        future_1.33.0          clue_0.3-64           
+## [169] scattermore_1.2        ggforce_0.4.1          broom_0.7.12           xtable_1.8-4           e1071_1.7-14           rstatix_0.7.2         
+## [175] later_1.3.2            viridisLite_0.4.2      class_7.3-22           memoise_2.0.1          IRanges_2.34.1         cluster_2.1.4         
+## [181] timechange_0.2.0       globals_0.16.2         caret_6.0-94
 ```
 
 # References

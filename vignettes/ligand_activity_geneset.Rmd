@@ -185,7 +185,7 @@ We will use the top 30 ligands to predict active target genes and construct an a
 
 Active target genes are defined as genes in the gene set of interest that have the highest regulatory potential for each top-ranked ligand. These top targets of each ligand are based on the prior model. Specifically, the function get_weighted_ligand_target_links will return genes that are in the gene set of interest and are the top `n` targets of a ligand (default: `n = 200`).
 
-```{r, fig.width=8, fig.height=6}
+```{r ligand-target-heatmap, fig.width=8, fig.height=6}
 active_ligand_target_links_df <- best_upstream_ligands %>%
   lapply(get_weighted_ligand_target_links,
          geneset = geneset_oi,
@@ -212,7 +212,7 @@ p_ligand_target_network
 
 We can also look at which receptors of the receiver cell population (malignant cells) can potentially bind to the prioritized ligands from the sender cell population (CAFs).
 
-```{r, fig.width=9, fig.height=6}
+```{r ligand-receptor-heatmap, fig.width=9, fig.height=6}
 
 ligand_receptor_links_df <- get_weighted_ligand_receptor_links(
   best_upstream_ligands, expressed_receptors,
@@ -247,7 +247,7 @@ vis_ligand_aupr <- ligand_activities %>% filter(test_ligand %in% best_upstream_l
   column_to_rownames("test_ligand") %>% select(aupr_corrected) %>% arrange(aupr_corrected) %>% as.matrix(ncol = 1)
 ```
 
-```{r, fig.width=5, fig.height=6}
+```{r ligand-activity-heatmap, fig.width=5, fig.height=6}
 p_ligand_aupr <- make_heatmap_ggplot(vis_ligand_aupr,
                                      "Prioritized CAF-ligands", "Ligand activity",
                                      color = "darkorange", legend_title = "AUPR") + 
@@ -280,7 +280,7 @@ vis_ligand_tumor_expression <- aggregated_expression_matrix_CAF[rev(best_upstrea
 
 ```
 
-```{r, fig.width=9, fig.height=6}
+```{r ligand-expression-heatmap, fig.width=9, fig.height=6}
 color <- colorRampPalette(rev(brewer.pal(n = 7, name ="RdYlBu")))(100)
 p_ligand_tumor_expression <- make_heatmap_ggplot(vis_ligand_tumor_expression,
                                                  "Prioritized CAF-ligands", "Tumor",
@@ -310,7 +310,7 @@ vis_target_tumor_expression_scaled <- aggregated_expression_matrix_target %>% t(
   .[order_tumors, order_targets]
 ```
 
-```{r, fig.width=9, fig.height=6}
+```{r target-expression-heatmap, fig.width=9, fig.height=6}
 p_target_tumor_scaled_expression <- make_threecolor_heatmap_ggplot(vis_target_tumor_expression_scaled,
                                                                    "Tumor", "Target",
                                                                    low_color = color[1], mid_color = color[50], mid = 0.5,
@@ -322,7 +322,7 @@ p_target_tumor_scaled_expression
 
 #### Combine the different heatmaps in one overview figure
 
-```{r, fig.width=15, fig.height=9}
+```{r summary-vis, fig.width=15, fig.height=9}
 
 figures_without_legend = plot_grid(
   p_ligand_aupr + theme(legend.position = "none"),

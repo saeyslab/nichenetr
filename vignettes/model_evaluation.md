@@ -15,7 +15,15 @@ that observed gene expression changes can be directly attributed to the
 addition of the ligand(s). Hence, differentially expressed genes can be
 considered as a gold standard of target genes of a particular ligand.
 
-You can use the procedure shown here to evaluate your own model and compare its performance to NicheNet. In NicheNet v2, we added more ligand treatment validation datasets from CytoSig. We will also demonstrate the better performance of NicheNet v2's ligand-target matrix. [Ligand treatment validation datasets, NicheNet's v1 ligand-target model](https://doi.org/10.5281/zenodo.3260758), and [NicheNet’s v2 ligand-target model](https://doi.org/10.5281/zenodo.7074290) can be downloaded from Zenodo.
+You can use the procedure shown here to evaluate your own model and
+compare its performance to NicheNet. In NicheNet v2, we added more
+ligand treatment validation datasets from CytoSig. We will also
+demonstrate the better performance of NicheNet v2’s ligand-target
+matrix. [Ligand treatment validation datasets, NicheNet’s v1
+ligand-target model](https://doi.org/10.5281/zenodo.3260758), and
+[NicheNet’s v2 ligand-target
+model](https://doi.org/10.5281/zenodo.7074290) can be downloaded from
+Zenodo.
 
 ### Load nichenetr, the model we want to evaluate, and the datasets on which we want to evaluate it.
 
@@ -99,14 +107,14 @@ performances %>%
   theme_bw()
 ```
 
-![](model_evaluation_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](model_evaluation_files/figure-gfm/target-prediction-v2-results-1.png)<!-- -->
 
 We will now compare performances between NicheNet v1 and v2 on both
 ligand treatment datasets. Note that although the performance of v2 is
 much better here, the CytoSig experiments were also included during
-model construction of v2. To get the results in the MultiNicheNet paper, you will have
-to follow the `model_construction.Rmd` vignette and filter out the
-CytoSig data sources during model construction.
+model construction of v2. To get the results in the MultiNicheNet paper,
+you will have to follow the `model_construction.Rmd` vignette and filter
+out the CytoSig data sources during model construction.
 
 ``` r
 
@@ -122,7 +130,6 @@ performances_df <- lapply(c("nichenet_gs", "cytosig_gs"), function(gs) {
   
   lapply(c("v1", "v2"), function(ver){
     # Get the ligand_target_matrix according to the version, Evaluate transcriptional response prediction on every dataset
-    # 
     performances = settings %>% lapply(evaluate_target_prediction, get(paste0("ligand_target_matrix_", ver))) %>% bind_rows()
   
     # Select some classification evaluation metrics showing the target gene prediction performance
@@ -153,7 +160,7 @@ ggplot(performances_df, aes(y=scorevalue, x=version)) +
         legend.position = "none")
 ```
 
-![](model_evaluation_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](model_evaluation_files/figure-gfm/target-prediction-comparison-1.png)<!-- -->
 
 ### Example: ligand activity prediction evaluation
 
@@ -171,7 +178,7 @@ ligand activity scores as should be for a good ligand-target model.
 
 A graphical summary of this procedure is visualized here below:
 
-![](ligand_activity_prediction_workflow_new.png)
+![](images/ligand_activity_prediction_workflow_new.png)
 
 Step 1: convert expression datasets to the required format to perform
 ligand activity prediction
@@ -229,7 +236,7 @@ evaluation_ligand_prediction %>%
   theme(axis.text.x = element_text(angle = 90))
 ```
 
-![](model_evaluation_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](model_evaluation_files/figure-gfm/ligand-activity-v2-results-1.png)<!-- -->
 
 We will again compare performances between NicheNet v1 and v2 on both
 ligand treatment datasets.
@@ -299,4 +306,4 @@ ggplot(performances_df %>% filter(importance_measure %in%
         legend.position = "bottom")
 ```
 
-![](model_evaluation_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](model_evaluation_files/figure-gfm/ligand-activity-comparison-1.png)<!-- -->

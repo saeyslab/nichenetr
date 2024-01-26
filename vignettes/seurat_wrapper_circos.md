@@ -8,9 +8,10 @@ rmarkdown::render("vignettes/seurat_wrapper_circos.Rmd", output_format = "github
 -->
 
 In this vignette, you can learn how to visualize the output of a
-NicheNet analysis in a circos plot (also called a chord diagram). This
-vignette follows the same workflow as shown in [Perform NicheNet
-analysis starting from a Seurat object](seurat_wrapper.md).
+NicheNet analysis in a circos plot (also called a chord diagram) via the
+`circlize` package. This vignette follows the same workflow as shown in
+[Perform NicheNet analysis starting from a Seurat
+object](seurat_wrapper.md).
 
 This vignette was made upon popular request to demonstrate how those two
 vignettes can be combined into one analysis workflow. Note that we as
@@ -47,6 +48,7 @@ library(circlize)
 ``` r
 ligand_target_matrix <- readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
 lr_network <- readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+weighted_networks <- readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
 head(lr_network)
 ## # A tibble: 6 × 4
 ##   from          to    database source  
@@ -57,7 +59,6 @@ head(lr_network)
 ## 4 a             Atrn  omnipath omnipath
 ## 5 a             F11r  omnipath omnipath
 ## 6 a             Mc1r  omnipath omnipath
-weighted_networks <- readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
 ```
 
 ### Read in the expression data of interacting cells
@@ -149,7 +150,7 @@ you can run the following:
 nichenet_output$ligand_expression_dotplot
 ```
 
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](seurat_wrapper_circos_files/figure-gfm/dotplot-1.png)<!-- -->
 
 As you can see, most of the top-ranked ligands seem to be mainly
 expressed by dendritic cells and monocytes.
@@ -161,13 +162,13 @@ differentially expressed after LCMV infection.
 nichenet_output$ligand_differential_expression_heatmap
 ```
 
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](seurat_wrapper_circos_files/figure-gfm/lfc-heatmap-1.png)<!-- -->
 
 ``` r
 VlnPlot(seuratObj, features = c("Ptprc", "H2-M3", "Cxcl10"), split.by = "aggregate", pt.size = 0, combine = TRUE)
 ```
 
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](seurat_wrapper_circos_files/figure-gfm/violin-plot-1.png)<!-- -->
 
 #### Inferred active ligand-target links
 
@@ -180,7 +181,7 @@ following command for a heatmap visualization:
 nichenet_output$ligand_target_heatmap
 ```
 
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](seurat_wrapper_circos_files/figure-gfm/ligand-target-heatmap-1.png)<!-- -->
 
 ## Circos plots to visualize ligand-target and ligand-receptor interactions
 
@@ -263,7 +264,7 @@ cell types. By default, cell types are ordered alphabetically, followed
 by “General” (then they are drawn counter-clockwise). Users can give a
 specific order to the cell types by providing a vector of cell types to
 the argument `celltype_order`. The gaps between the different segments
-can also be dfined by providing a named list to the argument `widths`.
+can also be defined by providing a named list to the argument `widths`.
 
 ``` r
 ligand_colors <- c("General" = "#377EB8", "NK" = "#4DAF4A", "B" = "#984EA3",
@@ -287,7 +288,7 @@ supporting the regulatory interaction).
 draw_circos_plot(vis_circos_obj, transparency = FALSE,  args.circos.text = list(cex = 0.5)) 
 ```
 
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](seurat_wrapper_circos_files/figure-gfm/ligand-target-circos-1.png)<!-- -->
 
 Render the circos plot where the degree of transparency determined by
 the regulatory potential value of a ligand-target interaction.
@@ -296,7 +297,7 @@ the regulatory potential value of a ligand-target interaction.
 draw_circos_plot(vis_circos_obj, transparency = TRUE,  args.circos.text = list(cex = 0.5)) 
 ```
 
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](seurat_wrapper_circos_files/figure-gfm/ligand-target-circos-transparent-1.png)<!-- -->
 
 To create a legend for the circos plot, we can use the
 `ComplexHeatmap::Legend` function and creating a gTree object from it
@@ -317,10 +318,10 @@ circos_legend <- ComplexHeatmap::Legend(
   type = "point",
   grid_height = unit(3, "mm"),
   grid_width = unit(3, "mm"),
-  labels_gp = gpar(fontsize = 8)
+  labels_gp = grid::gpar(fontsize = 8)
   )
 
-circos_legend_grob <- grid::grid.grabExpr(draw(circos_legend))
+circos_legend_grob <- grid::grid.grabExpr(ComplexHeatmap::draw(circos_legend))
 
 draw_circos_plot(vis_circos_obj, transparency = TRUE, args.circos.text = list(cex = 0.5))
 p_circos_no_legend <- recordPlot()
@@ -333,7 +334,7 @@ We can combine the circos plot and the legend using
 cowplot::plot_grid(p_circos_no_legend, circos_legend_grob, rel_widths = c(1, 0.1))
 ```
 
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](seurat_wrapper_circos_files/figure-gfm/ligand-target-circos-with-legend-1.png)<!-- -->
 
 We can save this plot to an svg file.
 
@@ -341,8 +342,6 @@ We can save this plot to an svg file.
 svg("ligand_target_circos.svg", width = 10, height = 10)
 cowplot::plot_grid(p_circos_no_legend, circos_legend_grob, rel_widths = c(1, 0.1))
 dev.off()
-## png 
-##   2
 ```
 
 ### Visualize ligand-receptor interactions of the prioritized ligands in a circos plot
@@ -375,11 +374,15 @@ draw_circos_plot(vis_circos_receptor_obj, transparency = FALSE,
                  link.visible = TRUE,  args.circos.text = list(cex = 0.8)) 
 ```
 
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](seurat_wrapper_circos_files/figure-gfm/ligand-receptor-circos-1.png)<!-- -->
 
 Just as above, if `transparency = TRUE`, the degree of transparency is
 determined by the prior interaction weight of the ligand-receptor
 interaction.
+
+### FAQ: How to draw a double circos plot of ligand-receptor-target links?
+
+Please check the [HNSCC case study + double circos visualization](circos_plot.md) for the demonstration.
 
 ``` r
 sessionInfo()
@@ -391,81 +394,49 @@ sessionInfo()
 ## BLAS/LAPACK: /usr/lib64/libopenblaso-r0.3.15.so;  LAPACK version 3.9.0
 ## 
 ## locale:
-##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
-##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8    LC_PAPER=en_US.UTF-8       LC_NAME=C                 
-##  [9] LC_ADDRESS=C               LC_TELEPHONE=C             LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8     LC_MONETARY=en_US.UTF-8   
+##  [6] LC_MESSAGES=en_US.UTF-8    LC_PAPER=en_US.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 ## 
-## time zone: Europe/Brussels
+## time zone: Asia/Bangkok
 ## tzcode source: system (glibc)
 ## 
 ## attached base packages:
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-##  [1] nichenetr_2.0.4    circlize_0.4.15    forcats_1.0.0      stringr_1.5.0      dplyr_1.1.4        purrr_1.0.2       
-##  [7] readr_2.1.2        tidyr_1.3.0        tibble_3.2.1       ggplot2_3.4.4      tidyverse_1.3.1    SeuratObject_5.0.1
-## [13] Seurat_4.4.0       testthat_3.2.1    
+##  [1] circlize_0.4.15    forcats_1.0.0      stringr_1.5.0      dplyr_1.1.4        purrr_1.0.2        readr_2.1.2        tidyr_1.3.0       
+##  [8] tibble_3.2.1       ggplot2_3.4.4      tidyverse_1.3.1    SeuratObject_5.0.1 Seurat_4.4.0       nichenetr_2.0.4   
 ## 
 ## loaded via a namespace (and not attached):
-##   [1] IRanges_2.34.1              progress_1.2.3              ParamHelpers_1.14.1         nnet_7.3-19                
-##   [5] goftest_1.2-3               vctrs_0.6.5                 spatstat.random_3.2-2       digest_0.6.33              
-##   [9] png_0.1-8                   shape_1.4.6                 proxy_0.4-27                OmnipathR_3.9.6            
-##  [13] ggrepel_0.9.4               deldir_2.0-2                parallelly_1.36.0           magick_2.7.5               
-##  [17] MASS_7.3-60                 reprex_2.0.1                reshape2_1.4.4              httpuv_1.6.13              
-##  [21] foreach_1.5.2               BiocGenerics_0.46.0         withr_2.5.2                 ggrastr_1.0.2              
-##  [25] xfun_0.41                   ggpubr_0.6.0                ellipsis_0.3.2              survival_3.5-7             
-##  [29] memoise_2.0.1               ggbeeswarm_0.7.2            zoo_1.8-12                  GlobalOptions_0.1.2        
-##  [33] V8_4.3.3                    pbapply_1.7-2               Formula_1.2-5               prettyunits_1.2.0          
-##  [37] promises_1.2.1              httr_1.4.7                  rstatix_0.7.2               globals_0.16.2             
-##  [41] fitdistrplus_1.1-11         rstudioapi_0.15.0           miniUI_0.1.1.1              generics_0.1.3             
-##  [45] base64enc_0.1-3             dir.expiry_1.8.0            curl_5.2.0                  S4Vectors_0.38.1           
-##  [49] zlibbioc_1.46.0             ScaledMatrix_1.8.1          BBmisc_1.13                 polyclip_1.10-6            
-##  [53] randomForest_4.7-1.1        GenomeInfoDbData_1.2.10     xtable_1.8-4                desc_1.4.3                 
-##  [57] doParallel_1.0.17           evaluate_0.23               S4Arrays_1.2.0              hms_1.1.3                  
-##  [61] GenomicRanges_1.52.0        irlba_2.3.5.1               colorspace_2.1-0            filelock_1.0.2             
-##  [65] visNetwork_2.1.2            ROCR_1.0-11                 smoof_1.6.0.3               reticulate_1.34.0          
-##  [69] readxl_1.4.3                spatstat.data_3.0-3         magrittr_2.0.3              lmtest_0.9-40              
-##  [73] mlrMBO_1.1.5.1              later_1.3.2                 lattice_0.21-9              spatstat.geom_3.2-7        
-##  [77] future.apply_1.11.0         lhs_1.1.6                   scattermore_1.2             XML_3.99-0.16              
-##  [81] scuttle_1.10.2              shadowtext_0.1.2            cowplot_1.1.2               matrixStats_1.2.0          
-##  [85] RcppAnnoy_0.0.21            class_7.3-22                Hmisc_5.1-0                 pillar_1.9.0               
-##  [89] nlme_3.1-163                emoa_0.5-0.2                iterators_1.0.14            caTools_1.18.2             
-##  [93] compiler_4.3.2              beachmat_2.16.0             stringi_1.7.6               gower_1.0.1                
-##  [97] tensor_1.5                  SummarizedExperiment_1.30.2 lubridate_1.9.3             devtools_2.4.3             
-## [101] plyr_1.8.9                  crayon_1.5.2                abind_1.4-5                 gridGraphics_0.5-1         
-## [105] parallelMap_1.5.1           haven_2.4.3                 locfit_1.5-9.8              sp_2.1-2                   
-## [109] modelr_0.1.8                fastmatch_1.1-4             codetools_0.2-19            recipes_1.0.7              
-## [113] BiocSingular_1.16.0         e1071_1.7-14                GetoptLong_1.0.5            plotly_4.10.0              
-## [117] mime_0.12                   splines_4.3.2               DiagrammeRsvg_0.1           Rcpp_1.0.11                
-## [121] basilisk_1.12.1             dbplyr_2.1.1                sparseMatrixStats_1.12.2    cellranger_1.1.0           
-## [125] knitr_1.45                  utf8_1.2.4                  clue_0.3-64                 fs_1.6.3                   
-## [129] listenv_0.9.0               checkmate_2.3.1             DelayedMatrixStats_1.22.5   logger_0.2.2               
-## [133] pkgbuild_1.4.3              ggsignif_0.6.4              Matrix_1.6-4                statmod_1.5.0              
-## [137] tzdb_0.4.0                  DiceKriging_1.6.0           tweenr_2.0.2                pkgconfig_2.0.3            
-## [141] tools_4.3.2                 cachem_1.0.8                DBI_1.1.3                   viridisLite_0.4.2          
-## [145] rvest_1.0.2                 fastmap_1.1.1               rmarkdown_2.11              scales_1.3.0               
-## [149] grid_4.3.2                  usethis_2.2.2               ica_1.0-3                   liana_0.1.12               
-## [153] broom_0.7.12                patchwork_1.1.3             dotCall64_1.1-1             carData_3.0-5              
-## [157] RANN_2.6.1                  rpart_4.1.21                farver_2.1.1                yaml_2.3.8                 
-## [161] MatrixGenerics_1.12.3       DiagrammeR_1.0.10           foreign_0.8-85              cli_3.6.2                  
-## [165] stats4_4.3.2                leiden_0.3.9                lifecycle_1.0.4             caret_6.0-94               
-## [169] rsconnect_1.0.1             uwot_0.1.16                 Biobase_2.60.0              mlr_2.19.1                 
-## [173] bluster_1.10.0              lava_1.7.3                  sessioninfo_1.2.2           backports_1.4.1            
-## [177] BiocParallel_1.34.2         timechange_0.2.0            gtable_0.3.4                rjson_0.2.21               
-## [181] ggridges_0.5.5              progressr_0.14.0            parallel_4.3.2              pROC_1.18.5                
-## [185] limma_3.56.2                jsonlite_1.8.8              edgeR_3.42.4                bitops_1.0-7               
-## [189] assertthat_0.2.1            brio_1.1.4                  Rtsne_0.17                  spatstat.utils_3.0-4       
-## [193] BiocNeighbors_1.18.0        highr_0.10                  metapod_1.8.0               dqrng_0.3.2                
-## [197] timeDate_4032.109           lazyeval_0.2.2              shiny_1.7.1                 htmltools_0.5.7            
-## [201] sctransform_0.4.0           rappdirs_0.3.3              basilisk.utils_1.12.1       glue_1.6.2                 
-## [205] spam_2.10-0                 XVector_0.40.0              RCurl_1.98-1.12             rprojroot_2.0.4            
-## [209] scran_1.28.2                gridExtra_2.3               igraph_1.2.11               R6_2.5.1                   
-## [213] SingleCellExperiment_1.22.0 fdrtool_1.2.17              labeling_0.4.3              cluster_2.1.4              
-## [217] pkgload_1.3.3               GenomeInfoDb_1.36.1         ipred_0.9-14                vipor_0.4.5                
-## [221] DelayedArray_0.26.7         tidyselect_1.2.0            htmlTable_2.4.1             ggforce_0.4.1              
-## [225] xml2_1.3.6                  car_3.1-2                   future_1.33.0               ModelMetrics_1.2.2.2       
-## [229] rsvd_1.0.5                  munsell_0.5.0               KernSmooth_2.23-22          data.table_1.14.10         
-## [233] htmlwidgets_1.6.2           ComplexHeatmap_2.16.0       RColorBrewer_1.1-3          rlang_1.1.2                
-## [237] spatstat.sparse_3.0-3       spatstat.explore_3.2-1      remotes_2.4.2               ggnewscale_0.4.9           
-## [241] fansi_1.0.6                 hardhat_1.3.0               beeswarm_0.4.0              prodlim_2023.08.28
+##   [1] fs_1.6.3               matrixStats_1.2.0      spatstat.sparse_3.0-3  bitops_1.0-7           lubridate_1.9.3        httr_1.4.7            
+##   [7] RColorBrewer_1.1-3     doParallel_1.0.17      tools_4.3.2            sctransform_0.4.0      backports_1.4.1        utf8_1.2.4            
+##  [13] R6_2.5.1               lazyeval_0.2.2         uwot_0.1.16            GetoptLong_1.0.5       withr_2.5.2            sp_2.1-2              
+##  [19] gridExtra_2.3          fdrtool_1.2.17         progressr_0.14.0       cli_3.6.2              spatstat.explore_3.2-1 labeling_0.4.3        
+##  [25] spatstat.data_3.0-3    randomForest_4.7-1.1   proxy_0.4-27           ggridges_0.5.5         pbapply_1.7-2          foreign_0.8-85        
+##  [31] parallelly_1.36.0      limma_3.56.2           readxl_1.4.3           rstudioapi_0.15.0      gridGraphics_0.5-1     visNetwork_2.1.2      
+##  [37] generics_0.1.3         shape_1.4.6            ica_1.0-3              spatstat.random_3.2-2  car_3.1-2              Matrix_1.6-4          
+##  [43] ggbeeswarm_0.7.2       fansi_1.0.6            S4Vectors_0.38.1       abind_1.4-5            lifecycle_1.0.4        yaml_2.3.8            
+##  [49] carData_3.0-5          recipes_1.0.7          Rtsne_0.17             grid_4.3.2             promises_1.2.1         crayon_1.5.2          
+##  [55] miniUI_0.1.1.1         lattice_0.21-9         haven_2.4.3            cowplot_1.1.2          pillar_1.9.0           knitr_1.45            
+##  [61] ComplexHeatmap_2.16.0  rjson_0.2.21           future.apply_1.11.0    codetools_0.2-19       leiden_0.3.9           glue_1.6.2            
+##  [67] data.table_1.14.10     vctrs_0.6.5            png_0.1-8              spam_2.10-0            cellranger_1.1.0       gtable_0.3.4          
+##  [73] assertthat_0.2.1       gower_1.0.1            xfun_0.41              mime_0.12              prodlim_2023.08.28     survival_3.5-7        
+##  [79] timeDate_4032.109      iterators_1.0.14       hardhat_1.3.0          lava_1.7.3             DiagrammeR_1.0.10      ellipsis_0.3.2        
+##  [85] fitdistrplus_1.1-11    ROCR_1.0-11            ipred_0.9-14           nlme_3.1-163           RcppAnnoy_0.0.21       irlba_2.3.5.1         
+##  [91] vipor_0.4.5            KernSmooth_2.23-22     rpart_4.1.21           colorspace_2.1-0       BiocGenerics_0.46.0    DBI_1.1.3             
+##  [97] Hmisc_5.1-0            nnet_7.3-19            ggrastr_1.0.2          tidyselect_1.2.0       compiler_4.3.2         rvest_1.0.2           
+## [103] htmlTable_2.4.1        xml2_1.3.6             plotly_4.10.0          shadowtext_0.1.2       checkmate_2.3.1        scales_1.3.0          
+## [109] caTools_1.18.2         lmtest_0.9-40          digest_0.6.33          goftest_1.2-3          spatstat.utils_3.0-4   rmarkdown_2.11        
+## [115] htmltools_0.5.7        pkgconfig_2.0.3        base64enc_0.1-3        highr_0.10             dbplyr_2.1.1           fastmap_1.1.1         
+## [121] rlang_1.1.2            GlobalOptions_0.1.2    htmlwidgets_1.6.2      shiny_1.7.1            farver_2.1.1           zoo_1.8-12            
+## [127] jsonlite_1.8.8         ModelMetrics_1.2.2.2   magrittr_2.0.3         Formula_1.2-5          dotCall64_1.1-1        patchwork_1.1.3       
+## [133] munsell_0.5.0          Rcpp_1.0.11            ggnewscale_0.4.9       reticulate_1.34.0      stringi_1.7.6          pROC_1.18.5           
+## [139] MASS_7.3-60            plyr_1.8.9             parallel_4.3.2         listenv_0.9.0          ggrepel_0.9.4          deldir_2.0-2          
+## [145] splines_4.3.2          tensor_1.5             hms_1.1.3              igraph_1.2.11          ggpubr_0.6.0           spatstat.geom_3.2-7   
+## [151] ggsignif_0.6.4         reshape2_1.4.4         stats4_4.3.2           reprex_2.0.1           evaluate_0.23          modelr_0.1.8          
+## [157] tzdb_0.4.0             foreach_1.5.2          tweenr_2.0.2           httpuv_1.6.13          RANN_2.6.1             polyclip_1.10-6       
+## [163] future_1.33.0          clue_0.3-64            scattermore_1.2        ggforce_0.4.1          broom_0.7.12           xtable_1.8-4          
+## [169] e1071_1.7-14           rstatix_0.7.2          later_1.3.2            viridisLite_0.4.2      class_7.3-22           beeswarm_0.4.0        
+## [175] IRanges_2.34.1         cluster_2.1.4          timechange_0.2.0       globals_0.16.2         caret_6.0-94
 ```

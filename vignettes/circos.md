@@ -1,5 +1,4 @@
-Circos plot visualization to show active ligand-target links between
-interacting cells
+HNSCC case study + double circos visualization
 ================
 Robin Browaeys & Chananchida Sang-aram
 2023-07-20
@@ -10,12 +9,11 @@ rmarkdown::render("vignettes/circos.Rmd", output_format = "github_document")
 
 This vignette shows how to visualize the output of a NicheNet analysis
 in a circos plot. This is an additional demonstration to [Seurat
-Wrapper + Circos visualization](seurat_wrapper_circos.md). Here, we will
+Wrapper + circos visualization](seurat_wrapper_circos.md). Here, we will
 use a normal matrix as input instead of a Seurat object.
 
 We will use the same dataset as from [NicheNet’s ligand activity
-analysis on a gene set of interest: predict active ligands and their
-target genes](ligand_activity_geneset.md) Puram et al. (2017). In
+analysis on a gene set of interest](ligand_activity_geneset.md) Puram et al. (2017). In
 contrast to the basic vignette, we will look at communication between
 multiple cell types. More specifically, we will predict which ligands
 expressed by both CAFs and endothelial cells can induce the p-EMT
@@ -278,7 +276,7 @@ supporting the regulatory interaction).
 draw_circos_plot(vis_circos_obj, transparency = FALSE,  args.circos.text = list(cex = 0.5)) 
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](circos_files/figure-gfm/ligand-target-circos-1.png)<!-- -->
 
 Render the circos plot where the degree of transparency determined by
 the regulatory potential value of a ligand-target interaction.
@@ -287,7 +285,7 @@ the regulatory potential value of a ligand-target interaction.
 draw_circos_plot(vis_circos_obj, transparency = TRUE,  args.circos.text = list(cex = 0.5)) 
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](circos_files/figure-gfm/ligand-target-circos-transparent-1.png)<!-- -->
 
 To create a legend for the circos plot, we can use the
 `ComplexHeatmap::Legend` function and creating a gTree object from it
@@ -308,10 +306,10 @@ circos_legend <- ComplexHeatmap::Legend(
   type = "point",
   grid_height = unit(3, "mm"),
   grid_width = unit(3, "mm"),
-  labels_gp = gpar(fontsize = 8)
+  labels_gp = grid::gpar(fontsize = 8)
   )
 
-circos_legend_grob <- grid::grid.grabExpr(draw(circos_legend))
+circos_legend_grob <- grid::grid.grabExpr(ComplexHeatmap::draw(circos_legend))
 
 draw_circos_plot(vis_circos_obj, transparency = TRUE, args.circos.text = list(cex = 0.5))
 p_circos_no_legend <- recordPlot()
@@ -324,7 +322,7 @@ We can combine the circos plot and the legend using
 cowplot::plot_grid(p_circos_no_legend, circos_legend_grob, rel_widths = c(1, 0.1))
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](circos_files/figure-gfm/ligand-target-circos-with-legend-1.png)<!-- -->
 
 We can save this plot to an svg file.
 
@@ -332,8 +330,6 @@ We can save this plot to an svg file.
 svg("ligand_target_circos.svg", width = 10, height = 10)
 cowplot::plot_grid(p_circos_no_legend, circos_legend_grob, rel_widths = c(1, 0.1))
 dev.off()
-## png 
-##   2
 ```
 
 ### Visualize ligand-receptor interactions of the prioritized ligands in a circos plot
@@ -369,7 +365,7 @@ draw_circos_plot(vis_circos_receptor_obj, transparency = FALSE,
                  link.visible = TRUE,  args.circos.text = list(cex = 0.8)) 
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](circos_files/figure-gfm/ligand-receptor-circos-1.png)<!-- -->
 
 Just as above, if `transparency = TRUE`, the degree of transparency is
 determined by the prior interaction weight of the ligand-receptor
@@ -380,7 +376,7 @@ draw_circos_plot(vis_circos_receptor_obj, transparency = TRUE,
                  link.visible = TRUE,  args.circos.text = list(cex = 0.8)) 
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](circos_files/figure-gfm/ligand-receptor-circos-transparent-1.png)<!-- -->
 
 ### Adding an outer track to the circos plot (ligand-receptor-target circos plot)
 
@@ -598,7 +594,7 @@ for (group in unique(targets_filtered$type)){
 }
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](circos_files/figure-gfm/double-circos-method-1-1.png)<!-- -->
 
 ``` r
 
@@ -691,7 +687,7 @@ for (target_gene_group in unique(target_gene_groups$target_type)){
 }
 ```
 
-![](circos_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](circos_files/figure-gfm/double-circos-method-2-1.png)<!-- -->
 
 ``` r
 

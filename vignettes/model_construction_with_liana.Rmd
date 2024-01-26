@@ -9,8 +9,18 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+<!-- github markdown built using
+rmarkdown::render("vignettes/model_construction_with_liana.Rmd", output_format = "github_document")
+-->
+
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  # comment = "#>",
+  warning = FALSE,
+  message = FALSE
+)
 ```
 
 Following the [Construction of NicheNet's ligand-target model](model_construction.md) vignette, we will now demonstrate how to use ligand-receptor reactions from LIANA to build the ligand-target model. LIANA is a framework that combines both resources and computational tools for ligand-receptor cell-cell communication inference (Dimitrov et al., 2022). As the NicheNet prior model is built by integrating ligand-receptor, signaling, and gene regulatory databases, each part can be replaced with external data sources. We will show how the first part, the ligand-receptor database, can be replaced with those from LIANA, and how to run the model afterward.
@@ -48,11 +58,11 @@ Next, we will calculate how much overlap there is between the ligands and recept
 
 ```{r}
 # Load signaling networks of NicheNet
-lr_network_human <- readRDS("~/Documents/nichenet/nichenet_v2/lr_network_human_21122021.rds")
-lr_network_mouse <- readRDS("~/Documents/nichenet/nichenet_v2/lr_network_mouse_21122021.rds")
+lr_network_human <- readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
+lr_network_mouse <- readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
 
-sig_network_human <- readRDS("~/Documents/nichenet/nichenet_v2/signaling_network_human_21122021.rds")
-sig_network_mouse <- readRDS("~/Documents/nichenet/nichenet_v2/signaling_network_mouse_21122021.rds")
+sig_network_human <- readRDS(url("https://zenodo.org/record/7074291/files/signaling_network_human_21122021.rds"))
+sig_network_mouse <- readRDS(url("https://zenodo.org/record/7074291/files/signaling_network_mouse_21122021.rds"))
 
 overlap_df <- lapply(show_resources()[-1], function(resource) {
   db <- select_resource(resource)[[1]] %>% decomplexify()
@@ -93,7 +103,7 @@ source_weights <- source_weights_df %>%
   add_row(source = "liana", weight = 1, .before = 1)
 
 # Load the gene regulatory network
-gr_network_human = readRDS("~/Documents/nichenet/nichenet_v2/gr_network_human_21122021.rds")
+gr_network_human <- readRDS(url("https://zenodo.org/record/7074291/files/gr_network_human_21122021.rds"))
 
 # Aggregate the individual data sources in a weighted manner to obtain a weighted integrated signaling network
 weighted_networks <- construct_weighted_networks(lr_network = liana_db,
@@ -121,8 +131,9 @@ In this section compare the results between using the LIANA LR network and Niche
 ```{r}
 # Typical nichenet analysis
 # Load seurat object
-seuratObj = readRDS("~/Documents/nichenet/nichenet_files/seuratObj.rds")
-seuratObj = alias_to_symbol_seurat(seuratObj, "mouse") # convert gene names
+seuratObj <- readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
+seuratObj <- UpdateSeuratObject(seuratObj)
+seuratObj <- alias_to_symbol_seurat(seuratObj, "mouse") # convert gene names
 
 # Load LIANA mouse consensus ligand-receptor network
 lr_network_liana <- select_resource("MouseConsensus")[[1]] %>% decomplexify()
@@ -141,9 +152,11 @@ expressed_genes_sender <- list_expressed_genes_sender %>% unlist() %>% unique()
  
 # Get gene set of interest through DE analysis
 seurat_obj_receiver <- subset(seuratObj, idents = receiver)
-seurat_obj_receiver <- SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[["aggregate"]])
+seurat_obj_receiver <- SetIdent(seurat_obj_receiver, value = seurat_obj_receiver$aggregate)
 condition_oi <- "LCMV"; condition_reference <- "SS"
-DE_table_receiver <- FindMarkers(object = seurat_obj_receiver, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = 0.10) %>% rownames_to_column("gene")
+DE_table_receiver <- FindMarkers(object = seurat_obj_receiver,
+                                 ident.1 = condition_oi, ident.2 = condition_reference,
+                                 min.pct = 0.10) %>% rownames_to_column("gene")
 geneset_oi <- DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= 0.25) %>% pull(gene)
 
 # Get potential ligands
@@ -151,11 +164,11 @@ ligands <- lr_network_liana %>% pull(from) %>% unique()
 receptors <- lr_network_liana %>% pull(to) %>% unique()
 expressed_ligands <- intersect(ligands,expressed_genes_sender)
 expressed_receptors <- intersect(receptors,expressed_genes_receiver)
-potential_ligands = lr_network_liana %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
+potential_ligands <- lr_network_liana %>% filter(from %in% expressed_ligands & to %in% expressed_receptors) %>% pull(from) %>% unique()
 potential_ligands
 
 # Constructing the ligand-target matrix
-gr_network_mouse <- readRDS("~/Documents/nichenet/nichenet_v2/gr_network_mouse_21122021.rds")
+gr_network_mouse <- readRDS(url("https://zenodo.org/records/7074291/file/gr_network_mouse_21122021.rds"))
 
 # Define optimum weight as the one calculated for the NicheNet LR network
 optim_weight <- optimized_source_weights_df %>% filter(source == "nichenet_verschueren") %>% pull(avg_weight) # 0.2788104
@@ -192,17 +205,16 @@ Run NicheNet using the wrapper function.
 
 ```{r}
 # Use the aggregate function
-ligand_target_matrix = readRDS("~/Documents/nichenet/nichenet_v2/ligand_target_matrix_nsga2r_final_mouse.rds")
-weighted_networks = readRDS("~/Documents/nichenet/nichenet_v2/weighted_networks_nsga2r_final_mouse.rds")
-lr_network = lr_network %>% distinct(from, to)
+ligand_target_matrix <- readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
+weighted_networks <- readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
 
-nichenet_output = nichenet_seuratobj_aggregate(
+nichenet_output <- nichenet_seuratobj_aggregate(
   seurat_obj = seuratObj,
   receiver = "CD8 T",
   condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS",
   sender = c("CD4 T","Treg", "Mono", "NK", "B", "DC"),
   ligand_target_matrix = ligand_target_matrix,
-  lr_network = lr_network_mouse,
+  lr_network = lr_network_mouse %>% distinct(from, to),
   weighted_networks = weighted_networks)
 
 nichenet_output$ligand_activities
@@ -216,7 +228,7 @@ intersect(ligand_activities[1:20,]$test_ligand, nichenet_output$ligand_activitie
 
 Below is a comparison of the rankings. Some of the NicheNet top-ranked ligands are not present in the LIANA LR network, such as Ptprc and some H2- ligands. Nonetheless, the LIANA network seems to have made some new links that results in new ligands appearing, such as Lck, Ccl5, and Crlf2.
 
-```{r fig.width=9, fig.height=6}
+```{r line-plot, fig.width=9, fig.height=6}
 rankings_df <- bind_rows(ligand_activities %>% select(test_ligand, rank) %>% mutate(db = "LIANA"),
                          nichenet_output$ligand_activities %>% select(test_ligand, rank) %>% mutate(db = "NicheNet"))
 rankings_df <- rankings_df %>% group_by(db) %>% mutate(new_rank = 1:n()) %>%

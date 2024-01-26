@@ -29,7 +29,7 @@ In this vignette, you can learn how to perform a basic NicheNet analysis on a Se
 
 To perform a NicheNet analysis, three features are extracted from the input data: the potential ligands, the gene set of interest, and the background gene set. This vignette will extract each feature as described in this flowchart:
 
-![](figure2.svg){width=50%}
+![](images/figure2.svg){width=70%}
 
 As example expression data of interacting cells, we will use mouse NICHE-seq data to explore intercellular communication in the T cell area in the inguinal lymph node before and 72 hours after lymphocytic choriomeningitis virus (LCMV) infection [@medaglia_spatial_2017]. We will focus on CD8 T cells as the receiver population, and as this dataset contains two conditions (before and after LCMV infection), the differentially expressed genes between these two conditions in CD8 T cells will be used as our gene set of interest. We will then prioritize which ligands from the microenvironment (sender-agnostic approach) and from specific immune cell populations like monocytes, dendritic cells, NK cells, B cells, and CD4 T cells (sender-focused approach) can regulate and induce these observed gene expression changes.
 
@@ -69,7 +69,7 @@ seuratObj <- alias_to_symbol_seurat(seuratObj, "mouse")
 
 Visualize which cell populations are present: CD4 T cells (including regulatory T cells), CD8 T cells, B cells, NK cells, dendritic cells (DCs) and inflammatory monocytes.
 
-```{r}
+```{r umap-1}
 # Note that the number of cells of some cell types is very low and should preferably be higher for a real application
 seuratObj@meta.data$celltype %>% table() 
 
@@ -78,7 +78,7 @@ DimPlot(seuratObj, reduction = "tsne")
 
 Visualize the data to see to which condition cells belong. The metadata column that denotes the condition (steady-state or after LCMV infection) is here called 'aggregate'.
 
-```{r}
+```{r umap-2}
 seuratObj@meta.data$aggregate %>% table()
 DimPlot(seuratObj, reduction = "tsne", group.by = "aggregate")
 ```
@@ -204,7 +204,7 @@ The performance metrics indicate that the 30 top-ranked ligands can predict the 
 
 We will use the top 30 ligands to predict active target genes and construct an active ligand-receptor network. However, the choice of looking only at the 30 top-ranked ligands for further biological interpretation is based on biological intuition and is quite arbitrary. Therefore, users can decide to continue the analysis with a different number of ligands. We recommend to check the selected cutoff by looking at the distribution of the ligand activity values. Here, we show the ligand activity histogram (the score for the 30th ligand is indicated via the dashed line).
 
-```{r}
+```{r histogram}
 p_hist_lig_activity <- ggplot(ligand_activities, aes(x=aupr_corrected)) + 
   geom_histogram(color="black", fill="darkorange")  + 
   geom_vline(aes(xintercept=min(ligand_activities %>% top_n(30, aupr_corrected) %>% pull(aupr_corrected))),
@@ -221,7 +221,7 @@ best_upstream_ligands <- ligand_activities %>% top_n(30, aupr_corrected) %>% arr
 
 We can also visualize the ligand activity measure (AUPR) of these top-ranked ligands:
 
-```{r fig.width=3,fig.height=6}
+```{r agnostic-ligand-activity-heatmap, fig.width=3,fig.height=6}
 vis_ligand_aupr <- ligand_activities %>% filter(test_ligand %in% best_upstream_ligands) %>%
   column_to_rownames("test_ligand") %>% select(aupr_corrected) %>% arrange(aupr_corrected) %>% as.matrix(ncol = 1)
 
@@ -252,7 +252,7 @@ head(active_ligand_target_links_df)
 
 For visualization purposes, the ligand-target prior model was adapted by setting a regulatory potential score to 0 if their score was below a predefined cutoff (default: 0.25, or the 25th percentile) across all scores between the top-ranked ligands and their top `n` targets. We recommend users to test several cutoff values for the best visualization, as lowering or increasing the cutoff will result in a denser or sparser heatmap, respectively. 
 
-```{r fig.width=10}
+```{r ligand-target-heatmap, fig.width=10}
 active_ligand_target_links <- prepare_ligand_target_visualization(
   ligand_target_df = active_ligand_target_links_df,
   ligand_target_matrix = ligand_target_matrix,
@@ -287,7 +287,7 @@ ligand_receptor_links_df <- get_weighted_ligand_receptor_links(
 
 Then, we create a heatmap for ligand-receptor interactions. Here, both the ligands and receptors are ordered by hierarchical clustering  You can choose to order only ligands or receptors hierarachically (with `order_hclust = ligands` or `receptors`, respectively) or not at all (`none`), in which case the ligands are ordered based on their rankings, and the receptors are ordered alphabetically..
 
-```{r fig.width=8}
+```{r ligand-receptor-heatmap, fig.width=8}
 vis_ligand_receptor_network <- prepare_ligand_receptor_visualization(
   ligand_receptor_links_df,
   best_upstream_ligands,
@@ -297,9 +297,10 @@ vis_ligand_receptor_network <- prepare_ligand_receptor_visualization(
                      y_name = "Ligands", x_name = "Receptors",  
                      color = "mediumvioletred", legend_title = "Prior interaction potential"))
 ```
+
 ## 6. Sender-focused approach
 
-To perform the sender-focused approach, simply subset the ligand activities to only contain expressed ligands from all populations (calculated in Step 1. We can then perform target gene and receptor inference as above.
+To perform the sender-focused approach, simply subset the ligand activities to only contain expressed ligands from all populations (calculated in Step 1). We can then perform target gene and receptor inference as above.
 
 ```{r}
 ligand_activities_all <- ligand_activities 
@@ -311,7 +312,7 @@ best_upstream_ligands <- ligand_activities %>% top_n(30, aupr_corrected) %>% arr
 
 ```
 
-```{r fig.width=3,fig.height=6}
+```{r focused-ligand-activity-heatmap, fig.width=3,fig.height=6}
 ligand_aupr_matrix <- ligand_activities %>% filter(test_ligand %in% best_upstream_ligands) %>%
   column_to_rownames("test_ligand") %>% select(aupr_corrected) %>% arrange(aupr_corrected)
 vis_ligand_aupr <- as.matrix(ligand_aupr_matrix, ncol = 1) 
@@ -325,7 +326,7 @@ p_ligand_aupr
 
 ```
 
-```{r fig.width=10}
+```{r focused-ligand-target-heatmap, fig.width=10}
 # Target gene plot
 active_ligand_target_links_df <- best_upstream_ligands %>%
   lapply(get_weighted_ligand_target_links,
@@ -351,7 +352,7 @@ p_ligand_target <- make_heatmap_ggplot(vis_ligand_target, "Prioritized ligands",
 p_ligand_target
 ```
 
-```{r}
+```{r focused-ligand-receptor-heatmap}
 # Receptor plot
 ligand_receptor_links_df <- get_weighted_ligand_receptor_links(
   best_upstream_ligands, expressed_receptors,
@@ -380,8 +381,8 @@ best_upstream_ligands_all %in% rownames(seuratObj) %>% table()
 
 For the sender-focused approach, we can also investigate further on which sender cell populations are potentially the true sender of these ligands. First, we can simply check which sender cell population expresses which of these top-ranked ligands.
 
-```{r fig.width=10}
-# Dotplot of sender-agnostic approach
+```{r dotplot, fig.width=10}
+# Dotplot of sender-focused approach
 p_dotplot <- DotPlot(subset(seuratObj, celltype %in% sender_celltypes),
         features = rev(best_upstream_ligands), cols = "RdYlBu") + 
   coord_flip() +
@@ -394,7 +395,7 @@ As you can see, most of the top-ranked ligands seem to be mainly expressed by de
 
 Next, we can also check upregulation of ligands in sender cells by computing the log-fold change between the two conditions. This ligand differential expression is not used for prioritization and ranking of the ligands (the ranking is only determined based on enrichment of target genes among DE genes in the receiver, CD8T cells), but it can add a useful extra layer of information next to the ligand activities. This is of course only possible in some cases, such as case-control studies.
 
-```{r, fig.width=10}
+```{r lfc-heatmap, fig.width=10}
 
 celltype_order <- levels(Idents(seuratObj)) 
 
@@ -430,7 +431,7 @@ We see that most of the top-ranked ligands also seem to be upregulated themselve
 
 Finally, you can also compare rankings between the sender-agnostic and sender-focused approach. Here, the red sections of the left bar plot indicates which ligands in the sender-agnostic approach are filtered out in the sender-focused approach because they are not expressed.
 
-```{r}
+```{r lineplot}
 (make_line_plot(ligand_activities = ligand_activities_all,
                 potential_ligands = potential_ligands_focused) +
    theme(plot.title = element_text(size=11, hjust=0.1, margin=margin(0, 0, -5, 0))))
@@ -441,7 +442,7 @@ Finally, you can also compare rankings between the sender-agnostic and sender-fo
 Finally, we can make a combined plot containing heatmap of ligand activities, ligand expression, ligand log-fold change and the target genes of the top-ranked ligands. As mentioned earlier, sometimes ligands do not appear in the ligand-target heatmap because they don't have target genes with high enough regulatory potential scores. In this case, CCl22 is present in other plots (ranked 25th) but is missing in the rightmost plot. If users wish for these plots to be consistent, they may use the variable `order_ligands` defined when creating the ligand-target heatmap to subset other plots instead of `best_upstream_ligands`.
 
 
-```{r, fig.width=16, fig.height=10}
+```{r summary-vis, fig.width=16, fig.height=10}
 figures_without_legend <- cowplot::plot_grid(
   p_ligand_aupr + theme(legend.position = "none"),
   p_dotplot + theme(legend.position = "none",

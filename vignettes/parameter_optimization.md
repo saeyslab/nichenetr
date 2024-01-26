@@ -54,7 +54,8 @@ dataset was used to evaluate the final performance.
 
 ``` r
 # Choose 1 fold
-fold <- "1234" # c("1234", "2345", "1345", "1245", "1235")
+cv_names <- c("1234", "2345", "1345", "1245", "1235")
+fold <- cv_names[1]
 
 # Load in validation datasets corresponding to the fold
 settings_CV <- readRDS(paste0("settings_training_f", fold))
@@ -132,7 +133,6 @@ This submits the job with the environment variable `CV_NO` that can be
 used by the script. This requires us to define `fold` differently.
 
 ``` r
-cv_names <- c("1234", "2345", "1345", "1245", "1235")
 task_id <- as.numeric(Sys.getenv("CV_NO")) #from 1-5
 fold <- cv_names[task_id]
 ```
@@ -149,10 +149,12 @@ top number of populations that have the best value (based on the
 geometric mean of the objective functions).
 
 ``` r
+cv_names <- c("1234", "2345", "1345", "1245", "1235")
 for (fold in cv_names){
   res_job_nsga2r_multi <- readRDS(paste0("results/cv_", fold, "_ltfcutoff_nsga2r_final.rds"))
   
   # Visualize source weights
+  print(fold)
   print(visualize_parameter_values(res_job_nsga2r_multi, source_names))
   
   for (n in c(25, 5, 1)){
@@ -167,55 +169,60 @@ for (fold in cv_names){
     # saveRDS(optimized_df$hyperparams_df, paste0("results/fold", fold, "_hyperparameters_top", n, ifelse(n == 1, "", "_summarized"), ".rds"))
   }
 }
+## [1] "1234"
 ## $source_weights_boxplot
 ```
 
-![](parameter_optimization_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](parameter_optimization_files/figure-gfm/weights-between-populations-1.png)<!-- -->
 
     ## 
     ## $hyperparameters_boxplot
 
-![](parameter_optimization_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
+![](parameter_optimization_files/figure-gfm/weights-between-populations-2.png)<!-- -->
 
     ## 
+    ## [1] "2345"
     ## $source_weights_boxplot
 
-![](parameter_optimization_files/figure-gfm/unnamed-chunk-6-3.png)<!-- -->
+![](parameter_optimization_files/figure-gfm/weights-between-populations-3.png)<!-- -->
 
     ## 
     ## $hyperparameters_boxplot
 
-![](parameter_optimization_files/figure-gfm/unnamed-chunk-6-4.png)<!-- -->
+![](parameter_optimization_files/figure-gfm/weights-between-populations-4.png)<!-- -->
 
     ## 
+    ## [1] "1345"
     ## $source_weights_boxplot
 
-![](parameter_optimization_files/figure-gfm/unnamed-chunk-6-5.png)<!-- -->
+![](parameter_optimization_files/figure-gfm/weights-between-populations-5.png)<!-- -->
 
     ## 
     ## $hyperparameters_boxplot
 
-![](parameter_optimization_files/figure-gfm/unnamed-chunk-6-6.png)<!-- -->
+![](parameter_optimization_files/figure-gfm/weights-between-populations-6.png)<!-- -->
 
     ## 
+    ## [1] "1245"
     ## $source_weights_boxplot
 
-![](parameter_optimization_files/figure-gfm/unnamed-chunk-6-7.png)<!-- -->
+![](parameter_optimization_files/figure-gfm/weights-between-populations-7.png)<!-- -->
 
     ## 
     ## $hyperparameters_boxplot
 
-![](parameter_optimization_files/figure-gfm/unnamed-chunk-6-8.png)<!-- -->
+![](parameter_optimization_files/figure-gfm/weights-between-populations-8.png)<!-- -->
 
     ## 
+    ## [1] "1235"
     ## $source_weights_boxplot
 
-![](parameter_optimization_files/figure-gfm/unnamed-chunk-6-9.png)<!-- -->
+![](parameter_optimization_files/figure-gfm/weights-between-populations-9.png)<!-- -->
 
     ## 
     ## $hyperparameters_boxplot
 
-![](parameter_optimization_files/figure-gfm/unnamed-chunk-6-10.png)<!-- -->
+![](parameter_optimization_files/figure-gfm/weights-between-populations-10.png)<!-- -->
 
 We can also visualize differences across folds.
 
@@ -223,17 +230,17 @@ We can also visualize differences across folds.
 list_optimization_results <- lapply(cv_names, function(fold){
   readRDS(paste0("results/cv_", fold, "_ltfcutoff_nsga2r_final.rds"))
 })
- 
+
 print(visualize_parameter_values_across_folds(list_optimization_results, source_names, 5))
 ## $source_weights_boxplot
 ```
 
-![](parameter_optimization_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](parameter_optimization_files/figure-gfm/weights-between-folds-1.png)<!-- -->
 
     ## 
     ## $hyperparameters_boxplot
 
-![](parameter_optimization_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
+![](parameter_optimization_files/figure-gfm/weights-between-folds-2.png)<!-- -->
 
 ``` r
 
@@ -242,12 +249,12 @@ print(visualize_parameter_values_across_folds(list_optimization_results, source_
 ## $source_weights_boxplot
 ```
 
-![](parameter_optimization_files/figure-gfm/unnamed-chunk-7-3.png)<!-- -->
+![](parameter_optimization_files/figure-gfm/weights-between-folds-3.png)<!-- -->
 
     ## 
     ## $hyperparameters_boxplot
 
-![](parameter_optimization_files/figure-gfm/unnamed-chunk-7-4.png)<!-- -->
+![](parameter_optimization_files/figure-gfm/weights-between-folds-4.png)<!-- -->
 
 Finally, we can compute the average value of top 25 populations across
 all folds.

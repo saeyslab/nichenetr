@@ -39,7 +39,7 @@ final model, we weighted each data source during integration. These data
 source weights were automatically determined via model-based parameter
 optimization to improve the accuracy of ligand-target predictions (see
 the vignette [Parameter optimization via
-mlrMBO](parameter_optimization.md). In this vignette, we will show how
+NSGA-II](parameter_optimization.md). In this vignette, we will show how
 to construct models with unoptimized data source weigths as well.
 
 Finally, we combined the ligand-signaling and gene regulatory network to
@@ -53,7 +53,7 @@ transcriptional regulators, and ultimately ending at target genes.
 
 A graphical summary of this procedure is visualized here below:
 
-![](workflow_model_construction.png)
+![](images/workflow_model_construction.png)
 
 # Construct a ligand-target model from all collected ligand-receptor, signaling and gene regulatory network data sources
 
@@ -78,7 +78,7 @@ Construct the weighted integrated ligand-signaling and gene regulatory
 network. In this first example, we give every data source the same
 weight (as given by the `source_weights_df` data frame provided by
 default by the nichenetr package). See the vignette showing how to use
-mlrMBO to optimize data source weights and the hyperparameters if
+NSGA-II to optimize data source weights and the hyperparameters if
 interested in performing parameter optimization. For the hyperparameters
 of the model (hub correction factors and damping factor), we will use
 the optimized values (as given by the `hyperparameter_list` data frame
@@ -175,7 +175,8 @@ nichenetr package)
 
 ``` r
 annotation_data_sources$type_db %>% unique()
-##  [1] "comprehensive_db" "literature"       "ptm"              "text_mining"      "directional_ppi"  "PPI"              "ChIP"             "motif"            "prediction"       "perturbation"
+##  [1] "comprehensive_db" "literature"       "ptm"              "text_mining"      "directional_ppi"  "PPI"              "ChIP"            
+##  [8] "motif"            "prediction"       "perturbation"
 ```
 
 ``` r
@@ -381,7 +382,7 @@ extract_top_n_targets("TNF",10,ligand_target_matrix)
 Most optimally, you would like to optimize the parameters again when
 including own data sources. Instructions to do this are given in the
 following vignette: [Parameter optimization via
-mlrMBO](parameter_optimization.md):
+NSGA-II](parameter_optimization.md):
 `vignette("parameter_optimization", package="nichenetr")`
 
 However, this optimization process takes a lot of time and requires the

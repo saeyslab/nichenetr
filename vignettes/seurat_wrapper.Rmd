@@ -29,7 +29,7 @@ The wrapper function we will show consists of the same different steps that are 
 
 To perform a NicheNet analysis, three features are extracted from the input data: the potential ligands, the gene set of interest, and the background gene set. This vignette will extract each feature as described in this flowchart:
 
-![](figure2.svg){width=50%}
+![](images/figure2.svg){width=70%}
 
 As example expression data of interacting cells, we will use mouse NICHE-seq data to explore intercellular communication in the T cell area in the inguinal lymph node before and 72 hours after lymphocytic choriomeningitis virus (LCMV) infection [@medaglia_spatial_2017]. We will focus on CD8 T cells as the receiver population, and as this dataset contains two conditions (before and after LCMV infection), the differentially expressed genes between these two conditions in CD8 T cells will be used as our gene set of interest. We will then prioritize which ligands from the microenvironment (sender-agnostic approach) and from specific immune cell populations like monocytes, dendritic cells, NK cells, B cells, and CD4 T cells (sender-focused approach) can regulate and induce these observed gene expression changes.
 
@@ -63,7 +63,6 @@ if(organism == "human"){
   lr_network <- readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
   ligand_target_matrix <- readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
   weighted_networks <- readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
-
 }
 
 lr_network <- lr_network %>% distinct(from, to)
@@ -92,7 +91,7 @@ seuratObj@meta.data %>% head()
 
 Visualize which cell populations are present: CD4 T cells (including regulatory T cells), CD8 T cells, B cells, NK cells, dendritic cells (DCs) and inflammatory monocytes.
 
-```{r}
+```{r umap-1}
 # Note that the number of cells of some cell types is very low and should preferably be higher for a real application
 seuratObj@meta.data$celltype %>% table() 
 DimPlot(seuratObj, reduction = "tsne")
@@ -100,7 +99,7 @@ DimPlot(seuratObj, reduction = "tsne")
 
 Visualize the data to see to which condition cells belong. The metadata column that denotes the condition (steady-state or after LCMV infection) is here called 'aggregate'.
 
-```{r}
+```{r umap-2}
 seuratObj@meta.data$aggregate %>% table()
 DimPlot(seuratObj, reduction = "tsne", group.by = "aggregate")
 ```
@@ -193,7 +192,7 @@ Below we will show visualizations that are in the output object. In some cases (
 
 To see which sender cell population expresses which of the top-ranked ligands:
 
-```{r, fig.width=8}
+```{r dotplot-sender, fig.width=8}
 nichenet_output$ligand_expression_dotplot
 ```
 
@@ -201,7 +200,7 @@ As you can see, most op the top-ranked ligands seem to be mainly expressed by de
 
 It could also be interesting to see whether some of these ligands are differentially expressed after LCMV infection. 
 
-```{r, fig.width=4, fig.height=8}
+```{r lfc-heatmap, fig.width=4, fig.height=8}
 nichenet_output$ligand_differential_expression_heatmap
 ```
 
@@ -211,16 +210,16 @@ Although this ligand differential expression is not used for prioritization and 
 
 NicheNet also infers active target genes of these top-ranked ligands, best visualized with the following heatmap showing which top-ranked ligands are predicted to have regulated the expression of which differentially expressed genes:
 
-```{r}
+```{r ligand-target-heatmap, fig.width=10}
 nichenet_output$ligand_target_heatmap
 ```
 
 This is a normal ggplot object that can be adapted accordingly. For example if you want to change the color code to blue instead of purple, change the axis ticks of the legend, and change the axis labels of the heatmap, you can do the following:
 
-```{r}
+```{r ligand-target-heatmap-adapted}
 nichenet_output$ligand_target_heatmap +
   scale_fill_gradient2(low = "whitesmoke",high = "royalblue") +
-  xlab("anti-LCMV response genes in CD8 T cells") + ylab("Prioritized immmune cell ligands")
+  xlab("Anti-LCMV response genes in CD8 T cells") + ylab("Prioritized immmune cell ligands")
 ```
 
 If you want, you can also extract the ligand-target links and their regulatory potential scores in matrix or data frame format (e.g. for visualization in other ways or output to a csv file).
@@ -241,18 +240,20 @@ nichenet_output$top_targets
 
 You can visualize the expression of these target genes as well (only the top 50 are shown here). Because we only focus on CD8 T cells as receiver cells, we will only show expression in these cells. To emphasize that these target genes are differentially expressed, we split cells up in steady-state cells and cells after response to LCMV infection. 
 
-```{r, fig.width=12}
-DotPlot(seuratObj %>% subset(idents = "CD8 T"), features = nichenet_output$top_targets[1:50] %>%
+```{r dotplot-condition, fig.width=10, fig.height=8}
+DotPlot(seuratObj %>% subset(idents = "CD8 T"),
+        features = nichenet_output$top_targets[1:50] %>%
           rev(), split.by = "aggregate") + coord_flip()
 ```
 
-```{r}
-VlnPlot(seuratObj %>% subset(idents = "CD8 T"), features = c("Ptprc", "H2-M3", "Cxcl10"), split.by = "aggregate", pt.size = 0, combine = TRUE)
+```{r violin-plot}
+VlnPlot(seuratObj %>% subset(idents = "CD8 T"),
+        features = c("Ptprc", "H2-M3", "Cxcl10"), split.by = "aggregate", pt.size = 0, combine = TRUE)
 ```
 
 The display the combined plot of ligand activities, expression, differential expression and target genes of ligands:
 
-```{r, fig.width = 16, fig.height= 10}
+```{r summary-vis, fig.width = 16, fig.height= 10}
 nichenet_output$ligand_activity_target_heatmap
 ```
 
@@ -262,7 +263,7 @@ nichenet_output$ligand_activity_target_heatmap
 
 NicheNet also infers the receiver cell receptors of these top-ranked ligands. You can run following command for a heatmap visualization of the ligand-receptor links:
 
-```{r}
+```{r ligand-receptor-heatmap}
 nichenet_output$ligand_receptor_heatmap
 ```
 
@@ -272,7 +273,7 @@ If you want, you can also extract the ligand-receptor links and their interactio
 nichenet_output$ligand_receptor_matrix %>% .[1:10,1:6]
 ```
 
-```{r}
+```{r dotplot-receptor}
 nichenet_output$ligand_receptor_df # weight column accords to number of data sources that document this interaction
 ```
 
@@ -284,7 +285,7 @@ nichenet_output$top_receptors
 
 You can visualize the expression of these as well. Because we only focus on CD8 T cells as receiver cells, we will only show expression in these cells. 
 
-```{r, fig.width=12}
+```{r dotplot-receptors, fig.width=12}
 DotPlot(seuratObj %>% subset(idents = "CD8 T"),
         features = nichenet_output$top_receptors %>% rev(), split.by = "aggregate") +
   coord_flip()
@@ -299,7 +300,7 @@ nichenet_output$background_expressed_genes %>% length()
 ### Results of the sender-agnostic approach
 
 
-```{r, fig.width=14}
+```{r summary-vis-agnostic, fig.width=14}
 # There is no log-fold change or expression plot because we did not define cell types
 nichenet_output_agnostic$ligand_activity_target_heatmap
 ```
@@ -314,7 +315,7 @@ In some cases, you might be interested in multiple target/receiver cell populati
 # To run with  all celltypes in the dataset (only when this would make sense biologically!)
 # receiver_celltypes_oi <- seuratObj %>% Idents() %>% unique()
 
-receiver_celltypes_oi = c("CD4 T", "CD8 T")
+receiver_celltypes_oi <- c("CD4 T", "CD8 T")
 
 nichenet_output <- receiver_celltypes_oi %>% lapply(nichenet_seuratobj_aggregate,
                                                     seurat_obj = seuratObj,
@@ -377,13 +378,13 @@ nichenet_output <- nichenet_seuratobj_cluster_de(
 
 Check the top-ranked ligands and their target genes:
 
-```{r, fig.width = 12}
+```{r summary-vis-cluster-de, fig.width = 12}
 nichenet_output$ligand_activity_target_heatmap
 ```
 
 Check the expression of the top-ranked ligands:
 
-```{r fig.width=12,fig.height=6}
+```{r dotplot-cluster-de, fig.width=12,fig.height=6}
 DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), cols = "RdYlBu") +
   RotatedAxis()
 ```

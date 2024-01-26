@@ -58,11 +58,22 @@ of Puram et al.
 ``` r
 tumors_remove = c("HN10","HN","HN12", "HN13", "HN24", "HN7", "HN8","HN23")
 
-CAF_ids = sample_info %>% filter(`Lymph node` == 0) %>% filter((tumor %in% tumors_remove == FALSE)) %>% filter(`non-cancer cell type` == "CAF") %>% .$cell
-malignant_ids = sample_info %>% filter(`Lymph node` == 0) %>% filter(`classified  as cancer cell` == 1) %>% filter((tumor %in% tumors_remove == FALSE)) %>% .$cell
+CAF_ids = sample_info %>% filter(`Lymph node` == 0) %>%
+  filter((tumor %in% tumors_remove == FALSE)) %>%
+  filter(`non-cancer cell type` == "CAF") %>% .$cell
 
-expressed_genes_CAFs = expression[CAF_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
-expressed_genes_malignant = expression[malignant_ids,] %>% apply(2,function(x){10*(2**x - 1)}) %>% apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
+malignant_ids = sample_info %>% filter(`Lymph node` == 0) %>%
+  filter(`classified  as cancer cell` == 1) %>%
+  filter((tumor %in% tumors_remove == FALSE)) %>% .$cell
+
+expressed_genes_CAFs = expression[CAF_ids,] %>%
+  apply(2,function(x){10*(2**x - 1)}) %>%
+  apply(2,function(x){log2(mean(x) + 1)}) %>%
+  .[. >= 4] %>% names()
+
+expressed_genes_malignant = expression[malignant_ids,] %>%
+  apply(2,function(x){10*(2**x - 1)}) %>%
+  apply(2,function(x){log2(mean(x) + 1)}) %>% .[. >= 4] %>% names()
 ```
 
 ### Load the ligand-target model we want to use
@@ -117,9 +128,14 @@ In practice, ligand activity analysis for several cells can be better
 run in parallel (via e.g. parallel::mclapply)!
 
 ``` r
-malignant_hn5_ids = sample_info %>% filter(tumor == "HN5") %>% filter(`Lymph node` == 0) %>% filter(`classified  as cancer cell` == 1)  %>% .$cell %>% head(10)
+malignant_hn5_ids = sample_info %>% filter(tumor == "HN5") %>%
+  filter(`Lymph node` == 0) %>%
+  filter(`classified  as cancer cell` == 1)  %>%
+  .$cell %>% head(10)
 
-ligand_activities = predict_single_cell_ligand_activities(cell_ids = malignant_hn5_ids, expression_scaled = expression_scaled, ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+ligand_activities = predict_single_cell_ligand_activities(cell_ids = malignant_hn5_ids,
+                                                          expression_scaled = expression_scaled,
+                                                          ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
 ```
 
 ### Ligand prioritization by regression analysis
@@ -170,17 +186,20 @@ output_correlation_analysis %>% arrange(-pearson_regression) %>% select(pearson_
 ##  8              0.550 BGN    
 ##  9              0.526 CLCF1  
 ## 10              0.510 TFPI   
-## # … with 193 more rows
+## # ℹ 193 more rows
 ```
 
 Visualize the relation between ligand activity and the cell’s property
 score of interest
 
 ``` r
-inner_join(cell_scores_tbl,normalized_ligand_activities) %>% ggplot(aes(score,TNC)) + geom_point() + geom_smooth(method = "lm")
+inner_join(cell_scores_tbl,normalized_ligand_activities) %>%
+  ggplot(aes(score,TNC)) +
+  geom_point() +
+  geom_smooth(method = "lm")
 ```
 
-![](ligand_activity_single_cell_files/figure-gfm/unnamed-chunk-80-1.png)<!-- -->
+![](ligand_activity_single_cell_files/figure-gfm/scatterplot-1.png)<!-- -->
 
 ### References
 
