@@ -35,6 +35,12 @@ Return the genes that are expressed in given cell cluster(s) based on the fracti
 }
 \examples{
 \dontrun{
+# For sparse matrix
+get_expressed_genes("CD8 T", GetAssayData(seuratObj), seuratObj$celltype, pct = 0.10)
+}
+
+\dontrun{
+# For Seurat object
 get_expressed_genes(celltype_oi = "CD8 T", seurat_obj = seuratObj, pct = 0.10)
 }
 

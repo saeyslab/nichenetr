@@ -1094,6 +1094,12 @@ get_expressed_genes <- function(celltype_oi, object, ...) {
 #' @param celltype_annot Vector of cell type annotations
 #' @import dplyr
 #' @rdname get_expressed_genes
+#' @examples
+#' \dontrun{
+#' # For sparse matrix
+#' get_expressed_genes("CD8 T", GetAssayData(seuratObj), seuratObj$celltype, pct = 0.10)
+#' }
+#'
 #' @export
 get_expressed_genes.default <- function(celltype_oi, object, celltype_annot, pct = 0.1) {
   requireNamespace("dplyr")
@@ -1143,6 +1149,7 @@ get_expressed_genes.default <- function(celltype_oi, object, celltype_annot, pct
 #'
 #' @examples
 #' \dontrun{
+#' # For Seurat object
 #' get_expressed_genes(celltype_oi = "CD8 T", seurat_obj = seuratObj, pct = 0.10)
 #' }
 #'
