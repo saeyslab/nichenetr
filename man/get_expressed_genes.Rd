@@ -2,28 +2,46 @@
 % Please edit documentation in R/application_prediction.R
 \name{get_expressed_genes}
 \alias{get_expressed_genes}
-\title{Determine expressed genes of a cell type from a Seurat object single-cell RNA seq dataset or Seurat spatial transcriptomics dataset}
+\alias{get_expressed_genes.default}
+\alias{get_expressed_genes.Seurat}
+\title{Determine expressed genes of a cell type from an input object}
 \usage{
-get_expressed_genes(ident, seurat_obj, pct = 0.10, assay_oi = NULL)
+get_expressed_genes(celltype_oi, object, ...)
+
+\method{get_expressed_genes}{default}(celltype_oi, object, celltype_annot, pct = 0.1)
+
+\method{get_expressed_genes}{Seurat}(celltype_oi, seurat_obj, pct = 0.1, assay_oi = NULL, ...)
 }
 \arguments{
-\item{ident}{Name of cluster identity/identities of cells}
+\item{celltype_oi}{Character vector of cell type(s) to be considered. If input is a Seurat object, these must correspond to the cell identities from \code{Idents}.}
 
-\item{seurat_obj}{Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.}
+\item{object}{Input matrix with rows as genes and columns as cells}
 
-\item{pct}{We consider genes expressed if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10. Choice of this parameter is important and depends largely on the used sequencing platform. We recommend to require a lower fraction (like the default 0.10) for 10X data than for e.g. Smart-seq2 data.}
+\item{...}{additional parameters passed to \code{GetAssayData} (in case the slot/layer needs to be specified)}
 
-\item{assay_oi}{If wanted: specify yourself which assay to look for. Default this value is NULL and as a consequence the 'most advanced' assay will be used to define expressed genes.}
+\item{celltype_annot}{Vector of cell type annotations}
+
+\item{pct}{We consider genes expressed if they are expressed in at least a specific fraction of cells of the given cluster(s). This number indicates this fraction. Default: 0.10. Choice of this parameter is important and depends largely on the used sequencing platform. We recommend to require a lower fraction (like the default 0.10) for 10X data than for e.g. Smart-seq2 data.}
+
+\item{seurat_obj}{Single-cell expression or spatial dataset as Seurat object}
+
+\item{assay_oi}{If wanted: specify yourself which assay to look for. If not NULL, the \code{DefaultAssay} of the Seurat object is used.}
 }
 \value{
-A character vector with the gene symbols of the expressed genes
+A vector containing gene symbols of the expressed genes
 }
 \description{
-\code{get_expressed_genes} Return the genes that are expressed in a given cell cluster based on the fraction of cells in that cluster that should express the cell.
+Return the genes that are expressed in given cell cluster(s) based on the fraction of cells in the cluster(s) that should express the cell.
 }
 \examples{
 \dontrun{
-get_expressed_genes(ident = "CD8 T", seurat_obj = seuratObj, pct = 0.10)
+# For sparse matrix
+get_expressed_genes("CD8 T", GetAssayData(seuratObj), seuratObj$celltype, pct = 0.10)
+}
+
+\dontrun{
+# For Seurat object
+get_expressed_genes(celltype_oi = "CD8 T", seurat_obj = seuratObj, pct = 0.10)
 }
 
 }

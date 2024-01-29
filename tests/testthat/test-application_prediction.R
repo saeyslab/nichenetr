@@ -5,6 +5,7 @@ test_that("Seurat wrapper works", {
   lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
   weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
   seurat_object_lite = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
+  seurat_object_lite = Seurat::UpdateSeuratObject(seurat_object_lite)
 
   nichenet_output = nichenet_seuratobj_aggregate(seurat_obj = seurat_object_lite, receiver = "CD8 T", condition_oi = "LCMV", condition_reference = "SS", condition_colname = "aggregate", sender = c("Mono"), ligand_target_matrix = ligand_target_matrix, weighted_networks = weighted_networks, lr_network = lr_network)
   expect_type(nichenet_output,"list")

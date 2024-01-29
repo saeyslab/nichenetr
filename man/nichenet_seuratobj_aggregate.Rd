@@ -41,7 +41,7 @@ nichenet_seuratobj_aggregate(receiver, seurat_obj, condition_colname, condition_
 
 \item{verbose}{Print out the current analysis stage. Default: TRUE.}
 
-\item{assay_oi}{If wanted: specify yourself which assay to look for. Default this value is NULL and as a consequence the 'most advanced' assay will be used to define expressed genes.}
+\item{assay_oi}{If wanted: specify yourself which assay to look for. If not NULL, the \code{DefaultAssay} of the Seurat object is used.}
 }
 \value{
 A list with the following elements:
