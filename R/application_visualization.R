@@ -583,8 +583,6 @@ make_heatmap_bidir_lt_ggplot = function(matrix, y_name, x_name, y_axis = TRUE, x
 #' # Show only top 20, and write rankings on the plot
 #' make_mushroom_plot(prior_table, top_n = 20, show_rankings = TRUE)
 #'
-#' make_mushroom_plot(prior_table, top_n = 20, show_ranking = TRUE)
-#'
 #' # Show all datapoints, and use true color range
 #' make_mushroom_plot(prior_table, show_all_datapoints = TRUE, true_color_range = TRUE)
 #'
