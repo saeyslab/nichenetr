@@ -1,15 +1,109 @@
 context("Prioritization scheme")
-test_that("Prioritization scheme works", {
-    options(timeout = 3600)
-    ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
-    lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
-    weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
-    seurat_obj_test = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
-    seurat_obj_test = Seurat::UpdateSeuratObject(seurat_obj_test)
+test_that("Wrapper function for seurat", {
+  options(timeout = 3600)
 
-    lr_network = lr_network %>% distinct(from, to)
+  lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+  lr_network = lr_network %>% distinct(from, to)
+
+  seurat_obj_test = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
+  seurat_obj_test = Seurat::UpdateSeuratObject(seurat_obj_test)
+  seurat_obj_test = alias_to_symbol_seurat(seurat_obj_test, "mouse")
+
+  generate_info_tables_args <- list(
+    seuratObj = seurat_obj_test,
+    celltype_colname = "celltype",
+    senders_oi = "Mono",
+    receivers_oi = "CD8 T",
+    expressed_ligands = get_expressed_genes("Mono", seurat_obj_test),
+    expressed_receptors = get_expressed_genes("CD8 T", seurat_obj_test),
+    lr_network = lr_network,
+    condition_colname = "aggregate",
+    condition_oi = "LCMV",
+    condition_reference = "SS",
+    scenario = "case_control",
+    assay_oi = "RNA"
+  )
+
+  tmp <- do.call(generate_info_tables, generate_info_tables_args)
+
+  expect_type(tmp, "list")
+  expect_equal(length(tmp), 4)
+  expect_named(tmp, c("sender_receiver_de", "sender_receiver_info", "lr_condition_de", "scenario"))
+
+  # Cell type, senders, receivers, condition doesn't exist
+  expect_error(do.call(generate_info_tables, replace(generate_info_tables_args, "celltype_colname", "cell.type")), "does not exist")
+  expect_error(do.call(generate_info_tables, replace(generate_info_tables_args, "senders_oi", "Mono1")), "Not all senders_oi exist")
+  expect_error(do.call(generate_info_tables, replace(generate_info_tables_args, "receivers_oi", "CD8 T1")), "Not all receivers_oi exist")
+  expect_error(do.call(generate_info_tables, replace(generate_info_tables_args, "condition_colname", "condition")), "does not exist")
+
+  # Not all conditions are given
+  expect_error(do.call(generate_info_tables, replace(generate_info_tables_args, "condition_colname", NULL)), "arguments must be either all NULL or all provided")
+  expect_error(do.call(generate_info_tables, replace(generate_info_tables_args, "condition_oi", NULL)), "arguments must be either all NULL or all provided")
+  expect_error(do.call(generate_info_tables, replace(generate_info_tables_args,
+                                                     c("condition_colname", "condition_oi", "condition_reference"),
+                                                      c(NULL, NULL, NULL))),
+               "arguments are not provided but the 'case_control' scenario is selected")
+
+  # Conditions given
+  expect_warning(do.call(generate_info_tables, replace(generate_info_tables_args, "scenario", "one_condition")),
+                 "arguments are provided but the 'one_condition' scenario is selected")
+
+  tmp2 <- do.call(generate_info_tables, replace(generate_info_tables_args, "scenario", "one_condition"))
+  expect_null(tmp2$lr_condition_de)
+
+  # Give additional arguments - change DE test
+  tmp2 <- do.call(generate_info_tables, replace(generate_info_tables_args, "test.use", "t"))
+
+  # pval should be different but LFC should remain the same
+  expect_equal(nrow(tmp$sender_receiver_de), nrow(tmp2$sender_receiver_de))
+  expect_false(isTRUE(all.equal(tmp$sender_receiver_de$p_val_ligand, tmp2$sender_receiver_de$p_val_ligand)))
+  expect_identical(tmp2$sender_receiver_de$lfc_ligand, tmp$sender_receiver_de$lfc_ligand)
+
+  # Now for lr_condition_de
+  expect_equal(nrow(tmp$lr_condition_de), nrow(tmp2$lr_condition_de))
+  expect_false(isTRUE(all.equal(tmp$lr_condition_de$p_val_ligand, tmp2$lr_condition_de$p_val_ligand)))
+  expect_identical(tmp2$lr_condition_de$lfc_ligand, tmp$lr_condition_de$lfc_ligand)
+
+  # Averae expression should remain the same
+  expect_identical(tmp2$sender_receiver_info, tmp$sender_receiver_info)
+
+  # Change logfc.threshold and min.pct
+  tmp2 <- do.call(generate_info_tables, replace(generate_info_tables_args, c("logfc.threshold", "min.pct"), c(0.25, 0.2)))
+  expect_true(nrow(tmp2$sender_receiver_de) < nrow(tmp$sender_receiver_de))
+  expect_true(nrow(tmp2$lr_condition_de) < nrow(tmp$lr_condition_de))
+  expect_identical(tmp2$sender_receiver_info, tmp$sender_receiver_info)
+
+  # Change slot for package version < 5
+  slot_name <- ifelse(as.numeric(substr(packageVersion("Seurat"), 1, 1)) < 5, "slot", "layer")
+
+  tmp3 <- do.call(generate_info_tables, replace(generate_info_tables_args, slot_name, "counts"))
+
+  # tmp3 should have different values for p_val_ligand, lfc_ligand, average values, and lr_condition_de
+  expect_false(isTRUE(all.equal(tmp$sender_receiver_de$p_val_receptor, tmp3$sender_receiver_de$p_val_receptor)))
+  expect_false(isTRUE(all.equal(tmp$sender_receiver_de$lfc_receptor, tmp3$sender_receiver_de$lfc_receptor)))
+  expect_false(isTRUE(all.equal(tmp$sender_receiver_info$avg_ligand, tmp3$sender_receiver_info$avg_ligand)))
+  expect_false(isTRUE(all.equal(tmp$lr_condition_de$p_val_receptor, tmp3$lr_condition_de$p_val_receptor)))
+
+  # It should have the same length for everything though
+  expect_equal(nrow(tmp$sender_receiver_info), nrow(tmp3$sender_receiver_info))
+  expect_equal(nrow(tmp$sender_receiver_de), nrow(tmp3$sender_receiver_de))
+  expect_equal(nrow(tmp$lr_condition_de), nrow(tmp3$lr_condition_de))
+
+  # Results should be different for one_condition if we give NULL conditions vs not
+  tmp2 <- do.call(generate_info_tables, replace(generate_info_tables_args, "scenario", "one_condition"))
+  tmp3 <- do.call(generate_info_tables, generate_info_tables_args %>% replace(., c("condition_colname", "condition_oi", "condition_reference"), c(NULL, NULL, NULL)) %>% replace("scenario", "one_condition"))
+
+  expect_false(isTRUE(all.equal(tmp3$sender_receiver_de, tmp2$sender_receiver_de)))
+  expect_false(isTRUE(all.equal(tmp3$sender_receiver_info, tmp2$sender_receiver_info)))
+
+
+})
+
+test_that("Prioritization scheme works", {
+    ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
+     weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
+
     weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network, by = c("from","to"))
-    seurat_obj_test = alias_to_symbol_seurat(seurat_obj_test, "mouse")
 
     celltypes <- unique(seurat_obj_test$celltype)
     lr_network_renamed <- lr_network %>% rename(ligand=from, receptor=to)
@@ -40,6 +134,8 @@ test_that("Prioritization scheme works", {
                                     group.by = "aggregate", min.pct = 0, logfc.threshold = 0,
                                     features = feature_list) %>% rownames_to_column("gene")
 
+    # TODO: TESTS FOR PROCESS_TABLE_TO_IC
+
     # Combine DE of senders and receivers -> used for prioritization
     processed_DE_table <- process_table_to_ic(DE_table, table_type = "celltype_DE", lr_network_renamed,
                                             senders_oi = sender_celltypes, receivers_oi = receiver)
@@ -47,6 +143,15 @@ test_that("Prioritization scheme works", {
     processed_expr_table <- process_table_to_ic(expression_info, table_type = "expression", lr_network_renamed)
 
     processed_condition_markers <- process_table_to_ic(condition_markers, table_type = "group_DE", lr_network_renamed)
+
+    # Check that results from wrapper function generate_info_tables and the separate ones are the same
+    info_tables <- generate_info_tables(seurat_obj_test, "celltype", sender_celltypes, receiver,
+                                        feature_list, feature_list, lr_network, "aggregate",
+                                        condition_oi, condition_reference, "case_control", "RNA")
+
+    expect_identical(info_tables$sender_receiver_info, processed_expr_table)
+    expect_identical(info_tables$sender_receiver_de, processed_DE_table)
+    expect_identical(info_tables$lr_condition_de, processed_condition_markers)
 
     # Check processed tables
     expect_type(processed_DE_table,"list")
@@ -127,7 +232,7 @@ test_that("Prioritization scheme works", {
     # Check that prioritization score is the same as the sum of the weighted scores
     temp_weights <- c(prioritizing_weights, prioritizing_weights["de_ligand"], prioritizing_weights["de_receptor"])
     expect_equal(prior_table %>% filter(ligand == "Lgals1", sender == "Mono", receptor == "Cd69") %>%
-        mutate(prioritization_score = rowSums(across(c(scaled_lfc_ligand, scaled_lfc_receptor, scaled_activity, scaled_avg_exprs_ligand, scaled_avg_exprs_receptor, scaled_lfc_ligand_group, scaled_lfc_receptor_group, scaled_p_val_ligand_adapted, scaled_p_val_receptor_adapted)) * temp_weights) / sum(temp_weights)) %>% pull(prioritization_score),
+        mutate(prioritization_score = rowSums(across(c(scaled_p_val_ligand_adapted, scaled_p_val_receptor_adapted, scaled_activity, scaled_avg_exprs_ligand, scaled_avg_exprs_receptor, scaled_p_val_ligand_adapted_group, scaled_pval_receptor_adapted_group)) * temp_weights) / sum(temp_weights)) %>% pull(prioritization_score),
                 prior_table %>% filter(ligand == "Lgals1", sender == "Mono", receptor == "Cd69") %>% pull(prioritization_score),
         check.attributes=FALSE)
 
