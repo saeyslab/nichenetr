@@ -722,9 +722,6 @@ make_ligand_receptor_lfc_spatial_plot = function(receiver_oi, prioritized_tbl_oi
 #'
 #' @description \code{make_circos_lr} Plot the prioritized ligand-receptor pairs in a circos plot (via the circlize package)
 #'
-#' @usage
-#' make_circos_lr(prioritized_tbl_oi, colors_sender, colors_receiver, cutoff = 0, scale = FALSE, transparency = NULL, circos_type = "normal", border = TRUE)
-#'
 #' @param prioritized_tbl_oi Dataframe with the ligand-receptor interactions that should be visualized
 #' @param colors_sender Named character vector giving the colors of each sender cell type
 #' @param colors_receiver Named character vector giving the colors of each receiver cell type
@@ -733,6 +730,7 @@ make_ligand_receptor_lfc_spatial_plot = function(receiver_oi, prioritized_tbl_oi
 #' @param transparency Vector of transparency values of the links or NULL, in that case this will be calculated automatically. Default: NULL.
 #' @param circos_type "normal" or "arrow". Default: "normal".
 #' @param border Border to arrows or not in `chordDiagram`? (Default: TRUE)
+#' @param separate_legend return plot and legend as separate objects? (Default: FALSE)
 #'
 #' @return List containing the circos plot and the legend
 #'
@@ -747,7 +745,8 @@ make_ligand_receptor_lfc_spatial_plot = function(receiver_oi, prioritized_tbl_oi
 #'
 #' @export
 #'
-make_circos_lr= function(prioritized_tbl_oi, colors_sender, colors_receiver, cutoff = 0, scale = FALSE, transparency = NULL, circos_type = "normal", border = TRUE){
+make_circos_lr= function(prioritized_tbl_oi, colors_sender, colors_receiver, cutoff = 0, scale = FALSE, transparency = NULL, circos_type = "normal", border = TRUE,
+                         separate_legend = FALSE){
 
   requireNamespace("dplyr")
   requireNamespace("ggplot2")
@@ -772,6 +771,10 @@ make_circos_lr= function(prioritized_tbl_oi, colors_sender, colors_receiver, cut
   circos_links = circos_links_oi %>% dplyr::rename(weight = prioritization_score)
 
   #circos_links = circos_links_oi %>% dplyr::rename(weight = prioritization_score) %>% dplyr::mutate(ligand = paste(sender, ligand, sep = "_"), receptor = paste(receptor, receiver, sep = "_"))
+
+  if (!"ligand_receptor" %in% colnames(circos_links)) {
+    circos_links = circos_links %>% dplyr::mutate(ligand_receptor = paste(ligand, receptor, sep = "--"))
+  }
 
   df = circos_links %>% mutate(ligand_receptor_sender_receiver = paste0(sender, receiver, ligand_receptor))
 
@@ -955,24 +958,28 @@ make_circos_lr= function(prioritized_tbl_oi, colors_sender, colors_receiver, cut
 
   plot(NULL ,xaxt='n',yaxt='n',bty='n',ylab='',xlab='', xlim=0:1, ylim=0:1)
   # grid_col_all = c(grid_col_receptor, grid_col_ligand)
-  legend = ComplexHeatmap::Legend(at = prioritized_tbl_oi$receiver %>% unique() %>% sort(),
+  legend_receiver = ComplexHeatmap::Legend(at = prioritized_tbl_oi$receiver %>% unique() %>% sort(),
                                   type = "grid",
                                   legend_gp = grid::gpar(fill = grid_col_receptor[prioritized_tbl_oi$receiver %>% unique() %>% sort()]),
                                   title_position = "topleft",
                                   title = "Receiver")
-  ComplexHeatmap::draw(legend, just = c("left", "bottom"))
 
-  legend = ComplexHeatmap::Legend(at = prioritized_tbl_oi$sender %>% unique() %>% sort(),
+  legend_sender = ComplexHeatmap::Legend(at = prioritized_tbl_oi$sender %>% unique() %>% sort(),
                                   type = "grid",
                                   legend_gp = grid::gpar(fill = grid_col_ligand[prioritized_tbl_oi$sender %>% unique() %>% sort()]),
                                   title_position = "topleft",
                                   title = "Sender")
-  ComplexHeatmap::draw(legend, just = c("left", "top"))
 
-  p_legend = grDevices::recordPlot()
+  circos_legend_sender <- grid::grid.grabExpr(ComplexHeatmap::draw(legend_sender))
+  circos_legend_receiver <- grid::grid.grabExpr(ComplexHeatmap::draw(legend_receiver))
+  aligned_legend <- cowplot::plot_grid(NULL, circos_legend_sender, circos_legend_receiver, NULL, ncol=1, rel_heights = c(1, 1, 1, 1))
 
 
-  return(list(p_circos = p_circos, p_legend = p_legend))
+  if (separate_legend){
+    return(list(p_circos = p_circos, p_legend = aligned_legend))
+  }
+
+  return(cowplot::plot_grid(p_circos, aligned_legend, rel_widths = c(1, 0.1)))
 
 }
 
