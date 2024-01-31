@@ -273,7 +273,7 @@ proportional the ligand-target regulatory potential (~prior knowledge
 supporting the regulatory interaction).
 
 ``` r
-draw_circos_plot(vis_circos_obj, transparency = FALSE,  args.circos.text = list(cex = 0.5)) 
+make_circos_plot(vis_circos_obj, transparency = FALSE,  args.circos.text = list(cex = 0.5)) 
 ```
 
 ![](circos_files/figure-gfm/ligand-target-circos-1.png)<!-- -->
@@ -282,7 +282,7 @@ Render the circos plot where the degree of transparency determined by
 the regulatory potential value of a ligand-target interaction.
 
 ``` r
-draw_circos_plot(vis_circos_obj, transparency = TRUE,  args.circos.text = list(cex = 0.5)) 
+make_circos_plot(vis_circos_obj, transparency = TRUE,  args.circos.text = list(cex = 0.5)) 
 ```
 
 ![](circos_files/figure-gfm/ligand-target-circos-transparent-1.png)<!-- -->
@@ -311,7 +311,7 @@ circos_legend <- ComplexHeatmap::Legend(
 
 circos_legend_grob <- grid::grid.grabExpr(ComplexHeatmap::draw(circos_legend))
 
-draw_circos_plot(vis_circos_obj, transparency = TRUE, args.circos.text = list(cex = 0.5))
+make_circos_plot(vis_circos_obj, transparency = TRUE, args.circos.text = list(cex = 0.5))
 p_circos_no_legend <- recordPlot()
 ```
 
@@ -361,7 +361,7 @@ necessary for making all links visible, since no cutoff is used to
 filter out ligand-receptor interactions.
 
 ``` r
-draw_circos_plot(vis_circos_receptor_obj, transparency = FALSE,
+make_circos_plot(vis_circos_receptor_obj, transparency = FALSE,
                  link.visible = TRUE,  args.circos.text = list(cex = 0.8)) 
 ```
 
@@ -372,7 +372,7 @@ determined by the prior interaction weight of the ligand-receptor
 interaction.
 
 ``` r
-draw_circos_plot(vis_circos_receptor_obj, transparency = TRUE,
+make_circos_plot(vis_circos_receptor_obj, transparency = TRUE,
                  link.visible = TRUE,  args.circos.text = list(cex = 0.8)) 
 ```
 

@@ -1066,7 +1066,7 @@ prepare_circos_visualization <- function(circos_links, ligand_colors = NULL, tar
 }
 
 #' @title Draw a circos plot
-#' @usage draw_circos_plot(vis_circos_obj, transparency = FALSE, args.circos.text = list(), ...)
+#' @usage make_circos_plot(vis_circos_obj, transparency = FALSE, args.circos.text = list(), ...)
 #' @description Draw a circos plot
 #' @param vis_circos_obj Object returned by \code{\link{prepare_circos_visualization}}
 #' @param transparency Logical indicating whether the transparency of the links will correspond to the ligand-target potential score (default: FALSE)
@@ -1077,18 +1077,18 @@ prepare_circos_visualization <- function(circos_links, ligand_colors = NULL, tar
 #' @examples
 #' \dontrun{
 #' # Default
-#' draw_circos_plot(vis_circos_obj, transparency = FALSE)
+#' make_circos_plot(vis_circos_obj, transparency = FALSE)
 #'
 #' # Transparency
-#' draw_circos_plot(vis_circos_obj, transparency = TRUE)
+#' make_circos_plot(vis_circos_obj, transparency = TRUE)
 #'
 #' # Make text smaller
-#' draw_circos_plot(vis_circos_obj, transparency = TRUE, args.circos.text = list(cex = 0.5))
+#' make_circos_plot(vis_circos_obj, transparency = TRUE, args.circos.text = list(cex = 0.5))
 #'
 #' # Don't sort links of each ligand based on widths (not recommended)
-#' draw_circos_plot(vis_circos_obj, transparency = TRUE, args.circos.text = list(cex = 0.5), link.sort = FALSE)
+#' make_circos_plot(vis_circos_obj, transparency = TRUE, args.circos.text = list(cex = 0.5), link.sort = FALSE)
 #' }
-draw_circos_plot <- function(vis_circos_obj, transparency = FALSE, args.circos.text = list(), ...){
+make_circos_plot <- function(vis_circos_obj, transparency = FALSE, args.circos.text = list(), ...){
   # Check that transparency is a logical
   if (!is.logical(transparency)) stop("transparency should be a logical")
 

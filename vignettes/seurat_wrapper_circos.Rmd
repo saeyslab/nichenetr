@@ -178,14 +178,14 @@ Render the circos plot where all links have the same transparency.  Here, only t
 
 ```{r ligand-target-circos, fig.width=8, fig.height=8}
 
-draw_circos_plot(vis_circos_obj, transparency = FALSE,  args.circos.text = list(cex = 0.5)) 
+make_circos_plot(vis_circos_obj, transparency = FALSE,  args.circos.text = list(cex = 0.5)) 
 
 ```
 
 Render the circos plot where the degree of transparency determined by the regulatory potential value of a ligand-target interaction.
 
 ```{r ligand-target-circos-transparent, fig.width=8, fig.height=8}
-draw_circos_plot(vis_circos_obj, transparency = TRUE,  args.circos.text = list(cex = 0.5)) 
+make_circos_plot(vis_circos_obj, transparency = TRUE,  args.circos.text = list(cex = 0.5)) 
 ```
 
 To create a legend for the circos plot, we can use the `ComplexHeatmap::Legend` function and creating a gTree object from it with `grid::grid.grabExpr`. As the circos plot is drawn on base R graphics (i.e., it is not a ggplot object), we will get the plot using `recordPlot()`.
@@ -208,7 +208,7 @@ circos_legend <- ComplexHeatmap::Legend(
 
 circos_legend_grob <- grid::grid.grabExpr(ComplexHeatmap::draw(circos_legend))
 
-draw_circos_plot(vis_circos_obj, transparency = TRUE, args.circos.text = list(cex = 0.5))
+make_circos_plot(vis_circos_obj, transparency = TRUE, args.circos.text = list(cex = 0.5))
 p_circos_no_legend <- recordPlot()
 ```
 
@@ -246,7 +246,7 @@ vis_circos_receptor_obj <- prepare_circos_visualization(lr_network_top_df,
 When drawing the plot, the argument `link.visible` = TRUE is also necessary for making all links visible, since no cutoff is used to filter out ligand-receptor interactions.
 
 ```{r ligand-receptor-circos}
-draw_circos_plot(vis_circos_receptor_obj, transparency = FALSE,
+make_circos_plot(vis_circos_receptor_obj, transparency = FALSE,
                  link.visible = TRUE,  args.circos.text = list(cex = 0.8)) 
 ```
 
