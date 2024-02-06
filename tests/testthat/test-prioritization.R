@@ -8,15 +8,14 @@ test_that("Wrapper function for seurat", {
   seurat_obj_test = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
   seurat_obj_test = Seurat::UpdateSeuratObject(seurat_obj_test)
   seurat_obj_test = alias_to_symbol_seurat(seurat_obj_test, "mouse")
+  lr_network_filtered <- lr_network %>% filter(from %in% rownames(seurat_obj_test), to %in% rownames(seurat_obj_test))
 
   generate_info_tables_args <- list(
     seuratObj = seurat_obj_test,
     celltype_colname = "celltype",
     senders_oi = "Mono",
     receivers_oi = "CD8 T",
-    expressed_ligands = get_expressed_genes("Mono", seurat_obj_test),
-    expressed_receptors = get_expressed_genes("CD8 T", seurat_obj_test),
-    lr_network = lr_network,
+    lr_network = lr_network_filtered,
     condition_colname = "aggregate",
     condition_oi = "LCMV",
     condition_reference = "SS",
@@ -27,8 +26,8 @@ test_that("Wrapper function for seurat", {
   tmp <- do.call(generate_info_tables, generate_info_tables_args)
 
   expect_type(tmp, "list")
-  expect_equal(length(tmp), 4)
-  expect_named(tmp, c("sender_receiver_de", "sender_receiver_info", "lr_condition_de", "scenario"))
+  expect_equal(length(tmp), 3)
+  expect_named(tmp, c("sender_receiver_de", "sender_receiver_info", "lr_condition_de"))
 
   # Cell type, senders, receivers, condition doesn't exist
   expect_error(do.call(generate_info_tables, replace(generate_info_tables_args, "celltype_colname", "cell.type")), "does not exist")
@@ -100,13 +99,20 @@ test_that("Wrapper function for seurat", {
 })
 
 test_that("Prioritization scheme works", {
+    options(timeout = 3600)
+
+    lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+    lr_network = lr_network %>% distinct(from, to)
     ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
-     weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
+    weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
+
+    seurat_obj_test = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
+    seurat_obj_test = Seurat::UpdateSeuratObject(seurat_obj_test)
+    seurat_obj_test = alias_to_symbol_seurat(seurat_obj_test, "mouse")
 
     weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network, by = c("from","to"))
 
     celltypes <- unique(seurat_obj_test$celltype)
-    lr_network_renamed <- lr_network %>% rename(ligand=from, receptor=to)
     condition_oi <- "LCMV"
     condition_reference <- "SS"
     sender_celltypes <- "Mono"
@@ -120,14 +126,17 @@ test_that("Prioritization scheme works", {
     expect_type(nichenet_output,"list")
     ligand_activities <- nichenet_output$ligand_activities
 
-    feature_list <- intersect(rownames(seurat_obj_test), unique(union(lr_network_renamed$ligand, lr_network_renamed$receptor)))
+    feature_list <- unique(unlist(lr_network)) %>% .[. %in% rownames(seurat_obj_test)]
     # Only calculate DE for LCMV condition, with genes that are in the ligand-receptor network
     DE_table <- calculate_de(seurat_obj_test, celltype_colname = "celltype",
                             condition_colname = "aggregate", condition_oi = condition_oi,
                             features = feature_list)
 
+
     # Average expression information - only for LCMV condition
-    expression_info <- get_exprs_avg(seurat_obj_test, "celltype", condition_colname = "aggregate", condition_oi = condition_oi)
+    expression_info <- get_exprs_avg(seurat_obj_test, "celltype",
+                                     condition_colname = "aggregate", condition_oi = condition_oi,
+                                     features = feature_list)
 
     # Calculate condition specificity - only for datasets with two conditions!
     condition_markers <- FindMarkers(object = seurat_obj_test, ident.1 = condition_oi, ident.2 = condition_reference,
@@ -137,16 +146,17 @@ test_that("Prioritization scheme works", {
     # TODO: TESTS FOR PROCESS_TABLE_TO_IC
 
     # Combine DE of senders and receivers -> used for prioritization
-    processed_DE_table <- process_table_to_ic(DE_table, table_type = "celltype_DE", lr_network_renamed,
+    processed_DE_table <- process_table_to_ic(DE_table, table_type = "celltype_DE", lr_network,
                                             senders_oi = sender_celltypes, receivers_oi = receiver)
 
-    processed_expr_table <- process_table_to_ic(expression_info, table_type = "expression", lr_network_renamed)
+    processed_expr_table <- process_table_to_ic(expression_info, table_type = "expression", lr_network)
 
-    processed_condition_markers <- process_table_to_ic(condition_markers, table_type = "group_DE", lr_network_renamed)
+    processed_condition_markers <- process_table_to_ic(condition_markers, table_type = "group_DE", lr_network)
 
+    lr_network_filterd <- lr_network %>% filter(from %in% feature_list, to %in% feature_list)
     # Check that results from wrapper function generate_info_tables and the separate ones are the same
     info_tables <- generate_info_tables(seurat_obj_test, "celltype", sender_celltypes, receiver,
-                                        feature_list, feature_list, lr_network, "aggregate",
+                                        lr_network_filterd, "aggregate",
                                         condition_oi, condition_reference, "case_control", "RNA")
 
     expect_identical(info_tables$sender_receiver_info, processed_expr_table)
@@ -190,13 +200,13 @@ test_that("Prioritization scheme works", {
     expect_equal((temp_row$lfc_ligand + temp_row$lfc_receptor)/2, temp_row$ligand_receptor_lfc_avg)
 
     # Check errors and warnings in case of improper usage
-    expect_error(process_table_to_ic(condition_markers, table_type = "group_DE", lr_network = lr_network_renamed, receivers_oi = receiver))
-    expect_error(process_table_to_ic(condition_markers, table_type = "group_DE", lr_network = lr_network_renamed, senders_oi = sender_celltypes))
-    expect_error(process_table_to_ic(DE_table, table_type = "random", lr_network = lr_network_renamed))
-    expect_warning(process_table_to_ic(DE_table, table_type = "celltype_DE", lr_network = lr_network_renamed))
-    expect_warning(process_table_to_ic(DE_table, table_type = "celltype_DE", lr_network = lr_network_renamed))
-    expect_warning(process_table_to_ic(expression_info, lr_network = lr_network_renamed, receivers_oi = receiver))
-    expect_warning(process_table_to_ic(expression_info, lr_network = lr_network_renamed, senders_oi = sender_celltypes))
+    expect_error(process_table_to_ic(condition_markers, table_type = "group_DE", lr_network = lr_network, receivers_oi = receiver))
+    expect_error(process_table_to_ic(condition_markers, table_type = "group_DE", lr_network = lr_network, senders_oi = sender_celltypes))
+    expect_error(process_table_to_ic(DE_table, table_type = "random", lr_network = lr_network))
+    expect_warning(process_table_to_ic(DE_table, table_type = "celltype_DE", lr_network = lr_network))
+    expect_warning(process_table_to_ic(DE_table, table_type = "celltype_DE", lr_network = lr_network))
+    expect_warning(process_table_to_ic(expression_info, lr_network = lr_network, receivers_oi = receiver))
+    expect_warning(process_table_to_ic(expression_info, lr_network = lr_network, senders_oi = sender_celltypes))
 
     # Default weights
     prioritizing_weights = c("de_ligand" = 1,
@@ -211,7 +221,7 @@ test_that("Prioritization scheme works", {
                                processed_DE_table,
                                ligand_activities,
                                processed_condition_markers,
-                               prioritizing_weights)
+                               prioritizing_weights = prioritizing_weights)
 
     expect_type(prior_table,"list")
 
@@ -230,9 +240,9 @@ test_that("Prioritization scheme works", {
                     check.attributes = FALSE)
 
     # Check that prioritization score is the same as the sum of the weighted scores
-    temp_weights <- c(prioritizing_weights, prioritizing_weights["de_ligand"], prioritizing_weights["de_receptor"])
+    temp_weights <- prioritizing_weights
     expect_equal(prior_table %>% filter(ligand == "Lgals1", sender == "Mono", receptor == "Cd69") %>%
-        mutate(prioritization_score = rowSums(across(c(scaled_p_val_ligand_adapted, scaled_p_val_receptor_adapted, scaled_activity, scaled_avg_exprs_ligand, scaled_avg_exprs_receptor, scaled_p_val_ligand_adapted_group, scaled_pval_receptor_adapted_group)) * temp_weights) / sum(temp_weights)) %>% pull(prioritization_score),
+        mutate(prioritization_score = rowSums(across(c(scaled_p_val_ligand_adapted, scaled_p_val_receptor_adapted, scaled_activity, scaled_avg_exprs_ligand, scaled_avg_exprs_receptor, scaled_p_val_ligand_adapted_group, scaled_p_val_receptor_adapted_group)) * temp_weights) / sum(temp_weights)) %>% pull(prioritization_score),
                 prior_table %>% filter(ligand == "Lgals1", sender == "Mono", receptor == "Cd69") %>% pull(prioritization_score),
         check.attributes=FALSE)
 
