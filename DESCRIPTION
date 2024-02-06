@@ -14,6 +14,14 @@ RoxygenNote: 7.1.2
 Depends: R (>= 3.0.0)
 Imports:
     tidyverse,
+    data.table,
+    dplyr,
+    ggplot2,
+    magrittr,
+    purrr,
+    readr,
+    tibble,
+    tidyr,
     igraph,
     Matrix,
     fdrtool,
@@ -40,6 +48,7 @@ Imports:
     shadowtext
 Suggests: 
     knitr,
+    RColorBrewer,
     rmarkdown,
     testthat,
     doMC,
