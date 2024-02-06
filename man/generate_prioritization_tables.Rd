@@ -24,7 +24,7 @@ generate_prioritization_tables(
 
 \item{prioritizing_weights}{Named vector indicating the relative weights of each prioritization criterion (default: NULL). If NULL, the weights are determined by the chosen "scenario". If provided, the vector must contain the following names: "de_ligand", "de_receptor", "activity_scaled", "exprs_ligand", "exprs_receptor", "ligand_condition_specificity", "receptor_condition_specificity"}
 
-\item{scenario}{"case_control" or "one_condition": if "case_control", all weights are set to 1. If "one_condition", the weights are set to 0 for condition specificity, 2 for ligand activity, and 1 for the remaining criteria.}
+\item{scenario}{"case_control" or "one_condition": if "case_control", all weights are set to 1. If "one_condition", the weights are set to 0 for condition specificity and 1 for the remaining criteria.}
 }
 \value{
 Data frames of prioritized sender-ligand-receiver-receptor interactions.

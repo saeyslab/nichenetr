@@ -175,6 +175,12 @@ get_exprs_avg = function(seurat_obj, celltype_colname,
 process_table_to_ic = function(table_object, table_type = "expression",
                                lr_network, senders_oi = NULL, receivers_oi = NULL){
 
+  # Rename lr_network columns to "ligand", "receptor" if the columns "from","to" exist
+  if (all(c("from", "to") %in% colnames(lr_network)) &
+      !all(c("ligand", "receptor") %in% colnames(lr_network))){
+    lr_network <- lr_network %>% dplyr::rename(ligand = from, receptor = to)
+  }
+
   ligands = lr_network %>% dplyr::pull(ligand) %>% unique()
   receptors = lr_network %>% dplyr::pull(receptor) %>% unique()
 
@@ -190,8 +196,8 @@ process_table_to_ic = function(table_object, table_type = "expression",
     if (is.null(senders_oi)) warning("senders_oi is NULL For DE filtering, it is best if this parameter is given.")
     if (is.null(receivers_oi)) warning("receivers_oi is NULL For DE filtering, it is best if this parameter is given.")
 
-    sender_table <- table_object %>% dplyr::rename(sender = cluster_id, ligand = gene, avg_ligand = avg_log2FC, p_val_ligand = p_val,  p_adj_ligand = p_val_adj, pct_expressed_sender = pct.1)
-    receiver_table <-  table_object %>% dplyr::rename(receiver = cluster_id, receptor = gene, avg_receptor = avg_log2FC, p_val_receptor = p_val, p_adj_receptor = p_val_adj, pct_expressed_receiver = pct.1)
+    sender_table <- table_object %>% dplyr::rename(sender = tidyr::starts_with("cluster"), ligand = gene, avg_ligand = avg_log2FC, p_val_ligand = p_val,  p_adj_ligand = p_val_adj, pct_expressed_sender = pct.1)
+    receiver_table <-  table_object %>% dplyr::rename(receiver = tidyr::starts_with("cluster"), receptor = gene, avg_receptor = avg_log2FC, p_val_receptor = p_val, p_adj_receptor = p_val_adj, pct_expressed_receiver = pct.1)
     columns_select <- c("sender", "receiver", "ligand", "receptor", "lfc_ligand", "lfc_receptor", "ligand_receptor_lfc_avg", "p_val_ligand", "p_adj_ligand", "p_val_receptor", "p_adj_receptor", "pct_expressed_sender", "pct_expressed_receiver")
 
   } else if (table_type == "group_DE") {
@@ -303,8 +309,6 @@ generate_info_tables <- function(seuratObj,
     assay_oi <- DefaultAssay(seuratObj)
   }
 
-  lr_network_renamed <- lr_network_filtered %>% rename(ligand=from, receptor=to)
-
   # If condition_colname is given, give message
   if (!is.null(condition_colname)) {
     message("condition_* is given. Only cells from that condition will be considered in cell type specificity calculation.")
@@ -315,7 +319,7 @@ generate_info_tables <- function(seuratObj,
                            celltype_colname = celltype_colname,
                            condition_colname = condition_colname,
                            condition_oi = condition_oi,
-                           features = unique(unlist(lr_network_renamed)),
+                           features = unique(unlist(lr_network_filtered)),
                            ...)
 
   # Average expression information
@@ -323,7 +327,7 @@ generate_info_tables <- function(seuratObj,
                                    celltype_colname = celltype_colname,
                                    condition_colname = condition_colname,
                                    condition_oi = condition_oi,
-                                   features = unique(unlist(lr_network_renamed)),
+                                   features = unique(unlist(lr_network_filtered)),
                                    assay_oi = assay_oi,
                                    ...)
 
@@ -337,7 +341,7 @@ generate_info_tables <- function(seuratObj,
                              ident.2 = condition_reference,
                              group.by = "aggregate",
                              assay = assay_oi,
-                             features = unique(unlist(lr_network_renamed)),
+                             features = unique(unlist(lr_network_filtered)),
                              min.pct = 0,
                              logfc.threshold = 0)
 
@@ -349,7 +353,7 @@ generate_info_tables <- function(seuratObj,
 
     processed_condition_markers <- process_table_to_ic(condition_markers,
                                                        table_type = "group_DE",
-                                                       lr_network_renamed)
+                                                       lr_network_filtered)
   } else {
     processed_condition_markers <- NULL
   }
@@ -357,13 +361,13 @@ generate_info_tables <- function(seuratObj,
   # Combine DE of senders and receivers -> used for prioritization
   processed_DE_table <- process_table_to_ic(DE_table,
                                             table_type = "celltype_DE",
-                                            lr_network_renamed,
+                                            lr_network_filtered,
                                             senders_oi = senders_oi,
                                             receivers_oi = receivers_oi)
 
   processed_expr_table <- process_table_to_ic(expression_info,
                                               table_type = "expression",
-                                              lr_network_renamed)
+                                              lr_network_filtered)
 
   return (list(sender_receiver_de = processed_DE_table,
                sender_receiver_info = processed_expr_table,
@@ -378,7 +382,7 @@ generate_info_tables <- function(seuratObj,
 #' @param ligand_activities Output of \code{predict_ligand_activities}
 #' @param lr_condition_de Output of \code{generate_info_tables} OR \code{FindMarkers} -> \code{process_table_to_ic}
 #' @param prioritizing_weights Named vector indicating the relative weights of each prioritization criterion (default: NULL). If NULL, the weights are determined by the chosen "scenario". If provided, the vector must contain the following names: "de_ligand", "de_receptor", "activity_scaled", "exprs_ligand", "exprs_receptor", "ligand_condition_specificity", "receptor_condition_specificity"
-#' @param scenario "case_control" or "one_condition": if "case_control", all weights are set to 1. If "one_condition", the weights are set to 0 for condition specificity, 2 for ligand activity, and 1 for the remaining criteria.
+#' @param scenario "case_control" or "one_condition": if "case_control", all weights are set to 1. If "one_condition", the weights are set to 0 for condition specificity and 1 for the remaining criteria.
 #'
 #' @return Data frames of prioritized sender-ligand-receiver-receptor interactions.
 #' The resulting dataframe contains columns from the input dataframes, but columns from \code{lr_condition_de} are suffixed with \code{_group} (some columns from \code{lr_condition_de} are also not present).
@@ -461,7 +465,7 @@ generate_prioritization_tables = function(sender_receiver_info, sender_receiver_
 
       prioritizing_weights = c("de_ligand" = 1,
                                "de_receptor" = 1,
-                               "activity_scaled" = 2,
+                               "activity_scaled" = 1,
                                "exprs_ligand" = 1,
                                "exprs_receptor" = 1,
                                "ligand_condition_specificity" = 0,
@@ -482,6 +486,11 @@ generate_prioritization_tables = function(sender_receiver_info, sender_receiver_
     # message using custom weights
     message("Using custom weights for prioritization")
     scenario <- NULL
+  }
+
+  # If "rank" column doesn't exist for ligand_activities, calculate rank
+  if (!"rank" %in% colnames(ligand_activities)){
+    ligand_activities <- ligand_activities %>% dplyr::mutate(rank = rank(desc(aupr_corrected)))
   }
 
   sender_receiver_tbl = sender_receiver_de %>% dplyr::distinct(sender, receiver)
