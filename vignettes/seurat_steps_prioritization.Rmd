@@ -84,10 +84,10 @@ condition_oi <-  "LCMV"
 condition_reference <- "SS"
 
 seurat_obj_receiver <- subset(seuratObj, idents = receiver)
-seurat_obj_receiver <- SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[["aggregate", drop=TRUE]])
 
 DE_table_receiver <-  FindMarkers(object = seurat_obj_receiver,
                                   ident.1 = condition_oi, ident.2 = condition_reference,
+                                  group.by = "aggregate", 
                                   min.pct = 0.05) %>% rownames_to_column("gene")
 
 geneset_oi <- DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= 0.25) %>% pull(gene)
@@ -153,7 +153,7 @@ info_tables$lr_condition_de %>% head()
 
 ```
 
-Next, we generate the prioritization table. This table contains the rankings of ligand-receptor pairs based on the different criteria. We provide two scenarios: `case_control` and `one_condition`. In the "case_control" scenario, all weights are set to 1. If "one_condition", the weights are set to 0 for condition specificity, 2 for ligand activity, and 1 for the remaining criteria. Users can also provide their own weights using the `prioritizing_weights` argument.
+Next, we generate the prioritization table. This table contains the rankings of ligand-receptor pairs based on the different criteria. We provide two scenarios: `case_control` and `one_condition`. In the "case_control" scenario, all weights are set to 1. If "one_condition", the weights are set to 0 for condition specificity and 1 for the remaining criteria. Users can also provide their own weights using the `prioritizing_weights` argument.
 
 ```{r}
 prior_table <- generate_prioritization_tables(info_tables$sender_receiver_info,
@@ -180,12 +180,10 @@ Note that we appended the suffix '_group' to columns that refer to differential 
 `generate_info_tables` is a wrapper function that calculates all the information needed for the prioritization. However, in some cases you may need more flexibility on how these values are calculated (but note that you can pass extra arguments to `generate_info_tables` that will get passed on to `FindMarkers`, `FindAllMarkers`, and `AverageExpression`). Below, we show how we use helper functions `calculate_de` and `get_exprs_avg` to calculate the DE and get the average expression used for cell type specificity. `process_table_to_ic` transforms these different dataframes so they are compatible with the `generate_prioritization_tables` function. 
 
 ```{r}
-lr_network_renamed <- lr_network_filtered %>% rename(ligand=from, receptor=to)
-
 # Only calculate DE for LCMV condition, with genes that are in the ligand-receptor network
-DE_table <- calculate_de(seuratObj, celltype_colname = "celltype",
-                         condition_colname = "aggregate", condition_oi = condition_oi,
-                         features = unique(unlist(lr_network_filtered)))
+DE_table <- FindAllMarkers(subset(seuratObj, subset = aggregate == "LCMV"),
+                           min.pct = 0, logfc.threshold = 0, return.thresh = 1,
+                           features = unique(unlist(lr_network_filtered))) 
 
 # Average expression information - only for LCMV condition
 expression_info <- get_exprs_avg(seuratObj, "celltype", condition_colname = "aggregate", condition_oi = condition_oi,
@@ -197,12 +195,12 @@ condition_markers <- FindMarkers(object = seuratObj, ident.1 = condition_oi, ide
                                  features = unique(unlist(lr_network_filtered))) %>% rownames_to_column("gene")
 
 # Combine DE of senders and receivers -> used for prioritization
-processed_DE_table <- process_table_to_ic(DE_table, table_type = "celltype_DE", lr_network_renamed,
+processed_DE_table <- process_table_to_ic(DE_table, table_type = "celltype_DE", lr_network_filtered,
                                          senders_oi = sender_celltypes, receivers_oi = receiver)
   
-processed_expr_table <- process_table_to_ic(expression_info, table_type = "expression", lr_network_renamed)
+processed_expr_table <- process_table_to_ic(expression_info, table_type = "expression", lr_network_filtered)
 
-processed_condition_markers <- process_table_to_ic(condition_markers, table_type = "group_DE", lr_network_renamed)
+processed_condition_markers <- process_table_to_ic(condition_markers, table_type = "group_DE", lr_network_filtered)
 ```
 
 And here is how you can define custom weights:

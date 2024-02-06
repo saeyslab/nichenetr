@@ -152,10 +152,10 @@ expressed_genes_sender <- list_expressed_genes_sender %>% unlist() %>% unique()
  
 # Get gene set of interest through DE analysis
 seurat_obj_receiver <- subset(seuratObj, idents = receiver)
-seurat_obj_receiver <- SetIdent(seurat_obj_receiver, value = seurat_obj_receiver$aggregate)
 condition_oi <- "LCMV"; condition_reference <- "SS"
 DE_table_receiver <- FindMarkers(object = seurat_obj_receiver,
                                  ident.1 = condition_oi, ident.2 = condition_reference,
+                                 group.by = "aggregate", 
                                  min.pct = 0.10) %>% rownames_to_column("gene")
 geneset_oi <- DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= 0.25) %>% pull(gene)
 

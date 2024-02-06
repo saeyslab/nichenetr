@@ -85,10 +85,10 @@ condition_oi <-  "LCMV"
 condition_reference <- "SS"
 
 seurat_obj_receiver <- subset(seuratObj, idents = receiver)
-seurat_obj_receiver <- SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[["aggregate", drop=TRUE]])
 
 DE_table_receiver <-  FindMarkers(object = seurat_obj_receiver,
                                   ident.1 = condition_oi, ident.2 = condition_reference,
+                                  group.by = "aggregate", 
                                   min.pct = 0.05) %>% rownames_to_column("gene")
 
 geneset_oi <- DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= 0.25) %>% pull(gene)
@@ -169,20 +169,20 @@ info_tables <- generate_info_tables(seuratObj,
 names(info_tables)
 ## [1] "sender_receiver_de"   "sender_receiver_info" "lr_condition_de"
 info_tables$sender_receiver_de %>% head()
-##   sender receiver ligand receptor lfc_ligand lfc_receptor ligand_receptor_lfc_avg  p_val_ligand  p_adj_ligand p_val_receptor p_adj_receptor
-## 1     DC    CD8 T   Ccl5    Cxcr3   6.432043   0.16714791                3.299595  1.893317e-25  2.563740e-21   7.758812e-05   1.000000e+00
-## 2   Mono    CD8 T   Lyz2    Itgal   5.493265  -0.01687003                2.738198 1.728697e-160 2.340828e-156   4.973381e-02   1.000000e+00
-## 3     DC    CD8 T  H2-M2     Cd8a   3.416479   1.94059972                2.678539 1.017174e-272 1.377355e-268  5.250531e-206  7.109745e-202
-## 4     DC    CD8 T Cxcl16    Cxcr6   4.182085   0.54826454                2.365175 1.138617e-243 1.541801e-239   5.987787e-21   8.108063e-17
-## 5   Mono    CD8 T  Cxcl9    Cxcr3   4.328801   0.16714791                2.247975 3.834954e-124 5.192911e-120   7.758812e-05   1.000000e+00
-## 6   Mono    CD8 T  Cxcl9     Dpp4   4.328801   0.16416445                2.246483 3.834954e-124 5.192911e-120   6.628900e-04   1.000000e+00
-##   pct_expressed_sender pct_expressed_receiver
-## 1                1.000                  0.042
-## 2                0.933                  0.188
-## 3                0.429                  0.659
-## 4                0.929                  0.089
-## 5                0.547                  0.042
-## 6                0.547                  0.148
+##   sender receiver ligand receptor lfc_ligand lfc_receptor ligand_receptor_lfc_avg  p_val_ligand  p_adj_ligand p_val_receptor p_adj_receptor pct_expressed_sender
+## 1     DC    CD8 T   Ccl5    Cxcr3   6.432043   0.16714791                3.299595  1.893317e-25  2.563740e-21   7.758812e-05   1.000000e+00                1.000
+## 2   Mono    CD8 T   Lyz2    Itgal   5.493265  -0.01687003                2.738198 1.728697e-160 2.340828e-156   4.973381e-02   1.000000e+00                0.933
+## 3     DC    CD8 T  H2-M2     Cd8a   3.416479   1.94059972                2.678539 1.017174e-272 1.377355e-268  5.250531e-206  7.109745e-202                0.429
+## 4     DC    CD8 T Cxcl16    Cxcr6   4.182085   0.54826454                2.365175 1.138617e-243 1.541801e-239   5.987787e-21   8.108063e-17                0.929
+## 5   Mono    CD8 T  Cxcl9    Cxcr3   4.328801   0.16714791                2.247975 3.834954e-124 5.192911e-120   7.758812e-05   1.000000e+00                0.547
+## 6   Mono    CD8 T  Cxcl9     Dpp4   4.328801   0.16416445                2.246483 3.834954e-124 5.192911e-120   6.628900e-04   1.000000e+00                0.547
+##   pct_expressed_receiver
+## 1                  0.042
+## 2                  0.188
+## 3                  0.659
+## 4                  0.089
+## 5                  0.042
+## 6                  0.148
 info_tables$sender_receiver_info %>% head()
 ## # A tibble: 6 × 7
 ##   sender receiver ligand receptor avg_ligand avg_receptor ligand_receptor_prod
@@ -207,9 +207,9 @@ Next, we generate the prioritization table. This table contains the
 rankings of ligand-receptor pairs based on the different criteria. We
 provide two scenarios: `case_control` and `one_condition`. In the
 “case_control” scenario, all weights are set to 1. If “one_condition”,
-the weights are set to 0 for condition specificity, 2 for ligand
-activity, and 1 for the remaining criteria. Users can also provide their
-own weights using the `prioritizing_weights` argument.
+the weights are set to 0 for condition specificity and 1 for the
+remaining criteria. Users can also provide their own weights using the
+`prioritizing_weights` argument.
 
 ``` r
 prior_table <- generate_prioritization_tables(info_tables$sender_receiver_info,
@@ -220,21 +220,21 @@ prior_table <- generate_prioritization_tables(info_tables$sender_receiver_info,
 
 prior_table %>% head
 ## # A tibble: 6 × 51
-##   sender receiver ligand receptor lfc_ligand lfc_receptor ligand_receptor_lfc_avg p_val_ligand p_adj_ligand p_val_receptor p_adj_receptor
-##   <chr>  <chr>    <chr>  <chr>         <dbl>        <dbl>                   <dbl>        <dbl>        <dbl>          <dbl>          <dbl>
-## 1 NK     CD8 T    Ptprc  Dpp4          0.596        0.164                   0.380    2.18e-  7    2.96e-  3       0.000663              1
-## 2 Mono   CD8 T    Ptprc  Dpp4          0.438        0.164                   0.301    3.52e-  5    4.77e-  1       0.000663              1
-## 3 Mono   CD8 T    Cxcl10 Dpp4          4.27         0.164                   2.22     2.53e- 79    3.43e- 75       0.000663              1
-## 4 Mono   CD8 T    Cxcl9  Dpp4          4.33         0.164                   2.25     3.83e-124    5.19e-120       0.000663              1
-## 5 Treg   CD8 T    Ptprc  Dpp4          0.282        0.164                   0.223    1.44e-  2    1   e+  0       0.000663              1
-## 6 Mono   CD8 T    Cxcl11 Dpp4          2.36         0.164                   1.26     9.28e-121    1.26e-116       0.000663              1
-## # ℹ 40 more variables: pct_expressed_sender <dbl>, pct_expressed_receiver <dbl>, avg_ligand <dbl>, avg_receptor <dbl>, ligand_receptor_prod <dbl>,
-## #   lfc_pval_ligand <dbl>, p_val_ligand_adapted <dbl>, scaled_lfc_ligand <dbl>, scaled_p_val_ligand <dbl>, scaled_lfc_pval_ligand <dbl>,
-## #   scaled_p_val_ligand_adapted <dbl>, activity <dbl>, rank <dbl>, activity_zscore <dbl>, scaled_activity <dbl>, lfc_pval_receptor <dbl>,
-## #   p_val_receptor_adapted <dbl>, scaled_lfc_receptor <dbl>, scaled_p_val_receptor <dbl>, scaled_lfc_pval_receptor <dbl>,
-## #   scaled_p_val_receptor_adapted <dbl>, scaled_avg_exprs_ligand <dbl>, scaled_avg_exprs_receptor <dbl>, lfc_ligand_group <dbl>,
-## #   p_val_ligand_group <dbl>, lfc_pval_ligand_group <dbl>, p_val_ligand_adapted_group <dbl>, scaled_lfc_ligand_group <dbl>,
-## #   scaled_p_val_ligand_group <dbl>, scaled_lfc_pval_ligand_group <dbl>, scaled_p_val_ligand_adapted_group <dbl>, lfc_receptor_group <dbl>, …
+##   sender receiver ligand receptor lfc_ligand lfc_receptor ligand_receptor_lfc_avg p_val_ligand p_adj_ligand p_val_receptor p_adj_receptor pct_expressed_sender
+##   <chr>  <chr>    <chr>  <chr>         <dbl>        <dbl>                   <dbl>        <dbl>        <dbl>          <dbl>          <dbl>                <dbl>
+## 1 NK     CD8 T    Ptprc  Dpp4          0.596        0.164                   0.380    2.18e-  7    2.96e-  3       0.000663              1                0.894
+## 2 Mono   CD8 T    Ptprc  Dpp4          0.438        0.164                   0.301    3.52e-  5    4.77e-  1       0.000663              1                0.867
+## 3 Mono   CD8 T    Cxcl10 Dpp4          4.27         0.164                   2.22     2.53e- 79    3.43e- 75       0.000663              1                0.867
+## 4 Mono   CD8 T    Cxcl9  Dpp4          4.33         0.164                   2.25     3.83e-124    5.19e-120       0.000663              1                0.547
+## 5 Treg   CD8 T    Ptprc  Dpp4          0.282        0.164                   0.223    1.44e-  2    1   e+  0       0.000663              1                0.685
+## 6 Mono   CD8 T    Cxcl11 Dpp4          2.36         0.164                   1.26     9.28e-121    1.26e-116       0.000663              1                0.307
+## # ℹ 39 more variables: pct_expressed_receiver <dbl>, avg_ligand <dbl>, avg_receptor <dbl>, ligand_receptor_prod <dbl>, lfc_pval_ligand <dbl>,
+## #   p_val_ligand_adapted <dbl>, scaled_lfc_ligand <dbl>, scaled_p_val_ligand <dbl>, scaled_lfc_pval_ligand <dbl>, scaled_p_val_ligand_adapted <dbl>, activity <dbl>,
+## #   rank <dbl>, activity_zscore <dbl>, scaled_activity <dbl>, lfc_pval_receptor <dbl>, p_val_receptor_adapted <dbl>, scaled_lfc_receptor <dbl>,
+## #   scaled_p_val_receptor <dbl>, scaled_lfc_pval_receptor <dbl>, scaled_p_val_receptor_adapted <dbl>, scaled_avg_exprs_ligand <dbl>,
+## #   scaled_avg_exprs_receptor <dbl>, lfc_ligand_group <dbl>, p_val_ligand_group <dbl>, lfc_pval_ligand_group <dbl>, p_val_ligand_adapted_group <dbl>,
+## #   scaled_lfc_ligand_group <dbl>, scaled_p_val_ligand_group <dbl>, scaled_lfc_pval_ligand_group <dbl>, scaled_p_val_ligand_adapted_group <dbl>,
+## #   lfc_receptor_group <dbl>, p_val_receptor_group <dbl>, lfc_pval_receptor_group <dbl>, p_val_receptor_adapted_group <dbl>, scaled_lfc_receptor_group <dbl>, …
 ```
 
 As you can see, the resulting table now show the rankings for
@@ -250,21 +250,20 @@ were used to calculate the ranking:
 ``` r
 prior_table %>% select(c('sender', 'receiver', 'ligand', 'receptor', 'scaled_p_val_ligand_adapted', 'scaled_p_val_receptor_adapted', 'scaled_avg_exprs_ligand', 'scaled_avg_exprs_receptor', 'scaled_p_val_ligand_adapted_group', 'scaled_p_val_receptor_adapted_group', 'scaled_activity'))
 ## # A tibble: 1,272 × 11
-##    sender receiver ligand receptor scaled_p_val_ligand_…¹ scaled_p_val_recepto…² scaled_avg_exprs_lig…³ scaled_avg_exprs_rec…⁴ scaled_p_val_ligand_…⁵
-##    <chr>  <chr>    <chr>  <chr>                     <dbl>                  <dbl>                  <dbl>                  <dbl>                  <dbl>
-##  1 NK     CD8 T    Ptprc  Dpp4                      0.869                  0.829                  1.00                   1.00                   0.850
-##  2 Mono   CD8 T    Ptprc  Dpp4                      0.841                  0.829                  0.867                  1.00                   0.850
-##  3 Mono   CD8 T    Cxcl10 Dpp4                      0.960                  0.829                  1.00                   1.00                   0.929
-##  4 Mono   CD8 T    Cxcl9  Dpp4                      0.975                  0.829                  1.00                   1.00                   0.787
-##  5 Treg   CD8 T    Ptprc  Dpp4                      0.756                  0.829                  0.741                  1.00                   0.850
-##  6 Mono   CD8 T    Cxcl11 Dpp4                      0.973                  0.829                  1.00                   1.00                   0.732
-##  7 B      CD8 T    Ptprc  Dpp4                      0.748                  0.829                  0.666                  1.00                   0.850
-##  8 DC     CD8 T    Icam1  Il2rg                     0.876                  0.714                  1.00                   0.995                  0.717
-##  9 DC     CD8 T    Ccl22  Dpp4                      0.997                  0.829                  1.00                   1.00                   0.539
-## 10 NK     CD8 T    Cd320  Jaml                      0.889                  0.943                  0.905                  1.00                   0.472
+##    sender receiver ligand receptor scaled_p_val_ligand_adapted scaled_p_val_receptor_adapted scaled_avg_exprs_ligand scaled_avg_exprs_receptor scaled_p_val_ligand_…¹
+##    <chr>  <chr>    <chr>  <chr>                          <dbl>                         <dbl>                   <dbl>                     <dbl>                  <dbl>
+##  1 NK     CD8 T    Ptprc  Dpp4                           0.869                         0.829                   1.00                      1.00                   0.850
+##  2 Mono   CD8 T    Ptprc  Dpp4                           0.841                         0.829                   0.867                     1.00                   0.850
+##  3 Mono   CD8 T    Cxcl10 Dpp4                           0.960                         0.829                   1.00                      1.00                   0.929
+##  4 Mono   CD8 T    Cxcl9  Dpp4                           0.975                         0.829                   1.00                      1.00                   0.787
+##  5 Treg   CD8 T    Ptprc  Dpp4                           0.756                         0.829                   0.741                     1.00                   0.850
+##  6 Mono   CD8 T    Cxcl11 Dpp4                           0.973                         0.829                   1.00                      1.00                   0.732
+##  7 B      CD8 T    Ptprc  Dpp4                           0.748                         0.829                   0.666                     1.00                   0.850
+##  8 DC     CD8 T    Icam1  Il2rg                          0.876                         0.714                   1.00                      0.995                  0.717
+##  9 DC     CD8 T    Ccl22  Dpp4                           0.997                         0.829                   1.00                      1.00                   0.539
+## 10 NK     CD8 T    Cd320  Jaml                           0.889                         0.943                   0.905                     1.00                   0.472
 ## # ℹ 1,262 more rows
-## # ℹ abbreviated names: ¹​scaled_p_val_ligand_adapted, ²​scaled_p_val_receptor_adapted, ³​scaled_avg_exprs_ligand, ⁴​scaled_avg_exprs_receptor,
-## #   ⁵​scaled_p_val_ligand_adapted_group
+## # ℹ abbreviated name: ¹​scaled_p_val_ligand_adapted_group
 ## # ℹ 2 more variables: scaled_p_val_receptor_adapted_group <dbl>, scaled_activity <dbl>
 ```
 
@@ -286,12 +285,10 @@ transforms these different dataframes so they are compatible with the
 `generate_prioritization_tables` function.
 
 ``` r
-lr_network_renamed <- lr_network_filtered %>% rename(ligand=from, receptor=to)
-
 # Only calculate DE for LCMV condition, with genes that are in the ligand-receptor network
-DE_table <- calculate_de(seuratObj, celltype_colname = "celltype",
-                         condition_colname = "aggregate", condition_oi = condition_oi,
-                         features = unique(unlist(lr_network_filtered)))
+DE_table <- FindAllMarkers(subset(seuratObj, subset = aggregate == "LCMV"),
+                           min.pct = 0, logfc.threshold = 0, return.thresh = 1,
+                           features = unique(unlist(lr_network_filtered))) 
 
 # Average expression information - only for LCMV condition
 expression_info <- get_exprs_avg(seuratObj, "celltype", condition_colname = "aggregate", condition_oi = condition_oi,
@@ -303,12 +300,12 @@ condition_markers <- FindMarkers(object = seuratObj, ident.1 = condition_oi, ide
                                  features = unique(unlist(lr_network_filtered))) %>% rownames_to_column("gene")
 
 # Combine DE of senders and receivers -> used for prioritization
-processed_DE_table <- process_table_to_ic(DE_table, table_type = "celltype_DE", lr_network_renamed,
+processed_DE_table <- process_table_to_ic(DE_table, table_type = "celltype_DE", lr_network_filtered,
                                          senders_oi = sender_celltypes, receivers_oi = receiver)
   
-processed_expr_table <- process_table_to_ic(expression_info, table_type = "expression", lr_network_renamed)
+processed_expr_table <- process_table_to_ic(expression_info, table_type = "expression", lr_network_filtered)
 
-processed_condition_markers <- process_table_to_ic(condition_markers, table_type = "group_DE", lr_network_renamed)
+processed_condition_markers <- process_table_to_ic(condition_markers, table_type = "group_DE", lr_network_filtered)
 ```
 
 And here is how you can define custom weights:
@@ -332,21 +329,21 @@ prior_table <- generate_prioritization_tables(processed_expr_table,
 
 prior_table %>% head
 ## # A tibble: 6 × 51
-##   sender receiver ligand receptor lfc_ligand lfc_receptor ligand_receptor_lfc_avg p_val_ligand p_adj_ligand p_val_receptor p_adj_receptor
-##   <chr>  <chr>    <chr>  <chr>         <dbl>        <dbl>                   <dbl>        <dbl>        <dbl>          <dbl>          <dbl>
-## 1 NK     CD8 T    Ptprc  Dpp4          0.596        0.164                   0.380    2.18e-  7    2.96e-  3       0.000663              1
-## 2 Mono   CD8 T    Ptprc  Dpp4          0.438        0.164                   0.301    3.52e-  5    4.77e-  1       0.000663              1
-## 3 Mono   CD8 T    Cxcl10 Dpp4          4.27         0.164                   2.22     2.53e- 79    3.43e- 75       0.000663              1
-## 4 Mono   CD8 T    Cxcl9  Dpp4          4.33         0.164                   2.25     3.83e-124    5.19e-120       0.000663              1
-## 5 Treg   CD8 T    Ptprc  Dpp4          0.282        0.164                   0.223    1.44e-  2    1   e+  0       0.000663              1
-## 6 Mono   CD8 T    Cxcl11 Dpp4          2.36         0.164                   1.26     9.28e-121    1.26e-116       0.000663              1
-## # ℹ 40 more variables: pct_expressed_sender <dbl>, pct_expressed_receiver <dbl>, avg_ligand <dbl>, avg_receptor <dbl>, ligand_receptor_prod <dbl>,
-## #   lfc_pval_ligand <dbl>, p_val_ligand_adapted <dbl>, scaled_lfc_ligand <dbl>, scaled_p_val_ligand <dbl>, scaled_lfc_pval_ligand <dbl>,
-## #   scaled_p_val_ligand_adapted <dbl>, activity <dbl>, rank <dbl>, activity_zscore <dbl>, scaled_activity <dbl>, lfc_pval_receptor <dbl>,
-## #   p_val_receptor_adapted <dbl>, scaled_lfc_receptor <dbl>, scaled_p_val_receptor <dbl>, scaled_lfc_pval_receptor <dbl>,
-## #   scaled_p_val_receptor_adapted <dbl>, scaled_avg_exprs_ligand <dbl>, scaled_avg_exprs_receptor <dbl>, lfc_ligand_group <dbl>,
-## #   p_val_ligand_group <dbl>, lfc_pval_ligand_group <dbl>, p_val_ligand_adapted_group <dbl>, scaled_lfc_ligand_group <dbl>,
-## #   scaled_p_val_ligand_group <dbl>, scaled_lfc_pval_ligand_group <dbl>, scaled_p_val_ligand_adapted_group <dbl>, lfc_receptor_group <dbl>, …
+##   sender receiver ligand receptor lfc_ligand lfc_receptor ligand_receptor_lfc_avg p_val_ligand p_adj_ligand p_val_receptor p_adj_receptor pct_expressed_sender
+##   <chr>  <chr>    <chr>  <chr>         <dbl>        <dbl>                   <dbl>        <dbl>        <dbl>          <dbl>          <dbl>                <dbl>
+## 1 NK     CD8 T    Ptprc  Dpp4          0.596        0.164                   0.380    2.18e-  7    2.96e-  3       0.000663              1                0.894
+## 2 Mono   CD8 T    Ptprc  Dpp4          0.438        0.164                   0.301    3.52e-  5    4.77e-  1       0.000663              1                0.867
+## 3 Mono   CD8 T    Cxcl10 Dpp4          4.27         0.164                   2.22     2.53e- 79    3.43e- 75       0.000663              1                0.867
+## 4 Mono   CD8 T    Cxcl9  Dpp4          4.33         0.164                   2.25     3.83e-124    5.19e-120       0.000663              1                0.547
+## 5 Treg   CD8 T    Ptprc  Dpp4          0.282        0.164                   0.223    1.44e-  2    1   e+  0       0.000663              1                0.685
+## 6 Mono   CD8 T    Cxcl11 Dpp4          2.36         0.164                   1.26     9.28e-121    1.26e-116       0.000663              1                0.307
+## # ℹ 39 more variables: pct_expressed_receiver <dbl>, avg_ligand <dbl>, avg_receptor <dbl>, ligand_receptor_prod <dbl>, lfc_pval_ligand <dbl>,
+## #   p_val_ligand_adapted <dbl>, scaled_lfc_ligand <dbl>, scaled_p_val_ligand <dbl>, scaled_lfc_pval_ligand <dbl>, scaled_p_val_ligand_adapted <dbl>, activity <dbl>,
+## #   rank <dbl>, activity_zscore <dbl>, scaled_activity <dbl>, lfc_pval_receptor <dbl>, p_val_receptor_adapted <dbl>, scaled_lfc_receptor <dbl>,
+## #   scaled_p_val_receptor <dbl>, scaled_lfc_pval_receptor <dbl>, scaled_p_val_receptor_adapted <dbl>, scaled_avg_exprs_ligand <dbl>,
+## #   scaled_avg_exprs_receptor <dbl>, lfc_ligand_group <dbl>, p_val_ligand_group <dbl>, lfc_pval_ligand_group <dbl>, p_val_ligand_adapted_group <dbl>,
+## #   scaled_lfc_ligand_group <dbl>, scaled_p_val_ligand_group <dbl>, scaled_lfc_pval_ligand_group <dbl>, scaled_p_val_ligand_adapted_group <dbl>,
+## #   lfc_receptor_group <dbl>, p_val_receptor_group <dbl>, lfc_pval_receptor_group <dbl>, p_val_receptor_adapted_group <dbl>, scaled_lfc_receptor_group <dbl>, …
 ```
 
 # Prioritizing across multiple receivers
@@ -437,21 +434,21 @@ prior_table_combined <- generate_prioritization_tables(
 
 head(prior_table_combined)
 ## # A tibble: 6 × 51
-##   sender receiver ligand receptor lfc_ligand lfc_receptor ligand_receptor_lfc_avg p_val_ligand p_adj_ligand p_val_receptor p_adj_receptor
-##   <chr>  <chr>    <chr>  <chr>         <dbl>        <dbl>                   <dbl>        <dbl>        <dbl>          <dbl>          <dbl>
-## 1 NK     CD8 T    Ptprc  Dpp4          0.596        0.164                   0.380  0.000000218      0.00296       6.63e- 4       1   e+ 0
-## 2 NK     CD4 T    Ptprc  Cd4           0.596        0.996                   0.796  0.000000218      0.00296       2.63e-34       3.56e-30
-## 3 B      CD4 T    H2-Eb1 Cd4           4.02         0.996                   2.51   0                0             2.63e-34       3.56e-30
-## 4 Mono   CD8 T    Ptprc  Dpp4          0.438        0.164                   0.301  0.0000352        0.477         6.63e- 4       1   e+ 0
-## 5 Mono   CD4 T    Ptprc  Cd4           0.438        0.996                   0.717  0.0000352        0.477         2.63e-34       3.56e-30
-## 6 NK     CD4 T    Ptprc  Cd247         0.596        0.457                   0.526  0.000000218      0.00296       5.61e- 4       1   e+ 0
-## # ℹ 40 more variables: pct_expressed_sender <dbl>, pct_expressed_receiver <dbl>, avg_ligand <dbl>, avg_receptor <dbl>, ligand_receptor_prod <dbl>,
-## #   lfc_pval_ligand <dbl>, p_val_ligand_adapted <dbl>, scaled_lfc_ligand <dbl>, scaled_p_val_ligand <dbl>, scaled_lfc_pval_ligand <dbl>,
-## #   scaled_p_val_ligand_adapted <dbl>, activity <dbl>, rank <dbl>, activity_zscore <dbl>, scaled_activity <dbl>, lfc_pval_receptor <dbl>,
-## #   p_val_receptor_adapted <dbl>, scaled_lfc_receptor <dbl>, scaled_p_val_receptor <dbl>, scaled_lfc_pval_receptor <dbl>,
-## #   scaled_p_val_receptor_adapted <dbl>, scaled_avg_exprs_ligand <dbl>, scaled_avg_exprs_receptor <dbl>, lfc_ligand_group <dbl>,
-## #   p_val_ligand_group <dbl>, lfc_pval_ligand_group <dbl>, p_val_ligand_adapted_group <dbl>, scaled_lfc_ligand_group <dbl>,
-## #   scaled_p_val_ligand_group <dbl>, scaled_lfc_pval_ligand_group <dbl>, scaled_p_val_ligand_adapted_group <dbl>, lfc_receptor_group <dbl>, …
+##   sender receiver ligand receptor lfc_ligand lfc_receptor ligand_receptor_lfc_avg p_val_ligand p_adj_ligand p_val_receptor p_adj_receptor pct_expressed_sender
+##   <chr>  <chr>    <chr>  <chr>         <dbl>        <dbl>                   <dbl>        <dbl>        <dbl>          <dbl>          <dbl>                <dbl>
+## 1 NK     CD8 T    Ptprc  Dpp4          0.596        0.164                   0.380  0.000000218      0.00296       6.63e- 4       1   e+ 0                0.894
+## 2 NK     CD4 T    Ptprc  Cd4           0.596        0.996                   0.796  0.000000218      0.00296       2.63e-34       3.56e-30                0.894
+## 3 B      CD4 T    H2-Eb1 Cd4           4.02         0.996                   2.51   0                0             2.63e-34       3.56e-30                0.93 
+## 4 Mono   CD8 T    Ptprc  Dpp4          0.438        0.164                   0.301  0.0000352        0.477         6.63e- 4       1   e+ 0                0.867
+## 5 Mono   CD4 T    Ptprc  Cd4           0.438        0.996                   0.717  0.0000352        0.477         2.63e-34       3.56e-30                0.867
+## 6 NK     CD4 T    Ptprc  Cd247         0.596        0.457                   0.526  0.000000218      0.00296       5.61e- 4       1   e+ 0                0.894
+## # ℹ 39 more variables: pct_expressed_receiver <dbl>, avg_ligand <dbl>, avg_receptor <dbl>, ligand_receptor_prod <dbl>, lfc_pval_ligand <dbl>,
+## #   p_val_ligand_adapted <dbl>, scaled_lfc_ligand <dbl>, scaled_p_val_ligand <dbl>, scaled_lfc_pval_ligand <dbl>, scaled_p_val_ligand_adapted <dbl>, activity <dbl>,
+## #   rank <dbl>, activity_zscore <dbl>, scaled_activity <dbl>, lfc_pval_receptor <dbl>, p_val_receptor_adapted <dbl>, scaled_lfc_receptor <dbl>,
+## #   scaled_p_val_receptor <dbl>, scaled_lfc_pval_receptor <dbl>, scaled_p_val_receptor_adapted <dbl>, scaled_avg_exprs_ligand <dbl>,
+## #   scaled_avg_exprs_receptor <dbl>, lfc_ligand_group <dbl>, p_val_ligand_group <dbl>, lfc_pval_ligand_group <dbl>, p_val_ligand_adapted_group <dbl>,
+## #   scaled_lfc_ligand_group <dbl>, scaled_p_val_ligand_group <dbl>, scaled_lfc_pval_ligand_group <dbl>, scaled_p_val_ligand_adapted_group <dbl>,
+## #   lfc_receptor_group <dbl>, p_val_receptor_group <dbl>, lfc_pval_receptor_group <dbl>, p_val_receptor_adapted_group <dbl>, scaled_lfc_receptor_group <dbl>, …
 ```
 
 ### Extra visualization of ligand-receptor pairs
@@ -547,8 +544,8 @@ sessionInfo()
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-##  [1] forcats_1.0.0      stringr_1.5.0      dplyr_1.1.4        purrr_1.0.2        readr_2.1.2        tidyr_1.3.0        tibble_3.2.1      
-##  [8] ggplot2_3.4.4      tidyverse_1.3.1    SeuratObject_5.0.1 Seurat_4.4.0       nichenetr_2.0.5   
+##  [1] forcats_1.0.0      stringr_1.5.0      dplyr_1.1.4        purrr_1.0.2        readr_2.1.2        tidyr_1.3.0        tibble_3.2.1       ggplot2_3.4.4     
+##  [9] tidyverse_1.3.1    SeuratObject_5.0.1 Seurat_4.4.0       nichenetr_2.1.0   
 ## 
 ## loaded via a namespace (and not attached):
 ##   [1] fs_1.6.3               matrixStats_1.2.0      spatstat.sparse_3.0-3  bitops_1.0-7           lubridate_1.9.3        httr_1.4.7            
