@@ -86,15 +86,20 @@ test_that("mlrMBO optimization of a multi-objective function can be performed is
   if(Sys.info()['sysname'] == "Windows"){
     print("windows - skip test on using parallelized mlrmbo optimization")
   } else {
-    mlrmbo_optimization_result = lapply(1,mlrmbo_optimization, obj_fun = obj_fun_multi_topology_correction, niter = 2, ncores = 1, nstart = 100, additional_arguments = additional_arguments_topology_correction)
 
-    optimized_parameters = process_mlrmbo_nichenet_optimization(mlrmbo_optimization_result[[1]],additional_arguments_topology_correction$source_names)
-    optimized_parameters = process_mlrmbo_nichenet_optimization(mlrmbo_optimization_result,additional_arguments_topology_correction$source_names)
-    expect_type(mlrmbo_optimization_result, "list")
-    expect_type(mlrmbo_optimization_result[[1]]$pareto.set[[1]]$source_weights, "double")
-    expect_equal(length(mlrmbo_optimization_result[[1]]$pareto.set[[1]]$source_weights),nr_datasources)
-    expect_type(optimized_parameters, "list")
-    expect_equal(is.data.frame(optimized_parameters$source_weight_df), TRUE)
+    if (!requireNamespace("mco", quietly = TRUE)) {
+      print("skip test due to mco not being installed")
+    } else {
+      mlrmbo_optimization_result = lapply(1,mlrmbo_optimization, obj_fun = obj_fun_multi_topology_correction, niter = 2, ncores = 1, nstart = 100, additional_arguments = additional_arguments_topology_correction)
+
+      optimized_parameters = process_mlrmbo_nichenet_optimization(mlrmbo_optimization_result[[1]],additional_arguments_topology_correction$source_names)
+      optimized_parameters = process_mlrmbo_nichenet_optimization(mlrmbo_optimization_result,additional_arguments_topology_correction$source_names)
+      expect_type(mlrmbo_optimization_result, "list")
+      expect_type(mlrmbo_optimization_result[[1]]$pareto.set[[1]]$source_weights, "double")
+      expect_equal(length(mlrmbo_optimization_result[[1]]$pareto.set[[1]]$source_weights),nr_datasources)
+      expect_type(optimized_parameters, "list")
+      expect_equal(is.data.frame(optimized_parameters$source_weight_df), TRUE)
+    }
   }
 })
 
