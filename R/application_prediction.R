@@ -865,8 +865,6 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #' @title Perform NicheNet analysis on Seurat object: explain DE between conditions
 #'
 #' @description \code{nichenet_seuratobj_aggregate} Perform NicheNet analysis on Seurat object: explain differential expression (DE) in a receiver celltype between two different conditions by ligands expressed by sender cells
-#' @usage
-#' nichenet_seuratobj_aggregate(receiver, seurat_obj, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 30,top_n_targets = 200, cutoff_visualization = 0.33,verbose = TRUE, assay_oi = NULL)
 #'
 #' @param receiver Name of cluster identity/identities of cells that are presumably affected by intercellular communication with other cells
 #' @param seurat_obj Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.
@@ -885,7 +883,7 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #' @param lr_network The ligand-receptor network (columns that should be present: $from, $to) of the organism of interest.
 #' @param weighted_networks The NicheNet weighted networks of the organism of interest denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.
 #' @param verbose Print out the current analysis stage. Default: TRUE.
-#' @inheritParams get_expressed_genes
+#' @param assay_oi The assay to be used for calculating expressed genes and the DE analysis. If NULL, the default assay of the Seurat object will be used.
 #'
 #' @return A list with the following elements:
 #' $ligand_activities: data frame with output ligand activity analysis;
@@ -920,47 +918,56 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #' @export
 #'
 nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname, condition_oi, condition_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,
-                                        expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE ,top_n_ligands = 30,
+                                        assay_oi = NULL, expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE ,top_n_ligands = 30,
                                         top_n_targets = 200, cutoff_visualization = 0.33,
-                                        verbose = TRUE, assay_oi = NULL)
+                                        verbose = TRUE)
 {
   requireNamespace("Seurat")
   requireNamespace("dplyr")
 
-  # input check
-  if(! "RNA" %in% names(seurat_obj@assays)){
-    if ("Spatial" %in% names(seurat_obj@assays)){
-      warning("You are going to apply NicheNet on a spatial seurat object. Be sure it's ok to use NicheNet the way you are planning to do it. So this means: you should have changes in gene expression in receiver cells caused by cell-cell interactions. Note that in the case of spatial transcriptomics, you are not dealing with single cells but with 'spots' containing multiple cells of the same of different cell types.")
+  if (is.null(assay_oi)){
+    assay_oi <- DefaultAssay(seurat_obj)
+  } else {
+    DefaultAssay(seurat_obj) <- assay_oi
+  }
 
-      if (class(seurat_obj@assays$Spatial@data) != "matrix" & class(seurat_obj@assays$Spatial@data) != "dgCMatrix") {
-        warning("Spatial Seurat object should contain a matrix of normalized expression data. Check 'seurat_obj@assays$Spatial@data' for default or 'seurat_obj@assays$SCT@data' for when the single-cell transform pipeline was applied")
-      }
-      if (sum(dim(seurat_obj@assays$Spatial@data)) == 0) {
-        stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$Spatial@data'")
-      }
-    }} else {
-      if (class(seurat_obj@assays$RNA@data) != "matrix" &
-          class(seurat_obj@assays$RNA@data) != "dgCMatrix") {
-        warning("Seurat object should contain a matrix of normalized expression data. Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data or seurat_obj@assays$SCT@data for when the single-cell transform pipeline was applied")
-      }
+  if (verbose){
+    print(paste0("The ", assay_oi, " assay will be used for the analysis."))
+  }
 
-      if ("integrated" %in% names(seurat_obj@assays)) {
-        if (sum(dim(seurat_obj@assays$RNA@data)) == 0 & sum(dim(seurat_obj@assays$integrated@data)) ==
-            0)
-          stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data")
-      }
-      else if ("SCT" %in% names(seurat_obj@assays)) {
-        if (sum(dim(seurat_obj@assays$RNA@data)) == 0 & sum(dim(seurat_obj@assays$SCT@data)) ==
-            0) {
-          stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$SCT@data' for data corrected via SCT")
-        }
-      }
-      else {
-        if (sum(dim(seurat_obj@assays$RNA@data)) == 0) {
-          stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data'")
-        }
-      }
+  obj_version <- as.numeric(substr(seurat_obj@version, 1, 1))
+
+  if (assay_oi == "Spatial") {
+    warning("You are going to apply NicheNet on a spatial seurat object. Be sure it's ok to use NicheNet the way you are planning to do it. So this means: you should have changes in gene expression in receiver cells caused by cell-cell interactions. Note that in the case of spatial transcriptomics, you are not dealing with single cells but with 'spots' containing multiple cells of the same of different cell types.")
+  }
+
+  if(assay_oi == "integrated"){
+    warning("The used assay is a result of the Seurat integration workflow. Make sure that the way of defining expressed and differentially expressed genes in this wrapper is appropriate for your integrated data.")
+  }
+
+  # Input check
+  # Version 5
+  if (obj_version >= 5){
+    if (sum(dim(GetAssayData(seurat_obj, assay = assay_oi, layer = "data"))) == 0){
+      stop("Seurat object should contain normalized expression data (numeric matrix). Check 'GetAssayData(seurat_obj, assay = assay_oi, layer = 'data')'")
     }
+
+    if (!class(GetAssayData(seurat_obj, assay = assay_oi, layer = "data")) %in% c("matrix", "dgCMatrix")) {
+      warning("The normalized expression data should be a matrix object.")
+    }
+
+
+  } else if (obj_version < 5) {
+
+    if (sum(dim(GetAssayData(seurat_obj, assay = assay_oi, slot = "data"))) == 0){
+      stop("Seurat object should contain normalized expression data (numeric matrix). Check 'GetAssayData(seurat_obj, assay = assay_oi, layer = 'data')'")
+    }
+
+    if (!class(GetAssayData(seurat_obj, assay = assay_oi, slot = "data")) %in% c("matrix", "dgCMatrix")) {
+      warning("The normalized expression data should be a matrix object.")
+    }
+  }
+
 
   if(!condition_colname %in% colnames(seurat_obj@meta.data))
     stop("Your column indicating the conditions/samples of interest should be in the metadata dataframe")
@@ -983,9 +990,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   }
   if(geneset != "DE" & geneset != "up" & geneset != "down")
     stop("geneset should be 'DE', 'up' or 'down'")
-  if("integrated" %in% names(seurat_obj@assays)){
-    warning("Seurat object is result from the Seurat integration workflow. Make sure that the way of defining expressed and differentially expressed genes in this wrapper is appropriate for your integrated data.")
-  }
+
   # Read in and process NicheNet networks, define ligands and receptors
   if (verbose == TRUE){print("Read in and process NicheNet's networks")}
   weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
@@ -1010,11 +1015,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
     } else if (sender == "undefined") {
-      if("integrated" %in% names(seurat_obj@assays)){
-        expressed_genes_sender = union(seurat_obj@assays$integrated@data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
-      } else {
-        expressed_genes_sender = union(seurat_obj@assays$RNA@data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
-        }
+      expressed_genes_sender = union(Seurat::GetAssayData(seurat_obj, assay=assay_oi) %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
     } else if (sender != "all" & sender != "undefined") {
       sender_celltypes = sender
       list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
@@ -1033,7 +1034,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
 
   seurat_obj_receiver= subset(seurat_obj, idents = receiver)
   seurat_obj_receiver = SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[[condition_colname, drop=TRUE]])
-  DE_table_receiver = FindMarkers(object = seurat_obj_receiver, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct) %>% rownames_to_column("gene")
+  DE_table_receiver = FindMarkers(object = seurat_obj_receiver, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct, assay = assay_oi) %>% rownames_to_column("gene")
 
   SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_receiver)
 
@@ -1189,7 +1190,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
 
   if (are_there_senders == TRUE){
     if (verbose == TRUE){print("Perform DE analysis in sender cells")}
-    seurat_obj = subset(seurat_obj, features= potential_ligands)
+    seurat_obj = subset(seurat_obj, features = potential_ligands)
 
     DE_table_all = Idents(seurat_obj) %>% levels() %>% intersect(sender_celltypes) %>% lapply(get_lfc_celltype, seurat_obj = seurat_obj, condition_colname = condition_colname, condition_oi = condition_oi, condition_reference = condition_reference, expression_pct = expression_pct, celltype_col = NULL) %>% reduce(full_join, by = "gene") # use this if cell type labels are the identities of your Seurat object -- if not: indicate the celltype_col properly
     DE_table_all[is.na(DE_table_all)] = 0
@@ -1424,7 +1425,7 @@ get_expressed_genes.Seurat = function(celltype_oi, seurat_obj, pct = 0.1, assay_
 #' @param lr_network The ligand-receptor network (columns that should be present: $from, $to).
 #' @param weighted_networks The NicheNet weighted networks denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.
 #' @param verbose Print out the current analysis stage. Default: TRUE.
-#' @inheritParams get_expressed_genes
+#' @param assay_oi The assay to be used for calculating expressed genes and the DE analysis. If NULL, the default assay of the Seurat object will be used.
 #'
 #' @return A list with the following elements:
 #' $ligand_activities: data frame with output ligand activity analysis;
@@ -1461,48 +1462,55 @@ get_expressed_genes.Seurat = function(celltype_oi, seurat_obj, pct = 0.1, assay_
 #' @export
 #'
 nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver_reference, sender = "all",ligand_target_matrix,lr_network,weighted_networks,
-                                        expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 30,
+                                         assay_oi = NULL, expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 30,
                                         top_n_targets = 200, cutoff_visualization = 0.33,
-                                        verbose = TRUE, assay_oi = NULL)
+                                        verbose = TRUE)
 {
   requireNamespace("Seurat")
   requireNamespace("dplyr")
 
-  # input check
-  # input check
-  if(! "RNA" %in% names(seurat_obj@assays)){
-    if ("Spatial" %in% names(seurat_obj@assays)){
-      warning("You are going to apply NicheNet on a spatial seurat object. Be sure it's ok to use NicheNet the way you are planning to do it. So this means: you should have changes in gene expression in receiver cells caused by cell-cell interactions. Note that in the case of spatial transcriptomics, you are not dealing with single cells but with 'spots' containing multiple cells of the same of different cell types.")
+  if (is.null(assay_oi)){
+    assay_oi <- DefaultAssay(seurat_obj)
+  } else {
+    DefaultAssay(seurat_obj) <- assay_oi
+  }
 
-      if (class(seurat_obj@assays$Spatial@data) != "matrix" & class(seurat_obj@assays$Spatial@data) != "dgCMatrix") {
-        warning("Spatial Seurat object should contain a matrix of normalized expression data. Check 'seurat_obj@assays$Spatial@data' for default or 'seurat_obj@assays$SCT@data' for when the single-cell transform pipeline was applied")
-      }
-      if (sum(dim(seurat_obj@assays$Spatial@data)) == 0) {
-        stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$Spatial@data'")
-      }
-    }} else {
-      if (class(seurat_obj@assays$RNA@data) != "matrix" &
-          class(seurat_obj@assays$RNA@data) != "dgCMatrix") {
-        warning("Seurat object should contain a matrix of normalized expression data. Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data or seurat_obj@assays$SCT@data for when the single-cell transform pipeline was applied")
-      }
+  if (verbose){
+    print(paste0("The ", assay_oi, " assay will be used for the analysis."))
+  }
 
-      if ("integrated" %in% names(seurat_obj@assays)) {
-        if (sum(dim(seurat_obj@assays$RNA@data)) == 0 & sum(dim(seurat_obj@assays$integrated@data)) ==
-            0)
-          stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data")
-      }
-      else if ("SCT" %in% names(seurat_obj@assays)) {
-        if (sum(dim(seurat_obj@assays$RNA@data)) == 0 & sum(dim(seurat_obj@assays$SCT@data)) ==
-            0) {
-          stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$SCT@data' for data corrected via SCT")
-        }
-      }
-      else {
-        if (sum(dim(seurat_obj@assays$RNA@data)) == 0) {
-          stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data'")
-        }
-      }
+  obj_version <- as.numeric(substr(seurat_obj@version, 1, 1))
+
+  if (assay_oi == "Spatial") {
+    warning("You are going to apply NicheNet on a spatial seurat object. Be sure it's ok to use NicheNet the way you are planning to do it. So this means: you should have changes in gene expression in receiver cells caused by cell-cell interactions. Note that in the case of spatial transcriptomics, you are not dealing with single cells but with 'spots' containing multiple cells of the same of different cell types.")
+  }
+
+  if(assay_oi == "integrated"){
+    warning("The used assay is a result of the Seurat integration workflow. Make sure that the way of defining expressed and differentially expressed genes in this wrapper is appropriate for your integrated data.")
+  }
+
+  # Input check
+  # Version 5
+  if (obj_version >= 5){
+    if (sum(dim(GetAssayData(seurat_obj, assay = assay_oi, layer = "data"))) == 0){
+      stop("Seurat object should contain normalized expression data (numeric matrix). Check 'GetAssayData(seurat_obj, assay = assay_oi, layer = 'data')'")
     }
+
+    if (!class(GetAssayData(seurat_obj, assay = assay_oi, layer = "data")) %in% c("matrix", "dgCMatrix")) {
+      warning("The normalized expression data should be a matrix object.")
+    }
+
+
+  } else if (obj_version < 5) {
+
+    if (sum(dim(GetAssayData(seurat_obj, assay = assay_oi, slot = "data"))) == 0){
+      stop("Seurat object should contain normalized expression data (numeric matrix). Check 'GetAssayData(seurat_obj, assay = assay_oi, layer = 'data')'")
+    }
+
+    if (!class(GetAssayData(seurat_obj, assay = assay_oi, slot = "data")) %in% c("matrix", "dgCMatrix")) {
+      warning("The normalized expression data should be a matrix object.")
+    }
+  }
 
 
   if(sum(receiver_affected %in% unique(Idents(seurat_obj))) != length(receiver_affected))
@@ -1522,10 +1530,6 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   }
   if(geneset != "DE" & geneset != "up" & geneset != "down")
     stop("geneset should be 'DE', 'up' or 'down'")
-
-  if("integrated" %in% names(seurat_obj@assays)){
-    warning("Seurat object is result from the Seurat integration workflow. Make sure that the way of defining expressed and differentially expressed genes in this wrapper is appropriate for your integrated data.")
-  }
 
   # Read in and process NicheNet networks, define ligands and receptors
   if (verbose == TRUE){print("Read in and process NicheNet's networks")}
@@ -1558,11 +1562,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
     } else if (sender == "undefined") {
-      if("integrated" %in% names(seurat_obj@assays)){
-        expressed_genes_sender = union(seurat_obj@assays$integrated@data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
-      } else {
-        expressed_genes_sender = union(seurat_obj@assays$RNA@data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
-        }
+      expressed_genes_sender = union(Seurat::GetAssayData(seurat_obj, assay=assay_oi) %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
     } else if (sender != "all" & sender != "undefined") {
       sender_celltypes = sender
       list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
@@ -1579,7 +1579,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
   # step2 nichenet analysis: define background and gene list of interest: here differential expression between two conditions of cell type of interest
   if (verbose == TRUE){print("Perform DE analysis between two receiver cell clusters")}
 
-  DE_table_receiver = FindMarkers(object = seurat_obj, ident.1 = receiver_affected, ident.2 = receiver_reference, min.pct = expression_pct) %>% rownames_to_column("gene")
+  DE_table_receiver = FindMarkers(object = seurat_obj, ident.1 = receiver_affected, ident.2 = receiver_reference, min.pct = expression_pct, assay = assay_oi) %>% rownames_to_column("gene")
 
   SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_receiver)
 
@@ -1788,7 +1788,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 #' @param lr_network The ligand-receptor network (columns that should be present: $from, $to) of the organism of interest.
 #' @param weighted_networks The NicheNet weighted networks of the organism of interest denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.
 #' @param verbose Print out the current analysis stage. Default: TRUE.
-#' @inheritParams get_expressed_genes
+#' @param assay_oi The assay to be used for calculating expressed genes and the DE analysis. If NULL, the default assay of the Seurat object will be used.
 #'
 #' @return A list with the following elements:
 #' $ligand_activities: data frame with output ligand activity analysis;
@@ -1823,49 +1823,57 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 #'
 nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected, receiver_reference,
                                          condition_colname, condition_oi, condition_reference, sender = "all",
-                                         ligand_target_matrix,lr_network,weighted_networks,
+                                         ligand_target_matrix,lr_network,weighted_networks, assay_oi = NULL,
                                          expression_pct = 0.10, lfc_cutoff = 0.25, geneset = "DE", filter_top_ligands = TRUE, top_n_ligands = 30,
                                          top_n_targets = 200, cutoff_visualization = 0.33,
-                                         verbose = TRUE, assay_oi = NULL)
+                                         verbose = TRUE)
 {
 
   requireNamespace("Seurat")
   requireNamespace("dplyr")
 
-  # input check
-  if(! "RNA" %in% names(seurat_obj@assays)){
-    if ("Spatial" %in% names(seurat_obj@assays)){
-      warning("You are going to apply NicheNet on a spatial seurat object. Be sure it's ok to use NicheNet the way you are planning to do it. So this means: you should have changes in gene expression in receiver cells caused by cell-cell interactions. Note that in the case of spatial transcriptomics, you are not dealing with single cells but with 'spots' containing multiple cells of the same of different cell types.")
+  if (is.null(assay_oi)){
+    assay_oi <- DefaultAssay(seurat_obj)
+  } else {
+    DefaultAssay(seurat_obj) <- assay_oi
+  }
 
-      if (class(seurat_obj@assays$Spatial@data) != "matrix" & class(seurat_obj@assays$Spatial@data) != "dgCMatrix") {
-        warning("Spatial Seurat object should contain a matrix of normalized expression data. Check 'seurat_obj@assays$Spatial@data' for default or 'seurat_obj@assays$SCT@data' for when the single-cell transform pipeline was applied")
-      }
-      if (sum(dim(seurat_obj@assays$Spatial@data)) == 0) {
-        stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$Spatial@data'")
-      }
-    }} else {
-      if (class(seurat_obj@assays$RNA@data) != "matrix" &
-          class(seurat_obj@assays$RNA@data) != "dgCMatrix") {
-        warning("Seurat object should contain a matrix of normalized expression data. Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data or seurat_obj@assays$SCT@data for when the single-cell transform pipeline was applied")
-      }
+  if (verbose){
+    print(paste0("The ", assay_oi, " assay will be used for the analysis."))
+  }
 
-      if ("integrated" %in% names(seurat_obj@assays)) {
-        if (sum(dim(seurat_obj@assays$RNA@data)) == 0 & sum(dim(seurat_obj@assays$integrated@data)) ==
-            0)
-          stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$integrated@data' for integrated data")
-      }
-      else if ("SCT" %in% names(seurat_obj@assays)) {
-        if (sum(dim(seurat_obj@assays$RNA@data)) == 0 & sum(dim(seurat_obj@assays$SCT@data)) ==
-            0) {
-          stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data' for default or 'seurat_obj@assays$SCT@data' for data corrected via SCT")
-        }
-      }
-      else {
-        if (sum(dim(seurat_obj@assays$RNA@data)) == 0) {
-          stop("Seurat object should contain normalized expression data (numeric matrix). Check 'seurat_obj@assays$RNA@data'")
-        }
-      }
+  obj_version <- as.numeric(substr(seurat_obj@version, 1, 1))
+
+  if (assay_oi == "Spatial") {
+    warning("You are going to apply NicheNet on a spatial seurat object. Be sure it's ok to use NicheNet the way you are planning to do it. So this means: you should have changes in gene expression in receiver cells caused by cell-cell interactions. Note that in the case of spatial transcriptomics, you are not dealing with single cells but with 'spots' containing multiple cells of the same of different cell types.")
+  }
+
+  if(assay_oi == "integrated"){
+    warning("The used assay is a result of the Seurat integration workflow. Make sure that the way of defining expressed and differentially expressed genes in this wrapper is appropriate for your integrated data.")
+  }
+
+  # Input check
+  # Version 5
+  if (obj_version >= 5){
+    if (sum(dim(GetAssayData(seurat_obj, assay = assay_oi, layer = "data"))) == 0){
+      stop("Seurat object should contain normalized expression data (numeric matrix). Check 'GetAssayData(seurat_obj, assay = assay_oi, layer = 'data')'")
     }
+
+    if (!class(GetAssayData(seurat_obj, assay = assay_oi, layer = "data")) %in% c("matrix", "dgCMatrix")) {
+      warning("The normalized expression data should be a matrix object.")
+    }
+
+
+  } else if (obj_version < 5) {
+
+    if (sum(dim(GetAssayData(seurat_obj, assay = assay_oi, slot = "data"))) == 0){
+      stop("Seurat object should contain normalized expression data (numeric matrix). Check 'GetAssayData(seurat_obj, assay = assay_oi, layer = 'data')'")
+    }
+
+    if (!class(GetAssayData(seurat_obj, assay = assay_oi, slot = "data")) %in% c("matrix", "dgCMatrix")) {
+      warning("The normalized expression data should be a matrix object.")
+    }
+  }
 
 
   if(sum(receiver_affected %in% unique(Idents(seurat_obj))) != length(receiver_affected))
@@ -1892,9 +1900,6 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   if(geneset != "DE" & geneset != "up" & geneset != "down")
     stop("geneset should be 'DE', 'up' or 'down'")
 
-  if("integrated" %in% names(seurat_obj@assays)){
-    warning("Seurat object is result from the Seurat integration workflow. Make sure that the way of defining expressed and differentially expressed genes in this wrapper is appropriate for your integrated data.")
-  }
   # Read in and process NicheNet networks, define ligands and receptors
   if (verbose == TRUE){print("Read in and process NicheNet's networks")}
   weighted_networks_lr = weighted_networks$lr_sig %>% inner_join(lr_network %>% distinct(from,to), by = c("from","to"))
@@ -1926,13 +1931,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
       expressed_genes_sender = list_expressed_genes_sender %>% unlist() %>% unique()
 
     } else if (sender == "undefined") {
-
-      if("integrated" %in% names(seurat_obj@assays)){
-        expressed_genes_sender = union(seurat_obj@assays$integrated@data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
-      } else {
-        expressed_genes_sender = union(seurat_obj@assays$RNA@data %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
-        }
-
+      expressed_genes_sender = union(Seurat::GetAssayData(seurat_obj, assay=assay_oi) %>% rownames(),rownames(ligand_target_matrix)) %>% union(colnames(ligand_target_matrix))
     } else if (sender != "all" & sender != "undefined") {
       sender_celltypes = sender
       list_expressed_genes_sender = sender_celltypes %>% unique() %>% lapply(get_expressed_genes, seurat_obj, expression_pct, assay_oi)
@@ -1959,7 +1958,12 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 
   seurat_obj_receiver = merge(seurat_obj_receiver_affected, seurat_obj_receiver_reference)
 
-  DE_table_receiver = FindMarkers(object = seurat_obj_receiver, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct) %>% rownames_to_column("gene")
+  if (obj_version >= 5 & inherits(seurat_obj[[assay_oi]], "Assay5")){
+    # If an object was updated instead of being created in v5, it will not inherit Assay5
+    seurat_obj_receiver <- SeuratObject::JoinLayers(seurat_obj_receiver, assay=assay_oi)
+  }
+
+  DE_table_receiver = FindMarkers(object = seurat_obj_receiver, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct, assay = assay_oi) %>% rownames_to_column("gene")
 
 
   SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_receiver)
