@@ -21,6 +21,8 @@ nichenet_seuratobj_cluster_de(seurat_obj, receiver_affected, receiver_reference,
 
 \item{weighted_networks}{The NicheNet weighted networks denoting interactions and their weights/confidences in the ligand-signaling and gene regulatory network.}
 
+\item{assay_oi}{The assay to be used for calculating expressed genes and the DE analysis. If NULL, the default assay of the Seurat object will be used.}
+
 \item{expression_pct}{To determine ligands and receptors expressed by sender and receiver cells, we consider genes expressed if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10}
 
 \item{lfc_cutoff}{Cutoff on log fold change in the wilcoxon differential expression test. Default: 0.25.}
@@ -36,8 +38,6 @@ nichenet_seuratobj_cluster_de(seurat_obj, receiver_affected, receiver_reference,
 \item{cutoff_visualization}{Because almost no ligand-target scores have a regulatory potential score of 0, we clarify the heatmap visualization by giving the links with the lowest scores a score of 0. The cutoff_visualization paramter indicates this fraction of links that are given a score of zero. Default = 0.33.}
 
 \item{verbose}{Print out the current analysis stage. Default: TRUE.}
-
-\item{assay_oi}{If wanted: specify yourself which assay to look for. If not NULL, the \code{DefaultAssay} of the Seurat object is used.}
 }
 \value{
 A list with the following elements:

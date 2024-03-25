@@ -29,6 +29,17 @@ test_that("human-mouse and symbol-alias conversion works", {
 test_that("Seurat alias conversion works", {
   options(timeout = 3600)
   seurat_object_lite = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
+
   seurat_object_lite2 = seurat_object_lite %>% alias_to_symbol_seurat(organism = "mouse")
   testthat::expect_equal(typeof(seurat_object_lite2), "S4")
+
+  seurat_object_lite <- UpdateSeuratObject(seurat_object_lite)
+
+  if (grepl("^5", packageVersion("Seurat")) & grepl("^5", seurat_object_lite@version)){
+    expect_error(alias_to_symbol_seurat(seurat_object_lite, "mouse"))
+  } else {
+    seurat_object_lite2 = seurat_object_lite %>% alias_to_symbol_seurat(organism = "mouse")
+    testthat::expect_equal(typeof(seurat_object_lite2), "S4")
+  }
+
 })
