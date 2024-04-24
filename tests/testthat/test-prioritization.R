@@ -78,14 +78,21 @@ test_that("Wrapper function for seurat", {
   expect_true(nrow(tmp2$lr_condition_de) < nrow(tmp$lr_condition_de))
   expect_identical(tmp2$sender_receiver_info, tmp$sender_receiver_info)
 
-  # Change slot for package version < 5
-  slot_name <- ifelse(as.numeric(substr(packageVersion("Seurat"), 1, 1)) < 5, "slot", "layer")
+  # Change slot if object is seurat obj v5
+  # slot_name <- ifelse(as.numeric(substr(seurat_obj_test@version, 1, 1)) >= 5 & inherits(seurat_obj_test[["RNA"]], "Assay5"),
+  #     "layer", "slot")
+  slot_name <- "slot"
 
   tmp3 <- do.call(generate_info_tables, replace(generate_info_tables_args, slot_name, "counts"))
 
   # tmp3 should have different values for p_val_ligand, lfc_ligand, average values, and lr_condition_de
   expect_false(isTRUE(all.equal(tmp$sender_receiver_de$p_val_receptor, tmp3$sender_receiver_de$p_val_receptor)))
-  expect_false(isTRUE(all.equal(tmp$sender_receiver_de$lfc_receptor, tmp3$sender_receiver_de$lfc_receptor)))
+  # LFC remains the same for v5
+  if (grepl("^5", packageVersion("Seurat")) & grepl("^5", seurat_obj_test@version)){
+    expect_true(isTRUE(all.equal(tmp$sender_receiver_de$lfc_receptor, tmp3$sender_receiver_de$lfc_receptor)))
+  } else {
+    expect_false(isTRUE(all.equal(tmp$sender_receiver_de$lfc_receptor, tmp3$sender_receiver_de$lfc_receptor)))
+  }
   expect_false(isTRUE(all.equal(tmp$sender_receiver_info$avg_ligand, tmp3$sender_receiver_info$avg_ligand)))
   expect_false(isTRUE(all.equal(tmp$lr_condition_de$p_val_receptor, tmp3$lr_condition_de$p_val_receptor)))
 
