@@ -11,6 +11,7 @@
 #' @param top_n_regulators The number of top regulators that should be included in the ligand-target signaling network. Top regulators are regulators that score both high for being upstream of the target gene(s) and high for being downstream of the ligand. Default: 4.
 #' @param weighted_networks A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)
 #' @param ligands_position Indicate whether the ligands in the ligand-target matrix are in the rows ("rows") or columns ("cols"). Default: "cols".
+#' @param minmax_scaling Indicate whether the weights of both dataframes should be min-max scaled between 0.75 and 1. Default: FALSE.
 #'
 #' @return A list containing 2 elements (sig and gr): the integrated weighted ligand-signaling and gene regulatory networks data frame / tibble format with columns: from, to, weight
 #'
@@ -27,7 +28,7 @@
 #' }
 #' @export
 #'
-get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all, top_n_regulators = 4, weighted_networks, ligands_position = "cols"){
+get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all, top_n_regulators = 4, weighted_networks, ligands_position = "cols", minmax_scaling = FALSE){
 
   if (!is.list(weighted_networks))
     stop("weighted_networks must be a list object")
@@ -69,6 +70,11 @@ get_ligand_signaling_path = function(ligand_tf_matrix, ligands_all, targets_all,
     filter(from %in% c(ligands_all,tf_nodes) & to %in% tf_nodes) %>% group_by(from,to) %>% mutate(weight = sum(weight)) %>% ungroup() %>% distinct()
   tf_regulatory = weighted_networks$gr %>%
     filter(from %in% final_combined_df$TF & to %in% targets_all)  %>% ungroup() %>% distinct()
+
+  if (minmax_scaling){
+    tf_signaling <- tf_signaling %>% mutate(weight = ((weight-min(weight))/(max(weight)-min(weight))) + 0.75)
+    tf_regulatory <- tf_regulatory %>% mutate(weight = ((weight-min(weight))/(max(weight)-min(weight))) + 0.75)
+  }
 
   return(list(sig = tf_signaling, gr = tf_regulatory))
 }
@@ -344,7 +350,7 @@ make_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,x_axis = TR
   requireNamespace("dplyr")
   requireNamespace("ggplot2")
 
-  matrix_df_vis = matrix %>% data.frame() %>% rownames_to_column("y") %>% as_tibble() %>% gather(x,"score", -y) %>% mutate(y = factor(y, levels = rownames(matrix), ordered = TRUE), x = factor(x, levels = colnames(matrix), ordered = TRUE))
+  matrix_df_vis = matrix %>% data.frame(check.names = FALSE) %>% rownames_to_column("y") %>% as_tibble() %>% gather(x,"score", -y) %>% mutate(y = factor(y, levels = rownames(matrix), ordered = TRUE), x = factor(x, levels = colnames(matrix), ordered = TRUE))
 
   plot_object = matrix_df_vis %>% ggplot(aes(x,y,fill = score)) + geom_tile(color = "white", size = 0.5) + scale_fill_gradient(low = "whitesmoke", high = color) + theme_minimal()
 
@@ -424,7 +430,7 @@ make_threecolor_heatmap_ggplot = function(matrix, y_name, x_name, y_axis = TRUE,
   requireNamespace("dplyr")
   requireNamespace("ggplot2")
 
-  matrix_df_vis = matrix %>% data.frame() %>% rownames_to_column("y") %>% as_tibble() %>% gather(x,"score", -y) %>% mutate(y = factor(y, levels = rownames(matrix), ordered = TRUE), x = factor(x, levels = colnames(matrix), ordered = TRUE))
+  matrix_df_vis = matrix %>% data.frame(check.names = FALSE) %>% rownames_to_column("y") %>% as_tibble() %>% gather(x,"score", -y) %>% mutate(y = factor(y, levels = rownames(matrix), ordered = TRUE), x = factor(x, levels = colnames(matrix), ordered = TRUE))
 
   plot_object = matrix_df_vis %>% ggplot(aes(x,y,fill = score)) + geom_tile(color = "white", size = 0.5) + scale_fill_gradient2(low = low_color, mid = mid_color,high = high_color, midpoint = mid) + theme_minimal()
 
@@ -557,6 +563,7 @@ make_heatmap_bidir_lt_ggplot = function(matrix, y_name, x_name, y_axis = TRUE, x
 #' @param receptor_fill_colors A vector of the low and high colors to use for the receptor semicircle fill gradient (default: c("#FEE0D2", "#A50F15"))
 #' @param unranked_ligand_fill_colors A vector of the low and high colors to use for the unranked ligands when show_all_datapoints is TRUE (default: c(alpha("#FFFFFF", alpha=0.2), alpha("#252525", alpha=0.2)))
 #' @param unranked_receptor_fill_colors A vector of the low and high colors to use for the unkraed receptors when show_all_datapoints is TRUE (default: c(alpha("#FFFFFF", alpha=0.2), alpha("#252525", alpha=0.2)))
+#' @param ... Additional arguments passed to \code{\link{ggplot2::theme}}. As there are often issues with the scales legend, it is recommended to change legend sizes and positions using this argument, i.e., \code{legend.key.height}, \code{legend.key.width}, \code{legend.title}, and \code{legend.text}.
 #'
 #' @return A ggplot object
 #'
@@ -572,24 +579,29 @@ make_heatmap_bidir_lt_ggplot = function(matrix, y_name, x_name, y_axis = TRUE, x
 #' prior_table <- generate_prioritization_tables(processed_expr_table, processed_DE_table, ligand_activities, processed_condition_markers, prioritizing_weights)
 #' make_mushroom_plot(prior_table)
 #'
+#'
 #' # Show only top 20, and write rankings on the plot
 #' make_mushroom_plot(prior_table, top_n = 20, show_rankings = TRUE)
 #'
 #' # Show all datapoints, and use true color range
 #' make_mushroom_plot(prior_table, show_all_datapoints = TRUE, true_color_range = TRUE)
 #'
+#'
 #' # Change the size and color columns
 #' make_mushroom_plot(prior_table, size = "pct_expressed", color = "scaled_avg_exprs")
 #' }
+#'
+#'
 #' @export
 #'
-make_mushroom_plot = function(prioritization_table, top_n = 30, show_rankings = FALSE,
+make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings = FALSE,
                               show_all_datapoints = FALSE, true_color_range = FALSE,
                               size = "scaled_avg_exprs", color = "scaled_lfc",
                               ligand_fill_colors = c("#DEEBF7", "#08306B"),
                               receptor_fill_colors = c("#FEE0D2", "#A50F15"),
                               unranked_ligand_fill_colors = c(alpha("#FFFFFF", alpha=0.2), alpha("#252525", alpha=0.2)),
-                              unranked_receptor_fill_colors = c( alpha("#FFFFFF", alpha=0.2), alpha("#252525", alpha=0.2))){
+                              unranked_receptor_fill_colors = c( alpha("#FFFFFF", alpha=0.2), alpha("#252525", alpha=0.2)),
+                              ...){
   size_ext <-  c("ligand", "receptor"); color_ext <- c("ligand", "receptor")
   if (size == "pct_expressed") size_ext <- c("sender", "receiver")
   if (color == "pct_expressed") color_ext <- c("sender", "receiver")
@@ -600,7 +612,7 @@ make_mushroom_plot = function(prioritization_table, top_n = 30, show_rankings = 
     stop(paste(paste0("`", cols_to_use %>% .[!. %in% colnames(prioritization_table)], "`", collapse =", "), "column not in prioritization table"))
   }
   if(!is.logical(show_rankings) | length(show_rankings) != 1)
-       stop("show_rankings should be a TRUE or FALSE")
+    stop("show_rankings should be a TRUE or FALSE")
   if(!is.logical(show_all_datapoints) | length(show_all_datapoints) != 1)
     stop("show_all_datapoints should be a TRUE or FALSE")
   if(!is.logical(true_color_range) | length(true_color_range) != 1)
@@ -645,14 +657,46 @@ make_mushroom_plot = function(prioritization_table, top_n = 30, show_rankings = 
   # Rename size and color columns to be more human-readable
   keywords_adj <- c("LFC", "p-val", "product", "mean", "adjusted", "expression") %>% setNames(c("lfc", "pval", "prod", "avg", "adj", "exprs"))
   size_title <- sapply(stringr::str_split(size, "_")[[1]], function(k) ifelse(is.na(keywords_adj[k]), k, keywords_adj[k])) %>%
-    paste0(., collapse = " ") %>%  R.utils::capitalize()
+    paste0(., collapse = " ") %>%  stringr::str_replace("^\\w{1}", toupper)
   color_title <- sapply(stringr::str_split(color, "_")[[1]], function(k) ifelse(is.na(keywords_adj[k]), k, keywords_adj[k])) %>%
-    paste0(., collapse = " ") %>% R.utils::capitalize()
+    paste0(., collapse = " ") %>% stringr::str_replace("^\\w{1}", toupper)
 
   color_lims <- c(0,1)
   if (true_color_range) color_lims <- NULL
 
   scale <- 0.5
+
+  ncelltypes <- length(celltypes_vec)
+  n_interactions <- length(lr_interaction_vec)
+  legend2_df <- data.frame(values = c(0.25, 0.5, 0.75, 1), x=(ncelltypes+2.5):(ncelltypes+5.5), y=rep(floor(n_interactions/3), 4), start=-pi)
+  axis_rect <- data.frame(xmin=0, xmax=ncelltypes+1, ymin=0, ymax=n_interactions+1)
+  panel_grid_y <- data.frame(x = rep(seq(from = 0.5, to = ncelltypes+0.5, by = 1), each=2),
+                             y = c(n_interactions+1, 0), group = rep(1:(ncelltypes+1), each=2))
+  panel_grid_x <- data.frame(y = rep(seq(from = 0.5, to = n_interactions+0.5, by = 1), each=2),
+                             x = c(ncelltypes+1, 0), group = rep(1:(n_interactions+1), each=2))
+
+  theme_args <- list(panel.grid.major = element_blank(),
+                     legend.box = "horizontal",
+                     panel.background = element_blank())
+
+  theme_args[names(list(...))] <- list(...)
+
+  # Check if legend.title is in the extra arguments
+    # Multiply by ratio of 5/14: see https://stackoverflow.com/questions/25061822/ggplot-geom-text-font-size-control
+  scale_legend_title_size <- ifelse("legend.title" %in% names(theme_args), theme_args$legend.title$size*(5/14), GeomLabel$default_aes$size)
+  # Check if legend.text is in the extra arguments
+  scale_legend_text_size <- ifelse("legend.text" %in% names(theme_args), theme_args$legend.text$size*(5/14), GeomLabel$default_aes$size)
+
+  # Check if legend.justification is in the extra arguments
+  if (!"legend.justification" %in% names(theme_args)) {
+    theme_args$legend.justification <- c(1, 0.7)
+  }
+
+  # Check if legend.position is in the extra arguments
+  if (!"legend.position" %in% names(theme_args)){
+    theme_args$legend.position <- c(1, 0.7)
+  }
+
   p1 <- ggplot() +
     # Draw ligand semicircle
     geom_arc_bar(data = filtered_table %>% filter(type=="ligand",  prioritization_rank <= top_n),
@@ -661,6 +705,8 @@ make_mushroom_plot = function(prioritization_table, top_n = 30, show_rankings = 
                  color = "white") +
     scale_fill_gradient(low = ligand_fill_colors[1] , high=ligand_fill_colors[2] ,
                         limits=color_lims, oob=scales::squish,
+                        n.breaks = 3,
+                        guide = guide_colorbar(order = 1),
                         name=paste0(color_title, " (", color_ext[1], ")") %>% str_wrap(width=15)) +
     # Create new fill scale for receptor semicircles
     new_scale_fill() +
@@ -668,34 +714,57 @@ make_mushroom_plot = function(prioritization_table, top_n = 30, show_rankings = 
                  aes(x0 = x, y0 = y, r0 = 0, r = sqrt(size)*scale,
                      start = start, end = start + pi, fill=color),
                  color = "white") +
-    scale_fill_gradient(low = receptor_fill_colors[1], high=receptor_fill_colors[2] , limits=color_lims, oob=scales::squish,
-                        name=paste0(color_title,  " (", color_ext[2], ")") %>% str_wrap(width=15)) +
+    # Size legend
+    geom_arc_bar(data = legend2_df, aes(x0=x, y0=y, r0=0, r=sqrt(values)*scale, start=start, end=start+pi), fill="black") +
+    geom_rect(data = legend2_df, aes(xmin=x-0.5, xmax=x+0.5, ymin=y-0.5, ymax=y+0.5), color="gray90", fill=NA) +
+    geom_text(data = legend2_df, aes(label=values, x=x, y=y-0.6), vjust=1, size = scale_legend_text_size) +
+    geom_text(data = data.frame(x = (ncelltypes+4), y = floor(n_interactions/3)+1,
+                                label = size_title %>% str_wrap(width=15)),
+              aes(x=x, y=y, label=label), size = scale_legend_title_size, vjust=0, lineheight = .75) +
+    # Panel grid
+    geom_line(data = panel_grid_y, aes(x=x, y=y, group=group), color = "gray90") +
+    geom_line(data = panel_grid_x, aes(x=x, y=y, group=group), color = "gray90") +
+    # Draw box to represent x and y "axis"
+    geom_rect(data = axis_rect, aes(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax), color = "black", fill = "transparent") +
     # Other plot information
-    scale_y_continuous(breaks=length(lr_interaction_vec):1, labels=names(lr_interaction_vec)) +
-    scale_x_continuous(breaks=1:length(celltypes_vec), labels=names(celltypes_vec), position="top") +
+    scale_fill_gradient(low = receptor_fill_colors[1], high=receptor_fill_colors[2] , limits=color_lims, oob=scales::squish, n.breaks = 3,
+                        name=paste0(color_title,  " (", color_ext[2], ")") %>% str_wrap(width=15),
+                        guide = guide_colorbar(order = 2)) +
+    scale_y_continuous(breaks=n_interactions:1, labels=names(lr_interaction_vec), expand = expansion(add=c(0,0))) +
+    scale_x_continuous(breaks=1:ncelltypes, labels=names(celltypes_vec), position="top", expand = expansion(add=c(0,0))) +
     xlab("Sender cell types") + ylab("Ligand-receptor interaction") +
     coord_fixed() +
-    theme_bw() +
-    theme(panel.grid.major = element_blank(),
-          legend.box = "horizontal")
-
+    do.call(theme, theme_args)
 
   # Add unranked ligand and receptor semicircles if requested
   if (show_all_datapoints){
+
+    # Limits will depend on true_color_range
+    unranked_ligand_lims <- c(0,1); unranked_receptor_lims <- c(0,1)
+    if (true_color_range){
+      # Follow limits of the top_n lr pairs
+      unranked_ligand_lims <- filtered_table %>% filter(type=="ligand",  prioritization_rank <= top_n) %>%
+        select(color) %>% range
+      unranked_receptor_lims <- filtered_table %>% filter(type=="receptor",  prioritization_rank <= top_n) %>%
+        select(color) %>% range
+    }
+
     p1 <- p1 + new_scale_fill() +
       geom_arc_bar(data = filtered_table %>% filter(type=="ligand", prioritization_rank > top_n),
                    aes(x0 = x, y0 = y, r0 = 0, r = sqrt(size)*scale,
                        start = start, end = start + pi, fill=color),
                    color = "white") +
       scale_fill_gradient(low = unranked_ligand_fill_colors[1], high=unranked_ligand_fill_colors[2],
-                          limits=color_lims, oob=scales::squish, guide = "none") +
+                          limits=unranked_ligand_lims, oob = scales::oob_squish,
+                          guide = "none") +
       new_scale_fill() +
       geom_arc_bar(data = filtered_table %>% filter(type=="receptor", prioritization_rank > top_n),
                    aes(x0 = x, y0 = y, r0 = 0, r = sqrt(size)*scale,
                        start = start, end = start + pi, fill=color),
                    color = "white") +
       scale_fill_gradient(low=unranked_receptor_fill_colors[1], high=unranked_receptor_fill_colors[2],
-                          limits=color_lims, oob=scales::squish, guide = "none")
+                          limits=unranked_receptor_lims, oob = scales::oob_squish,
+                          guide = "none")
   }
 
   # Add ranking numbers if requested
@@ -704,33 +773,539 @@ make_mushroom_plot = function(prioritization_table, top_n = 30, show_rankings = 
                                aes(x=x, y=y, label=prioritization_rank))
   }
 
-  legend1 <- ggpubr::as_ggplot(ggpubr::get_legend(p1))
-
-  # For the size legend, create a new plot
-  legend2 <- ggplot(data.frame(values = c(0.25, 0.5, 0.75, 1), x=1:4, y=1, start=-pi)) +
-    geom_rect(aes(xmin=x-0.5, xmax=x+0.5, ymin=y-0.5, ymax=y+0.5), color="gray80", fill=NA) +
-    geom_arc_bar(aes(x0=x, y0=y, r0=0, r=sqrt(values)*scale, start=start, end=start+pi), fill="black") +
-    geom_text(aes(label=values, x=x, y=y-0.6), vjust=1) +
-    labs(tag = size_title) +
-    scale_x_continuous(breaks = 1:4, labels=c(0.25, 0.5, 0.75, 1)) +
-    scale_y_continuous(limits=c(-0.5, 1.5)) +
-    labs(x="Percent expressed") +
-    coord_fixed() +  theme_classic() +
-    theme(panel.background = element_blank(),
-          plot.background = element_blank(),
-          plot.margin = margin(0, 0, 10, 0),
-          plot.tag.position = "top",
-          plot.tag = element_text(margin=margin(0, 0, 5,0), size=10),
-          axis.text = element_blank(),
-          axis.line = element_blank(),
-          axis.ticks = element_blank(),
-          axis.title = element_blank())
-
-  # Combine the two legends
-  legends <- cowplot::plot_grid(NULL, legend1, legend2, NULL, nrow=4, scale=c(1,1,0.5,1),
-                                rel_heights = c(2, 1, 2, 2), align = "v", axis="tb")
-  cowplot::plot_grid(p1 + theme(legend.position="none"), legends)
+  p1
 }
 
 
+## Circos plot functions
+#' @title Assign ligands to cell types
+#' @usage assign_ligands_to_celltype(seuratObj, ligands, celltype_col, func.agg=mean, func.assign=function(x) mean(x) + sd(x), slot="data", condition_oi=NULL, condition_col=NULL)
+#' @description Assign ligands to a sender cell type, based on the strongest expressing cell type of that ligand. Ligands are only assigned to a cell type if that cell type is the only one to show an expression that is higher than the average + SD. Otherwise, it is assigned to "General".
+#' @param seuratObj Seurat object
+#' @param ligands Vector of ligands to assign to cell types
+#' @param celltype_col Metadata column name in the Seurat object that contains the cell type information
+#' @param func.agg Function to use to aggregate the expression of a ligand across all cells in a cell type (default = mean)
+#' @param func.assign Function to use to assign a ligand to a cell type (default = mean + SD)
+#' @param slot Slot in the Seurat object to use (default = "data"). If "data", the normalized counts are first exponentiated before aggregation is performed
+#' @param condition_oi Condition of interest to subset the Seurat object (default = NULL)
+#' @param condition_col Metadata column name in the Seurat object that contains the condition of interest (default = NULL)
+#' @return A data frame of two columns, the cell type the ligand has been assigned to (\code{ligand_type}) and the ligand name (\code{ligand})
+#' @export
+#' @examples \dontrun{
+#' assign_ligands_to_celltype(seuratObj = seuratObj, ligands = best_upstream_ligands[1:20],
+#'                           celltype_col = "celltype", func.agg = mean, func.assign = function(x) {mean(x)+sd(x)},
+#'                           slot = "data", condition_oi = "LCMV", condition_col = "aggregate")
+#' }
+#'
+assign_ligands_to_celltype <- function(seuratObj, ligands, celltype_col, func.agg = mean, func.assign = function(x) {mean(x)+sd(x)},
+                                        condition_oi = NULL, condition_col = NULL, slot = "data") {
+  # Check that if condition_oi is given, then so is condition_oi, and vice versa
+  if (any(!is.na(condition_col), !is.na(condition_oi)) & !all(!is.na(condition_col), !is.na(condition_oi))){
+    stop("Please input both condition_colname and condition_oi")
+  }
+
+  # Check that all ligands are in the seurat object
+  if (any(!ligands %in% rownames(seuratObj))){
+    stop("Not all ligands are in the Seurat object")
+  }
+
+  seuratObj_subset <- subset(seuratObj, features = ligands)
+
+  # Calculate average ligand expression in sender cells
+  if (!is.null(condition_oi)){
+    seuratObj_subset <- seuratObj_subset[, seuratObj_subset[[condition_col]] == condition_oi ]
+  }
+
+  avg_expression_ligands <- lapply(unique(seuratObj_subset$celltype), function (celltype) {
+    if (slot == "data"){
+      # Exponentiate-1 and calculate in non-log space
+      expm1(GetAssayData(seuratObj_subset[, seuratObj_subset[[celltype_col]] == celltype], slot = slot)) %>%
+        apply(1, func.agg)
+
+    } else {
+      apply(GetAssayData(seuratObj_subset[, seuratObj_subset[[celltype_col]] == celltype], slot = slot), 1, func.agg)
+
+    }
+    }) %>% setNames(unique(seuratObj_subset$celltype)) %>%
+    do.call(cbind, .) %>%
+    set_rownames(ligands)
+
+  sender_ligand_assignment <- avg_expression_ligands %>% apply(1, function(ligand_expression){
+    ligand_expression > func.assign(ligand_expression)
+  }) %>% t()
+  sender_ligand_assignment <- sender_ligand_assignment %>% apply(2, function(x){x[x == TRUE]}) %>% purrr::keep(function(x){length(x) > 0})
+
+  all_assigned_ligands = sender_ligand_assignment %>% lapply(function(x){names(x)}) %>% unlist()
+  unique_ligands = all_assigned_ligands %>% table() %>% .[. == 1] %>% names()
+  general_ligands = ligands %>% setdiff(unique_ligands)
+
+  ligand_type_indication_df <- lapply(names(sender_ligand_assignment), function(sender) {
+    unique_ligands_sender <- names(sender_ligand_assignment[[sender]]) %>% setdiff(general_ligands)
+    data.frame(ligand_type = sender, ligand = unique_ligands_sender)
+  }) %>% bind_rows()
+
+  ligand_type_indication_df <- bind_rows(ligand_type_indication_df,
+                                         data.frame(ligand_type = "General", ligand = general_ligands))
+
+  return(ligand_type_indication_df)
+}
+
+#' @title Get ligand-target links of interest
+#' @usage get_ligand_target_links_oi(ligand_type_indication_df, active_ligand_target_links_df, cutoff = 0.40)
+#' @description Filter ligand-target links based on a cutoff
+#' @param ligand_type_indication_df Dataframe with column names \code{ligand_type} and \code{ligand}, from the function \code{\link{assign_ligands_to_celltype}}
+#' @param active_ligand_target_links_df Dataframe with weighted ligand-target links from the function \code{\link{get_ligand_target_links}}, and an additional column \code{target_type} that indicates the grouping of target genes
+#' @param cutoff Quantile to filter ligand-target links (default = 0.40, meaning 40\% of the lowest weighted ligand-target links are removed)
+#' @return A dataframe with ligand-target links with weights above a certain cutoff. This dataframe also contains the attribute \code{cutoff_include_all_ligands}, which is the cutoff value of regulatory potential used at \code{cutoff} quantile.
+#' @export
+#' @examples \dontrun{
+#' active_ligand_target_links_df <- lapply(best_upstream_ligands, get_weighted_ligand_target_links,
+#'                                          geneset = geneset_oi,
+#'                                          ligand_target_matrix = ligand_target_matrix,
+#'                                          n = 200)
+#' active_ligand_target_links_df <- drop_na(bind_rows(active_ligand_target_links_df))
+#' ligand_type_indication_df <- assign_ligands_to_celltype(seuratObj = seuratObj, ligands = best_upstream_ligands[1:20])
+#' circos_links <- get_ligand_target_links_oi(ligand_type_indication_df,
+#'                                            active_ligand_target_links_df %>% mutate(target_type = "LCMV-DE"),
+#'                                            cutoff = 0.40)
+#' attr(circos_links, "cutoff_include_all_ligands") # This is the cutoff value of regulatory potential used
+#' }
+#'
+get_ligand_target_links_oi <- function(ligand_type_indication_df, active_ligand_target_links_df, cutoff = 0.40){
+  # Check that ligand_type_indication_df has the correct colnames
+  if (!all(c("ligand_type", "ligand") %in% colnames(ligand_type_indication_df))){
+    stop("ligand_type_indication_df must have columns ligand_type and ligand")
+  }
+
+  # Check that active_ligand_target_links_df has the correct colnames
+  if (!all(c("ligand", "target", "weight", "target_type") %in% colnames(active_ligand_target_links_df))){
+    stop("active_ligand_target_links_df must have columns ligand, target, weight, and target_type")
+  }
+
+  # Check that cutoff is between 0 and 1
+  if (cutoff < 0 | cutoff > 1){
+    stop("cutoff must be between 0 and 1")
+  }
+
+  active_ligand_target_links_df <- active_ligand_target_links_df %>% inner_join(ligand_type_indication_df)
+  cutoff_include_all_ligands <- active_ligand_target_links_df$weight %>% quantile(cutoff)
+  active_ligand_target_links_df_circos <- active_ligand_target_links_df %>% filter(weight > cutoff_include_all_ligands)
+  ligands_to_remove <- setdiff(active_ligand_target_links_df$ligand %>% unique(), active_ligand_target_links_df_circos$ligand %>% unique())
+  targets_to_remove <- setdiff(active_ligand_target_links_df$target %>% unique(), active_ligand_target_links_df_circos$target %>% unique())
+  circos_links <- active_ligand_target_links_df %>% filter(!target %in% targets_to_remove & !ligand %in% ligands_to_remove)
+
+  # Add this as an attribute
+  attr(circos_links, "cutoff_include_all_ligands") <- cutoff_include_all_ligands
+  return(circos_links)
+}
+
+#' @title Prepare circos visualization
+#' @usage prepare_circos_visualization(circos_links, ligand_colors = NULL, target_colors = NULL, widths = NULL, celltype_order = NULL)
+#' @description Prepare the data for the circos visualization by incorporating the colors and order of the links, as well as gaps between different cell types
+#' @param circos_links Dataframe from the function \code{\link{get_ligand_target_links_oi}} containing weighted ligand-target links, cell type expressing the ligand, and target gene goruping
+#' @param ligand_colors Named vector of colors for each cell type (default: NULL, where colors follow the ggplot default color scheme)
+#' @param target_colors Named vector of colors for each target gene grouping (default: NULL, where colors follow the ggplot default color scheme)
+#' @param widths Named list of widths for the different types groupings, including:
+#' \itemize{
+#' \item width_same_cell_same_ligand_type: Width of the links between ligands of the same cell type (default: 0.5)
+#' \item width_different_cell: Width of the links between different cell types, or between different target gene groups (default: 6)
+#' \item width_ligand_target: Width of the links between ligands and targets (default: 15)
+#' \item width_same_cell_same_target_type: Width of the links between target genes of the same group (default: 0.5)
+#' }
+#' @param celltype_order Order of the cell types (default: NULL, where cell types are ordered alphabetically, followed by "General"). Cell types are then drawn counter-clockwise in the circos plot.
+#' @return A list of four objects, including:
+#' \itemize{
+#' \item circos_links: Dataframe of weighted ligand-target links
+#' \item ligand_colors: Named vector of ligands and their colors
+#' \item order: Vector of order of the ligands and target genes
+#' \item gaps: Vector of gaps between the different groupings
+#' }
+#' @examples \dontrun{
+#' celltype_order <- c("General", "NK", "B", "DC", "Mono")
+#' ligand_colors <- c("General" = "lawngreen", "NK" = "royalblue", "B" = "darkgreen", "Mono" = "violet", "DC" = "steelblue2")
+#' target_colors <- c("LCMV-DE" = "tomato")
+#' vis_circos_obj <- prepare_circos_visualization(circos_links, ligand_colors, target_colors, celltype_order = celltype_order)
+#' }
+#'
+#' @export
+prepare_circos_visualization <- function(circos_links, ligand_colors = NULL, target_colors = NULL, widths = NULL, celltype_order = NULL) {
+  # Check that circos_links has the correct colnames
+  if (!all(c("ligand", "target", "weight", "target_type", "ligand_type") %in% colnames(circos_links))){
+    stop("circos_links must have columns ligand, target, weight, target_type, and ligand_type")
+  }
+
+  # If ligand_colors and/or target_colors is NULL, set to default ggplot colors (equally spaced colors around the color wheel)
+  if (is.null(ligand_colors) | is.null(target_colors)){
+    n_ligands <- is.null(ligand_colors)*length(unique(circos_links$ligand_type))
+    n_targets <- is.null(target_colors)*length(unique(circos_links$target_type))
+    n_total <- n_ligands + n_targets
+    hues <- seq(15, 375, length = n_total + 1)
+
+    if (is.null(target_colors)){
+      target_colors <- hcl(h = hues, l = 65, c = 100)[(n_ligands+1):n_total]
+      names(target_colors) <- unique(circos_links$target_type)
+    }
+
+    if (is.null(ligand_colors)){
+      ligand_colors <- hcl(h = hues, l = 65, c = 100)[1:n_ligands]
+      names(ligand_colors) <- unique(circos_links$ligand_type)
+    }
+  }
+
+  # Check that ligand colors contains all ligand types
+  if (!all(unique(circos_links$ligand_type) %in% names(ligand_colors))){
+    stop("ligand_colors must contain all cell types in circos_links$ligand_type")
+  }
+
+    # If ligand colors contain additional cell types, intersect
+  if (length(setdiff(names(ligand_colors), unique(circos_links$ligand_type))) > 0){
+    warning("ligand_colors contains additional cell types not in circos_links$ligand_type, these will be removed")
+    ligand_colors <- ligand_colors %>% .[names(.) %in% unique(circos_links$ligand_type)]
+  }
+
+  # Check that target colors contains all target types
+  if (!all(unique(circos_links$target_type) %in% names(target_colors))){
+    stop("target_colors must contain all target groupings in circos_links$target_type")
+  }
+
+  # If target colors contain additional target types, intersect
+  if (length(setdiff(names(target_colors), unique(circos_links$target_type))) > 0){
+    warning("target_colors contains additional target types not in circos_links$target_type, these will be removed")
+    target_colors <- target_colors %>% .[names(.) %in% unique(circos_links$target_type)]
+  }
+
+  # Check that celltype_order contains all cell types
+  if (!is.null(celltype_order) & !all(unique(circos_links$ligand_type) %in% celltype_order)){
+    stop("celltype_order must contain all cell types in circos_links$ligand_type")
+  }
+
+  # If celltype_order contains additional cell types, intersect
+  if (!is.null(celltype_order) & length(setdiff(celltype_order,  unique(circos_links$ligand_type))) > 0){
+    warning("celltype_order contains additional cell types not in circos_links$ligand_type, these will be removed")
+    celltype_order <- celltype_order %>% .[. %in% unique(circos_links$ligand_type)]
+  }
+
+  # If width is null, set default widths
+  if (is.null(widths)){
+    widths <- list(width_same_cell_same_ligand_type = 0.5,
+                  width_different_cell = 6,
+                  width_ligand_target = 15,
+                  width_same_cell_same_target_type = 0.5)
+  }
+
+  # Check that widths contains all widths
+  if (!all(c("width_same_cell_same_ligand_type", "width_different_cell", "width_ligand_target", "width_same_cell_same_target_type") %in% names(widths))){
+    stop("widths must contain all four width names")
+  }
+
+  # Check that all widths are numeric
+  if (!all(is.numeric(unlist(widths)))){
+    stop("all widths must be numeric")
+  }
+
+
+  #  give each segment of ligands and targets a specific color and order
+  grid_col_tbl_ligand <- tibble(ligand_type = ligand_colors %>% names(), color_ligand_type = ligand_colors)
+  grid_col_tbl_target <- tibble(target_type = target_colors %>% names(), color_target_type = target_colors)
+
+  circos_links <- circos_links %>% mutate(ligand = paste(ligand," ")) # extra space: make a difference between a gene as ligand and a gene as target!
+  circos_links <- circos_links %>% inner_join(grid_col_tbl_ligand) %>% inner_join(grid_col_tbl_target)
+  links_circle <- circos_links %>% select(ligand, target, weight)
+
+  ligand_color <- circos_links %>% distinct(ligand,color_ligand_type)
+  grid_ligand_color <- ligand_color$color_ligand_type %>% set_names(ligand_color$ligand)
+  target_color <- circos_links %>% distinct(target,color_target_type)
+  grid_target_color <- target_color$color_target_type %>% set_names(target_color$target)
+
+  grid_col <- c(grid_ligand_color, grid_target_color)
+
+  # Prepare the circos visualization: order ligands and targets
+  target_type_order <- circos_links %>% arrange(target_type) %>% pull(target_type) %>% unique()
+  target_order <- circos_links %>% arrange(target_type, target) %>% pull(target) %>% unique()
+
+  if (is.null(celltype_order)){
+    circos_links_arranged <- circos_links %>% mutate(
+      ligand_type_order = case_when(
+        ligand_type == "General" ~ 1,
+        TRUE ~ 2
+      )) %>% arrange(ligand_type_order, desc(ligand_type)) %>%
+      select(-ligand_type_order)
+    ligand_type_order <- circos_links_arranged %>% pull(ligand_type) %>% unique
+    ligand_order <- circos_links_arranged %>% pull(ligand) %>% unique
+  } else {
+    ligand_type_order <- celltype_order
+    # Arrange circos_links according to celltype_order
+    ligand_order <- circos_links %>% arrange(factor(ligand_type, levels = celltype_order), ligand) %>% pull(ligand) %>% unique
+
+  }
+
+  order <- c(ligand_order,target_order)
+
+  # Prepare the circos visualization: define the gaps between the different segments
+  gaps_sender_cell_types <- unlist(lapply(seq_along(ligand_type_order), function(i) {
+    c(rep(widths$width_same_cell_same_ligand_type,
+        times = (circos_links %>% filter(ligand_type == ligand_type_order[i]) %>% distinct(ligand) %>% nrow()-1)),
+      if (i < length(ligand_type_order)) widths$width_different_cell)
+    }))
+
+  gaps_target_types <- unlist(lapply(seq_along(target_type_order), function(i) {
+    c(rep(widths$width_same_cell_same_target_type,
+          times = (circos_links %>% filter(target_type == target_type_order[i]) %>% distinct(target) %>% nrow()-1)),
+      if (i < length(target_type_order)) widths$width_different_cell)
+  }))
+
+  gaps <- c(
+    gaps_sender_cell_types,
+    widths$width_ligand_target,
+    gaps_target_types,
+    widths$width_ligand_target
+  )
+
+  return(list(links_circle = links_circle, ligand_colors = grid_col, order=order, gaps = gaps))
+
+}
+
+#' @title Draw a circos plot
+#' @usage make_circos_plot(vis_circos_obj, transparency = FALSE, args.circos.text = list(), ...)
+#' @description Draw a circos plot
+#' @param vis_circos_obj Object returned by \code{\link{prepare_circos_visualization}}
+#' @param transparency Logical indicating whether the transparency of the links will correspond to the ligand-target potential score (default: FALSE)
+#' @param args.circos.text List of arguments to pass to \code{\link{circos.text}} (by default, the text size is set to 1)
+#' @param ... Additional arguments to pass to \code{\link{chordDiagram}}
+#' @return A circos plot
+#' @export
+#' @examples
+#' \dontrun{
+#' # Default
+#' make_circos_plot(vis_circos_obj, transparency = FALSE)
+#'
+#' # Transparency
+#' make_circos_plot(vis_circos_obj, transparency = TRUE)
+#'
+#' # Make text smaller
+#' make_circos_plot(vis_circos_obj, transparency = TRUE, args.circos.text = list(cex = 0.5))
+#'
+#' # Don't sort links of each ligand based on widths (not recommended)
+#' make_circos_plot(vis_circos_obj, transparency = TRUE, args.circos.text = list(cex = 0.5), link.sort = FALSE)
+#' }
+make_circos_plot <- function(vis_circos_obj, transparency = FALSE, args.circos.text = list(), ...){
+  # Check that transparency is a logical
+  if (!is.logical(transparency)) stop("transparency should be a logical")
+
+  # Check that vis_circos_obj contains the required elements
+  if (!all(c("links_circle", "ligand_colors", "order", "gaps") %in% names(vis_circos_obj))) stop("vis_circos_obj should contain the elements 'links_circle', 'ligand_colors', 'order' and 'gaps'")
+
+  # Check that all elements of args.circos.text is part of the arguments of circos.text
+  if (!all(names(args.circos.text) %in% names(formals(circos.text)))) {
+    warning("args.circos.text contain element(s) that are not part of the arguments of circos.text")
+  }
+
+  # Check that all elements of ... is part of the arguments of chordDiagram
+  if (!all(names(list(...)) %in% names(formals(chordDiagram)))) {
+    warning("extra arguments contain element(s) that are not part of the arguments of chordDiagram")
+  }
+
+  # give the option that links in the circos plot will be transparant ~ ligand-target potential score
+  if (!transparency){
+    transparency_val <- 0
+  } else if (transparency) {
+    transparency_val <- vis_circos_obj$links_circle %>% mutate(weight =(weight-min(weight))/(max(weight)-min(weight))) %>% mutate(transparency = 1-weight) %>% .$transparency
+  }
+
+  default_params <- list(x = vis_circos_obj$links_circle,
+                         order=vis_circos_obj$order,
+                         grid.col = vis_circos_obj$ligand_colors,
+                         transparency = transparency_val,
+                         directional = 1, link.sort = TRUE,
+                         link.decreasing = FALSE,
+                         diffHeight = 0.005,
+                         direction.type = c("diffHeight", "arrows"),
+                         link.arr.type = "big.arrow",
+                         link.visible = vis_circos_obj$links_circle$weight >= attr(vis_circos_obj$links_circle, "cutoff_include_all_ligands"),
+                         annotationTrack = "grid",
+                         preAllocateTracks = list(track.height = 0.075)
+                         )
+
+  # Replace this with user arguments
+  default_params[names(list(...))] =  list(...)
+
+  circos_text_default_params <- list(
+    facing = "clockwise",
+    niceFacing = TRUE,
+    adj = c(0, 0.55),
+    cex = 1
+  )
+  circos_text_default_params[names(args.circos.text)] <-  args.circos.text
+
+  # Only the widths of the blocks that indicate each target gene is proportional the ligand-target regulatory potential (~prior knowledge supporting the regulatory interaction).
+  circos.par(gap.degree = vis_circos_obj$gaps)
+  do.call(chordDiagram, default_params)
+
+  # we go back to the first track and customize sector labels
+  circos.track(track.index = 1, panel.fun = function(x, y) {
+    do.call(circos.text, c(list(x=CELL_META$xcenter, y=CELL_META$ylim[1], label=CELL_META$sector.index), circos_text_default_params)
+           )
+  }, bg.border = NA)
+  circos.clear()
+}
+
+#' @title Make a line plot
+#' @usage make_line_plot(ligand_activities, potential_ligands, ranking_range = c(1, 20), agnostic_color = "tomato", focused_color = "black", tied_color = "gray75", inset_scale = 1)
+#' @description Make a line plot comparing the ranking of ligands based on their activities in the sender-agnostic and sender-focused approaches
+#' @param ligand_activities Dataframe containing the ligand activities from the sender-agnostic approach
+#' @param potential_ligands Character vector containing the ligands that are expressed in the sender cell type (i.e. the ligands that are used in the sender-focused approach)
+#' @param ranking_range Numeric vector of length 2 indicating the range of the rankings to be displayed (default: c(1, 20))
+#' @param agnostic_color Color representing ligands only inthe sender-agnostic approach (default: "tomato")
+#' @param focused_color Color representing expressed ligands from the sender-focused approach (default: "black")
+#' @param tied_color Color to shade ligands that are tied in the same rank (default: "gray75")
+#' @param inset_scale Numeric value indicating the size of the points and text in the inset (default: 1)
+#' @return A ggplot object showing the distribution of sender-focused ligands, as well as a line plot inset comparing the rankings between the two approaches
+#' @examples \dontrun{
+#' # Default
+#' make_line_plot(ligand_activities, potential_ligands)
+#' }
+#' @export
+
+make_line_plot <- function(ligand_activities, potential_ligands, ranking_range = c(1, 20),
+                           agnostic_color = "tomato", focused_color = "black", tied_color = "gray75",
+                           inset_scale = 1) {
+
+  inset_text_size <- ggplot2::GeomLabel$default_aes$size*inset_scale
+  axis_text_size <- ggplot2::GeomLabel$default_aes$size*0.75*inset_scale
+  axis_title_size <- ggplot2::GeomLabel$default_aes$size*inset_scale
+  point_size <- ggplot2::GeomPoint$default_aes$size*inset_scale
+  segment_linewidth <- ggplot2::GeomSegment$default_aes$linewidth*inset_scale
+  nudge_x <- 0.05/inset_scale
+
+  # Check if all potential ligands are in ligand_activities
+  if (!all(potential_ligands %in% ligand_activities$test_ligand)) stop("Not all potential ligands are in ligand_activities")
+
+  # Check if ranking_range is small -> large
+  if (ranking_range[1] >= ranking_range[2]) stop("Starting range should be smaller than ending range")
+
+  # Add rank to ligand_activities if it doesn't exist
+  if (!"rank" %in% names(ligand_activities)) ligand_activities <- ligand_activities %>% mutate(rank = rank(desc(aupr_corrected)))
+
+  # x position of "sender-agnostic" ligands
+  agnostic_x <- 3.25
+  focused_x <- agnostic_x+(1.5*inset_scale)
+
+  # Create dataframe of the two approaches
+  rankings_df <- bind_rows(ligand_activities %>% select(test_ligand, rank) %>% mutate(type = "agnostic"),
+                          ligand_activities %>% filter(test_ligand %in% potential_ligands) %>%
+                            select(test_ligand, rank) %>% mutate(type = "focused")) %>%
+    group_by(type) %>% mutate(new_rank = 1:n(),
+                              x = case_when(type == "agnostic" ~ agnostic_x,
+                                            type == "focused" ~ focused_x)) %>%
+    # Ligands that are expressed
+    group_by(test_ligand) %>% mutate(expressed = (n() > 1)) %>% ungroup()
+
+  # Define some variables
+  start_n <- ranking_range[1]
+  end_n <- ranking_range[2]
+  n_ligands <- max(rankings_df$new_rank)
+  margin <- 1/10                                                    # Leave 1/10 of plot empty at top and bottom
+  by_n <- ((n_ligands*margin*9)-(n_ligands*margin))/(end_n-start_n) # Space between each rank
+  #cutoff <- by_n+((end_n-start_n+0.5)*by_n) # Doesn't work for all cases
+
+  # Set index to 1 for the start_n ligand
+  rankings_df <- rankings_df %>%
+    group_by(type) %>%
+          mutate(index = (-start_n+2):(n()-start_n+1),
+          y = (n_ligands*margin)+(by_n*(index-1)))
+
+  cutoff <- (rankings_df %>% filter(new_rank == end_n, type == "agnostic") %>% pull(y)) + (by_n*0.25)
+
+  # Line segments that go beyond the inset
+  line_df <- rankings_df %>% filter(expressed) %>% select(-c(rank, new_rank, index, expressed)) %>%
+    pivot_wider(names_from = type, values_from = c(x, y)) %>%
+    rename(x1 = x_agnostic, y1 = y_agnostic, x2 = x_focused, y2 = y_focused) %>%
+    # Use equation of a line to find the x value at the cutoff
+    # Different lines for the top and bottom cutoff
+    mutate(m = (y2-y1)/(x2-x1), x0 = case_when(y2 > by_n ~ ((cutoff-y1)/m)+x1,
+                                              y2 <= by_n ~ (((n_ligands*margin)-y1)/m)+x1))
+
+  # Highlight ties
+  ties_df <- rankings_df %>% group_by(type, rank) %>%
+    mutate(ties = n() > 1) %>% filter(ties == TRUE) %>%
+    ungroup() %>% group_split(type) %>% lapply(., function(group) {
+      group %>% split(f = .$rank) %>%
+        sapply(., function (k) data.frame(range(k$y))) %>% bind_cols %>% t() %>% data.frame() %>%
+        `colnames<-`(c("ystart", "yend")) %>% `rownames<-`(NULL) %>%
+        mutate(xstart = case_when(unique(group$type) == "agnostic" ~ agnostic_x,
+                                  unique(group$type) == "focused" ~ focused_x),
+              xend = xstart)
+    }) %>% bind_rows() %>%
+    # Clip the lines to the cutoff
+    filter(ystart < cutoff, yend > by_n) %>% mutate(yend = case_when(yend > cutoff ~ cutoff,
+                                                        TRUE ~ yend),
+                                                    ystart = case_when(ystart <= (n_ligands*margin) ~ (n_ligands*margin)-(by_n*0.5),
+                                                        TRUE ~ ystart))
+
+  # Subset the dataframe to the range of interest
+  rankings_df_subset <- rankings_df %>% filter(new_rank <= end_n, new_rank >= start_n)
+
+  ggplot() +
+    # BAR PLOT
+    # Base + expressed ligands drawn as line segments
+    geom_rect(aes(ymin=1, ymax=n_ligands, xmin=0.5, xmax=1.5), fill = agnostic_color) +
+    geom_segment(data = rankings_df %>% filter(type == "agnostic", expressed),
+                aes(y=new_rank, yend=new_rank, x=0.5, xend=1.5), color = focused_color, linewidth = segment_linewidth) +
+    # y-axis + ticks
+    geom_segment(aes(y=0, yend=max(labeling::extended(0, n_ligands, 5)), x=0.3, xend=0.3)) +
+    geom_segment(data = (axis_df <- data.frame(x=0.3, xend=0.25, y=labeling::extended(0, n_ligands, 5),
+                                  yend=labeling::extended(0, n_ligands, 5))),
+                aes(y=y, yend=yend, x=x, xend=xend)) +
+    # y-axis ticklabels + title
+    geom_text(data=axis_df, aes(x=xend-0.05, y=y, label=y, hjust=1), size=axis_text_size) +
+    geom_text(aes(x=0, y=n_ligands/2, label="Ligand rankings", vjust=-1/inset_scale), angle=90, size=axis_title_size) +
+    # Title
+    #geom_text(aes(x=1, y=0, label = "Distribution of expressed ligands\nacross all sender-agnostic ligands"), nudge_y=by_n) +
+    ggtitle("Distribution of expressed ligands\nacross all sender-agnostic ligands") +
+    # ELBOW CONNECTORS
+    # Top, vertical line, bottom, horizontal line connecting to inset
+    geom_segment(data = data.frame(x = c(1.6, 1.65, 1.65, 1.65),
+                                  xend = c(1.65, 1.65, 1.60, agnostic_x-1.25),
+                                  y=c(min(rankings_df_subset$new_rank), min(rankings_df_subset$new_rank), max(rankings_df_subset$new_rank), ((end_n-start_n)/2)+start_n-1),
+                                  yend=c(min(rankings_df_subset$new_rank), max(rankings_df_subset$new_rank), max(rankings_df_subset$new_rank), ((end_n-start_n)/2)+start_n-1)),
+                aes(x=x, xend=xend, y=y, yend=yend)) +
+    # LINE PLOT
+    # Ties
+    geom_segment(data = ties_df, aes(x=xstart, y=ystart, xend=xend, yend=yend),
+                color = tied_color, linewidth=3, lineend="round") +
+    # Points
+    geom_point(data = rankings_df_subset, aes(x=x, y=y, color = expressed), size = point_size) +
+    # Line segment from focused -> agnostic
+    geom_segment(data = line_df %>% filter(x0 > agnostic_x, y2 < cutoff, y2 >= (n_ligands*margin)), aes(x=x2, y=y2, xend=x0, yend=cutoff), linewidth = segment_linewidth) +
+    # Line segment from agnostic -> focused
+    geom_segment(data = line_df %>% filter(x0 > agnostic_x, y1 < cutoff, y1 >= (n_ligands*margin)), aes(x=x1, y=y1, xend=x0, yend=(n_ligands*margin)), linewidth = segment_linewidth) +
+    # Line segment within range
+    geom_line(data = rankings_df_subset, aes(x=x, y=y, group = test_ligand), linewidth = segment_linewidth) +
+    # Ligand names
+    geom_text(data = rankings_df_subset %>% filter(type == "agnostic"), aes(x=x, y=y, label = test_ligand, hjust = "right", color = expressed), nudge_x = -nudge_x, size=inset_text_size) +
+    geom_text(data = rankings_df_subset %>% filter(type == "focused"), aes(x=x, y=y, label = test_ligand, hjust = "left",  color = expressed), nudge_x = nudge_x, size=inset_text_size) +
+    # Ranking labels
+    geom_text(data = rankings_df_subset, aes(x=agnostic_x-0.75, y=y, label=new_rank), size=inset_text_size) +
+    # Outer rectangle
+    geom_rect(aes(ymin=0, ymax=n_ligands*(margin*19/2), xmin=agnostic_x-1.25, xmax = agnostic_x+2.25), fill=NA, color="black") +
+     # Heading
+    geom_text(data = data.frame(x = c(agnostic_x-0.75, agnostic_x, focused_x),
+                                y = n_ligands*(margin/2), label = c("Rank", "Agnostic", "Focused")),
+                                aes(x=x, y=y, label=label), size=inset_text_size) +
+    # PLOT SETTINGS
+    scale_color_manual(values = c("TRUE" = focused_color, "FALSE" = agnostic_color), breaks=c(TRUE, FALSE), labels = c("Only agnostic", "Tied")) +
+    scale_y_reverse() +
+    xlim(0, agnostic_x+2.5) +
+    labs(y = "Ligand rankings") +
+    guides(color = guide_legend(override.aes = list(shape = c(19, 15), size = c(2, 4), color = c(agnostic_color, tied_color)))) +
+    theme_classic() +
+    theme(axis.title = element_blank(), axis.text = element_blank(),
+          axis.line = element_blank(), axis.ticks = element_blank(),
+          legend.title = element_blank(), legend.direction = "horizontal",
+          legend.position = c(0.5, 0.05),
+          legend.background = element_blank(),
+          legend.text = element_text(size = 12),
+          plot.title = element_text(hjust=0.11, margin=margin(0, 0, -20, 0)))
+
+}
 

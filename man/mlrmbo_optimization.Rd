@@ -2,7 +2,7 @@
 % Please edit documentation in R/parameter_optimization.R
 \name{mlrmbo_optimization}
 \alias{mlrmbo_optimization}
-\title{Optimization of objective functions via model-based optimization.}
+\title{Optimization of objective functions via model-based optimization (mlrMBO).}
 \usage{
 mlrmbo_optimization(run_id,obj_fun,niter,ncores,nstart,additional_arguments)
 }

@@ -67,7 +67,7 @@ performances = settings %>% lapply(evaluate_target_prediction, ligand_target_mat
 
 Step 3: visualize the results: show here different classification evaluation metrics
 
-```{r, fig.width=8, fig.height=8}
+```{r target-prediction-v2-results, fig.width=8, fig.height=8}
 # Visualize some classification evaluation metrics showing the target gene prediction performance
 performances = performances %>% select(-aupr, -auc_iregulon,-pearson_log_pval,-spearman_log_pval ,-sensitivity_roc, -specificity_roc) %>% gather(key = scorename, value = scorevalue, auroc:spearman)
 
@@ -88,7 +88,7 @@ performances %>%
 
 We will now compare performances between NicheNet v1 and v2 on both ligand treatment datasets. Note that although the performance of v2 is much better here, the CytoSig experiments were also included during model construction of v2. To get the results in the MultiNicheNet paper, you will have to follow the `model_construction.Rmd` vignette and filter out the CytoSig data sources during model construction.
 
-```{r fig.width=8, fig.height=6}
+```{r target-prediction-comparison, fig.width=8, fig.height=6}
 
 performances_df <- lapply(c("nichenet_gs", "cytosig_gs"), function(gs) {
   
@@ -102,7 +102,6 @@ performances_df <- lapply(c("nichenet_gs", "cytosig_gs"), function(gs) {
   
   lapply(c("v1", "v2"), function(ver){
     # Get the ligand_target_matrix according to the version, Evaluate transcriptional response prediction on every dataset
-    # 
     performances = settings %>% lapply(evaluate_target_prediction, get(paste0("ligand_target_matrix_", ver))) %>% bind_rows()
   
     # Select some classification evaluation metrics showing the target gene prediction performance
@@ -141,7 +140,7 @@ Now we will show how to assess the accuracy of the model in predicting whether c
 
 A graphical summary of this procedure is visualized here below:
 
-![](ligand_activity_prediction_workflow_new.png)
+![](images/ligand_activity_prediction_workflow_new.png)
 
 Step 1: convert expression datasets to the required format to perform ligand activity prediction
 
@@ -175,7 +174,7 @@ evaluation_ligand_prediction = ligand_importances$setting %>% unique() %>% lappl
 
 Step 4: visualize the results: show here different classification evaluation metrics
 
-```{r,fig.width=8, fig.height=8}
+```{r ligand-activity-v2-results, fig.width=8, fig.height=8}
 # Visualize some classification evaluation metrics showing the ligand activity prediction performance
 evaluation_ligand_prediction = evaluation_ligand_prediction %>% select(-aupr, -sensitivity_roc, -specificity_roc, -pearson, -spearman, -mean_rank_GST_log_pval) %>% gather(key = scorename, value = scorevalue, auroc:aupr_corrected)
 scorelabels = c(auroc="AUROC", aupr_corrected="AUPR (corrected)")
@@ -233,7 +232,7 @@ performances_df <- lapply(c("nichenet_gs", "cytosig_gs"), function(gs) {
 
 ```
 
-```{r fig.width=8, fig.height=6}
+```{r ligand-activity-comparison, fig.width=8, fig.height=6}
 scorelabels = str_wrap(c("AUROC", "AUPR", "AUPR     (corrected)", "Sensitivity ROC", "Specificity ROC",
                          "Mean-rank gene-set enrichment", "AUC-iRegulon", "AUC-iRegulon (corrected)",
                         "Pearson log p-val", "Spearman log p-val", "Pearson correlation", "Spearman's rank correlation"), width=15) %>% setNames(performances_df$importance_measure %>% unique)

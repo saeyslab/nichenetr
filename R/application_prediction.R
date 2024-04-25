@@ -100,7 +100,7 @@ predict_ligand_activities = function(geneset,background_expressed_genes,ligand_t
 }
 #' @title Infer weighted active ligand-target links between a possible ligand and target genes of interest
 #'
-#' @description \code{get_weighted_ligand_target_links} Infer active ligand target links between possible lignands and genes belonging to a gene set of interest: consider the intersect between the top n targets of a ligand and the gene set.
+#' @description \code{get_weighted_ligand_target_links} Infer active ligand target links between possible ligands and genes belonging to a gene set of interest: consider the intersect between the top n targets of a ligand and the gene set.
 #'
 #' @usage
 #' get_weighted_ligand_target_links(ligand, geneset,ligand_target_matrix,n = 250)
@@ -217,6 +217,94 @@ prepare_ligand_target_visualization = function(ligand_target_df, ligand_target_m
   return(vis_ligand_target_network)
 
 }
+
+#' @title Get the weighted ligand-receptor links between a possible ligand and its receptors
+#' @description \code{get_weighted_ligand_receptor_links} Get the weighted ligand-receptor links between a possible ligand and its receptors
+#'
+#' @param best_upstream_ligands Character vector containing ligands of interest.
+#' @param expressed_receptors Character vector of receptors expressed in the cell type of interest.
+#' @param lr_network A data frame with two columns, \code{from} and \code{to}, containing the ligand-receptor interactions.
+#' @param weighted_networks_lr_sig A data frame with three columns, \code{from}, \code{to} and \code{weight}, containing the ligand-receptor interactions and their weights.
+#'
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   ligand_receptor_links_df <- get_weighted_ligand_receptor_links(best_upstream_ligands, expressed_receptors, lr_network, weighted_networks$lr_sig)
+#' }
+#'
+get_weighted_ligand_receptor_links = function(best_upstream_ligands, expressed_receptors, lr_network, weighted_networks_lr_sig) {
+
+  lr_network <- lr_network %>% distinct(from, to)
+  weighted_networks_lr <- inner_join(weighted_networks_lr_sig, lr_network, by = c("from","to"))
+
+  lr_network_top <- lr_network %>% filter(from %in% best_upstream_ligands & to %in% expressed_receptors) %>% distinct(from,to)
+  best_upstream_receptors <- lr_network_top %>% pull(to) %>% unique()
+
+  lr_network_top_df_long <- weighted_networks_lr %>% filter(from %in% best_upstream_ligands & to %in% best_upstream_receptors)
+
+  return(lr_network_top_df_long)
+
+}
+
+#' @title Prepare ligand-receptor visualization
+#' @description \code{prepare_ligand_receptor_visualization} Prepare a matrix of ligand-receptor interactions for visualization.
+#'
+#' @param lr_network_top_df_long A data frame with three columns, \code{from}, \code{to} and \code{weight}, containing the ligand-receptor interactions and their weights.
+#' @param best_upstream_ligands Character vector of ligands of interest. This will only be used if \code{order_hclust = "receptors"} or \code{order_hclust = "none"}.
+#' @param order_hclust "both", "ligands", "receptors", or "none". If "both", the ligands and receptors are ordered by hierarchical clustering. If "ligands" or "receptors" only the ligands or receptors are ordered hierarchically. If "none", no hierarchical clustering is performed, and the ligands are ordered based on \code{best_upstream_ligands}, and the receptors are ordered alphabetically.
+#'
+#' @return A matrix of ligand-receptor interactions for visualization.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' ligand_receptor_network = prepare_ligand_receptor_visualization(best_upstream_ligands = best_upstream_ligands, expressed_receptors = expressed_receptors, lr_network = lr_network, weighted_networks_lr_sig = weighted_networks_lr_sig, order_hclust = TRUE)
+#' }
+#'
+prepare_ligand_receptor_visualization = function(lr_network_top_df_long, best_upstream_ligands, order_hclust = "both") {
+
+  lr_network_top_df <- lr_network_top_df_long %>% spread("from","weight",fill = 0)
+  lr_network_top_matrix = lr_network_top_df %>% select(-to) %>% as.matrix() %>% magrittr::set_rownames(lr_network_top_df$to)
+
+  # Check if order_hclust is valid
+  if (!(order_hclust %in% c("both", "ligands", "receptors", "none"))) {
+    stop("order_hclust must be one of 'both', 'ligands', 'receptors', or 'none'")
+  }
+
+  if (order_hclust == "both" | order_hclust == "receptors") {
+    dist_receptors = dist(lr_network_top_matrix, method = "binary")
+    hclust_receptors = hclust(dist_receptors, method = "ward.D2")
+    order_receptors = hclust_receptors$labels[hclust_receptors$order]
+  }
+
+  if (order_hclust == "both" | order_hclust == "ligands") {
+    dist_ligands = dist(lr_network_top_matrix %>% t(), method = "binary")
+    hclust_ligands = hclust(dist_ligands, method = "ward.D2")
+    order_ligands_receptor = hclust_ligands$labels[hclust_ligands$order]
+  }
+
+  if (order_hclust == "none" | order_hclust == "receptors") {
+    order_ligands_receptor = rev(best_upstream_ligands)
+  }
+
+  if (order_hclust == "none" | order_hclust == "ligands") {
+    order_receptors = rownames(lr_network_top_matrix)
+  }
+
+  order_receptors = order_receptors %>% intersect(rownames(lr_network_top_matrix))
+  order_ligands_receptor = order_ligands_receptor %>% intersect(colnames(lr_network_top_matrix))
+
+  vis_ligand_receptor_network = lr_network_top_matrix[order_receptors, order_ligands_receptor]
+  rownames(vis_ligand_receptor_network) <- order_receptors
+  colnames(vis_ligand_receptor_network) <- order_ligands_receptor
+
+  return(vis_ligand_receptor_network)
+
+}
+
 #' @title Assess probability that a target gene belongs to the geneset based on a multi-ligand random forest model
 #'
 #' @description \code{assess_rf_class_probabilities} Assess probability that a target gene belongs to the geneset based on a multi-ligand random forest model (with cross-validation). Target genes and background genes will be split in different groups in a stratified way.
@@ -399,6 +487,103 @@ calculate_fraction_top_predicted_fisher = function(affected_gene_predictions, qu
     return(summary)
   }
 }
+
+#' @title Run ligand activity analysis with bootstrap
+#' @description \code{bootstrap_ligand_activity_analysis} Randomly sample a gene set from all expressed genes in the receiver cell type, then perform ligand activity analysis on this gene set. This 'null gene set' has equal length to the gene set of interest.
+#' @usage bootstrap_ligand_activity_analysis(expressed_genes_receiver, geneset_oi, background_expressed_genes, ligand_target_matrix, potential_ligands, n_iter = 10, n_cores = 1, parallel_func = "mclapply")
+#' @param expressed_genes_receiver Genes expressed in the receiver cell type
+#' @inheritParams predict_ligand_activities
+#' @param n_iter Number of iterations to perform (Default: 10)
+#' @param geneset_oi Character vector of the gene symbols of genes of which the expression is potentially affected by ligands from the interacting cell.
+#' @param n_cores Number of cores to use for parallelization (Default: 1)
+#' @param parallel_func Parallelization function to use from "mclapply", "pbmclapply", or "parLapply" (Default: "mclapply")
+#' @return List of n_iter elements, each element containing the output of predict_ligand_activities for a random gene set
+#' @examples
+#' \dontrun{
+#' permutations <- bootstrap_ligand_activity_analysis(expressed_genes_receiver, geneset_oi, background_expressed_genes,
+#'                            ligand_target_matrix, potential_ligands, n_iter = 10, n_cores = 1, parallel_func = "mclapply")
+#' }
+#' @export
+bootstrap_ligand_activity_analysis <- function(expressed_genes_receiver, geneset_oi, background_expressed_genes,
+                                               ligand_target_matrix, potential_ligands, n_iter = 10,
+                                               n_cores=1, parallel_func = "mclapply"){
+
+  # Check if parallel function is valid
+  if (!(parallel_func %in% c("mclapply", "pbmclapply", "parLapply"))) {
+    stop("parallel_func must be one of 'mclapply', 'pbmclapply', or 'parLapply'")
+  }
+
+  # Check if parallel function is mclapply/pbmclapply that they are not on Windows
+  if (Sys.info()[['sysname']] == "Windows" && parallel_func %in% c("mclapply", "pbmclapply")){
+    if (n_cores > 1){
+      warning("Setting 'n_cores' to 1 as Windows OS cannot make use of mclapply and pbmclapply parallelization. Consider using 'parLapply' instead.")
+      n_cores = 1
+    }
+  }
+
+  if (parallel_func %in% c("mclapply", "pbmclapply")){
+    parFunc <- ifelse(parallel_func == "mclapply", parallel::mclapply, pbmcapply::pbmclapply)
+
+    perms <- parFunc(1:n_iter, function (i){
+      random_geneset <- sample(expressed_genes_receiver, size = length(geneset_oi))
+      predict_ligand_activities(geneset = random_geneset, background_expressed_genes = background_expressed_genes,
+                                ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+    }, mc.cores = n_cores)
+
+  } else if (parallel_func == "parLapply"){
+    if(Sys.info()[['sysname']] == "Windows"){
+      # STILL HAS TO BE TESTED ON WINDOWS
+      clust <- parallel::makeCluster(n_cores)
+      parallel::clusterExport(clust, c("expressed_genes_receiver", "geneset_oi","background_expressed_genes","ligand_target_matrix","potential_ligands"), envir = environment())
+      parallel::clusterEvalQ(clust, library(nichenetr))
+      parallel::clusterEvalQ(clust, library(tidyverse))
+
+    } else {
+      clust <- parallel::makeCluster(n_cores, type="FORK")
+    }
+
+    on.exit(parallel::stopCluster(clust))
+    perms <- parallel::parLapply(clust, 1:n_iter, function (i){
+      random_geneset <- sample(expressed_genes_receiver, size = length(geneset_oi))
+      predict_ligand_activities(geneset = random_geneset, background_expressed_genes = background_expressed_genes,
+                                ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+    })
+
+  }
+
+  return(perms)
+
+}
+
+
+#' @title Calculate ligand p-values from the bootstrapped ligand activity analysis
+#' @description \code{calculate_p_value_bootstrap} Calculate the p-value for each ligand from the bootstrapped ligand activity analysis
+#' @usage calculate_p_value_bootstrap(bootstrap_results, ligand_activities, metric = "aupr_corrected")
+#' @param bootstrap_results Output of \code{\link{bootstrap_ligand_activity_analysis}}
+#' @param ligand_activities Output of \code{\link{predict_ligand_activities}}
+#' @param metric Metric to use (Default: "aupr_corrected")
+#' @return Data frame with the ligand name, the number of times the bootstrapped value had a higher score than the observed (\code{total}), and the p-value for each ligand, calculated as \code{total/length(bootstrap_results)}
+#' @examples
+#' \dontrun{
+#' permutations <- bootstrap_ligand_activity_analysis(expressed_genes_receiver, geneset_oi, background_expressed_genes,
+#'                            ligand_target_matrix, potential_ligands, n_iter = 10)
+#' p_values <- calculate_p_value_bootstrap(permutations, ligand_activities, metric = "aupr_corrected")
+#' }
+#' @export
+calculate_p_value_bootstrap <- function(bootstrap_results, ligand_activities, metric = "aupr_corrected"){
+  n_iter <- length(bootstrap_results)
+  bootstrap_results %>% bind_rows(.id = "round") %>% group_by(test_ligand) %>%
+    select(round, test_ligand, all_of(metric)) %>% arrange(test_ligand) %>% rename(null_metric = metric) %>%
+    # Merge with observed values
+    inner_join(ligand_activities %>% select(test_ligand, all_of(metric)) %>% rename(observed_metric = metric), by = "test_ligand") %>%
+    # Calculate fraction of permutations with higher AUPR
+    mutate(null_is_larger = null_metric > observed_metric) %>%
+    summarise(total = sum(null_is_larger)) %>%
+    mutate(pval = total/n_iter)
+
+}
+
+
 #' @title Cut off outer quantiles and rescale to a [0, 1] range
 #'
 #' @description \code{scale_quantile} Cut off outer quantiles and rescale to a [0, 1] range
@@ -1963,7 +2148,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 #' @description \code{get_lfc_celltype} Get log fold change of genes between two conditions in cell type of interest when using a Seurat single-cell object.
 #'
 #' @usage
-#' get_lfc_celltype(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, celltype_col = "celltype", expression_pct = 0.10)
+#' get_lfc_celltype(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, celltype_col = "celltype")
 #' #'
 #' @param seurat_obj Single-cell expression dataset as Seurat object https://satijalab.org/seurat/.
 #' @param celltype_oi Name of celltype of interest. Should be present in the celltype metadata dataframe.
@@ -1971,7 +2156,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 #' @param condition_oi Condition of interest. Should be a name present in the "condition_colname" column of the metadata.
 #' @param condition_reference The second condition (e.g. reference or steady-state condition). Should be a name present in the "condition_colname" column of the metadata.
 #' @param celltype_col Metadata colum name where the cell type identifier is stored. Default: "celltype". If this is NULL, the Idents() of the seurat object will be considered as your cell type identifier.
-#' @param expression_pct To consider only genes if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10
+#' @param ... Additional arguments passed to \code{\link{FindMarkers}}.
 #'
 #' @return A tbl with the log fold change values of genes. Positive lfc values: higher in condition_oi compared to condition_reference.
 #'
@@ -1986,7 +2171,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 #' }
 #' @export
 #'
-get_lfc_celltype = function(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, celltype_col = "celltype", expression_pct = 0.10){
+get_lfc_celltype = function(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, celltype_col = "celltype", ...){
   requireNamespace("Seurat")
   requireNamespace("dplyr")
   if(!is.null(celltype_col)){
@@ -1997,8 +2182,9 @@ get_lfc_celltype = function(celltype_oi, seurat_obj, condition_colname, conditio
     seuratObj_sender = subset(seurat_obj, idents = celltype_oi)
 
   }
+
   seuratObj_sender = SetIdent(seuratObj_sender, value = seuratObj_sender[[condition_colname, drop=TRUE]])
-  DE_table_sender = FindMarkers(object = seuratObj_sender, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct, logfc.threshold = 0.05) %>% rownames_to_column("gene")
+  DE_table_sender = FindMarkers(object = seuratObj_sender, ident.1 = condition_oi, ident.2 = condition_reference, ...) %>% rownames_to_column("gene")
 
   SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_sender)
 

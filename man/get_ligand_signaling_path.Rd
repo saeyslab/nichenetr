@@ -18,6 +18,8 @@ get_ligand_signaling_path(ligand_tf_matrix, ligands_all, targets_all, top_n_regu
 \item{weighted_networks}{A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)}
 
 \item{ligands_position}{Indicate whether the ligands in the ligand-target matrix are in the rows ("rows") or columns ("cols"). Default: "cols".}
+
+\item{minmax_scaling}{Indicate whether the weights of both dataframes should be min-max scaled between 0.75 and 1. Default: FALSE.}
 }
 \value{
 A list containing 2 elements (sig and gr): the integrated weighted ligand-signaling and gene regulatory networks data frame / tibble format with columns: from, to, weight

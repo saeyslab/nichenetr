@@ -15,7 +15,7 @@ calculate_de(seurat_obj, celltype_colname, condition_oi = NA, condition_colname 
 
 \item{condition_colname}{Name of the meta data column that indicates from which group/condition a cell comes from}
 
-\item{assay_oi}{Which assay need to be used for DE calculation. Default RNA, alternatives: SCT.}
+\item{assay_oi}{Which assay need to be used for DE calculation. If NULL, will use \code{DefaultAssay}}
 
 \item{...}{Arguments passed to Seurat::FindAllMarkers(by default: features = NULL, min.pct = 0, logfc.threshold = 0, return.thresh = 1)}
 }

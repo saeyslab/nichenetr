@@ -4,7 +4,17 @@
 \alias{make_circos_lr}
 \title{make_circos_lr}
 \usage{
-make_circos_lr(prioritized_tbl_oi, colors_sender, colors_receiver, cutoff = 0, scale = FALSE, transparency = NULL, circos_type = "normal", border = TRUE)
+make_circos_lr(
+  prioritized_tbl_oi,
+  colors_sender,
+  colors_receiver,
+  cutoff = 0,
+  scale = FALSE,
+  transparency = NULL,
+  circos_type = "normal",
+  border = TRUE,
+  separate_legend = FALSE
+)
 }
 \arguments{
 \item{prioritized_tbl_oi}{Dataframe with the ligand-receptor interactions that should be visualized}
@@ -22,6 +32,8 @@ make_circos_lr(prioritized_tbl_oi, colors_sender, colors_receiver, cutoff = 0, s
 \item{circos_type}{"normal" or "arrow". Default: "normal".}
 
 \item{border}{Border to arrows or not in `chordDiagram`? (Default: TRUE)}
+
+\item{separate_legend}{return plot and legend as separate objects? (Default: FALSE)}
 }
 \value{
 List containing the circos plot and the legend

@@ -4,7 +4,7 @@
 \alias{get_lfc_celltype}
 \title{Get log fold change values of genes in cell type of interest}
 \usage{
-get_lfc_celltype(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, celltype_col = "celltype", expression_pct = 0.10)
+get_lfc_celltype(celltype_oi, seurat_obj, condition_colname, condition_oi, condition_reference, celltype_col = "celltype")
 #'
 }
 \arguments{
@@ -20,7 +20,7 @@ get_lfc_celltype(celltype_oi, seurat_obj, condition_colname, condition_oi, condi
 
 \item{celltype_col}{Metadata colum name where the cell type identifier is stored. Default: "celltype". If this is NULL, the Idents() of the seurat object will be considered as your cell type identifier.}
 
-\item{expression_pct}{To consider only genes if they are expressed in at least a specific fraction of cells of a cluster. This number indicates this fraction. Default: 0.10}
+\item{...}{Additional arguments passed to \code{\link{FindMarkers}}.}
 }
 \value{
 A tbl with the log fold change values of genes. Positive lfc values: higher in condition_oi compared to condition_reference.

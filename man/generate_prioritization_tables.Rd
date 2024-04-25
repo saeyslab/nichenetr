@@ -2,23 +2,29 @@
 % Please edit documentation in R/prioritization.R
 \name{generate_prioritization_tables}
 \alias{generate_prioritization_tables}
-\title{generate_prioritization_tables}
+\title{Perform a prioritization of cell-cell interactions (similar to MultiNicheNet).}
 \usage{
-generate_prioritization_tables(sender_receiver_info, sender_receiver_de, ligand_activities, lr_condition_de = NULL,
-                                      prioritizing_weights = c("de_ligand" = 1,"de_receptor" = 1,"activity_scaled" = 2,
-                                                               "exprs_ligand" = 1,"exprs_receptor" = 1,
-                                                               "ligand_condition_specificity" = 0, "receptor_condition_specificity"=0))
+generate_prioritization_tables(
+  sender_receiver_info,
+  sender_receiver_de,
+  ligand_activities,
+  lr_condition_de = NULL,
+  prioritizing_weights = NULL,
+  scenario = "case_control"
+)
 }
 \arguments{
-\item{sender_receiver_info}{Output of \code{get_exprs_avg} -> \code{process_table_to_ic}}
+\item{sender_receiver_info}{Output of \code{generate_info_tables} OR \code{get_exprs_avg} -> \code{process_table_to_ic}}
 
-\item{sender_receiver_de}{Output of\code{calculate_de} -> \code{process_table_to_ic}}
+\item{sender_receiver_de}{Output of \code{generate_info_tables} OR \code{calculate_de} -> \code{process_table_to_ic}}
 
 \item{ligand_activities}{Output of \code{predict_ligand_activities}}
 
-\item{lr_condition_de}{Output of \code{FindMarkers} -> \code{process_table_to_ic}}
+\item{lr_condition_de}{Output of \code{generate_info_tables} OR \code{FindMarkers} -> \code{process_table_to_ic}}
 
-\item{prioritizing_weights}{Named vector indicating the relative weights of each prioritization criterion}
+\item{prioritizing_weights}{Named vector indicating the relative weights of each prioritization criterion (default: NULL). If NULL, the weights are determined by the chosen "scenario". If provided, the vector must contain the following names: "de_ligand", "de_receptor", "activity_scaled", "exprs_ligand", "exprs_receptor", "ligand_condition_specificity", "receptor_condition_specificity"}
+
+\item{scenario}{"case_control" or "one_condition": if "case_control", all weights are set to 1. If "one_condition", the weights are set to 0 for condition specificity and 1 for the remaining criteria.}
 }
 \value{
 Data frames of prioritized sender-ligand-receiver-receptor interactions.
@@ -30,41 +36,25 @@ Additionally, the following columns are added:
 \item \code{activity_zscore}: z-score of the ligand activity
 \item \code{prioritization_score}: The prioritization score for each interaction, calculated as a weighted sum of the prioritization criteria.
 }
-Moreover, \code{scaled_*} columns are scaled using the corresponding column's ranking or the \code{scale_quantile_adapted} function.
+Moreover, \code{scaled_*} columns are scaled using the corresponding column's ranking or the \code{scale_quantile_adapted} function. The columns used for prioritization are scaled_p_val_ligand_adapted, scaled_p_val_receptor_adapted, scaled_activity, scaled_avg_exprs_ligand, scaled_avg_exprs_receptor, scaled_p_val_ligand_adapted_group, scaled_p_val_receptor_adapted_group
 }
 \description{
-\code{generate_prioritization_tables}  Perform a prioritization of cell-cell interactions (similar to MultiNicheNet).
 User can choose the importance attached to each of the following prioritization criteria: differential expression of ligand and receptor, cell-type specificity of expression of ligand and receptor, NicheNet ligand activity
 }
 \examples{
 \dontrun{
-library(dplyr)
-lr_network = readRDS(url("https://zenodo.org/record/3260758/files/lr_network.rds"))
-lr_network = lr_network \%>\% dplyr::rename(ligand = from, receptor = to) \%>\% dplyr::distinct(ligand, receptor)
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
-seurat_obj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
-seurat_obj$celltype <- make.names(seuratObj$celltype)
-sender_celltypes = c("CD4.T","Treg", "Mono", "NK", "B", "DC")
-receiver = "CD8.T"
 
-# Convert lr_network from mouse to human
-lr_network = lr_network \%>\% mutate(from = convert_human_to_mouse_symbols(from), to = convert_human_to_mouse_symbols(to)) \%>\% drop_na()
-colnames(ligand_target_matrix) = ligand_target_matrix \%>\% colnames() \%>\% convert_human_to_mouse_symbols()
-rownames(ligand_target_matrix) = ligand_target_matrix \%>\% rownames() \%>\% convert_human_to_mouse_symbols()
-ligand_target_matrix = ligand_target_matrix \%>\% .[!is.na(rownames(ligand_target_matrix)), !is.na(colnames(ligand_target_matrix))]
+# Calculate tables with generate_info_tables
+info_tables <- generate_info_tables(seurat_obj, "celltype", sender_celltypes, receiver, expressed_ligands, expressed_receptors, lr_network, "aggregate", "LCMV", "SS")
 
-# Ligand activity analysis
-seurat_obj_receiver = subset(seurat_obj, idents = receiver) \%>\% SetIdent(value = .[["aggregate", drop = TRUE]])
-geneset_oi = FindMarkers(object = seurat_obj_receiver, ident.1 = "LCMV, ident.2 = "SS, min.pct = 0.10) \%>\% rownames_to_column("gene") \%>\%
-     filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= 0.25) \%>\% pull(gene) \%>\% .[. \%in\% rownames(ligand_target_matrix)]
-expressed_genes_sender = sender_celltypes \%>\% unique() \%>\% lapply(get_expressed_genes, seurat_obj, 0.10) \%>\% unlist() \%>\% unique()
-expressed_genes_receiver = get_expressed_genes(receiver, seurat_obj, pct = 0.10)
-expressed_ligands = intersect(lr_network \%>\% pull(ligand) \%>\% unique(), expressed_genes_sender)
-expressed_receptors = intersect(lr_network \%>\% pull(receiver) \%>\% unique(), expressed_genes_receiver)
-potential_ligands = lr_network \%>\% filter(ligand \%in\% expressed_ligands & receptor \%in\% expressed_receptors) \%>\% pull(from) \%>\% unique()
-ligand_activities = predict_ligand_activities(geneset = geneset_oi, background_expressed_genes = expressed_genes_receiver \%>\% .[. \%in\% rownames(ligand_target_matrix)],
-                                            ligand_target_matrix = ligand_target_matrix, potential_ligands = potential_ligands)
+# Generate prioritization tables
+generate_prioritization_tables(info_tables$sender_receiver_info,
+                               info_tables$sender_receiver_de,
+                               ligand_activities,
+                               info_tables$lr_condition_de,
+                               scenario = "case_control")
 
+# Alternatively, these tables can also be calculated manually:
 # Calculate LCMV-specific average expression
 expression_info = get_exprs_avg(seurat_obj, "celltype", condition_oi = "LCMV", condition_colname = "aggregate")
 
@@ -81,12 +71,10 @@ processed_DE_table <- process_table_to_ic(DE_table, table_type = "celltype_DE", 
                                           senders_oi = sender_celltypes, receivers_oi = receiver)
 processed_condition_DE_table <- process_table_to_ic(condition_markers, table_type = "group_DE", lr_network)
 
-# Generate prioritization tables
-prioritizing_weights = c("de_ligand" = 1, "de_receptor" = 1, "activity_scaled" = 2, "exprs_ligand" = 1, "exprs_receptor" = 1, "ligand_condition_specificity" = 0, "receptor_condition_specificity" = 0)
-generate_prioritization_tables(processed_expr_info,
-                               processed_DE_table,
-                               ligand_activities,
-                               processed_condition_DE_table,
-                               prioritizing_weights)
+# Custom weights
+prioritizing_weights = c("de_ligand" = 1, "de_receptor" = 1, "activity_scaled" = 2, "exprs_ligand" = 1, "exprs_receptor" = 1, "ligand_condition_specificity" = 0.5, "receptor_condition_specificity" = 0.5)
+
+generate_prioritization_tables(processed_expr_info,processed_DE_table, ligand_activities, processed_condition_DE_table, prioritizing_weights)
+
 }
 }

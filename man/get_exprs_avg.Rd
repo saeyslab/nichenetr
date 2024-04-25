@@ -4,7 +4,14 @@
 \alias{get_exprs_avg}
 \title{Calculate average of gene expression per cell type.}
 \usage{
-get_exprs_avg(seurat_obj, celltype_colname, condition_oi = NA, condition_colname = NA)
+get_exprs_avg(
+  seurat_obj,
+  celltype_colname,
+  condition_oi = NULL,
+  condition_colname = NULL,
+  assay_oi = NULL,
+  ...
+)
 }
 \arguments{
 \item{seurat_obj}{Seurat object}
@@ -14,6 +21,10 @@ get_exprs_avg(seurat_obj, celltype_colname, condition_oi = NA, condition_colname
 \item{condition_oi}{If provided, subset seurat_obj so average expression is only calculated for cells belonging to condition_oi}
 
 \item{condition_colname}{Name of the meta data column that indicates from which group/condition a cell comes from}
+
+\item{assay_oi}{Which assay need to be used for DE calculation. If NULL, will use \code{DefaultAssay}}
+
+\item{...}{Arguments passed to Seurat::AverageExpression, usually for slot/layer to use (default: data)}
 }
 \value{
 Data frame with average gene expression per cell type.

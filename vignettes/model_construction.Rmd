@@ -31,13 +31,13 @@ The prior model at the basis of NicheNet denotes how strongly existing knowledge
 First, we collected multiple complementary data sources covering ligand-receptor, signal transduction (e.g., protein-protein and kinase-substrate interactions) and gene regulatory interactions (e.g., inferred from ChIP-seq and motifs). For information of all collected data sources (link to the website of the database, etc), see [Data source information](data_sources.xlsx)
 
 Secondly, we integrated these individual data sources into two weighted networks: 1) a ligand-signaling network, which contains protein-protein interactions covering the signaling paths from ligands to downstream transcriptional regulators; and 2) a gene regulatory network, which contains gene regulatory interactions between transcriptional regulators and target genes. 
-To let informative data sources contribute more to the final model, we weighted each data source during integration. These data source weights were automatically determined via model-based parameter optimization to improve the accuracy of ligand-target predictions (see the vignette [Parameter optimization via mlrMBO](parameter_optimization.md). In this vignette, we will show how to construct models with unoptimized data source weigths as well.
+To let informative data sources contribute more to the final model, we weighted each data source during integration. These data source weights were automatically determined via model-based parameter optimization to improve the accuracy of ligand-target predictions (see the vignette [Parameter optimization via NSGA-II](parameter_optimization.md). In this vignette, we will show how to construct models with unoptimized data source weigths as well.
 
 Finally, we combined the ligand-signaling and gene regulatory network to calculate a regulatory potential score between all pairs of ligands and target genes. A ligand-target pair receives a high regulatory potential if the regulators of the target gene are lying downstream of the signaling network of the ligand. To calculate this, we used network propagation methods on the integrated networks to propagate the signal starting from a ligand, flowing through receptors, signaling proteins, transcriptional regulators, and ultimately ending at target genes. 
 
 A graphical summary of this procedure is visualized here below:
 
-![](workflow_model_construction.png)
+![](images/workflow_model_construction.png)
 
 
 # Construct a ligand-target model from all collected ligand-receptor, signaling and gene regulatory network data sources
@@ -57,7 +57,7 @@ gr_network = readRDS(url("https://zenodo.org/record/7074291/files/gr_network_hum
 
 ## Construct NicheNet's ligand-target model from unoptimized data source weights
 
-Construct the weighted integrated ligand-signaling and gene regulatory network. In this first example, we give every data source the same weight (as given by the `source_weights_df` data frame provided by default by the nichenetr package). See the vignette showing how to use mlrMBO to optimize data source weights and the hyperparameters if interested in performing parameter optimization. For the hyperparameters of the model (hub correction factors and damping factor), we will use the optimized values (as given by the `hyperparameter_list` data frame provided by default by the nichenetr package).
+Construct the weighted integrated ligand-signaling and gene regulatory network. In this first example, we give every data source the same weight (as given by the `source_weights_df` data frame provided by default by the nichenetr package). See the vignette showing how to use NSGA-II to optimize data source weights and the hyperparameters if interested in performing parameter optimization. For the hyperparameters of the model (hub correction factors and damping factor), we will use the optimized values (as given by the `hyperparameter_list` data frame provided by default by the nichenetr package).
 
 The ligand-signaling network hub correction factor and gene regulatory network hub correction factor were defined as hyperparameter of the model to mitigate the potential negative influence of over-dominant hubs on the final model.
 The damping factor hyperparameter is the main parameter of the Personalized PageRank algorithm, which we used as network propagation algorithm to link ligands to downstream regulators.
@@ -290,6 +290,6 @@ extract_top_n_targets("TNF",10,ligand_target_matrix)
 ## Final note
 
 Most optimally, you would like to optimize the parameters again when including own data sources. Instructions to do this are given in the following vignette: 
-[Parameter optimization via mlrMBO](parameter_optimization.md): `vignette("parameter_optimization", package="nichenetr")`
+[Parameter optimization via NSGA-II](parameter_optimization.md): `vignette("parameter_optimization", package="nichenetr")`
 
 However, this optimization process takes a lot of time and requires the availability of multiple cores to perform the optimization in parallel. Because we demonstrate in the NicheNet paper that unoptimized models also perform considerably well, data source weight optmization is not necessary to have decent predictive ability.

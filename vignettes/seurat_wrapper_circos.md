@@ -7,50 +7,33 @@ Robin Browaeys
 rmarkdown::render("vignettes/seurat_wrapper_circos.Rmd", output_format = "github_document")
 -->
 
-In this vignette, you can learn how to perform a basic NicheNet analysis
-on a Seurat v3 object - and how to visualize the output in a circos
-plot. This vignette demonstrates the same workflow as shown in [Perform
-NicheNet analysis starting from a Seurat
-object](seurat_wrapper.md):`vignette("seurat_wrapper", package="nichenetr")`,
-but adds a circos plot visualization as shown in [Circos plot
-visualization to show active ligand-target links between interacting
-cells](circos.md):`vignette("circos", package="nichenetr")`. For more
-detailed information about the NicheNet workflow, check those vignettes.
+In this vignette, you can learn how to visualize the output of a
+NicheNet analysis in a circos plot (also called a chord diagram) via the
+`circlize` package. This vignette follows the same workflow as shown in
+[Perform NicheNet analysis starting from a Seurat
+object](seurat_wrapper.md).
+
 This vignette was made upon popular request to demonstrate how those two
 vignettes can be combined into one analysis workflow. Note that we as
 developers of NicheNet generally recommend a visualization of the output
 by combining several heatmaps (ligand activity, ligand-target links,
 ligand-receptor links, ligand expression, ligand LFC,…) over using a
-circos plot visualization. Certainly for cases with many sender cell
-types and ligands that are expressed by more than one sender cell type.
-Because in those cases, the circos plot is much less informative and
-could lead to wrong interpretation of the results.
+circos plot visualization. This is especially true for cases with many
+sender cell types and ligands that are expressed by more than one sender
+cell type. Because in those cases, the circos plot is much less
+informative and could lead to wrong interpretation of the results.
 
-As example expression data of interacting cells, we will use mouse
-NICHE-seq data from Medaglia et al. to explore intercellular
-communication in the T cell area in the inguinal lymph node before and
-72 hours after lymphocytic choriomeningitis virus (LCMV) infection (See
-Medaglia et al. 2017). We will NicheNet to explore immune cell crosstalk
-in response to this LCMV infection.
-
-In this dataset, differential expression is observed between CD8 T cells
-in steady-state and CD8 T cells after LCMV infection. NicheNet can be
-applied to look at how several immune cell populations in the lymph node
-(i.e., monocytes, dendritic cells, NK cells, B cells, CD4 T cells) can
-regulate and induce these observed gene expression changes. NicheNet
-will specifically prioritize ligands from these immune cells and their
-target genes that change in expression upon LCMV infection.
-
-The used [ligand-target matrix](https://doi.org/10.5281/zenodo.7074290)
-and the [Seurat object of the processed NICHE-seq single-cell
-data](https://doi.org/10.5281/zenodo.3531889) can be downloaded from
-Zenodo.
+We will again use the NICHE-seq data from Medaglia et al. (2017), which
+profiles several immune cell types in the T cell area in the inguinal
+lymph node before and 72 hours after lymphocytic choriomeningitis virus
+(LCMV) infection. You can download the [NicheNet
+networks](https://doi.org/10.5281/zenodo.7074290) and the [Seurat object
+of the processed NICHE-seq single-cell
+data](https://doi.org/10.5281/zenodo.3531889) from Zenodo.
 
 # Prepare NicheNet analysis
 
-## Load required packages, read in the Seurat object with processed expression data of interacting cells and NicheNet’s ligand-target prior model, ligand-receptor network and weighted integrated networks.
-
-### Load Packages:
+### Load packages
 
 ``` r
 library(nichenetr) # Please update to v2.0.4
@@ -60,22 +43,12 @@ library(tidyverse)
 library(circlize)
 ```
 
-If you would use and load other packages, we recommend to load these 3
-packages after the others.
-
-### Read in NicheNet’s ligand-target prior model, ligand-receptor network and weighted integrated networks:
+### Read in NicheNet’s networks
 
 ``` r
-ligand_target_matrix = readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
-ligand_target_matrix[1:5,1:5] # target genes in rows, ligands in columns
-##               2300002M23Rik 2610528A11Rik 9530003J23Rik            a          A2m
-## 0610005C13Rik  0.000000e+00  0.000000e+00  1.311297e-05 0.000000e+00 1.390053e-05
-## 0610009B22Rik  0.000000e+00  0.000000e+00  1.269301e-05 0.000000e+00 1.345536e-05
-## 0610009L18Rik  8.872902e-05  4.977197e-05  2.581909e-04 7.570125e-05 9.802264e-05
-## 0610010F05Rik  2.194046e-03  1.111556e-03  3.142374e-03 1.631658e-03 2.585820e-03
-## 0610010K14Rik  2.271606e-03  9.360769e-04  3.546140e-03 1.697713e-03 2.632082e-03
-
-lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+ligand_target_matrix <- readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
+lr_network <- readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+weighted_networks <- readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
 head(lr_network)
 ## # A tibble: 6 × 4
 ##   from          to    database source  
@@ -86,80 +59,26 @@ head(lr_network)
 ## 4 a             Atrn  omnipath omnipath
 ## 5 a             F11r  omnipath omnipath
 ## 6 a             Mc1r  omnipath omnipath
-
-weighted_networks = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
-head(weighted_networks$lr_sig) # interactions and their weights in the ligand-receptor + signaling network
-## # A tibble: 6 × 3
-##   from          to     weight
-##   <chr>         <chr>   <dbl>
-## 1 0610010F05Rik App    0.110 
-## 2 0610010F05Rik Cat    0.0673
-## 3 0610010F05Rik H1f2   0.0660
-## 4 0610010F05Rik Lrrc49 0.0829
-## 5 0610010F05Rik Nicn1  0.0864
-## 6 0610010F05Rik Srpk1  0.123
-head(weighted_networks$gr) # interactions and their weights in the gene regulatory network
-## # A tibble: 6 × 3
-##   from          to            weight
-##   <chr>         <chr>          <dbl>
-## 1 0610010K14Rik 0610010K14Rik 0.121 
-## 2 0610010K14Rik 2510039O18Rik 0.121 
-## 3 0610010K14Rik 2610021A01Rik 0.0256
-## 4 0610010K14Rik 9130401M01Rik 0.0263
-## 5 0610010K14Rik Alg1          0.127 
-## 6 0610010K14Rik Alox12        0.128
 ```
 
 ### Read in the expression data of interacting cells
 
 ``` r
-seuratObj = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
+seuratObj <- readRDS(url("https://zenodo.org/record/3531889/files/seuratObj.rds"))
+
 # For newer Seurat versions, you may need to run the following
 seuratObj <- UpdateSeuratObject(seuratObj)
 
-seuratObj@meta.data %>% head()
-##         nGene nUMI orig.ident aggregate res.0.6 celltype nCount_RNA nFeature_RNA
-## W380370   880 1611      LN_SS        SS       1    CD8 T       1607          876
-## W380372   541  891      LN_SS        SS       0    CD4 T        885          536
-## W380374   742 1229      LN_SS        SS       0    CD4 T       1223          737
-## W380378   847 1546      LN_SS        SS       1    CD8 T       1537          838
-## W380379   839 1606      LN_SS        SS       0    CD4 T       1603          836
-## W380381   517  844      LN_SS        SS       0    CD4 T        840          513
+# Convert gene names
+seuratObj <- alias_to_symbol_seurat(seuratObj, "mouse")
 ```
-
-Visualize which cell populations are present: CD4 T cells (including
-regulatory T cells), CD8 T cells, B cells, NK cells, dendritic cells
-(DCs) and inflammatory monocytes
-
-``` r
-seuratObj@meta.data$celltype %>% table() # note that the number of cells of some cell types is very low and should preferably be higher for a real application
-## .
-##     B CD4 T CD8 T    DC  Mono    NK  Treg 
-##   382  2562  1645    18    90   131   199
-DimPlot(seuratObj, reduction = "tsne")
-```
-
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
-
-``` r
-seuratObj@meta.data$aggregate %>% table()
-## .
-## LCMV   SS 
-## 3886 1141
-DimPlot(seuratObj, reduction = "tsne", group.by = "aggregate")
-```
-
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 # Perform the NicheNet analysis
 
-## NicheNet analysis on Seurat object: explain differential expression between two conditions
-
-In this case study, the receiver cell population is the ‘CD8 T’ cell
-population, whereas the sender cell populations are ‘CD4 T’, ‘Treg’,
-‘Mono’, ‘NK’, ‘B’ and ‘DC’. The above described functions will consider
-a gene to be expressed when it is expressed in at least a predefined
-fraction of cells in one cluster (default: 10%).
+For this analysis, we define the receiver cell population as the ‘CD8 T’
+cell population, and the sender cell populations as ‘CD4 T’, ‘Treg’,
+‘Mono’, ‘NK’, ‘B’ and ‘DC’. We consider a gene to be expressed when it
+is expressed in at least 10% of cells in one cluster (default).
 
 The gene set of interest are the genes differentially expressed in CD8 T
 cells after LCMV infection. The condition of interest is thus ‘LCMV’,
@@ -173,20 +92,20 @@ target genes and construct an active ligand-receptor network is 30 by
 default, but we will only choose the top 20 to not overcrowd the circos
 plot.
 
-To perform the NicheNet analysis with these specifications, run the
-following:
+**Note:** Cell types should be the identities of the seurat object
+(check using `table(Idents(seuratObj))`)
 
 ``` r
-# indicated cell types should be cell class identities
-# check via: 
-# seuratObj %>% Idents() %>% table()
-sender_celltypes = c("CD4 T","Treg", "Mono", "NK", "B", "DC")
-nichenet_output = nichenet_seuratobj_aggregate(
+sender_celltypes <- c("CD4 T","Treg", "Mono", "NK", "B", "DC")
+nichenet_output <- nichenet_seuratobj_aggregate(
   seurat_obj = seuratObj, 
   receiver = "CD8 T", 
-  condition_colname = "aggregate", condition_oi = "LCMV", condition_reference = "SS", 
+  condition_colname = "aggregate",
+  condition_oi = "LCMV", condition_reference = "SS", 
   sender = sender_celltypes, 
-  ligand_target_matrix = ligand_target_matrix, lr_network = lr_network, weighted_networks = weighted_networks,
+  ligand_target_matrix = ligand_target_matrix,
+  lr_network = lr_network,
+  weighted_networks = weighted_networks,
   top_n_ligands = 20)
 ## [1] "Read in and process NicheNet's networks"
 ## [1] "Define expressed ligands and receptors in receiver and sender cells"
@@ -207,20 +126,20 @@ command:
 
 ``` r
 nichenet_output$ligand_activities
-## # A tibble: 70 × 6
+## # A tibble: 73 × 6
 ##    test_ligand auroc  aupr aupr_corrected pearson  rank
 ##    <chr>       <dbl> <dbl>          <dbl>   <dbl> <dbl>
-##  1 Ebi3        0.658 0.381          0.235   0.293     1
-##  2 Ptprc       0.642 0.305          0.159   0.161     2
-##  3 H2-M3       0.610 0.287          0.142   0.181     3
-##  4 H2-M2       0.614 0.272          0.126   0.147     5
-##  5 H2-T10      0.614 0.272          0.126   0.147     5
-##  6 H2-T22      0.614 0.272          0.126   0.147     5
-##  7 H2-T23      0.614 0.271          0.126   0.147     7
-##  8 H2-K1       0.607 0.258          0.113   0.132     8
-##  9 H2-Q4       0.606 0.258          0.112   0.131    10
-## 10 H2-Q6       0.606 0.258          0.112   0.131    10
-## # ℹ 60 more rows
+##  1 Ebi3        0.663 0.390          0.244   0.301     1
+##  2 Ptprc       0.642 0.310          0.165   0.167     2
+##  3 H2-M3       0.608 0.292          0.146   0.179     3
+##  4 H2-M2       0.611 0.279          0.133   0.153     5
+##  5 H2-T10      0.611 0.279          0.133   0.153     5
+##  6 H2-T22      0.611 0.279          0.133   0.153     5
+##  7 H2-T23      0.611 0.278          0.132   0.153     7
+##  8 H2-K1       0.605 0.268          0.122   0.142     8
+##  9 H2-Q4       0.605 0.268          0.122   0.141    10
+## 10 H2-Q6       0.605 0.268          0.122   0.141    10
+## # ℹ 63 more rows
 ```
 
 These ligands are expressed by one or more of the input sender cells. To
@@ -228,39 +147,28 @@ see which cell population expresses which of these top-ranked ligands,
 you can run the following:
 
 ``` r
-DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), cols = "RdYlBu") + RotatedAxis()
+nichenet_output$ligand_expression_dotplot
 ```
 
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](seurat_wrapper_circos_files/figure-gfm/dotplot-1.png)<!-- -->
 
-As you can see, most op the top-ranked ligands seem to be mainly
+As you can see, most of the top-ranked ligands seem to be mainly
 expressed by dendritic cells and monocytes.
 
 It could also be interesting to see whether some of these ligands are
 differentially expressed after LCMV infection.
 
 ``` r
-DotPlot(seuratObj, features = nichenet_output$top_ligands %>% rev(), split.by = "aggregate") + RotatedAxis()
+nichenet_output$ligand_differential_expression_heatmap
 ```
 
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](seurat_wrapper_circos_files/figure-gfm/lfc-heatmap-1.png)<!-- -->
 
 ``` r
-VlnPlot(seuratObj, features = c("Il15", "Cxcl10","Cxcl16"), split.by = "aggregate", pt.size = 0, combine = FALSE)
-## [[1]]
+VlnPlot(seuratObj, features = c("Ptprc", "H2-M3", "Cxcl10"), split.by = "aggregate", pt.size = 0, combine = TRUE)
 ```
 
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
-
-    ## 
-    ## [[2]]
-
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
-
-    ## 
-    ## [[3]]
-
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-10-3.png)<!-- -->
+![](seurat_wrapper_circos_files/figure-gfm/violin-plot-1.png)<!-- -->
 
 #### Inferred active ligand-target links
 
@@ -273,7 +181,7 @@ following command for a heatmap visualization:
 nichenet_output$ligand_target_heatmap
 ```
 
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](seurat_wrapper_circos_files/figure-gfm/ligand-target-heatmap-1.png)<!-- -->
 
 ## Circos plots to visualize ligand-target and ligand-receptor interactions
 
@@ -282,341 +190,253 @@ the strongest expressing cell type. Therefore we need to determine per
 cell type which ligands they express more strongly than the other cell
 types.
 
-### Calculate average ligand expression in sender cells
-
-``` r
-# avg_expression_ligands = AverageExpression(seuratObj %>% subset(subset = aggregate == "LCMV"),features = nichenet_output$top_ligands) # if want to look specifically in LCMV-only cells
-avg_expression_ligands = AverageExpression(seuratObj, features = nichenet_output$top_ligands)
-```
-
 ### Assign ligands to sender cells
 
-To assign ligands to sender cell type, we can e.g. look for which sender
-cell types show an expression that is higher than the average + SD.
+To assign ligands to sender cell type, we can look for which sender cell
+types show a mean expression that is higher than the mean + one standard
+deviation. You can change the functions to aggregate the counts
+(`func.agg`, default is the mean) and function to assign the ligands
+(`func.assign`, default is mean + SD). Ligands that are expressed higher
+than `func.assign` in more than one cell type and ligands that are not
+assigned to any cell type are assigned to “General”.
 
 ``` r
-sender_ligand_assignment = avg_expression_ligands$RNA %>% apply(1, function(ligand_expression){
-  ligand_expression > (ligand_expression %>% mean() + ligand_expression %>% sd())
-  }) %>% t()
-sender_ligand_assignment = sender_ligand_assignment %>% apply(2, function(x){x[x == TRUE]}) %>% purrr::keep(function(x){length(x) > 0})
-names(sender_ligand_assignment)
-## [1] "B"    "NK"   "Mono" "DC"
-```
+ligand_type_indication_df <- assign_ligands_to_celltype(seuratObj,
+                                                        nichenet_output$top_ligands,
+                                                        celltype_col = "celltype") 
 
-The top ligands seem to be most strongly expressed by B cells, NK cells,
-monocytes and DCs. We will know also look at which ligands are common
-across multiple cell types (= those that are specific to \> 1 cell type,
-or those that were not assigned to a cell type in the previous block of
-code)
-
-Determine now which prioritized ligands are expressed by CAFs and or
-endothelial cells
-
-``` r
-
-all_assigned_ligands = sender_ligand_assignment %>% lapply(function(x){names(x)}) %>% unlist()
-unique_ligands = all_assigned_ligands %>% table() %>% .[. == 1] %>% names()
-general_ligands = nichenet_output$top_ligands %>% setdiff(unique_ligands)
-
-B_specific_ligands = sender_ligand_assignment$B %>% names() %>% setdiff(general_ligands)
-NK_specific_ligands = sender_ligand_assignment$NK %>% names() %>% setdiff(general_ligands)
-Mono_specific_ligands = sender_ligand_assignment$Mono %>% names() %>% setdiff(general_ligands)
-DC_specific_ligands = sender_ligand_assignment$DC %>% names() %>% setdiff(general_ligands)
-
-ligand_type_indication_df = tibble(
-  ligand_type = c(rep("B-specific", times = B_specific_ligands %>% length()),
-                  rep("NK-specific", times = NK_specific_ligands %>% length()),
-                  rep("Mono-specific", times = Mono_specific_ligands %>% length()),
-                  rep("DC-specific", times = DC_specific_ligands %>% length()),
-                  rep("General", times = general_ligands %>% length())),
-  ligand = c(B_specific_ligands, NK_specific_ligands, Mono_specific_ligands, DC_specific_ligands, general_ligands))
+ligand_type_indication_df %>% head()
+##   ligand_type ligand
+## 1           B  H2-M3
+## 2           B   Btla
+## 3          NK  Ptprc
+## 4          NK  H2-Q7
+## 5          NK   Cd48
+## 6        Mono   Ebi3
+ligand_type_indication_df$ligand_type %>% table()
+## .
+##       B      DC General    Mono      NK 
+##       2       8       1       6       3
 ```
 
 ### Define the ligand-target links of interest
 
-To avoid making a circos plots with too many ligand-target links, we
-will show only links with a weight higher than a predefined cutoff:
-links belonging to the 40% of lowest scores were removed. Not that this
+We will need the ligand-target links from the NicheNet output. To avoid
+making a circos plots with too many ligand-target links, we will show
+only links with a weight higher than a predefined cutoff: links
+belonging to the 40% of lowest scores were removed. Not that this
 cutoffs and other cutoffs used for this visualization can be changed
 according to the user’s needs.
 
 ``` r
-active_ligand_target_links_df = nichenet_output$ligand_target_df %>% mutate(target_type = "LCMV-DE") %>% inner_join(ligand_type_indication_df) # if you want ot make circos plots for multiple gene sets, combine the different data frames and differentiate which target belongs to which gene set via the target type
+head(nichenet_output$ligand_target_df)
+## # A tibble: 6 × 3
+##   ligand target weight
+##   <chr>  <chr>   <dbl>
+## 1 Ebi3   Bst2   0.0500
+## 2 Ebi3   Cd274  0.0504
+## 3 Ebi3   Cxcl10 0.0570
+## 4 Ebi3   Cxcr4  0.0430
+## 5 Ebi3   Ddit4  0.0485
+## 6 Ebi3   Ddx58  0.0402
 
-cutoff_include_all_ligands = active_ligand_target_links_df$weight %>% quantile(0.40)
+active_ligand_target_links_df <- nichenet_output$ligand_target_df
+active_ligand_target_links_df$target_type <- "LCMV-DE" # needed for joining tables
+circos_links <- get_ligand_target_links_oi(ligand_type_indication_df,
+                                           active_ligand_target_links_df,
+                                           cutoff = 0.40) 
 
-active_ligand_target_links_df_circos = active_ligand_target_links_df %>% filter(weight > cutoff_include_all_ligands)
-
-ligands_to_remove = setdiff(active_ligand_target_links_df$ligand %>% unique(), active_ligand_target_links_df_circos$ligand %>% unique())
-targets_to_remove = setdiff(active_ligand_target_links_df$target %>% unique(), active_ligand_target_links_df_circos$target %>% unique())
-  
-circos_links = active_ligand_target_links_df %>% filter(!target %in% targets_to_remove &!ligand %in% ligands_to_remove)
+head(circos_links)
+## # A tibble: 6 × 5
+##   ligand target weight target_type ligand_type
+##   <chr>  <chr>   <dbl> <chr>       <chr>      
+## 1 Ebi3   Bst2   0.0500 LCMV-DE     Mono       
+## 2 Ebi3   Cd274  0.0504 LCMV-DE     Mono       
+## 3 Ebi3   Cxcl10 0.0570 LCMV-DE     Mono       
+## 4 Ebi3   Cxcr4  0.0430 LCMV-DE     Mono       
+## 5 Ebi3   Ddit4  0.0485 LCMV-DE     Mono       
+## 6 Ebi3   Ddx58  0.0402 LCMV-DE     Mono
 ```
 
-Prepare the circos visualization: give each segment of ligands and
-targets a specific color and order
+Prepare the circos visualization by giving each segment of ligands and
+targets a specific color and order, as well as gaps between different
+cell types. By default, cell types are ordered alphabetically, followed
+by “General” (then they are drawn counter-clockwise). Users can give a
+specific order to the cell types by providing a vector of cell types to
+the argument `celltype_order`. The gaps between the different segments
+can also be defined by providing a named list to the argument `widths`.
 
 ``` r
-grid_col_ligand =c("General" = "lawngreen",
-            "NK-specific" = "royalblue",
-            "B-specific" = "darkgreen",
-            "Mono-specific" = "violet",
-            "DC-specific" = "steelblue2")
-grid_col_target =c(
-            "LCMV-DE" = "tomato")
+ligand_colors <- c("General" = "#377EB8", "NK" = "#4DAF4A", "B" = "#984EA3",
+                   "Mono" = "#FF7F00", "DC" = "#FFFF33", "Treg" = "#F781BF",
+                   "CD8 T"= "#E41A1C") 
+target_colors <- c("LCMV-DE" = "#999999") 
 
-grid_col_tbl_ligand = tibble(ligand_type = grid_col_ligand %>% names(), color_ligand_type = grid_col_ligand)
-grid_col_tbl_target = tibble(target_type = grid_col_target %>% names(), color_target_type = grid_col_target)
-
-circos_links = circos_links %>% mutate(ligand = paste(ligand," ")) # extra space: make a difference between a gene as ligand and a gene as target!
-circos_links = circos_links %>% inner_join(grid_col_tbl_ligand) %>% inner_join(grid_col_tbl_target)
-links_circle = circos_links %>% select(ligand,target, weight)
-
-ligand_color = circos_links %>% distinct(ligand,color_ligand_type)
-grid_ligand_color = ligand_color$color_ligand_type %>% set_names(ligand_color$ligand)
-target_color = circos_links %>% distinct(target,color_target_type)
-grid_target_color = target_color$color_target_type %>% set_names(target_color$target)
-
-grid_col =c(grid_ligand_color,grid_target_color)
-
-# give the option that links in the circos plot will be transparant ~ ligand-target potential score
-transparency = circos_links %>% mutate(weight =(weight-min(weight))/(max(weight)-min(weight))) %>% mutate(transparency = 1-weight) %>% .$transparency 
+vis_circos_obj <- prepare_circos_visualization(circos_links,
+                                               ligand_colors = ligand_colors,
+                                               target_colors = target_colors,
+                                               celltype_order = NULL) 
 ```
 
-Prepare the circos visualization: order ligands and targets
+Render the circos plot where all links have the same transparency. Here,
+only the widths of the blocks that indicate each target gene is
+proportional the ligand-target regulatory potential (~prior knowledge
+supporting the regulatory interaction).
 
 ``` r
-target_order = circos_links$target %>% unique()
-ligand_order = c(Mono_specific_ligands, DC_specific_ligands, NK_specific_ligands,B_specific_ligands, general_ligands) %>% c(paste(.," ")) %>% intersect(circos_links$ligand)
-order = c(ligand_order,target_order)
+
+make_circos_plot(vis_circos_obj, transparency = FALSE,  args.circos.text = list(cex = 0.5)) 
 ```
 
-Prepare the circos visualization: define the gaps between the different
-segments
+![](seurat_wrapper_circos_files/figure-gfm/ligand-target-circos-1.png)<!-- -->
+
+Render the circos plot where the degree of transparency determined by
+the regulatory potential value of a ligand-target interaction.
 
 ``` r
-width_same_cell_same_ligand_type = 0.5
-width_different_cell = 6
-width_ligand_target = 15
-width_same_cell_same_target_type = 0.5
+make_circos_plot(vis_circos_obj, transparency = TRUE,  args.circos.text = list(cex = 0.5)) 
+```
 
-gaps = c(
-  # width_ligand_target,
-  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "Mono-specific") %>% distinct(ligand) %>% nrow() -1)),
-  width_different_cell,
-  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "DC-specific") %>% distinct(ligand) %>% nrow() -1)),
-  width_different_cell,
-  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "NK-specific") %>% distinct(ligand) %>% nrow() -1)),
-  width_different_cell,
-  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "B-specific") %>% distinct(ligand) %>% nrow() -1)),
-  width_different_cell,
-  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "General") %>% distinct(ligand) %>% nrow() -1)),
-  width_ligand_target,
-  rep(width_same_cell_same_target_type, times = (circos_links %>% filter(target_type == "LCMV-DE") %>% distinct(target) %>% nrow() -1)),
-  width_ligand_target
+![](seurat_wrapper_circos_files/figure-gfm/ligand-target-circos-transparent-1.png)<!-- -->
+
+To create a legend for the circos plot, we can use the
+`ComplexHeatmap::Legend` function and creating a gTree object from it
+with `grid::grid.grabExpr`. As the circos plot is drawn on base R
+graphics (i.e., it is not a ggplot object), we will get the plot using
+`recordPlot()`.
+
+``` r
+par(bg = "transparent")
+
+# Default celltype order
+celltype_order <- unique(circos_links$ligand_type) %>% sort() %>% .[. != "General"] %>% c(., "General")
+
+# Create legend
+circos_legend <- ComplexHeatmap::Legend(
+  labels = celltype_order,
+  background = ligand_colors[celltype_order],
+  type = "point",
+  grid_height = unit(3, "mm"),
+  grid_width = unit(3, "mm"),
+  labels_gp = grid::gpar(fontsize = 8)
   )
+
+circos_legend_grob <- grid::grid.grabExpr(ComplexHeatmap::draw(circos_legend))
+
+make_circos_plot(vis_circos_obj, transparency = TRUE, args.circos.text = list(cex = 0.5))
+p_circos_no_legend <- recordPlot()
 ```
 
-Render the circos plot (all links same transparancy). Only the widths of
-the blocks that indicate each target gene is proportional the
-ligand-target regulatory potential (~prior knowledge supporting the
-regulatory interaction).
+We can combine the circos plot and the legend using
+`cowplot::plot_grid`.
 
 ``` r
-circos.par(gap.degree = gaps)
-chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = 0, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid", 
-    preAllocateTracks = list(track.height = 0.075))
-# we go back to the first track and customize sector labels
-circos.track(track.index = 1, panel.fun = function(x, y) {
-    circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index,
-        facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.55), cex = 1)
-}, bg.border = NA) #
+cowplot::plot_grid(p_circos_no_legend, circos_legend_grob, rel_widths = c(1, 0.1))
 ```
 
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](seurat_wrapper_circos_files/figure-gfm/ligand-target-circos-with-legend-1.png)<!-- -->
 
-``` r
-circos.clear()
-```
-
-Render the circos plot (degree of transparancy determined by the
-regulatory potential value of a ligand-target interaction)
-
-``` r
-circos.par(gap.degree = gaps)
-chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = transparency, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid", 
-    preAllocateTracks = list(track.height = 0.075))
-# we go back to the first track and customize sector labels
-circos.track(track.index = 1, panel.fun = function(x, y) {
-    circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index,
-        facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.55), cex = 1)
-}, bg.border = NA) #
-```
-
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
-
-``` r
-circos.clear()
-```
-
-Save circos plot to an svg file
+We can save this plot to an svg file.
 
 ``` r
 svg("ligand_target_circos.svg", width = 10, height = 10)
-circos.par(gap.degree = gaps)
-chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = transparency, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid",
-    preAllocateTracks = list(track.height = 0.075))
-# we go back to the first track and customize sector labels
-circos.track(track.index = 1, panel.fun = function(x, y) {
-    circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index,
-        facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.55), cex = 1)
-}, bg.border = NA) #
-circos.clear()
+cowplot::plot_grid(p_circos_no_legend, circos_legend_grob, rel_widths = c(1, 0.1))
 dev.off()
-## png 
-##   2
 ```
 
 ### Visualize ligand-receptor interactions of the prioritized ligands in a circos plot
 
-``` r
-lr_network_top_df = nichenet_output$ligand_receptor_df %>% mutate(receptor_type = "LCMV_CD8T_receptor") %>% inner_join(ligand_type_indication_df)
-```
+To create a ligand-receptor chord diagram, we can perform similar steps
+as above using the weighted ligand-receptor dataframe instead. However,
+as as `prepare_circos_visualization` accesses “target” and “target_type”
+columns, it is necessary to rename the columns accordingly even though
+the dataframe contains receptor and not target gene information.
 
 ``` r
-grid_col_ligand =c("General" = "lawngreen",
-            "NK-specific" = "royalblue",
-            "B-specific" = "darkgreen",
-            "Mono-specific" = "violet",
-            "DC-specific" = "steelblue2")
-grid_col_receptor =c(
-            "LCMV_CD8T_receptor" = "darkred")
+lr_network_top_df <- nichenet_output$ligand_receptor_df %>%
+  mutate(target_type = "LCMV_CD8T_receptor") %>%
+  rename(target=receptor) %>%
+  inner_join(ligand_type_indication_df)
 
-grid_col_tbl_ligand = tibble(ligand_type = grid_col_ligand %>% names(), color_ligand_type = grid_col_ligand)
-grid_col_tbl_receptor = tibble(receptor_type = grid_col_receptor %>% names(), color_receptor_type = grid_col_receptor)
+receptor_colors <- c("LCMV_CD8T_receptor" = "#E41A1C")
 
-circos_links = lr_network_top_df %>% mutate(ligand = paste(ligand," ")) # extra space: make a difference between a gene as ligand and a gene as receptor!
-circos_links = circos_links %>% inner_join(grid_col_tbl_ligand) %>% inner_join(grid_col_tbl_receptor)
-links_circle = circos_links %>% select(ligand,receptor, weight)
-
-ligand_color = circos_links %>% distinct(ligand,color_ligand_type)
-grid_ligand_color = ligand_color$color_ligand_type %>% set_names(ligand_color$ligand)
-receptor_color = circos_links %>% distinct(receptor,color_receptor_type)
-grid_receptor_color = receptor_color$color_receptor_type %>% set_names(receptor_color$receptor)
-
-grid_col =c(grid_ligand_color,grid_receptor_color)
-
-# give the option that links in the circos plot will be transparant ~ ligand-receptor potential score
-transparency = circos_links %>% mutate(weight =(weight-min(weight))/(max(weight)-min(weight))) %>% mutate(transparency = 1-weight) %>% .$transparency 
+vis_circos_receptor_obj <- prepare_circos_visualization(lr_network_top_df,
+                                                        ligand_colors = ligand_colors,
+                                                        target_colors = receptor_colors) 
 ```
 
-Prepare the circos visualization: order ligands and receptors
+When drawing the plot, the argument `link.visible` = TRUE is also
+necessary for making all links visible, since no cutoff is used to
+filter out ligand-receptor interactions.
 
 ``` r
-receptor_order = circos_links$receptor %>% unique()
-ligand_order = c(Mono_specific_ligands, DC_specific_ligands, NK_specific_ligands,B_specific_ligands, general_ligands) %>% c(paste(.," ")) %>% intersect(circos_links$ligand)
-order = c(ligand_order,receptor_order)
+make_circos_plot(vis_circos_receptor_obj, transparency = FALSE,
+                 link.visible = TRUE,  args.circos.text = list(cex = 0.8)) 
 ```
 
-Prepare the circos visualization: define the gaps between the different
-segments
+![](seurat_wrapper_circos_files/figure-gfm/ligand-receptor-circos-1.png)<!-- -->
+
+Just as above, if `transparency = TRUE`, the degree of transparency is
+determined by the prior interaction weight of the ligand-receptor
+interaction.
+
+### FAQ: How to draw a double circos plot of ligand-receptor-target links?
+
+Please check the [HNSCC case study + double circos visualization](circos_plot.md) for the demonstration.
 
 ``` r
-width_same_cell_same_ligand_type = 0.5
-width_different_cell = 6
-width_ligand_receptor = 15
-width_same_cell_same_receptor_type = 0.5
-
-gaps = c(
-  # width_ligand_target,
-  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "Mono-specific") %>% distinct(ligand) %>% nrow() -1)),
-  width_different_cell,
-  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "DC-specific") %>% distinct(ligand) %>% nrow() -1)),
-  width_different_cell,
-  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "NK-specific") %>% distinct(ligand) %>% nrow() -1)),
-  width_different_cell,
-  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "B-specific") %>% distinct(ligand) %>% nrow() -1)),
-  width_different_cell,
-  rep(width_same_cell_same_ligand_type, times = (circos_links %>% filter(ligand_type == "General") %>% distinct(ligand) %>% nrow() -1)),
-  width_ligand_receptor,
-  rep(width_same_cell_same_receptor_type, times = (circos_links %>% filter(receptor_type == "LCMV_CD8T_receptor") %>% distinct(receptor) %>% nrow() -1)),
-  width_ligand_receptor
-  )
+sessionInfo()
+## R version 4.3.2 (2023-10-31)
+## Platform: x86_64-redhat-linux-gnu (64-bit)
+## Running under: CentOS Stream 8
+## 
+## Matrix products: default
+## BLAS/LAPACK: /usr/lib64/libopenblaso-r0.3.15.so;  LAPACK version 3.9.0
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8     LC_MONETARY=en_US.UTF-8   
+##  [6] LC_MESSAGES=en_US.UTF-8    LC_PAPER=en_US.UTF-8       LC_NAME=C                  LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## time zone: Asia/Bangkok
+## tzcode source: system (glibc)
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+##  [1] circlize_0.4.15    forcats_1.0.0      stringr_1.5.0      dplyr_1.1.4        purrr_1.0.2        readr_2.1.2        tidyr_1.3.0       
+##  [8] tibble_3.2.1       ggplot2_3.4.4      tidyverse_1.3.1    SeuratObject_5.0.1 Seurat_4.4.0       nichenetr_2.0.4   
+## 
+## loaded via a namespace (and not attached):
+##   [1] fs_1.6.3               matrixStats_1.2.0      spatstat.sparse_3.0-3  bitops_1.0-7           lubridate_1.9.3        httr_1.4.7            
+##   [7] RColorBrewer_1.1-3     doParallel_1.0.17      tools_4.3.2            sctransform_0.4.0      backports_1.4.1        utf8_1.2.4            
+##  [13] R6_2.5.1               lazyeval_0.2.2         uwot_0.1.16            GetoptLong_1.0.5       withr_2.5.2            sp_2.1-2              
+##  [19] gridExtra_2.3          fdrtool_1.2.17         progressr_0.14.0       cli_3.6.2              spatstat.explore_3.2-1 labeling_0.4.3        
+##  [25] spatstat.data_3.0-3    randomForest_4.7-1.1   proxy_0.4-27           ggridges_0.5.5         pbapply_1.7-2          foreign_0.8-85        
+##  [31] parallelly_1.36.0      limma_3.56.2           readxl_1.4.3           rstudioapi_0.15.0      gridGraphics_0.5-1     visNetwork_2.1.2      
+##  [37] generics_0.1.3         shape_1.4.6            ica_1.0-3              spatstat.random_3.2-2  car_3.1-2              Matrix_1.6-4          
+##  [43] ggbeeswarm_0.7.2       fansi_1.0.6            S4Vectors_0.38.1       abind_1.4-5            lifecycle_1.0.4        yaml_2.3.8            
+##  [49] carData_3.0-5          recipes_1.0.7          Rtsne_0.17             grid_4.3.2             promises_1.2.1         crayon_1.5.2          
+##  [55] miniUI_0.1.1.1         lattice_0.21-9         haven_2.4.3            cowplot_1.1.2          pillar_1.9.0           knitr_1.45            
+##  [61] ComplexHeatmap_2.16.0  rjson_0.2.21           future.apply_1.11.0    codetools_0.2-19       leiden_0.3.9           glue_1.6.2            
+##  [67] data.table_1.14.10     vctrs_0.6.5            png_0.1-8              spam_2.10-0            cellranger_1.1.0       gtable_0.3.4          
+##  [73] assertthat_0.2.1       gower_1.0.1            xfun_0.41              mime_0.12              prodlim_2023.08.28     survival_3.5-7        
+##  [79] timeDate_4032.109      iterators_1.0.14       hardhat_1.3.0          lava_1.7.3             DiagrammeR_1.0.10      ellipsis_0.3.2        
+##  [85] fitdistrplus_1.1-11    ROCR_1.0-11            ipred_0.9-14           nlme_3.1-163           RcppAnnoy_0.0.21       irlba_2.3.5.1         
+##  [91] vipor_0.4.5            KernSmooth_2.23-22     rpart_4.1.21           colorspace_2.1-0       BiocGenerics_0.46.0    DBI_1.1.3             
+##  [97] Hmisc_5.1-0            nnet_7.3-19            ggrastr_1.0.2          tidyselect_1.2.0       compiler_4.3.2         rvest_1.0.2           
+## [103] htmlTable_2.4.1        xml2_1.3.6             plotly_4.10.0          shadowtext_0.1.2       checkmate_2.3.1        scales_1.3.0          
+## [109] caTools_1.18.2         lmtest_0.9-40          digest_0.6.33          goftest_1.2-3          spatstat.utils_3.0-4   rmarkdown_2.11        
+## [115] htmltools_0.5.7        pkgconfig_2.0.3        base64enc_0.1-3        highr_0.10             dbplyr_2.1.1           fastmap_1.1.1         
+## [121] rlang_1.1.2            GlobalOptions_0.1.2    htmlwidgets_1.6.2      shiny_1.7.1            farver_2.1.1           zoo_1.8-12            
+## [127] jsonlite_1.8.8         ModelMetrics_1.2.2.2   magrittr_2.0.3         Formula_1.2-5          dotCall64_1.1-1        patchwork_1.1.3       
+## [133] munsell_0.5.0          Rcpp_1.0.11            ggnewscale_0.4.9       reticulate_1.34.0      stringi_1.7.6          pROC_1.18.5           
+## [139] MASS_7.3-60            plyr_1.8.9             parallel_4.3.2         listenv_0.9.0          ggrepel_0.9.4          deldir_2.0-2          
+## [145] splines_4.3.2          tensor_1.5             hms_1.1.3              igraph_1.2.11          ggpubr_0.6.0           spatstat.geom_3.2-7   
+## [151] ggsignif_0.6.4         reshape2_1.4.4         stats4_4.3.2           reprex_2.0.1           evaluate_0.23          modelr_0.1.8          
+## [157] tzdb_0.4.0             foreach_1.5.2          tweenr_2.0.2           httpuv_1.6.13          RANN_2.6.1             polyclip_1.10-6       
+## [163] future_1.33.0          clue_0.3-64            scattermore_1.2        ggforce_0.4.1          broom_0.7.12           xtable_1.8-4          
+## [169] e1071_1.7-14           rstatix_0.7.2          later_1.3.2            viridisLite_0.4.2      class_7.3-22           beeswarm_0.4.0        
+## [175] IRanges_2.34.1         cluster_2.1.4          timechange_0.2.0       globals_0.16.2         caret_6.0-94
 ```
-
-Render the circos plot (all links same transparancy). Only the widths of
-the blocks that indicate each receptor is proportional the
-ligand-receptor interaction weight (~prior knowledge supporting the
-interaction).
-
-``` r
-circos.par(gap.degree = gaps)
-chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = 0, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid", 
-    preAllocateTracks = list(track.height = 0.075))
-# we go back to the first track and customize sector labels
-circos.track(track.index = 1, panel.fun = function(x, y) {
-    circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index,
-        facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.55), cex = 0.8)
-}, bg.border = NA) #
-```
-
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
-
-``` r
-circos.clear()
-```
-
-Render the circos plot (degree of transparancy determined by the prior
-interaction weight of the ligand-receptor interaction - just as the
-widths of the blocks indicating each receptor)
-
-``` r
-circos.par(gap.degree = gaps)
-chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = transparency, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid", 
-    preAllocateTracks = list(track.height = 0.075))
-# we go back to the first track and customize sector labels
-circos.track(track.index = 1, panel.fun = function(x, y) {
-    circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index,
-        facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.55), cex = 0.8)
-}, bg.border = NA) #
-```
-
-![](seurat_wrapper_circos_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
-
-``` r
-circos.clear()
-```
-
-Save circos plot to an svg file
-
-``` r
-svg("ligand_receptor_circos.svg", width = 15, height = 15)
-circos.par(gap.degree = gaps)
-chordDiagram(links_circle, directional = 1,order=order,link.sort = TRUE, link.decreasing = FALSE, grid.col = grid_col,transparency = transparency, diffHeight = 0.005, direction.type = c("diffHeight", "arrows"),link.arr.type = "big.arrow", link.visible = links_circle$weight >= cutoff_include_all_ligands,annotationTrack = "grid",
-    preAllocateTracks = list(track.height = 0.075))
-# we go back to the first track and customize sector labels
-circos.track(track.index = 1, panel.fun = function(x, y) {
-    circos.text(CELL_META$xcenter, CELL_META$ylim[1], CELL_META$sector.index,
-        facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.55), cex = 0.8)
-}, bg.border = NA) #
-circos.clear()
-dev.off()
-## png 
-##   2
-```
-
-### References
-
-<div id="refs" class="references csl-bib-body hanging-indent">
-
-<div id="ref-medaglia_spatial_2017" class="csl-entry">
-
-Medaglia, Chiara, Amir Giladi, Liat Stoler-Barak, Marco De Giovanni,
-Tomer Meir Salame, Adi Biram, Eyal David, et al. 2017. “Spatial
-Reconstruction of Immune Niches by Combining Photoactivatable Reporters
-and <span class="nocase">scRNA</span>-Seq.” *Science*, December,
-eaao4277. <https://doi.org/10.1126/science.aao4277>.
-
-</div>
-
-</div>

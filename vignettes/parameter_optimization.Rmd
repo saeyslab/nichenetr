@@ -1,16 +1,17 @@
 ---
-title: "Parameter optimization via mlrMBO"
-author: "Robin Browaeys"
-date: "2018-02-20"
+title: "Parameter optimization via NSGA-II"
+author: "Robin Browaeys & Chananchida Sang-aram"
+date: "2023-01-03"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Parameter optimization via mlrMBO}
+  %\VignetteIndexEntry{Parameter optimization via NSGA2R}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 <!-- github markdown built using 
-rmarkdown::render("vignettes/parameter_optimization.Rmd", output_format = "github_document") # please, don't run this!!
+rmarkdown::render("vignettes/parameter_optimization.Rmd", output_format = "github_document")
+knitr::opts_knit$set(root.dir = "~/NicheNet_V2/evaluation/optimization") # set root directory
 -->
 
 ```{r setup, include = FALSE}
@@ -19,111 +20,188 @@ knitr::opts_chunk$set(
   # comment = "#>",
   warning = FALSE,
   message = FALSE,
-  eval = FALSE
+  eval = TRUE
 )
+
 ```
 
-This vignette shows how we optimized both hyperparameters and data source weights via model-based optimization (see manuscript for more information). Because the optimization requires intensive parallel computation, we performed optimization in parallel on a gridengine cluster via the qsub package (https://cran.r-project.org/web/packages/qsub/qsub.pdf). This script is merely illustrative and should be adapted by the user to work on its own system.
+This vignette shows how we optimized both hyperparameters and data source weights via NSGA-II, a non-dominated sorting genetic algorithm. Because the optimization requires intensive parallel computation, we performed optimization in parallel on a high performance computing (HPC) cluster. The old code for parameter optimization via mlrMBO can be accessed by browsing the repository history during NicheNet v1.
 
-The [ligand treatment validation datasets](https://doi.org/10.5281/zenodo.3260758), and [NicheNet’s v2 ligand-target model](https://doi.org/10.5281/zenodo.7074290) can be downloaded from Zenodo.
+This script is merely illustrative and should be adapted by the user to work on its own system.
+
+All network and validation datasets can be downloaded from [Zenodo](https://zenodo.org/records/8016880), under "NicheNet_V2.zip".
 
 First, we will load in the required packages and networks we will use to construct the models which we will evaluate during the optimization procedure.
+
 ```{r}
 library(nichenetr)
 library(tidyverse)
-library(qsub)
-library(mlrMBO)
+library(nsga2R)
 
-# in the NicheNet framework, ligand-target links are predicted based on collected biological knowledge on ligand-receptor, signaling and gene regulatory interactions
-lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
-sig_network = readRDS(url("https://zenodo.org/record/7074291/files/signaling_network_human_21122021.rds"))
-gr_network = readRDS(url("https://zenodo.org/record/7074291/files/gr_network_human_21122021.rds"))
+# Path is relative to 'optimization.Rproj' in the zip file (evaluation/optimization/)
+lr_network <- readRDS("../../networks/data/ligand_receptor/lr_network_human_21122021.rds")
+sig_network <- readRDS("../../networks/data/signaling/signaling_network_human_21122021.rds")
+gr_network <- readRDS("../../networks/data/gene_regulatory/gr_network_human_21122021_optimization.rds")
+
+# Get names of all data sources
+source_names <- c(lr_network$source, sig_network$source, gr_network$source) %>% unique()
+source_names_zero_possible <- c(sig_network$source, gr_network$source) %>% unique()
+
+# nsga2r parameters
+n_param <- length(source_names) + 4
+n_obj <- 4
+lower_bounds <- c(rep(0,times = length(source_names)), 0, 0, 0.9, 0.01)
+upper_bounds <- c(rep(1,times = length(source_names)), 1, 1, 0.999, 0.99)
+
 ```
 
-We will load in the ligand treatment validation datasets and try to optimize the parameters to maximize both target gene and ligand activity prediction. In this vignette, we do the optimization on all datasets. Alternatively, you can select a specific subset of datasets and evaluate the final performance on the left-out datasets.
+To perform optimization, we will use the ligand treatment validation datasets and try to optimize the parameters to maximize both target gene and ligand activity prediction. We used 5-fold cross validation, i.e., 4/5th of dataset was used for training the parameters, and 1/5th of the dataset was used to evaluate the final performance.
 
-```{r}
-# The ligand treatment expression datasets used for validation can be downloaded from Zenodo:
-expression_settings_validation = readRDS(url("https://zenodo.org/record/3260758/files/expression_settings.rds"))
-```
+```{r, eval=FALSE}
+# Choose 1 fold
+cv_names <- c("1234", "2345", "1345", "1245", "1235")
+fold <- cv_names[1]
 
-Define the optimization wrapper function and config information for the qsub package
-```{r}
-mlrmbo_optimization_wrapper = function(...){
-  library(nichenetr)
-  library(mlrMBO)
-  library(parallelMap)
-  library(dplyr)
-  output = mlrmbo_optimization(...)
-  return(output)
-}
+# Load in validation datasets corresponding to the fold
+settings_CV <- readRDS(paste0("settings_training_f", fold))
+settings <- settings_CV$settings
 
-qsub_config = create_qsub_config(
-  remote = "myuser@mycluster.address.org:1234",
-  local_tmp_path = "/tmp/r2gridengine",
-  remote_tmp_path = "/scratch/personal/myuser/r2gridengine",
-  num_cores = 24,
-  memory = "10G",
-  wait = FALSE, 
-  max_wall_time = "500:00:00"
+# Remove databases from GRN if it is in the validation dataset
+gr_network <- readRDS("../../networks/data/gene_regulatory/gr_network_human_21122021_optimization.rds")
+forbidden_gr <- bind_rows(
+  gr_network %>% filter(database == "NicheNet_LT" & from %in% settings_CV$forbidden_ligands_nichenet),
+  gr_network %>% filter(database == "CytoSig" & from %in% settings_CV$forbidden_ligands_cytosig)
 )
-```
+gr_network <-  gr_network %>% setdiff(forbidden_gr)
+forbidden_gr %>% filter(database %in% c("NicheNet_LT", "CytoSig")) %>% pull(source) %>% table()
+gr_network %>% filter(database %in% c("NicheNet_LT", "CytoSig")) %>% pull(source) %>% table()
 
-Perform optimization:
-
-```{r}
-additional_arguments_topology_correction = list(source_names = source_weights_df$source %>% unique(), 
-                                                algorithm = "PPR", 
-                                                correct_topology = FALSE,
-                                                lr_network = lr_network, 
-                                                sig_network = sig_network, 
-                                                gr_network = gr_network, 
-                                                settings = lapply(expression_settings_validation,convert_expression_settings_evaluation), 
-                                                secondary_targets = FALSE, 
-                                                remove_direct_links = "no", 
-                                                cutoff_method = "quantile")
-nr_datasources = additional_arguments_topology_correction$source_names %>% length()
-
-obj_fun_multi_topology_correction = makeMultiObjectiveFunction(name = "nichenet_optimization",
-                                                               description = "data source weight and hyperparameter optimization: expensive black-box function", 
-                                                               fn = model_evaluation_optimization, 
-                                                               par.set = makeParamSet(
-                                                                 makeNumericVectorParam("source_weights", len = nr_datasources, lower = 0, upper = 1), 
-                                                                 makeNumericVectorParam("lr_sig_hub", len = 1, lower = 0, upper = 1),  
-                                                                 makeNumericVectorParam("gr_hub", len = 1, lower = 0, upper = 1),  
-                                                                 makeNumericVectorParam("ltf_cutoff", len = 1, lower = 0.9, upper = 0.999),  
-                                                                 makeNumericVectorParam("damping_factor", len = 1, lower = 0.01, upper = 0.99)), 
-                                                               has.simple.signature = FALSE,
-                                                               n.objectives = 4, 
-                                                               noisy = FALSE,
-                                                               minimize = c(FALSE,FALSE,FALSE,FALSE))
+# Perform optimization
 set.seed(1)
+results <- run_nsga2R_cluster(model_evaluation_optimization_nsga2r,
+                              # nsga2R params
+                              varNo=n_param,
+                              objDim=n_obj,
+                              lowerBounds= lower_bounds,
+                              upperBounds=upper_bounds,
+                              popSize = 360,
+                              tourSize = 2,
+                              generations = 15,
+                              ncores = 8,
+                              # model_evaluation_optimization_nsga2r params
+                              source_names = source_names,
+                              algorithm = "PPR",
+                              correct_topology = FALSE,
+                              lr_network = lr_network,
+                              sig_network = lr_network,
+                              gr_network = gr_network,
+                              settings = settings,
+                              secondary_targets = FALSE,
+                              remove_direct_links = "no",
+                              damping_factor = NULL)
 
-# Run with: 50 iterations, 24 desings evaluated in parallel and 240 start designs
+# Save results object
+readr::write_rds(results, paste0("results/cv_", fold, "_ltfcutoff_nsga2r_final.rds"))
 
-job_mlrmbo = qsub_lapply(X = 1,
-                               FUN = mlrmbo_optimization_wrapper,
-                               object_envir = environment(mlrmbo_optimization_wrapper),
-                               qsub_config = qsub_config,
-                               qsub_environment = NULL, 
-                               qsub_packages = NULL,
-                               obj_fun_multi_topology_correction, 
-                               50, 24, 240, 
-                               additional_arguments_topology_correction)
+# Save parameters
+optimized_parameters <- get_optimized_parameters_nsga2r(results, source_names)
+saveRDS(optimized_parameters, paste0("results/cv_", fold, "_ltfcutoff_nsga2r_optimized_parameters_final.rds"))
+
 ```
 
-Once the job is finised (which can take a few days - for shorter running time: reduce the number of iterations), run:
+In the real implementation, we submitted the code chunks above as an R script to the HPC in 5 separate jobs (one per cross-validation fold). Our job submission script looks as follows:
+```{bash, eval=FALSE}
+#!/bin/bash -l
+#PBS -l nodes=1:ppn=48
+#PBS -l mem=64gb
+#PBS -l walltime=72:00:00
+
+module load R/4.2.0-foss-2021b
+module load R-bundle-Bioconductor/3.15-foss-2021b-R-4.2.0
+
+cd $PBS_O_WORKDIR
+Rscript scripts/nsga2r_optimization.R
+```
+
+The submission command is as follows:
+```{bash, eval=FALSE}
+for i in {1..5}
+do
+qsub qsub_script.pbs -v "CV_NO=${i}" -N nsga2r_cv${i}
+done
+```
+
+This submits the job with the environment variable `CV_NO` that can be used by the script. This requires us to define `fold` differently.
+
+```{r, eval=FALSE}
+task_id <- as.numeric(Sys.getenv("CV_NO")) #from 1-5
+fold <- cv_names[task_id]
+```
+
+
+Once the job is finished (which can take a few days - for shorter running time: reduce the number of iterations), we can analyze the output of each fold and combine the results together. By default, `get_optimized_parameters_nsga2r` will retrieve the value of the parameters at the final iteration. However, in genetic algorithms it may be possible that equally good or better solution could have existed in earlier iterations or populations. Thus, we also allow users to set `search_all_iterations = TRUE`. The `top_n` value will then select the top number of populations that have the best value (based on the geometric mean of the objective functions).
+
+```{r weights-between-populations, fig.height=8, fig.width=10}
+cv_names <- c("1234", "2345", "1345", "1245", "1235")
+for (fold in cv_names){
+  res_job_nsga2r_multi <- readRDS(paste0("results/cv_", fold, "_ltfcutoff_nsga2r_final.rds"))
+  
+  # Visualize source weights
+  print(fold)
+  print(visualize_parameter_values(res_job_nsga2r_multi, source_names))
+  
+  for (n in c(25, 5, 1)){
+    
+    optimized_df <- get_optimized_parameters_nsga2r(result_nsga2r = res_job_nsga2r_multi,
+                                    source_names = source_names,
+                                    search_all_iterations = TRUE,
+                                    top_n = n,
+                                    summarise_weights = TRUE)
+    
+    # saveRDS(optimized_df$source_weight_df, paste0("results/fold", fold, "_sourceweights_top", n, ifelse(n == 1, "", "_summarized"), ".rds"))
+    # saveRDS(optimized_df$hyperparams_df, paste0("results/fold", fold, "_hyperparameters_top", n, ifelse(n == 1, "", "_summarized"), ".rds"))
+  }
+}
+```
+
+We can also visualize differences across folds.
+
+```{r weights-between-folds, fig.height=8, fig.width=10}
+list_optimization_results <- lapply(cv_names, function(fold){
+  readRDS(paste0("results/cv_", fold, "_ltfcutoff_nsga2r_final.rds"))
+})
+
+print(visualize_parameter_values_across_folds(list_optimization_results, source_names, 5))
+
+# The top 25 seems to have more overlap
+print(visualize_parameter_values_across_folds(list_optimization_results, source_names, 25))
+
+```
+
+Finally, we can compute the average value of top 25 populations across all folds.
 
 ```{r}
-res_job_mlrmbo = qsub_retrieve(job_mlrmbo)
+# Get average across all folds
+for (top_n in c(5, 25)){
+  all_optimized_weights <- lapply(1:length(list_optimization_results), function(i){
+    get_optimized_parameters_nsga2r(list_optimization_results[[i]],
+                                    source_names,
+                                    search_all_iterations = TRUE,
+                                    top_n = top_n,
+                                    summarise_weights = FALSE) %>%
+      lapply(mutate, fold = paste0("Fold", i))
+  })
+  
+  all_optimized_source_weights_summarised <- purrr::map(all_optimized_weights, "source_weight_df") %>% bind_rows() %>% 
+    group_by(source) %>% summarise(avg_weight = mean(weight), median_weight = median(weight))
+  
+  all_optimized_hyperparams_df_summarised <- purrr::map(all_optimized_weights, "hyperparams_df") %>% bind_rows() %>% 
+    group_by(parameter) %>% summarise(avg_weight = mean(weight), median_weight = median(weight))
+  
+  # saveRDS(all_optimized_source_weights_summarised, paste0("results/all_sourceweights_top", top_n, "_summarized_final.rds"))
+  # saveRDS(all_optimized_hyperparams_df_summarised, paste0("results/all_hyperparameters_top", top_n, "_summarized_final.rds"))
+  
+  # readRDS(paste0("results/all_sourceweights_top25_summarized_final.rds")) %>% write_tsv("results/source_weights_df_final.txt")
+  # readRDS(paste0("results/all_hyperparameters_top25_summarized_final.rds")) %>% write_tsv("results/hyperparameters_df_final.txt")
+}
 ```
-
-Get now the most optimal parameter setting as a result of this analysis
-
-```{r}
-optimized_parameters = res_job_mlrmbo %>% process_mlrmbo_nichenet_optimization(source_names = source_weights_df$source %>% unique())
-```
-
-
-When you would be interested to generate a context-specific model, it could be possible that you would like to optimize the parameters specifically on your dataset of interest and not on the general ligand treatment datasets (be aware for overfitting, though!). Because for your own data, you don't know the true active ligands, you could only optimize target gene prediction performance and not ligand activity performance. In order to this, you would need to change the expression settings in the optimization functions such that they include your data, and use the function `model_evaluation_optimization_application` instead of `model_evaluation_optimization` (define this as the function parameter in `makeMultiObjectiveFunction` shown here above).
-
