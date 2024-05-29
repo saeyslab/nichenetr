@@ -779,26 +779,26 @@ make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings =
 
 ## Circos plot functions
 #' @title Assign ligands to cell types
-#' @usage assign_ligands_to_celltype(seuratObj, ligands, celltype_col, func.agg=mean, func.assign=function(x) mean(x) + sd(x), slot="data", condition_oi=NULL, condition_col=NULL)
 #' @description Assign ligands to a sender cell type, based on the strongest expressing cell type of that ligand. Ligands are only assigned to a cell type if that cell type is the only one to show an expression that is higher than the average + SD. Otherwise, it is assigned to "General".
 #' @param seuratObj Seurat object
 #' @param ligands Vector of ligands to assign to cell types
 #' @param celltype_col Metadata column name in the Seurat object that contains the cell type information
 #' @param func.agg Function to use to aggregate the expression of a ligand across all cells in a cell type (default = mean)
 #' @param func.assign Function to use to assign a ligand to a cell type (default = mean + SD)
-#' @param slot Slot in the Seurat object to use (default = "data"). If "data", the normalized counts are first exponentiated before aggregation is performed
 #' @param condition_oi Condition of interest to subset the Seurat object (default = NULL)
 #' @param condition_col Metadata column name in the Seurat object that contains the condition of interest (default = NULL)
+#' @param ... Arguments passed to Seurat::GetAssayData for the slot/layer to use (default: data)
 #' @return A data frame of two columns, the cell type the ligand has been assigned to (\code{ligand_type}) and the ligand name (\code{ligand})
+#' @details If the provided slot/layer is "data",  the normalized counts are first exponentiated before aggregation is performed
 #' @export
 #' @examples \dontrun{
 #' assign_ligands_to_celltype(seuratObj = seuratObj, ligands = best_upstream_ligands[1:20],
 #'                           celltype_col = "celltype", func.agg = mean, func.assign = function(x) {mean(x)+sd(x)},
-#'                           slot = "data", condition_oi = "LCMV", condition_col = "aggregate")
+#'                           condition_oi = "LCMV", condition_col = "aggregate", slot = "data")
 #' }
 #'
 assign_ligands_to_celltype <- function(seuratObj, ligands, celltype_col, func.agg = mean, func.assign = function(x) {mean(x)+sd(x)},
-                                        condition_oi = NULL, condition_col = NULL, slot = "data") {
+                                        condition_oi = NULL, condition_col = NULL, ...) {
   # Check that if condition_oi is given, then so is condition_oi, and vice versa
   if (any(!is.na(condition_col), !is.na(condition_oi)) & !all(!is.na(condition_col), !is.na(condition_oi))){
     stop("Please input both condition_colname and condition_oi")
@@ -809,26 +809,31 @@ assign_ligands_to_celltype <- function(seuratObj, ligands, celltype_col, func.ag
     stop("Not all ligands are in the Seurat object")
   }
 
+  # Check if slot or layer is provided
+  if (length(list(...)) > 0 & grepl("slot|layer", names(list(...)))) {
+    slot <- list(...)[[which(grepl("slot|layer", names(list(...))))]]
+  } else {
+    slot <- "data"
+  }
+
   seuratObj_subset <- subset(seuratObj, features = ligands)
 
   # Calculate average ligand expression in sender cells
   if (!is.null(condition_oi)){
     seuratObj_subset <- seuratObj_subset[, seuratObj_subset[[condition_col]] == condition_oi ]
   }
-
-  avg_expression_ligands <- lapply(unique(seuratObj_subset$celltype), function (celltype) {
+  avg_expression_ligands <- lapply(unique(seuratObj_subset[[celltype_col, drop=TRUE]]), function (celltype) {
     if (slot == "data"){
       # Exponentiate-1 and calculate in non-log space
-      expm1(GetAssayData(seuratObj_subset[, seuratObj_subset[[celltype_col]] == celltype], slot = slot)) %>%
+      expm1(GetAssayData(seuratObj_subset[, seuratObj_subset[[celltype_col]] == celltype], ...)) %>%
         apply(1, func.agg)
 
     } else {
-      apply(GetAssayData(seuratObj_subset[, seuratObj_subset[[celltype_col]] == celltype], slot = slot), 1, func.agg)
+      apply(GetAssayData(seuratObj_subset[, seuratObj_subset[[celltype_col]] == celltype], ...), 1, func.agg)
 
     }
-    }) %>% setNames(unique(seuratObj_subset$celltype)) %>%
-    do.call(cbind, .) %>%
-    set_rownames(ligands)
+    }) %>% setNames(unique(seuratObj_subset[[celltype_col, drop=TRUE]])) %>%
+    do.call(cbind, .)
 
   sender_ligand_assignment <- avg_expression_ligands %>% apply(1, function(ligand_expression){
     ligand_expression > func.assign(ligand_expression)
@@ -841,7 +846,11 @@ assign_ligands_to_celltype <- function(seuratObj, ligands, celltype_col, func.ag
 
   ligand_type_indication_df <- lapply(names(sender_ligand_assignment), function(sender) {
     unique_ligands_sender <- names(sender_ligand_assignment[[sender]]) %>% setdiff(general_ligands)
-    data.frame(ligand_type = sender, ligand = unique_ligands_sender)
+
+    if (length(unique_ligands_sender) > 0) {
+      return(data.frame(ligand_type = sender, ligand = unique_ligands_sender))
+    }
+
   }) %>% bind_rows()
 
   ligand_type_indication_df <- bind_rows(ligand_type_indication_df,
