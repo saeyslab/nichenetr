@@ -32,7 +32,7 @@ assign_ligands_to_celltype(
 
 \item{condition_col}{Metadata column name in the Seurat object that contains the condition of interest (default = NULL)}
 
-\item{...}{Arguments passed to Seurat::GetAssayData for the slot/layer to use (default: data)}
+\item{...}{Arguments passed to Seurat::GetAssayData, e.g., for the slot/layer to use (default: data)}
 }
 \value{
 A data frame of two columns, the cell type the ligand has been assigned to (\code{ligand_type}) and the ligand name (\code{ligand})

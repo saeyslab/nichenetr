@@ -787,7 +787,7 @@ make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings =
 #' @param func.assign Function to use to assign a ligand to a cell type (default = mean + SD)
 #' @param condition_oi Condition of interest to subset the Seurat object (default = NULL)
 #' @param condition_col Metadata column name in the Seurat object that contains the condition of interest (default = NULL)
-#' @param ... Arguments passed to Seurat::GetAssayData for the slot/layer to use (default: data)
+#' @param ... Arguments passed to Seurat::GetAssayData, e.g., for the slot/layer to use (default: data)
 #' @return A data frame of two columns, the cell type the ligand has been assigned to (\code{ligand_type}) and the ligand name (\code{ligand})
 #' @details If the provided slot/layer is "data",  the normalized counts are first exponentiated before aggregation is performed
 #' @export
@@ -812,7 +812,7 @@ assign_ligands_to_celltype <- function(seuratObj, ligands, celltype_col, func.ag
   slot <- "data"
   # Check if slot or layer is provided
   if (length(list(...)) > 0) {
-    if (grepl("slot|layer", names(list(...)))){
+    if (any(grepl("slot|layer", names(list(...))))){
       slot <- list(...)[[which(grepl("slot|layer", names(list(...))))]]
     } else {
       warning("No slot/layer provided even though extra argument was provided, using default slot = 'data'")
