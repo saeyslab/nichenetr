@@ -809,11 +809,14 @@ assign_ligands_to_celltype <- function(seuratObj, ligands, celltype_col, func.ag
     stop("Not all ligands are in the Seurat object")
   }
 
+  slot <- "data"
   # Check if slot or layer is provided
-  if (length(list(...)) > 0 & grepl("slot|layer", names(list(...)))) {
-    slot <- list(...)[[which(grepl("slot|layer", names(list(...))))]]
-  } else {
-    slot <- "data"
+  if (length(list(...)) > 0) {
+    if (grepl("slot|layer", names(list(...)))){
+      slot <- list(...)[[which(grepl("slot|layer", names(list(...))))]]
+    } else {
+      warning("No slot/layer provided even though extra argument was provided, using default slot = 'data'")
+    }
   }
 
   seuratObj_subset <- subset(seuratObj, features = ligands)
