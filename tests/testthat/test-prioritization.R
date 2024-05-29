@@ -172,12 +172,21 @@ test_that("Prioritization scheme works", {
                                      condition_colname = "aggregate", condition_oi = condition_oi,
                                      features = feature_list)
 
-      # Calculate condition specificity - only for datasets with two conditions!
-      condition_markers <- FindMarkers(object = seurat_obj_test, ident.1 = condition_oi, ident.2 = condition_reference,
+    # Test cell type names conversion for Seurat object
+    # Replace space with underscore
+    seurat_obj_test$celltype2 <- gsub(" ", "_", seurat_obj_test$celltype)
+    new_celltypes <- suppressWarnings(get_exprs_avg(seurat_obj_test, "celltype2") %>% pull(cluster_id) %>% unique())
+    expect_equal(new_celltypes, sort(unique(seurat_obj_test$celltype2)))
+
+    # Replace CD8 T with CD8_T-test & replace Mono with Mono-test
+    seurat_obj_test$celltype2 <- gsub("CD8 T", "CD8_T-test", seurat_obj_test$celltype) %>% gsub("Mono", "Mono-test", .)
+    new_celltypes <- suppressWarnings(get_exprs_avg(seurat_obj_test, "celltype2") %>% pull(cluster_id) %>% unique())
+    expect_equal(new_celltypes, sort(unique(seurat_obj_test$celltype2)))
+
+    # Calculate condition specificity - only for datasets with two conditions!
+    condition_markers <- FindMarkers(object = seurat_obj_test, ident.1 = condition_oi, ident.2 = condition_reference,
                                        group.by = "aggregate", min.pct = 0, logfc.threshold = 0,
                                        features = feature_list) %>% rownames_to_column("gene")
-
-    # TODO: TESTS FOR PROCESS_TABLE_TO_IC
 
     # Combine DE of senders and receivers -> used for prioritization
     processed_DE_table <- process_table_to_ic(DE_table, table_type = "celltype_DE", lr_network,
