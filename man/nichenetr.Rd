@@ -2,6 +2,7 @@
 % Please edit documentation in R/nichenetr.R
 \docType{package}
 \name{nichenetr}
+\alias{nichenetr-package}
 \alias{nichenetr}
 \title{nichenetr: Linking Extracellular Protein Signals to Target Genes by data-integration.}
 \description{
@@ -17,3 +18,20 @@ This package allows you the investigate intercellular communication from a compu
 \code{\link{evaluate_target_prediction}}
 }
 
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/saeyslab/nichenetr}
+  \item Report bugs at \url{https://github.com/saeyslab/nichenetr/issues}
+}
+
+}
+\author{
+\strong{Maintainer}: Chananchida Sang-aram \email{chananchida.sangaram@ugent.be}
+
+Authors:
+\itemize{
+  \item Robin Browaeys
+}
+
+}
