@@ -125,13 +125,25 @@ get_exprs_avg = function(seurat_obj, celltype_colname,
 
   # Subset seurat object
   if (!is.null(condition_oi)) {
-    seurat_obj = seurat_obj[,seurat_obj[[condition_colname]] == condition_oi]
+    seurat_obj <- seurat_obj[,seurat_obj[[condition_colname]] == condition_oi]
   }
 
-  seurat_obj <- NormalizeData(seurat_obj, verbose = FALSE)
+  celltypes <- unique(seurat_obj[[celltype_colname, drop=TRUE]])
+
   avg_celltype <- AverageExpression(seurat_obj, group.by = celltype_colname, assays = assay_oi, ...) %>%
                     .[[assay_oi]] %>% data.frame(check.names=FALSE) %>% rownames_to_column("gene") %>%
                     pivot_longer(!gene, names_to = "cluster_id", values_to = "avg_expr")
+
+  # If any celltypes had an underscore in their name
+  if (any(grepl("_", celltypes))){
+    # Map the new names and the original names
+    # This is so it works in the case the original name also already has a hyphen in in
+    mapping <- data.frame(orig_name = sort(celltypes), cluster_id = sort(unique(avg_celltype$cluster_id)))
+    avg_celltype <- avg_celltype %>% left_join(mapping, by = "cluster_id") %>%
+                    dplyr::select(gene, cluster_id = orig_name, avg_expr)
+
+
+  }
 
   return (avg_celltype)
 
