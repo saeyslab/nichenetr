@@ -857,7 +857,7 @@ assign_ligands_to_celltype <- function(seuratObj, ligands, celltype_col, func.ag
   }) %>% bind_rows()
 
   ligand_type_indication_df <- bind_rows(ligand_type_indication_df,
-                                         data.frame(ligand_type = "General", ligand = general_ligands))
+                                         data.frame(ligand = general_ligands) %>% mutate(ligand_type = "General"))
 
   return(ligand_type_indication_df)
 }
