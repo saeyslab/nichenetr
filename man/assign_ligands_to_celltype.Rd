@@ -4,7 +4,18 @@
 \alias{assign_ligands_to_celltype}
 \title{Assign ligands to cell types}
 \usage{
-assign_ligands_to_celltype(seuratObj, ligands, celltype_col, func.agg=mean, func.assign=function(x) mean(x) + sd(x), slot="data", condition_oi=NULL, condition_col=NULL)
+assign_ligands_to_celltype(
+  seuratObj,
+  ligands,
+  celltype_col,
+  func.agg = mean,
+  func.assign = function(x) {
+     mean(x) + sd(x)
+ },
+  condition_oi = NULL,
+  condition_col = NULL,
+  ...
+)
 }
 \arguments{
 \item{seuratObj}{Seurat object}
@@ -21,7 +32,7 @@ assign_ligands_to_celltype(seuratObj, ligands, celltype_col, func.agg=mean, func
 
 \item{condition_col}{Metadata column name in the Seurat object that contains the condition of interest (default = NULL)}
 
-\item{slot}{Slot in the Seurat object to use (default = "data"). If "data", the normalized counts are first exponentiated before aggregation is performed}
+\item{...}{Arguments passed to Seurat::GetAssayData, e.g., for the slot/layer to use (default: data)}
 }
 \value{
 A data frame of two columns, the cell type the ligand has been assigned to (\code{ligand_type}) and the ligand name (\code{ligand})
@@ -29,11 +40,14 @@ A data frame of two columns, the cell type the ligand has been assigned to (\cod
 \description{
 Assign ligands to a sender cell type, based on the strongest expressing cell type of that ligand. Ligands are only assigned to a cell type if that cell type is the only one to show an expression that is higher than the average + SD. Otherwise, it is assigned to "General".
 }
+\details{
+If the provided slot/layer is "data",  the normalized counts are first exponentiated before aggregation is performed
+}
 \examples{
 \dontrun{
 assign_ligands_to_celltype(seuratObj = seuratObj, ligands = best_upstream_ligands[1:20],
                           celltype_col = "celltype", func.agg = mean, func.assign = function(x) {mean(x)+sd(x)},
-                          slot = "data", condition_oi = "LCMV", condition_col = "aggregate")
+                          condition_oi = "LCMV", condition_col = "aggregate", slot = "data")
 }
 
 }
