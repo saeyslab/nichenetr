@@ -1223,7 +1223,8 @@ make_line_plot <- function(ligand_activities, potential_ligands, ranking_range =
     # Use equation of a line to find the x value at the cutoff
     # Different lines for the top and bottom cutoff
     mutate(m = (y2-y1)/(x2-x1), x0 = case_when(y2 > by_n ~ ((cutoff-y1)/m)+x1,
-                                              y2 <= by_n ~ (((n_ligands*margin)-y1)/m)+x1))
+                                              y2 <= by_n ~ (((n_ligands*margin)-y1)/m)+x1)) %>%
+    filter(m != 0)
 
   # Highlight ties
   ties_df <- rankings_df %>% group_by(type, rank) %>%
@@ -1235,12 +1236,18 @@ make_line_plot <- function(ligand_activities, potential_ligands, ranking_range =
         mutate(xstart = case_when(unique(group$type) == "agnostic" ~ agnostic_x,
                                   unique(group$type) == "focused" ~ focused_x),
               xend = xstart)
-    }) %>% bind_rows() %>%
+    }) %>% bind_rows()
+
+  if (nrow(ties_df) > 0){
     # Clip the lines to the cutoff
-    filter(ystart < cutoff, yend > by_n) %>% mutate(yend = case_when(yend > cutoff ~ cutoff,
-                                                        TRUE ~ yend),
-                                                    ystart = case_when(ystart <= (n_ligands*margin) ~ (n_ligands*margin)-(by_n*0.5),
-                                                        TRUE ~ ystart))
+    ties_df <- ties_df %>% filter(ystart < cutoff, yend > by_n) %>%
+      mutate(yend = case_when(yend > cutoff ~ cutoff,
+                              TRUE ~ yend),
+             ystart = case_when(ystart <= (n_ligands*margin) ~ (n_ligands*margin)-(by_n*0.5),
+                                TRUE ~ ystart))
+  } else {
+    ties_df <- data.frame(ystart = numeric(), yend = numeric(), xstart = numeric(), xend = numeric())
+  }
 
   # Subset the dataframe to the range of interest
   rankings_df_subset <- rankings_df %>% filter(new_rank <= end_n, new_rank >= start_n)
