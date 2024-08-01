@@ -529,33 +529,33 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
   cor_p_pval = suppressWarnings(cor.test(as.numeric(prediction), as.numeric(response))) %>% .$p.value
   cor_s_pval = suppressWarnings(cor.test(as.numeric(prediction), as.numeric(response), method =  "s")) %>% .$p.value
 
-  mean_rank_GST = limma::wilcoxGST(response, prediction)
-  #### now start calculating the AUC-iRegulon
+  # Mean rank GST calculated if limma is installed
+  mean_rank_GST = ifelse(rlang::is_installed("limma"), limma::wilcoxGST(response, prediction), NA)
+
+  # Calculate the AUC-iRegulon
+  output_iregulon = list()
+  if (iregulon){
+    output_iregulon = calculate_auc_iregulon(prediction,response)
+  }
+
   tbl_perf = tibble(auroc = auroc,
                     aupr = aupr,
                     aupr_corrected = aupr - aupr_random,
                     sensitivity_roc = sensitivity,
                     specificity_roc = specificity,
                     mean_rank_GST_log_pval = -log(mean_rank_GST),
+                    auc_iregulon = output_iregulon$auc_iregulon,
+                    auc_iregulon_corrected = output_iregulon$auc_iregulon_corrected,
                     pearson_log_pval = -log10(cor_p_pval),
                     spearman_log_pval = -log10(cor_s_pval),
                     pearson = cor_p,
                     spearman = cor_s)
-  if (iregulon == TRUE){
-    output_iregulon = calculate_auc_iregulon(prediction,response)
-    tbl_perf = tibble(auroc = auroc,
-                      aupr = aupr,
-                      aupr_corrected = aupr - aupr_random,
-                      sensitivity_roc = sensitivity,
-                      specificity_roc = specificity,
-                      mean_rank_GST_log_pval = -log(mean_rank_GST),
-                      auc_iregulon = output_iregulon$auc_iregulon,
-                      auc_iregulon_corrected = output_iregulon$auc_iregulon_corrected,
-                      pearson_log_pval = -log10(cor_p_pval),
-                      spearman_log_pval = -log10(cor_s_pval),
-                      pearson = cor_p,
-                      spearman = cor_s)
+
+  # Remove mean_rank_GST if limma is not installed
+  if (!rlang::is_installed("limma")) {
+    tbl_perf = tbl_perf %>% select(-mean_rank_GST_log_pval)
   }
+
   return(tbl_perf)
 }
 classification_evaluation_categorical_pred = function(predictions, response) {

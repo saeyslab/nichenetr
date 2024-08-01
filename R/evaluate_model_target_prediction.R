@@ -110,7 +110,6 @@ convert_expression_settings_evaluation = function(setting) {
 #' @importFrom ROCR prediction performance
 #' @importFrom caTools trapz
 #' @importFrom data.table data.table
-#' @importFrom limma wilcoxGST
 #'
 #' @examples
 #' \dontrun{
@@ -193,7 +192,6 @@ evaluate_target_prediction = function(setting,ligand_target_matrix, ligands_posi
 #'
 #' @importFrom ROCR prediction performance
 #' @importFrom caTools trapz
-#' @importFrom limma wilcoxGST
 #' @import caret
 #' @importFrom purrr safely
 #'
@@ -300,7 +298,6 @@ evaluate_multi_ligand_target_prediction = function(setting,ligand_target_matrix,
 #' @importFrom ROCR prediction performance
 #' @importFrom caTools trapz
 #' @importFrom data.table data.table
-#' @importFrom limma wilcoxGST
 #'
 #' @examples
 #' \dontrun{
