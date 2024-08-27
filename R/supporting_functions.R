@@ -197,7 +197,7 @@ convert_alias_to_symbols = function(aliases, organism, verbose = TRUE){
 #' @description \code{alias_to_symbol_seurat} Convert aliases to official gene symbols in a Seurat Object. Makes use of `convert_alias_to_symbols`
 #' @usage alias_to_symbol_seurat(seurat_obj, organism)
 #'
-#' @param seurat_obj Seurat object
+#' @param seurat_obj Seurat object, v4 or below. For Seurat v5, a warning is thrown and the same object will be returned.
 #' @param organism Is Seurat object data from "mouse" or "human"
 #'
 #' @return Seurat object
@@ -219,12 +219,13 @@ alias_to_symbol_seurat = function(seurat_obj, organism) {
 
   # Stop if obj_version is seurat v5
   if (obj_version >= 5){
-    stop("This function is not supported for Seurat v5 objects. Consider using `convert_alias_to_symbols` on your original expression matrix and creating a new Seurat object instead.
+    warning("This function is not supported for Seurat v5 objects, so the same object will be returned. Consider using `convert_alias_to_symbols` on your original expression matrix and creating a new Seurat object instead.
          If this is not feasible, consider checking out Seurat.utils::RenameGenesSeurat.")
+
+    return(seurat_obj)
   }
 
   assays <- Assays(seurat_obj)
-
 
   convert_newnames <- function(feature_names, organism, verbose = FALSE) {
       newnames <- convert_alias_to_symbols(feature_names, organism = organism, verbose = verbose)
