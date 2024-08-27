@@ -38,7 +38,7 @@ library(nichenetr) # Please update to v2.0.6
 library(Seurat)
 library(SeuratObject)
 library(tidyverse)
-
+options(timeout = 600)
 ```
 
 ```{r}
@@ -170,7 +170,7 @@ As you can see, the resulting table now show the rankings for *ligand-receptor i
 We included all columns here, but if you just want relevant columns that were used to calculate the ranking:
 
 ```{r}
-prior_table %>% select(c('sender', 'receiver', 'ligand', 'receptor', 'scaled_p_val_ligand_adapted', 'scaled_p_val_receptor_adapted', 'scaled_avg_exprs_ligand', 'scaled_avg_exprs_receptor', 'scaled_p_val_ligand_adapted_group', 'scaled_p_val_receptor_adapted_group', 'scaled_activity'))
+prior_table %>% select(c('sender', 'receiver', 'ligand', 'receptor', 'scaled_p_val_adapted_ligand', 'scaled_p_val_adapted_receptor', 'scaled_avg_exprs_ligand', 'scaled_avg_exprs_receptor', 'scaled_p_val_adapted_ligand_group', 'scaled_p_val_adapted_receptor_group', 'scaled_activity'))
 ```
 
 Note that we appended the suffix '_group' to columns that refer to differential expression between conditions, e.g., `lfc_ligand_group` and `lfc_receptor_group.`
@@ -339,6 +339,7 @@ make_mushroom_plot(prior_table, top_n = 30, size = "pct_expressed", color = "sca
         axis.title.x = element_text(hjust = 0.25))
 
 ```
+
 ```{r}
 sessionInfo()
 ```
