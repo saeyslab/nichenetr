@@ -44,4 +44,9 @@ jobs:
           dependencies: '"hard"'
           extra-packages: any::rcmdcheck, local::.
           needs: check
-          
+      
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+          args: 'c("--no-manual","--no-build-vignettes","--no-examples")'
+          build_args: 'c("--no-manual","--no-build-vignettes")'
