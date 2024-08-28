@@ -556,7 +556,7 @@ make_heatmap_bidir_lt_ggplot = function(matrix, y_name, x_name, y_axis = TRUE, x
 #' @param top_n An integer indicating how many ligand-receptor pairs to show
 #' @param show_rankings A logical indicating whether to show the ranking of the ligand-receptor pairs (default: FALSE)
 #' @param show_all_datapoints A logical indicating whether to show all ligand-receptor pairs (default: FALSE, if true they will be grayed out)
-#' @param true_color_range A logical indicating whether to use the true color range for the ligand-receptor pairs (default: FALSE; range 0-1 is used)
+#' @param true_color_range A logical indicating whether to use the default color range as determined by ggplot (TRUE, default) or set the limits to a range of 0-1 (FALSE)
 #' @param size A string indicating which column to use for the size of the semicircles (default: "scaled_avg_exprs"; use column name without "_ligand" or "_receptor" suffix)
 #' @param color A string indicating which column to use for the color of the semicircles (default: "scaled_p_val_adapted"; use column name without "_ligand" or "_receptor" suffix)
 #' @param ligand_fill_colors A vector of the low and high colors to use for the ligand semicircle fill gradient (default: c("#DEEBF7", "#08306B"))
@@ -601,7 +601,7 @@ make_heatmap_bidir_lt_ggplot = function(matrix, y_name, x_name, y_axis = TRUE, x
 #' @export
 #'
 make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings = FALSE,
-                              show_all_datapoints = FALSE, true_color_range = FALSE,
+                              show_all_datapoints = FALSE, true_color_range = TRUE,
                               size = "scaled_avg_exprs", color = "scaled_p_val_adapted",
                               ligand_fill_colors = c("#DEEBF7", "#08306B"),
                               receptor_fill_colors = c("#FEE0D2", "#A50F15"),
@@ -673,7 +673,7 @@ make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings =
   }
 
   # Rename size and color columns to be more human-readable
-  keywords_adj <- c("LFC", "p-val", "p-val", "", "product", "mean", "adjusted", "expression") %>% setNames(c("lfc", "pval", "p", "val", "prod", "avg", "adj", "exprs"))
+  keywords_adj <- c("LFC", "pval", "", "product", "mean", "adjusted", "expression") %>% setNames(c("lfc", "p", "val", "prod", "avg", "adj", "exprs"))
   size_title <- sapply(stringr::str_split(size, "_")[[1]], function(k) ifelse(is.na(keywords_adj[k]), k, keywords_adj[k])) %>%
     paste0(., collapse = " ") %>%  stringr::str_replace("^\\w{1}", toupper)
   color_title <- sapply(stringr::str_split(color, "_")[[1]], function(k) ifelse(is.na(keywords_adj[k]), k, keywords_adj[k])) %>%

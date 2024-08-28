@@ -9,7 +9,7 @@ make_mushroom_plot(
   top_n = 30,
   show_rankings = FALSE,
   show_all_datapoints = FALSE,
-  true_color_range = FALSE,
+  true_color_range = TRUE,
   size = "scaled_avg_exprs",
   color = "scaled_p_val_adapted",
   ligand_fill_colors = c("#DEEBF7", "#08306B"),
@@ -30,7 +30,7 @@ make_mushroom_plot(
 
 \item{show_all_datapoints}{A logical indicating whether to show all ligand-receptor pairs (default: FALSE, if true they will be grayed out)}
 
-\item{true_color_range}{A logical indicating whether to use the true color range for the ligand-receptor pairs (default: FALSE; range 0-1 is used)}
+\item{true_color_range}{A logical indicating whether to use the default color range as determined by ggplot (TRUE, default) or set the limits to a range of 0-1 (FALSE)}
 
 \item{size}{A string indicating which column to use for the size of the semicircles (default: "scaled_avg_exprs"; use column name without "_ligand" or "_receptor" suffix)}
 
