@@ -42,7 +42,12 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           dependencies: '"hard"'
-          extra-packages: any::rcmdcheck, local::.
+          extra-packages: |
+            any::rcmdcheck
+            any::testthat
+            any::knitr
+            any::rmarkdown
+            local::.
           needs: check
       
       - uses: r-lib/actions/check-r-package@v2
