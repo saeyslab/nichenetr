@@ -105,7 +105,9 @@ convert_expression_settings_evaluation = function(setting) {
 #' @param ligand_target_matrix A matrix of ligand-target probabilty scores (or discrete target assignments).
 #' @param ligands_position Indicate whether the ligands in the ligand-target matrix are in the rows ("rows") or columns ("cols"). Default: "cols"
 
-#' @return A data.frame with following variables: setting, ligand and for probabilistic predictions: auroc, aupr, aupr_corrected (aupr - aupr for random prediction), sensitivity_roc (proxy measure, inferred from ROC), specificity_roc (proxy measure, inferred from ROC), mean_rank_GST_log_pval (-log10 of p-value of mean-rank gene set test), pearson (correlation coefficient), spearman (correlation coefficient); whereas for categorical predictions: accuracy, recall, specificity, precision, F1, F0.5, F2, mcc, informedness, markedness, fisher_pval_log (which is -log10 of p-value fisher exact test), fisher odds.
+#' @return A data.frame with following variables: setting, ligand nd for probabilistic predictions: auroc, aupr, aupr_corrected (aupr - aupr for random prediction), sensitivity_roc (proxy measure, inferred from ROC), specificity_roc (proxy measure, inferred from ROC), mean_rank_GST_log_pval (-log10 of p-value of mean-rank gene set test), pearson (correlation coefficient), spearman (correlation coefficient); whereas for categorical predictions: accuracy, recall, specificity, precision, F1, F0.5, F2, mcc, informedness, markedness, fisher_pval_log (which is -log10 of p-value fisher exact test), fisher odds.\cr
+#' "mean_rank_GST_log_pval" will only be included in the dataframe if limma is installed. From NicheNet v2.1.7 onwards, limma is no longer a hard dependency of NicheNet.
+#'
 #'
 #' @importFrom ROCR prediction performance
 #' @importFrom caTools trapz
