@@ -598,6 +598,9 @@ generate_prioritization_tables = function(sender_receiver_info, sender_receiver_
                     )* (1/sum_prioritization_weights)) %>% dplyr::arrange(-prioritization_score) %>%
     ungroup()
 
+  # Add rank
+  group_prioritization_tbl = group_prioritization_tbl %>% dplyr::mutate(prioritization_rank = rank(desc(prioritization_score)))
+
   return (group_prioritization_tbl)
 
 }
