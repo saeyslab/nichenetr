@@ -344,7 +344,8 @@ test_that("Prioritization scheme works", {
 
     # Check colnames
     expect_equal(colnames(prior_table),
-                 unique(c(colnames(processed_DE_table), colnames(processed_expr_table), "activity", "rank", "activity_zscore", "scaled_activity", "prioritization_score")))
+                 unique(c(colnames(processed_DE_table), colnames(processed_expr_table),
+                          "activity", "rank", "activity_zscore", "scaled_activity", "prioritization_score", "prioritization_rank")))
 
 
     prior_table_top10 <- prior_table %>% distinct(ligand, prioritization_score) %>% mutate(rank = rank(desc(prioritization_score), ties.method = "average")) %>% arrange(rank, ligand) %>% pull(ligand) %>% .[1:10]
@@ -370,7 +371,7 @@ test_that("Prioritization scheme works", {
 
     # Check colnames
     expect_equal(colnames(prior_table),
-                 unique(c(colnames(processed_DE_table), colnames(processed_expr_table), "prioritization_score")))
+                 unique(c(colnames(processed_DE_table), colnames(processed_expr_table), "prioritization_score", "prioritization_rank")))
 
     prioritizing_weights["de_ligand"] = 1
     prior_table <- generate_prioritization_tables(processed_expr_table,
@@ -382,7 +383,7 @@ test_that("Prioritization scheme works", {
 
     expect_equal(colnames(prior_table),
                  unique(c(colnames(processed_DE_table), colnames(processed_expr_table),
-                          "lfc_pval_ligand", "p_val_adapted_ligand", "scaled_lfc_ligand", "scaled_p_val_ligand", "scaled_lfc_pval_ligand", "scaled_p_val_adapted_ligand", "prioritization_score")))
+                          "lfc_pval_ligand", "p_val_adapted_ligand", "scaled_lfc_ligand", "scaled_p_val_ligand", "scaled_lfc_pval_ligand", "scaled_p_val_adapted_ligand", "prioritization_score", "prioritization_rank")))
 
 
     # Check mushroom plot
