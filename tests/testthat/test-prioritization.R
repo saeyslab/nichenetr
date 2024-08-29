@@ -11,7 +11,7 @@ test_that("Wrapper function for seurat", {
   if (as.numeric(substr(packageVersion("Seurat"), 1, 1)) < 5){
     seurat_obj_test = alias_to_symbol_seurat(seurat_obj_test, "mouse")
   } else if (grepl("^5", packageVersion("Seurat")) & grepl("^5", seurat_obj_test@version)){
-    expect_error(alias_to_symbol_seurat(seurat_obj_test, "mouse"))
+    expect_warning(alias_to_symbol_seurat(seurat_obj_test, "mouse"))
   }
 
   lr_network_filtered <- lr_network %>% filter(from %in% rownames(seurat_obj_test), to %in% rownames(seurat_obj_test))
@@ -138,7 +138,7 @@ test_that("Prioritization scheme works", {
       pct <- pcts[i]
 
       if (grepl("^5", packageVersion("Seurat"))){
-        expect_error(alias_to_symbol_seurat(seurat_obj_test, "mouse"))
+        expect_warning(alias_to_symbol_seurat(seurat_obj_test, "mouse"))
       } else {
         seurat_obj_test <- alias_to_symbol_seurat(seurat_obj_test, "mouse")
       }

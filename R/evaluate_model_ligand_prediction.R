@@ -193,7 +193,6 @@ get_multi_ligand_importances = function(setting,ligand_target_matrix, ligands_po
 #'
 #' @importFrom ROCR prediction performance
 #' @importFrom caTools trapz
-#' @importFrom limma wilcoxGST
 #' @import caret
 #' @importFrom purrr safely
 #'
@@ -267,7 +266,6 @@ evaluate_importances_ligand_prediction = function(importances, normalization, al
 #'
 #' @importFrom ROCR prediction performance
 #' @importFrom caTools trapz
-#' @importFrom limma wilcoxGST
 #'
 #' @examples
 #' \dontrun{

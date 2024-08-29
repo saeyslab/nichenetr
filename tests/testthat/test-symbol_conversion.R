@@ -31,15 +31,17 @@ test_that("Seurat alias conversion works", {
   seurat_object_lite = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
 
   seurat_object_lite2 = seurat_object_lite %>% alias_to_symbol_seurat(organism = "mouse")
-  testthat::expect_equal(typeof(seurat_object_lite2), "S4")
+  expect_equal(typeof(seurat_object_lite2), "S4")
 
   seurat_object_lite <- UpdateSeuratObject(seurat_object_lite)
 
   if (grepl("^5", packageVersion("Seurat")) & grepl("^5", seurat_object_lite@version)){
-    expect_error(alias_to_symbol_seurat(seurat_object_lite, "mouse"))
+    expect_warning(alias_to_symbol_seurat(seurat_object_lite, "mouse"))
+    same_seurat_obj <- suppressWarnings(alias_to_symbol_seurat(seurat_object_lite, "mouse"))
+    expect_true(all(rownames(seurat_object_lite) == rownames(same_seurat_obj)))
   } else {
     seurat_object_lite2 = seurat_object_lite %>% alias_to_symbol_seurat(organism = "mouse")
-    testthat::expect_equal(typeof(seurat_object_lite2), "S4")
+    expect_equal(typeof(seurat_object_lite2), "S4")
   }
 
 })
