@@ -38,7 +38,6 @@ library(nichenetr) # Please update to v2.0.6
 library(Seurat)
 library(SeuratObject)
 library(tidyverse)
-options(timeout = 600)
 ```
 
 ```{r}
@@ -231,8 +230,8 @@ prior_table %>% head
 As NicheNet is a receiver-based pipeline, to prioritize ligand-receptor pairs across multiple receivers, we need to perform the NicheNet analysis for each receiver separately. Let's suppose we want to prioritize ligand-receptor pairs across all T cells (CD4, CD8, and Tregs). The CD8 T analysis has already been performed above. We will use the wrapper function to perform a basic NicheNet analysis on the other two:
 
 ```{r}
-nichenet_output <- lapply(c("CD4 T", "Treg"), function(receiver_ct){
-  nichenet_seuratobj_aggregate(receiver = receiver_ct,
+nichenet_outputs <- lapply(c("CD8 T", "CD4 T", "Treg"), function(receiver_ct){
+  output <- nichenet_seuratobj_aggregate(receiver = receiver_ct,
                              seurat_obj = seuratObj,
                              condition_colname = "aggregate",
                              condition_oi = condition_oi,
@@ -243,42 +242,41 @@ nichenet_output <- lapply(c("CD4 T", "Treg"), function(receiver_ct){
                              weighted_networks = weighted_networks,
                              expression_pct = 0.05)
   
-}) %>% setNames(c("CD4 T", "Treg"))
+  # Add receiver cell type in ligand activity table
+  output$ligand_activities$receiver <- receiver_ct 
+  return(output)
+})
 
 ```
 
 To generate the dataframes used for prioritization, we will simply change the `lr_network_filtered` argument to only calculate DE and expression values for ligand-receptor pairs of interest.
 
 ```{r}
-info_tables2 <- lapply(names(nichenet_output), function(receiver_ct) {
-  generate_info_tables(seuratObj,
-                       celltype_colname = "celltype",
-                       senders_oi = sender_celltypes,
-                        receivers_oi = receiver_ct,
-                          lr_network_filtered = lr_network %>%
-                            filter(from %in% nichenet_output[[receiver_ct]]$ligand_activities$test_ligand &
-                                     to %in% nichenet_output[[receiver_ct]]$background_expressed_genes),
-                          condition_colname = "aggregate",
-                          condition_oi = condition_oi,
-                          condition_reference = condition_reference,
-                          scenario = "case_control")
+# Calculate prioritization criteria for each receiver cell type
+info_tables <- lapply(nichenet_outputs, function(output) {
+  lr_network_filtered <-  lr_network %>% select(from, to) %>% 
+                            filter(from %in% output$ligand_activities$test_ligand & 
+                                   to %in% output$background_expressed_genes) 
+  
+  generate_info_tables(seuratObj, 
+                       celltype_colname = "celltype", 
+                       senders_oi = sender_celltypes, 
+                       receivers_oi = unique(output$ligand_activities$receiver), 
+                       lr_network_filtered = lr_network_filtered, 
+                       condition_colname = "aggregate", 
+                       condition_oi = condition_oi, 
+                       condition_reference = condition_reference, 
+                       scenario = "case_control") 
 })
 
 ```
 
-We can then combine the results from `generate_info_tables` using `bind_rows`, which will concatenate the rows together. For the ligand activities, we will also add an additional column containing the receiver cell type. Note that for the average expression table (`sender_receiver_info`) and condition specificity (`lr_condition_de`), we need to remove duplicate rows.
+We can then combine the results from `generate_info_tables` using `bind_rows`, which will concatenate the rows together. Note that for the average expression table (`sender_receiver_info`) and condition specificity (`lr_condition_de`), we need to remove duplicate rows.
 
 ```{r}
-# Add CD8 T to list
-info_tables2[[3]] <- info_tables
-
 # bind rows of each element of info_tables using pmap
-info_tables_combined <- purrr::pmap(info_tables2, bind_rows)
-
-# Combine ligand activities and add receiver information
-ligand_activities_combined <- bind_rows(nichenet_output$`CD4 T`$ligand_activities %>% mutate(receiver = "CD4 T"),
-                                        nichenet_output$Treg$ligand_activities %>% mutate(receiver = "Treg"),
-                                        ligand_activities %>% mutate(receiver = "CD8 T"))
+info_tables_combined <- purrr::pmap(info_tables, bind_rows)
+ligand_activities_combined <- purrr::map_dfr(nichenet_outputs, "ligand_activities")
 
 prior_table_combined <- generate_prioritization_tables(
   sender_receiver_info = info_tables_combined$sender_receiver_info %>% distinct,
@@ -313,7 +311,8 @@ circos_plot <- make_circos_lr(prior_table_oi,
 circos_plot
 ```
 
-Furthermore, we provide the function `make_mushroom_plot` which allows you to display expression of ligand-receptor pairs in a specific receiver. By default, the fill gradient shows the LFC between cell types, while the size of the semicircle corresponds to the scaled mean expression. You can also choose to show the rankings of each ligand-receptor-sender pair with `show_rankings`, as well as show all data points for context (`show_all_datapoints`). `true_color_range = TRUE` will adjust the limits of the color gradient to the min-max of the values, instead of the limit being from 0 to 1. Note that the numbers displayed here are the rankings within the chosen cell type and not across all receiver cell types (in case of multiple receivers).
+Furthermore, we provide the function `make_mushroom_plot` which allows you to display expression of ligand-receptor pairs in a specific receiver. By default, the fill gradient shows the LFC between cell types, while the size of the semicircle corresponds to the scaled mean expression. You can also choose to show the rankings of each ligand-receptor-sender pair with `show_rankings`, as well as show all data points for context (`show_all_datapoints`). `true_color_range = TRUE` will adjust the limits of the color gradient to the min-max of the values, instead of the limit being from 0 to 1. Note that the numbers displayed here are the rankings across all receiver cell types (in case of multiple receivers), and by default the `top_n` ligand-receptor pairs are shown despite the absolute ranking. To show only pairs that have an absolute ranking within top_n across all receivers, set `use_absolute_rank = TRUE`.
+
 
 ```{r mushroom-plot-1, fig.height=8, fig.width=8}
 receiver_oi <- "CD8 T"
