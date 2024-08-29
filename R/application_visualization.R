@@ -557,6 +557,7 @@ make_heatmap_bidir_lt_ggplot = function(matrix, y_name, x_name, y_axis = TRUE, x
 #' @param show_rankings A logical indicating whether to show the ranking of the ligand-receptor pairs (default: FALSE)
 #' @param show_all_datapoints A logical indicating whether to show all ligand-receptor pairs (default: FALSE, if true they will be grayed out)
 #' @param true_color_range A logical indicating whether to use the default color range as determined by ggplot (TRUE, default) or set the limits to a range of 0-1 (FALSE)
+#' @param use_absolute_rank A logical indicating to whether use the absolute prioritization rank to filter the top_n ligand-receptor pairs (default: FALSE)
 #' @param size A string indicating which column to use for the size of the semicircles (default: "scaled_avg_exprs"; use column name without "_ligand" or "_receptor" suffix)
 #' @param color A string indicating which column to use for the color of the semicircles (default: "scaled_p_val_adapted"; use column name without "_ligand" or "_receptor" suffix)
 #' @param ligand_fill_colors A vector of the low and high colors to use for the ligand semicircle fill gradient (default: c("#DEEBF7", "#08306B"))
@@ -569,6 +570,8 @@ make_heatmap_bidir_lt_ggplot = function(matrix, y_name, x_name, y_axis = TRUE, x
 #' If the values range of the column used as the "size" parameter is not between 0 and 1.001, an error will be thrown.
 #'
 #' The sender cell types can be ordered by encoding the "sender" column as a factor. If the "sender" column is not a factor, the sender cell types will be ordered alphabetically.
+#'
+#' By default, the top_n ligand-receptor pairs are shown despite their absolute ranking. So, if a receiver cell type has LR pairs that are only ranked from 31-40 and the top_n is set to 20, the LR pairs will be shown. If use_absolute_rank is set to TRUE, only LR pairs with absolute ranking from 1-20 will be shown.
 #'
 #'
 #' @return A ggplot object
@@ -595,13 +598,17 @@ make_heatmap_bidir_lt_ggplot = function(matrix, y_name, x_name, y_axis = TRUE, x
 #'
 #' # Change the size and color columns
 #' make_mushroom_plot(prior_table, size = "pct_expressed", color = "scaled_avg_exprs")
-#' }
 #'
+#'
+#' # For a prioritization table with multiple receiver cell types
+#' make_mushroom_plot(prior_table_combined %>% filter(receiver == celltype_oi))
+#'}
 #'
 #' @export
 #'
 make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings = FALSE,
                               show_all_datapoints = FALSE, true_color_range = TRUE,
+                              use_absolute_rank = FALSE,
                               size = "scaled_avg_exprs", color = "scaled_p_val_adapted",
                               ligand_fill_colors = c("#DEEBF7", "#08306B"),
                               receptor_fill_colors = c("#FEE0D2", "#A50F15"),
@@ -623,6 +630,8 @@ make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings =
     stop("show_all_datapoints should be a TRUE or FALSE")
   if(!is.logical(true_color_range) | length(true_color_range) != 1)
     stop("true_color_range should be a TRUE or FALSE")
+  if(!is.logical(use_absolute_rank) | length(use_absolute_rank) != 1)
+    stop("use_absolute_rank should be a TRUE or FALSE")
   if(!is.numeric(top_n) | length(top_n) != 1)
     stop("top_n should be a numeric vector of length 1")
   if(length(ligand_fill_colors) != 2)
@@ -641,12 +650,26 @@ make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings =
   requireNamespace("shadowtext")
   requireNamespace("cowplot")
 
-  # Filter to top_n, create a new column of ligand-receptor interactions
-  filtered_table <- prioritization_table %>% dplyr::mutate(prioritization_rank = rank(desc(prioritization_score))) %>%
-    dplyr::mutate(lr_interaction = paste(ligand, receptor, sep = " - "))
-  order_interactions <- unique(filtered_table %>% filter(prioritization_rank <= top_n) %>% pull(lr_interaction))
+  if (!"prioritization_rank" %in% colnames(prioritization_table)){
+    prioritization_table <- prioritization_table %>% dplyr::mutate(prioritization_rank = rank(desc(prioritization_score)))
+  }
+  # Add 'relative rank' column which is basically 1:n
+  prioritization_table <- prioritization_table %>% dplyr::mutate(relative_rank = rank(desc(prioritization_score)))
+
+  # If use_absolute_rank, use 'prioritization_rank' column to filter top_n
+  rank_filter_col <- ifelse(use_absolute_rank, "prioritization_rank", "relative_rank")
+
+  # Create a new column of ligand-receptor interactions, and filter table to
+  # only include LR interactions that appear in the top_n
+  filtered_table <- prioritization_table %>% dplyr::mutate(lr_interaction = paste(ligand, receptor, sep = " - "))
+  order_interactions <- unique(filtered_table %>% filter(.data[[rank_filter_col]] <= top_n) %>% pull(lr_interaction))
   filtered_table <- filtered_table %>% filter(lr_interaction %in% order_interactions) %>%
     mutate(lr_interaction = factor(lr_interaction, levels = rev(order_interactions)))
+
+  # Check if filtered_table is empty
+  if (nrow(filtered_table) == 0){
+    stop("No ligand-receptor interactions found in the top_n. Please try use_absolute_rank = FALSE or increase top_n.")
+  }
 
   # Keep order of senders, if present (if not, sort alphabetically)
   if (!is.factor(filtered_table$sender)){
@@ -659,7 +682,7 @@ make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings =
   lr_interaction_vec <- 1:length(order_interactions) %>% setNames(order_interactions)
 
   # Make each ligand and receptor into separate rows (to draw 1 semicircle per row)
-  filtered_table <- filtered_table %>% select(c("lr_interaction", all_of(cols_to_use), "prioritization_rank")) %>%
+  filtered_table <- filtered_table %>% select(c("lr_interaction", all_of(cols_to_use), "prioritization_rank", "relative_rank")) %>%
     pivot_longer(c(ligand, receptor), names_to = "type", values_to = "protein") %>%
     mutate(size = ifelse(type == "ligand", get(paste0(size, "_", size_ext[1])), get(paste0(size, "_", size_ext[2]))),
            color = ifelse(type == "ligand", get(paste0(color, "_", color_ext[1])), get(paste0(color, "_",  color_ext[2])))) %>%
@@ -717,7 +740,7 @@ make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings =
 
   p1 <- ggplot() +
     # Draw ligand semicircle
-    geom_arc_bar(data = filtered_table %>% filter(type=="ligand",  prioritization_rank <= top_n),
+    geom_arc_bar(data = filtered_table %>% filter(type=="ligand",  .data[[rank_filter_col]] <= top_n),
                  aes(x0 = x, y0 = y, r0 = 0, r = sqrt(size)*scale,
                      start = start, end = start + pi, fill=color),
                  color = "white") +
@@ -728,7 +751,7 @@ make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings =
                         name=paste0(color_title, " (", color_ext[1], ")") %>% stringr::str_wrap(width=15)) +
     # Create new fill scale for receptor semicircles
     new_scale_fill() +
-    geom_arc_bar(data = filtered_table %>% filter(type=="receptor",  prioritization_rank <= top_n),
+    geom_arc_bar(data = filtered_table %>% filter(type=="receptor", .data[[rank_filter_col]] <= top_n),
                  aes(x0 = x, y0 = y, r0 = 0, r = sqrt(size)*scale,
                      start = start, end = start + pi, fill=color),
                  color = "white") +
@@ -761,14 +784,14 @@ make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings =
     unranked_ligand_lims <- c(0,1); unranked_receptor_lims <- c(0,1)
     if (true_color_range){
       # Follow limits of the top_n lr pairs
-      unranked_ligand_lims <- filtered_table %>% filter(type=="ligand",  prioritization_rank <= top_n) %>%
+      unranked_ligand_lims <- filtered_table %>% filter(type=="ligand",  .data[[rank_filter_col]] <= top_n) %>%
         select(color) %>% range
-      unranked_receptor_lims <- filtered_table %>% filter(type=="receptor",  prioritization_rank <= top_n) %>%
+      unranked_receptor_lims <- filtered_table %>% filter(type=="receptor",  .data[[rank_filter_col]] <= top_n) %>%
         select(color) %>% range
     }
 
     p1 <- p1 + new_scale_fill() +
-      geom_arc_bar(data = filtered_table %>% filter(type=="ligand", prioritization_rank > top_n),
+      geom_arc_bar(data = filtered_table %>% filter(type=="ligand", .data[[rank_filter_col]] > top_n),
                    aes(x0 = x, y0 = y, r0 = 0, r = sqrt(size)*scale,
                        start = start, end = start + pi, fill=color),
                    color = "white") +
@@ -776,7 +799,7 @@ make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings =
                           limits=unranked_ligand_lims, oob = scales::oob_squish,
                           guide = "none") +
       new_scale_fill() +
-      geom_arc_bar(data = filtered_table %>% filter(type=="receptor", prioritization_rank > top_n),
+      geom_arc_bar(data = filtered_table %>% filter(type=="receptor", .data[[rank_filter_col]] > top_n),
                    aes(x0 = x, y0 = y, r0 = 0, r = sqrt(size)*scale,
                        start = start, end = start + pi, fill=color),
                    color = "white") +
@@ -787,7 +810,7 @@ make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings =
 
   # Add ranking numbers if requested
   if (show_rankings){
-    p1 <- p1 + geom_shadowtext(data = filtered_table %>% filter(prioritization_rank <= top_n),
+    p1 <- p1 + geom_shadowtext(data = filtered_table %>% filter(.data[[rank_filter_col]] <= top_n),
                                aes(x=x, y=y, label=prioritization_rank))
   }
 

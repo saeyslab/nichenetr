@@ -10,6 +10,7 @@ make_mushroom_plot(
   show_rankings = FALSE,
   show_all_datapoints = FALSE,
   true_color_range = TRUE,
+  use_absolute_rank = FALSE,
   size = "scaled_avg_exprs",
   color = "scaled_p_val_adapted",
   ligand_fill_colors = c("#DEEBF7", "#08306B"),
@@ -31,6 +32,8 @@ make_mushroom_plot(
 \item{show_all_datapoints}{A logical indicating whether to show all ligand-receptor pairs (default: FALSE, if true they will be grayed out)}
 
 \item{true_color_range}{A logical indicating whether to use the default color range as determined by ggplot (TRUE, default) or set the limits to a range of 0-1 (FALSE)}
+
+\item{use_absolute_rank}{A logical indicating to whether use the absolute prioritization rank to filter the top_n ligand-receptor pairs (default: FALSE)}
 
 \item{size}{A string indicating which column to use for the size of the semicircles (default: "scaled_avg_exprs"; use column name without "_ligand" or "_receptor" suffix)}
 
@@ -56,6 +59,8 @@ A ggplot object
 If the values range of the column used as the "size" parameter is not between 0 and 1.001, an error will be thrown.
 
 The sender cell types can be ordered by encoding the "sender" column as a factor. If the "sender" column is not a factor, the sender cell types will be ordered alphabetically.
+
+By default, the top_n ligand-receptor pairs are shown despite their absolute ranking. So, if a receiver cell type has LR pairs that are only ranked from 31-40 and the top_n is set to 20, the LR pairs will be shown. If use_absolute_rank is set to TRUE, only LR pairs with absolute ranking from 1-20 will be shown.
 }
 \examples{
 \dontrun{
@@ -73,7 +78,10 @@ make_mushroom_plot(prior_table, show_all_datapoints = TRUE, true_color_range = T
 
 # Change the size and color columns
 make_mushroom_plot(prior_table, size = "pct_expressed", color = "scaled_avg_exprs")
-}
 
+
+# For a prioritization table with multiple receiver cell types
+make_mushroom_plot(prior_table_combined \%>\% filter(receiver == celltype_oi))
+}
 
 }
