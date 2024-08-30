@@ -274,11 +274,11 @@ test_that("Prioritization scheme works", {
                  check.attributes = FALSE)
 
     # Check that prioritization score is the same as the sum of the weighted scores
-    temp_weights = c("de_ligand" = 1,
-                     "de_receptor" = 1,
+    temp_weights = c("de_ligand" = 0.5,
+                     "de_receptor" = 0.5,
                      "activity_scaled" = 1,
-                     "exprs_ligand" = 1,
-                     "exprs_receptor" = 1,
+                     "exprs_ligand" = 0.5,
+                     "exprs_receptor" = 0.5,
                      "ligand_condition_specificity" = 1,
                      "receptor_condition_specificity" = 1)
     expect_equal(prior_table %>% filter(ligand == "Lgals1", sender == "Mono", receptor == "Cd69") %>%
@@ -300,6 +300,7 @@ test_that("Prioritization scheme works", {
                                                   processed_condition_markers,
                                                   prioritizing_weights = prioritizing_weights)
     temp_weights <- prioritizing_weights
+    temp_weights[c("de_ligand", "de_receptor", "exprs_ligand", "exprs_receptor")] <- 0.5
     expect_equal(prior_table %>% filter(ligand == "Lgals1", sender == "Mono", receptor == "Cd69") %>%
                    mutate(prioritization_score = rowSums(across(c(scaled_p_val_adapted_ligand, scaled_p_val_adapted_receptor, scaled_activity, scaled_avg_exprs_ligand, scaled_avg_exprs_receptor, scaled_p_val_adapted_ligand_group, scaled_p_val_adapted_receptor_group)) * temp_weights) / sum(temp_weights)) %>% pull(prioritization_score),
                  prior_table %>% filter(ligand == "Lgals1", sender == "Mono", receptor == "Cd69") %>% pull(prioritization_score),

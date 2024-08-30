@@ -584,15 +584,15 @@ generate_prioritization_tables = function(sender_receiver_info, sender_receiver_
 
 
   # have a weighted average the final score (no product!!)
-  sum_prioritization_weights = weights["de_ligand"] + weights["de_receptor"] + weights["activity_scaled"] + weights["exprs_ligand"] + weights["exprs_receptor"] + weights["ligand_condition_specificity"] + weights["receptor_condition_specificity"]
+  sum_prioritization_weights = 0.5*weights["de_ligand"] + 0.5*weights["de_receptor"] + weights["activity_scaled"] + 0.5*weights["exprs_ligand"] + 0.5*weights["exprs_receptor"] + weights["ligand_condition_specificity"] + weights["receptor_condition_specificity"]
   group_prioritization_tbl = group_prioritization_tbl %>% rowwise() %>%
     dplyr::mutate(prioritization_score =
                     (
-                        (prioritizing_weights["de_ligand"] * ifelse("scaled_p_val_adapted_ligand" %in% names(group_prioritization_tbl), scaled_p_val_adapted_ligand, 0)) +
-                        (prioritizing_weights["de_receptor"] * ifelse("scaled_p_val_adapted_receptor" %in% names(group_prioritization_tbl), scaled_p_val_adapted_receptor, 0)) +
+                        (0.5*prioritizing_weights["de_ligand"] * ifelse("scaled_p_val_adapted_ligand" %in% names(group_prioritization_tbl), scaled_p_val_adapted_ligand, 0)) +
+                        (0.5*prioritizing_weights["de_receptor"] * ifelse("scaled_p_val_adapted_receptor" %in% names(group_prioritization_tbl), scaled_p_val_adapted_receptor, 0)) +
                         (prioritizing_weights["activity_scaled"] * ifelse("scaled_activity" %in% names(group_prioritization_tbl), scaled_activity, 0)) +
-                        (prioritizing_weights["exprs_ligand"] * ifelse("scaled_avg_exprs_ligand" %in% names(group_prioritization_tbl), scaled_avg_exprs_ligand, 0)) +
-                        (prioritizing_weights["exprs_receptor"] * ifelse("scaled_avg_exprs_receptor" %in% names(group_prioritization_tbl), scaled_avg_exprs_receptor, 0)) +
+                        (0.5*prioritizing_weights["exprs_ligand"] * ifelse("scaled_avg_exprs_ligand" %in% names(group_prioritization_tbl), scaled_avg_exprs_ligand, 0)) +
+                        (0.5*prioritizing_weights["exprs_receptor"] * ifelse("scaled_avg_exprs_receptor" %in% names(group_prioritization_tbl), scaled_avg_exprs_receptor, 0)) +
                         (prioritizing_weights["ligand_condition_specificity"] * ifelse("scaled_p_val_adapted_ligand_group" %in% names(group_prioritization_tbl), scaled_p_val_adapted_ligand_group, 0)) +
                         (prioritizing_weights["receptor_condition_specificity"] * ifelse("scaled_p_val_adapted_receptor_group" %in% names(group_prioritization_tbl), scaled_p_val_adapted_receptor_group, 0))
                     )* (1/sum_prioritization_weights)) %>% dplyr::arrange(-prioritization_score) %>%

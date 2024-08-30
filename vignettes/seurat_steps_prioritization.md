@@ -224,12 +224,12 @@ prior_table %>% head
 ## # A tibble: 6 × 52
 ##   sender receiver ligand receptor lfc_ligand lfc_receptor ligand_receptor_lfc_avg p_val_ligand p_adj_ligand p_val_receptor p_adj_receptor pct_expressed_sender pct_expressed_receiver avg_ligand
 ##   <chr>  <chr>    <chr>  <chr>         <dbl>        <dbl>                   <dbl>        <dbl>        <dbl>          <dbl>          <dbl>                <dbl>                  <dbl>      <dbl>
-## 1 NK     CD8 T    Ptprc  Dpp4          0.642        0.299                   0.471    2.18e-  7    2.96e-  3       0.000663              1                0.894                  0.148      16.6 
-## 2 Mono   CD8 T    Ptprc  Dpp4          0.474        0.299                   0.386    3.52e-  5    4.77e-  1       0.000663              1                0.867                  0.148      14.9 
-## 3 Mono   CD8 T    Cxcl10 Dpp4          4.86         0.299                   2.58     2.53e- 79    3.43e- 75       0.000663              1                0.867                  0.148      54.8 
-## 4 Mono   CD8 T    Cxcl9  Dpp4          6.68         0.299                   3.49     3.83e-124    5.19e-120       0.000663              1                0.547                  0.148      23.8 
-## 5 Treg   CD8 T    Ptprc  Dpp4          0.307        0.299                   0.303    1.44e-  2    1   e+  0       0.000663              1                0.685                  0.148      13.2 
-## 6 Mono   CD8 T    Cxcl11 Dpp4          6.60         0.299                   3.45     9.28e-121    1.26e-116       0.000663              1                0.307                  0.148       4.37
+## 1 NK     CD8 T    Ptprc  Dpp4          0.642        0.299                   0.471     2.18e- 7     2.96e- 3       0.000663              1                0.894                  0.148     16.6  
+## 2 Mono   CD8 T    Ptprc  Dpp4          0.474        0.299                   0.386     3.52e- 5     4.77e- 1       0.000663              1                0.867                  0.148     14.9  
+## 3 Treg   CD8 T    Ptprc  Dpp4          0.307        0.299                   0.303     1.44e- 2     1   e+ 0       0.000663              1                0.685                  0.148     13.2  
+## 4 Mono   CD8 T    Cxcl10 Dpp4          4.86         0.299                   2.58      2.53e-79     3.43e-75       0.000663              1                0.867                  0.148     54.8  
+## 5 B      CD8 T    Ptprc  Dpp4          0.201        0.299                   0.250     2.08e- 2     1   e+ 0       0.000663              1                0.669                  0.148     12.3  
+## 6 Mono   CD8 T    Ebi3   Il6st         4.00         0.141                   2.07      9.77e-49     1.32e-44       0.0147                1                0.147                  0.09       0.546
 ## # ℹ 38 more variables: avg_receptor <dbl>, ligand_receptor_prod <dbl>, lfc_pval_ligand <dbl>, p_val_adapted_ligand <dbl>, scaled_lfc_ligand <dbl>, scaled_p_val_ligand <dbl>,
 ## #   scaled_lfc_pval_ligand <dbl>, scaled_p_val_adapted_ligand <dbl>, activity <dbl>, rank <dbl>, activity_zscore <dbl>, scaled_activity <dbl>, lfc_pval_receptor <dbl>,
 ## #   p_val_adapted_receptor <dbl>, scaled_lfc_receptor <dbl>, scaled_p_val_receptor <dbl>, scaled_lfc_pval_receptor <dbl>, scaled_p_val_adapted_receptor <dbl>, scaled_avg_exprs_ligand <dbl>,
@@ -256,14 +256,14 @@ prior_table %>% select(c('sender', 'receiver', 'ligand', 'receptor', 'scaled_p_v
 ##    <chr>  <chr>    <chr>  <chr>                          <dbl>                     <dbl>                  <dbl>                  <dbl>                  <dbl>                  <dbl>           <dbl>
 ##  1 NK     CD8 T    Ptprc  Dpp4                           0.871                     0.846                  1.00                   1.00                   0.844                  0.833           0.660
 ##  2 Mono   CD8 T    Ptprc  Dpp4                           0.841                     0.846                  0.867                  1.00                   0.844                  0.833           0.660
-##  3 Mono   CD8 T    Cxcl10 Dpp4                           0.958                     0.846                  1.00                   1.00                   0.926                  0.833           0.309
-##  4 Mono   CD8 T    Cxcl9  Dpp4                           0.974                     0.846                  1.00                   1.00                   0.779                  0.833           0.263
-##  5 Treg   CD8 T    Ptprc  Dpp4                           0.754                     0.846                  0.741                  1.00                   0.844                  0.833           0.660
-##  6 Mono   CD8 T    Cxcl11 Dpp4                           0.972                     0.846                  1.00                   1.00                   0.721                  0.833           0.273
-##  7 B      CD8 T    Ptprc  Dpp4                           0.747                     0.846                  0.666                  1.00                   0.844                  0.833           0.660
-##  8 DC     CD8 T    Ccl22  Dpp4                           0.997                     0.846                  1.00                   1.00                   0.545                  0.833           0.361
-##  9 DC     CD8 T    Icam1  Il2rg                          0.878                     0.723                  1.00                   0.995                  0.713                  0.985           0.273
-## 10 DC     CD8 T    Il15   Il2rg                          0.964                     0.723                  1.00                   0.995                  0.598                  0.985           0.214
+##  3 Treg   CD8 T    Ptprc  Dpp4                           0.754                     0.846                  0.741                  1.00                   0.844                  0.833           0.660
+##  4 Mono   CD8 T    Cxcl10 Dpp4                           0.958                     0.846                  1.00                   1.00                   0.926                  0.833           0.309
+##  5 B      CD8 T    Ptprc  Dpp4                           0.747                     0.846                  0.666                  1.00                   0.844                  0.833           0.660
+##  6 Mono   CD8 T    Ebi3   Il6st                          0.937                     0.692                  1.00                   0.635                  0.680                  0.515           1.00 
+##  7 Mono   CD8 T    Cxcl9  Dpp4                           0.974                     0.846                  1.00                   1.00                   0.779                  0.833           0.263
+##  8 DC     CD8 T    Icam1  Il2rg                          0.878                     0.723                  1.00                   0.995                  0.713                  0.985           0.273
+##  9 DC     CD8 T    B2m    Tap2                           0.862                     0.631                  1.00                   0.781                  1                      0.864           0.254
+## 10 Mono   CD8 T    Cxcl11 Dpp4                           0.972                     0.846                  1.00                   1.00                   0.721                  0.833           0.273
 ## # ℹ 1,202 more rows
 ## # ℹ abbreviated names: ¹​scaled_p_val_adapted_receptor, ²​scaled_avg_exprs_ligand, ³​scaled_avg_exprs_receptor, ⁴​scaled_p_val_adapted_ligand_group, ⁵​scaled_p_val_adapted_receptor_group
 ```
@@ -332,12 +332,12 @@ prior_table %>% head
 ## # A tibble: 6 × 52
 ##   sender receiver ligand receptor lfc_ligand lfc_receptor ligand_receptor_lfc_avg p_val_ligand p_adj_ligand p_val_receptor p_adj_receptor pct_expressed_sender pct_expressed_receiver avg_ligand
 ##   <chr>  <chr>    <chr>  <chr>         <dbl>        <dbl>                   <dbl>        <dbl>        <dbl>          <dbl>          <dbl>                <dbl>                  <dbl>      <dbl>
-## 1 NK     CD8 T    Ptprc  Dpp4          0.642        0.299                   0.471    2.18e-  7    2.96e-  3       0.000663              1                0.894                  0.148      16.6 
-## 2 Mono   CD8 T    Ptprc  Dpp4          0.474        0.299                   0.386    3.52e-  5    4.77e-  1       0.000663              1                0.867                  0.148      14.9 
-## 3 Mono   CD8 T    Cxcl10 Dpp4          4.86         0.299                   2.58     2.53e- 79    3.43e- 75       0.000663              1                0.867                  0.148      54.8 
-## 4 Mono   CD8 T    Cxcl9  Dpp4          6.68         0.299                   3.49     3.83e-124    5.19e-120       0.000663              1                0.547                  0.148      23.8 
-## 5 Treg   CD8 T    Ptprc  Dpp4          0.307        0.299                   0.303    1.44e-  2    1   e+  0       0.000663              1                0.685                  0.148      13.2 
-## 6 Mono   CD8 T    Cxcl11 Dpp4          6.60         0.299                   3.45     9.28e-121    1.26e-116       0.000663              1                0.307                  0.148       4.37
+## 1 NK     CD8 T    Ptprc  Dpp4          0.642        0.299                   0.471     2.18e- 7     2.96e- 3       0.000663              1                0.894                  0.148     16.6  
+## 2 Mono   CD8 T    Ptprc  Dpp4          0.474        0.299                   0.386     3.52e- 5     4.77e- 1       0.000663              1                0.867                  0.148     14.9  
+## 3 Treg   CD8 T    Ptprc  Dpp4          0.307        0.299                   0.303     1.44e- 2     1   e+ 0       0.000663              1                0.685                  0.148     13.2  
+## 4 Mono   CD8 T    Cxcl10 Dpp4          4.86         0.299                   2.58      2.53e-79     3.43e-75       0.000663              1                0.867                  0.148     54.8  
+## 5 B      CD8 T    Ptprc  Dpp4          0.201        0.299                   0.250     2.08e- 2     1   e+ 0       0.000663              1                0.669                  0.148     12.3  
+## 6 Mono   CD8 T    Ebi3   Il6st         4.00         0.141                   2.07      9.77e-49     1.32e-44       0.0147                1                0.147                  0.09       0.546
 ## # ℹ 38 more variables: avg_receptor <dbl>, ligand_receptor_prod <dbl>, lfc_pval_ligand <dbl>, p_val_adapted_ligand <dbl>, scaled_lfc_ligand <dbl>, scaled_p_val_ligand <dbl>,
 ## #   scaled_lfc_pval_ligand <dbl>, scaled_p_val_adapted_ligand <dbl>, activity <dbl>, rank <dbl>, activity_zscore <dbl>, scaled_activity <dbl>, lfc_pval_receptor <dbl>,
 ## #   p_val_adapted_receptor <dbl>, scaled_lfc_receptor <dbl>, scaled_p_val_receptor <dbl>, scaled_lfc_pval_receptor <dbl>, scaled_p_val_adapted_receptor <dbl>, scaled_avg_exprs_ligand <dbl>,
@@ -444,11 +444,11 @@ head(prior_table_combined)
 ## # A tibble: 6 × 52
 ##   sender receiver ligand receptor lfc_ligand lfc_receptor ligand_receptor_lfc_avg p_val_ligand p_adj_ligand p_val_receptor p_adj_receptor pct_expressed_sender pct_expressed_receiver avg_ligand
 ##   <chr>  <chr>    <chr>  <chr>         <dbl>        <dbl>                   <dbl>        <dbl>        <dbl>          <dbl>          <dbl>                <dbl>                  <dbl>      <dbl>
-## 1 NK     CD4 T    Ptprc  Cd4           0.642        1.71                    1.18   0.000000218      0.00296       2.63e-34       3.56e-30                0.894                  0.226       16.6
-## 2 NK     CD8 T    Ptprc  Dpp4          0.642        0.299                   0.471  0.000000218      0.00296       6.63e- 4       1   e+ 0                0.894                  0.148       16.6
-## 3 B      CD4 T    H2-Eb1 Cd4           5.00         1.71                    3.36   0                0             2.63e-34       3.56e-30                0.93                   0.226       31.0
-## 4 Mono   CD4 T    Ptprc  Cd4           0.474        1.71                    1.09   0.0000352        0.477         2.63e-34       3.56e-30                0.867                  0.226       14.9
-## 5 Mono   CD8 T    Ptprc  Dpp4          0.474        0.299                   0.386  0.0000352        0.477         6.63e- 4       1   e+ 0                0.867                  0.148       14.9
+## 1 NK     CD8 T    Ptprc  Dpp4          0.642        0.299                   0.471  0.000000218      0.00296       6.63e- 4       1   e+ 0                0.894                  0.148       16.6
+## 2 NK     CD4 T    Ptprc  Cd4           0.642        1.71                    1.18   0.000000218      0.00296       2.63e-34       3.56e-30                0.894                  0.226       16.6
+## 3 Mono   CD8 T    Ptprc  Dpp4          0.474        0.299                   0.386  0.0000352        0.477         6.63e- 4       1   e+ 0                0.867                  0.148       14.9
+## 4 B      CD4 T    H2-Eb1 Cd4           5.00         1.71                    3.36   0                0             2.63e-34       3.56e-30                0.93                   0.226       31.0
+## 5 Mono   CD4 T    Ptprc  Cd4           0.474        1.71                    1.09   0.0000352        0.477         2.63e-34       3.56e-30                0.867                  0.226       14.9
 ## 6 NK     CD4 T    Ptprc  Cd247         0.642        0.599                   0.620  0.000000218      0.00296       5.61e- 4       1   e+ 0                0.894                  0.309       16.6
 ## # ℹ 38 more variables: avg_receptor <dbl>, ligand_receptor_prod <dbl>, lfc_pval_ligand <dbl>, p_val_adapted_ligand <dbl>, scaled_lfc_ligand <dbl>, scaled_p_val_ligand <dbl>,
 ## #   scaled_lfc_pval_ligand <dbl>, scaled_p_val_adapted_ligand <dbl>, activity <dbl>, rank <dbl>, activity_zscore <dbl>, scaled_activity <dbl>, lfc_pval_receptor <dbl>,
@@ -556,8 +556,8 @@ sessionInfo()
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-##  [1] lubridate_1.9.3    forcats_1.0.0      stringr_1.5.1      dplyr_1.1.4        purrr_1.0.2        readr_2.1.5        tidyr_1.3.1        tibble_3.2.1       ggplot2_3.5.1      tidyverse_2.0.0   
-## [11] Seurat_5.1.0       SeuratObject_5.0.2 sp_2.1-4           nichenetr_2.1.7   
+##  [1] Seurat_5.1.0       SeuratObject_5.0.2 sp_2.1-4           lubridate_1.9.3    forcats_1.0.0      stringr_1.5.1      dplyr_1.1.4        purrr_1.0.2        readr_2.1.5        tidyr_1.3.1       
+## [11] tibble_3.2.1       ggplot2_3.5.1      tidyverse_2.0.0    nichenetr_2.2.0   
 ## 
 ## loaded via a namespace (and not attached):
 ##   [1] RcppAnnoy_0.0.22       splines_4.3.3          later_1.3.2            bitops_1.0-7           polyclip_1.10-6        hardhat_1.3.1          pROC_1.18.5            rpart_4.1.23          
