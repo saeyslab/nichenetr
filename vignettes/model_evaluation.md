@@ -88,6 +88,7 @@ performances = settings %>% lapply(evaluate_target_prediction, ligand_target_mat
 
 Step 3: visualize the results: show here different classification
 evaluation metrics
+(Note: Mean-rank gene-set enrichment will only be calculated if limma is installed)
 
 ``` r
 # Visualize some classification evaluation metrics showing the target gene prediction performance

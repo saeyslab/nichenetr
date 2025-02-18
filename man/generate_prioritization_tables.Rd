@@ -32,11 +32,11 @@ The resulting dataframe contains columns from the input dataframes, but columns 
 Additionally, the following columns are added:
 \itemize{
 \item \code{lfc_pval_*}: product of -log10(pval) and the LFC of the ligand/receptor
-\item \code{p_val_*_adapted}: p-value adapted to the sign of the LFC to only consider interactions where the ligand/receptor is upregulated in the sender/receiver
+\item \code{p_val_adapted_*}: p-value adapted to the sign of the LFC to only consider interactions where the ligand/receptor is upregulated in the sender/receiver
 \item \code{activity_zscore}: z-score of the ligand activity
 \item \code{prioritization_score}: The prioritization score for each interaction, calculated as a weighted sum of the prioritization criteria.
 }
-Moreover, \code{scaled_*} columns are scaled using the corresponding column's ranking or the \code{scale_quantile_adapted} function. The columns used for prioritization are scaled_p_val_ligand_adapted, scaled_p_val_receptor_adapted, scaled_activity, scaled_avg_exprs_ligand, scaled_avg_exprs_receptor, scaled_p_val_ligand_adapted_group, scaled_p_val_receptor_adapted_group
+Moreover, \code{scaled_*} columns are scaled using the corresponding column's ranking or the \code{scale_quantile_adapted} function. The columns used for prioritization are scaled_p_val_adapted_ligand, scaled_p_val_adapted_receptor, scaled_activity, scaled_avg_exprs_ligand, scaled_avg_exprs_receptor, scaled_p_val_adapted_ligand_group, scaled_p_val_adapted_receptor_group
 }
 \description{
 User can choose the importance attached to each of the following prioritization criteria: differential expression of ligand and receptor, cell-type specificity of expression of ligand and receptor, NicheNet ligand activity

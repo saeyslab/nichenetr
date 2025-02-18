@@ -353,10 +353,15 @@ evaluate_model = function(parameters_setting, lr_network, sig_network, gr_networ
   ligand_importances$spearman[is.na(ligand_importances$spearman)] = 0
   ligand_importances$pearson_log_pval[is.na(ligand_importances$pearson_log_pval)] = 0
   ligand_importances$spearman_log_pval[is.na(ligand_importances$spearman_log_pval)] = 0
-  ligand_importances$mean_rank_GST_log_pval[is.na(ligand_importances$mean_rank_GST_log_pval)] = 0
   ligand_importances$pearson_log_pval[is.infinite(ligand_importances$pearson_log_pval)] = 10000
   ligand_importances$spearman_log_pval[is.infinite(ligand_importances$spearman_log_pval)] = 10000
-  ligand_importances$mean_rank_GST_log_pval[is.infinite(ligand_importances$mean_rank_GST_log_pval)] = 10000
+
+  if ("mean_rank_GST_log_pval" %in% colnames(ligand_importances)){
+    ligand_importances$mean_rank_GST_log_pval[is.na(ligand_importances$mean_rank_GST_log_pval)] = 0
+    ligand_importances$mean_rank_GST_log_pval[is.infinite(ligand_importances$mean_rank_GST_log_pval)] = 10000
+  } else{
+    warning("mean_rank_GST_log_pval not in ligand_importances; do you have limma installed?")
+  }
 
   all_importances = ligand_importances %>% select_if(.predicate = function(x){sum(is.na(x)) == 0})
   # all_importances = full_join(ligand_importances, ligand_importances_glm, by = c("setting","test_ligand","ligand")) %>% full_join(ligand_importances_discrete, by = c("setting","test_ligand", "ligand"))

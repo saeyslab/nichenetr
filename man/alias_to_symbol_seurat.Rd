@@ -7,7 +7,7 @@
 alias_to_symbol_seurat(seurat_obj, organism)
 }
 \arguments{
-\item{seurat_obj}{Seurat object}
+\item{seurat_obj}{Seurat object, v4 or below. For Seurat v5, a warning is thrown and the same object will be returned.}
 
 \item{organism}{Is Seurat object data from "mouse" or "human"}
 }

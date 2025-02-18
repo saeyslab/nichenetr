@@ -663,7 +663,7 @@ DE_table_top_ligands <- lapply(
 DE_table_top_ligands <- DE_table_top_ligands %>%  reduce(., full_join) %>% 
   column_to_rownames("gene") 
 
-vis_ligand_lfc <- as.matrix(DE_table_top_ligands[rev(best_upstream_ligands), ]) 
+vis_ligand_lfc <- as.matrix(DE_table_top_ligands[rev(best_upstream_ligands), , drop = FALSE])
 
 p_lfc <- make_threecolor_heatmap_ggplot(vis_ligand_lfc,
                                 "Prioritized ligands", "LFC in Sender",
