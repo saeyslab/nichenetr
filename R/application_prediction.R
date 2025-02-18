@@ -2187,9 +2187,9 @@ get_lfc_celltype = function(celltype_oi, seurat_obj, condition_colname, conditio
   SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_sender)
 
   if(SeuratV4 == TRUE){
-    DE_table_sender = DE_table_sender %>% as_tibble() %>% select(-p_val) %>% select(gene, avg_log2FC)
+    DE_table_sender = DE_table_sender %>% as_tibble() %>% select(gene, avg_log2FC)
   } else {
-    DE_table_sender = DE_table_sender %>% as_tibble() %>% select(-p_val) %>% select(gene, avg_logFC)
+    DE_table_sender = DE_table_sender %>% as_tibble() %>% select(gene, avg_logFC)
   }
 
   colnames(DE_table_sender) = c("gene",celltype_oi)
