@@ -73,7 +73,7 @@ get_active_signaling_network = function(expression_receiver, sig_network, expres
   if(!is.numeric(expression_receiver) | is.null(names(expression_receiver)))
     stop("expression_receiver should be a named numeric vector indicating the expression value for every gene")
   if (!is.data.frame(sig_network))
-    stop("lr_network must be a data frame or tibble object")
+    stop("sig_network must be a data frame or tibble object")
   if(!is.numeric(expression_cutoff_receiver) | length(expression_cutoff_receiver) != 1 )
     stop("expression_cutoff_receiver should be a single number")
 
@@ -112,7 +112,7 @@ get_active_regulatory_network = function(expression_receiver, gr_network, expres
   if(!is.numeric(expression_receiver) | is.null(names(expression_receiver)))
     stop("expression_receiver should be a named numeric vector indicating the expression value for every gene")
   if (!is.data.frame(gr_network))
-    stop("lr_network must be a data frame or tibble object")
+    stop("gr_network must be a data frame or tibble object")
   if(!is.numeric(expression_cutoff_receiver) | length(expression_cutoff_receiver) != 1 )
     stop("expression_cutoff_receiver should be a single number")
 
