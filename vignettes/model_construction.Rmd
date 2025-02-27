@@ -77,7 +77,8 @@ Infer ligand-target regulatory potential scores based on the weighted integrated
 ```{r}
 # in this example we will calculate target gene regulatory potential scores for TNF and the ligand combination TNF+IL6
 ligands = list("TNF",c("TNF","IL6"))
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, lr_network = lr_network,
+                                                      ligands = ligands, algorithm = "PPR",
                                                       damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
                                                       ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
@@ -109,7 +110,8 @@ weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, lr_network = lr_network,
+                                                      ligands = ligands, algorithm = "PPR",
                                                       damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
                                                       ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
@@ -153,7 +155,8 @@ weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, lr_network = new_lr_network,
+                                                      ligands = ligands, algorithm = "PPR",
                                                       damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
                                                       ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
@@ -188,7 +191,8 @@ weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, lr_network = new_lr_network,
+                                                      ligands = ligands, algorithm = "PPR",
                                                       damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
                                                       ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
@@ -245,7 +249,8 @@ weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, lr_network = lr_network,
+                                                      ligands = ligands, algorithm = "PPR",
                                                       damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
                                                       ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
@@ -277,7 +282,8 @@ weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, lr_network = lr_network,
+                                                      ligands = ligands, algorithm = "PPR",
                                                       damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
                                                       ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
