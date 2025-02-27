@@ -162,6 +162,7 @@ apply_hub_corrections = function(weighted_networks,lr_sig_hub, gr_hub) {
 #' construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, ligands_as_cols = FALSE)
 #'
 #' @param weighted_networks A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)
+#' @param lr_network A data frame / tibble containing ligand-receptor interactions (required columns: from, to, source)
 #' @param ligands A list of all ligands and ligand-combinations of which target gene probability scores should be calculated. Example format: list("TNF","BMP2",c("IL4","IL13")).
 #' @param ltf_cutoff Ligand-tf scores beneath the "ltf_cutoff" quantile will be set to 0. Default: 0.99 such that only the 1 percent closest tfs will be considered as possible tfs downstream of the ligand of choice.
 #' @param algorithm Selection of the algorithm to calculate ligand-tf signaling probability scores. Different options: "PPR" (personalized pagerank), "SPL" (shortest path length) and "direct"(just take weights of ligand-signaling network as ligand-tf weights + give the ligand itself the max score). Default and recommended: PPR.
@@ -181,7 +182,7 @@ apply_hub_corrections = function(weighted_networks,lr_sig_hub, gr_hub) {
 #' }
 #' @export
 #'
-construct_ligand_tf_matrix = function(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, ligands_as_cols = FALSE) {
+construct_ligand_tf_matrix = function(weighted_networks, lr_network, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, ligands_as_cols = FALSE) {
 
   # input check
   if (!is.list(weighted_networks))
@@ -349,6 +350,7 @@ construct_tf_target_matrix = function(weighted_networks, tfs_as_cols = FALSE, st
 #' construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE,ligands_as_cols = TRUE, remove_direct_links = "no")
 #'
 #' @param weighted_networks A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)
+#' @param lr_network A data frame / tibble containing ligand-receptor interactions (required columns: from, to, source)
 #' @param ligands A list of all ligands and ligand-combinations of which target gene probability scores should be calculated. Example format: list("TNF","BMP2",c("IL4","IL13")).
 #' @param ltf_cutoff Ligand-tf scores beneath the "ltf_cutoff" quantile will be set to 0. Default: 0.99 such that only the 1 percent closest tfs will be considered as possible tfs downstream of the ligand of choice.
 #' @param algorithm Selection of the algorithm to calculate ligand-tf signaling probability scores. Different options: "PPR" (personalized pagerank), "SPL" (shortest path length) and "direct"(just take weights of ligand-signaling network as ligand-tf weights). Default and recommended: PPR.
@@ -370,7 +372,7 @@ construct_tf_target_matrix = function(weighted_networks, tfs_as_cols = FALSE, st
 #' }
 #' @export
 #'
-construct_ligand_target_matrix = function(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE,ligands_as_cols = TRUE, remove_direct_links = "no") {
+construct_ligand_target_matrix = function(weighted_networks, lr_network, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE,ligands_as_cols = TRUE, remove_direct_links = "no") {
 
   # input check
   if (!is.list(weighted_networks))
