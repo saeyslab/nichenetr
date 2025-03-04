@@ -1,0 +1,917 @@
+---
+title: "NicheNet"
+author: "Estefania"
+date: "2024-07-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.path='Figs/', message=FALSE)
+```
+
+Installation
+
+```{r}
+devtools::install_github("saeyslab/nichenetr")
+```
+
+0. Load needed packages
+```{r}
+
+library("nichenetr")
+library(Seurat)
+library(SeuratObject)
+library(tidyverse)
+library(dplyr)
+library(here)
+```
+
+1. Creating liver Seurat object from the Tabula Muris file "Liver-counts.csv"
+
+```{r}
+
+    # Read the count matrix from a CSV file
+    count_matrix <- read.csv("Liver-counts.csv", row.names = 1)
+
+    # Create a Seurat object from the count matrix
+    seurat_obj <- CreateSeuratObject(counts = count_matrix)
+    seurat_obj
+
+    # Normalize the data
+    seurat_obj <- NormalizeData(seurat_obj, normalization.method = "LogNormalize", scale.factor = 10000)
+
+    # Add the annotations to the Seurat object ------------------------------------
+    # Load annotations
+    annot <- read.table("annotations_facs.csv", header = TRUE, sep = ",")
+
+    # Create a temporary dataframe with the 'cell' column
+    seurat_metadata <- seurat_obj@meta.data
+    seurat_metadata$cell <- rownames(seurat_metadata)
+
+    # Merge the metadata with the 'annot' dataframe based on the 'cell' column
+    merged_metadata <- merge(seurat_metadata, annot[, c("cell", "cell_ontology_class")], by = "cell", all.x = TRUE)
+
+    # Set the rownames of the merged metadata to be the cell names again
+    rownames(merged_metadata) <- merged_metadata$cell
+    merged_metadata$cell <- NULL  # Remove the temporary 'cell' column
+
+    # Update the Seurat object's metadata
+    seurat_obj@meta.data <- merged_metadata
+
+    # Remove the dataframe
+    rm(annot, merged_metadata, seurat_metadata)
+    invisible(gc())
+```
+2. Giving Idents and other features to created Seurat Object
+
+```{r}
+
+all.genes <- rownames(seurat_obj)
+
+Idents(object = seurat_obj) <- seurat_obj@meta.data$cell_ontology_class
+seurat_obj <- ScaleData(seurat_obj, features = all.genes)
+
+seurat_obj <- FindVariableFeatures(object = seurat_obj)
+seurat_obj <- RunPCA(seurat_obj, features = VariableFeatures(object = seurat_obj))
+seurat_obj <- RunUMAP(seurat_obj, dims = 1:10)
+
+```
+
+3. Quality check (Seurat)
+
+Exploring subset
+
+```{r}
+seurat_obj@meta.data$cell_ontology_class %>% table() 
+```
+
+```{r}
+# Visualize QC metrics as a violin plot
+VlnPlot(seurat_obj, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+```
+
+```{r}
+DimPlot(seurat_obj, reduction = "umap")
+
+```
+
+4. Filtering out poor quality features
+
+
+A. Features filtering. At least 10 counts and present in at least 5% of the cell type
+
+```{r}
+seurat_subset <- subset(seurat_obj, idents = c("Kupffer cell", "hepatocyte"))
+
+# Access the raw data matrix from the Seurat object
+data_matrix <- GetAssayData(seurat_subset, slot = "counts")
+
+# Extract cell identities (cell types)
+cell_types <- Idents(seurat_subset)
+
+# Initialize a list to hold genes that pass the filters for both cell types
+filtered_genes <- c()
+
+# Loop through the cell types (e.g., "CellTypeA", "CellTypeB")
+for (cell_type in unique(cell_types)) {
+    
+    # Subset the data matrix for cells of the current cell type
+    cell_type_cells <- WhichCells(seurat_subset, idents = cell_type)
+    cell_type_data <- data_matrix[, cell_type_cells]
+    
+    # Step 1: Filter for genes with at least 10 counts in any cell
+    genes_with_min_counts <- rowSums(cell_type_data >= 10) > 0
+    
+    # Step 2: Filter for genes present in at least 5% of cells within this cell type
+    min_cells <- length(cell_type_cells) * 0.05  # Calculate 5% of cells for this type
+    genes_in_min_cells <- rowSums(cell_type_data > 0) >= min_cells
+    
+    # Combine both conditions
+    valid_genes <- rownames(cell_type_data)[genes_with_min_counts & genes_in_min_cells]
+    
+    # Store valid genes for this cell type
+    filtered_genes <- union(filtered_genes, valid_genes)
+}
+
+```
+
+B. Creating new Seurat Object with the subset
+```{r}
+counts <- GetAssayData(seurat_obj, slot="counts", assay="RNA")   
+#genes.percent.expression <- rowMeans(counts>0 )*100   
+
+#genes.filter <- names(genes.percent.expression[genes.percent.expression>5])  #select genes expressed in at least 1% of cells
+counts.sub <- counts[filtered_genes,]
+new_seurat_object <- CreateSeuratObject(counts=counts.sub)
+```
+
+C. Normalizing and adding metadata to the new seurat object with the subset of genes (filtered_genes)
+```{r}
+# Normalize the data
+    new_seurat_object <- NormalizeData(new_seurat_object, normalization.method = "LogNormalize", scale.factor = 10000)
+
+    # Add the annotations to the Seurat object ------------------------------------
+    # Load annotations
+    annot <- read.table("annotations_facs.csv", header = TRUE, sep = ",")
+
+    # Create a temporary dataframe with the 'cell' column
+    seurat_metadata <- new_seurat_object@meta.data
+    seurat_metadata$cell <- rownames(seurat_metadata)
+
+    # Merge the metadata with the 'annot' dataframe based on the 'cell' column
+    merged_metadata <- merge(seurat_metadata, annot[, c("cell", "cell_ontology_class")], by = "cell", all.x = TRUE)
+
+    # Set the rownames of the merged metadata to be the cell names again
+    rownames(merged_metadata) <- merged_metadata$cell
+    merged_metadata$cell <- NULL  # Remove the temporary 'cell' column
+
+    # Update the Seurat object's metadata
+    new_seurat_object@meta.data <- merged_metadata
+
+    # Remove the dataframe
+    rm(annot, merged_metadata, seurat_metadata)
+    invisible(gc())
+```
+D. Add Idents to new Seurat object
+```{r}
+
+all.genes <- rownames(new_seurat_object)
+Idents(object = new_seurat_object) <- new_seurat_object@meta.data$cell_ontology_class
+
+new_seurat_object <- ScaleData(new_seurat_object, features = all.genes)
+
+new_seurat_object <- FindVariableFeatures(object = new_seurat_object)
+new_seurat_object <- RunPCA(new_seurat_object, features = VariableFeatures(object = new_seurat_object))
+new_seurat_object <- RunUMAP(new_seurat_object, dims = 1:10)
+
+```
+
+E. Quality control new Seurat ibject with filtered features
+
+Exploring subset
+
+```{r}
+new_seurat_object@meta.data$cell_ontology_class %>% table() 
+```
+
+```{r}
+# Visualize QC metrics as a violin plot
+VlnPlot(new_seurat_object, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+```
+
+```{r}
+DimPlot(new_seurat_object, reduction = "umap")
+
+```
+
+```{r}
+FeaturePlot(new_seurat_object, features = "Hnf4a", reduction = "umap")
+```
+
+
+5. Subseting cell populations of interest (Kupffer cells and hepatocytes)
+
+```{r}
+seurat_obj <- subset(new_seurat_object,
+        subset = cell_ontology_class %in% c("Kupffer cell", "hepatocyte"))
+
+Idents(object = seurat_obj) <- seurat_obj@meta.data$cell_ontology_class
+```
+Exploring subset
+
+```{r}
+seurat_obj@meta.data$cell_ontology_class %>% table() 
+```
+
+6. Loading Nichenet and EVice data from zenodo
+Note for FNia: change ligand_to_target and add the zenodo address 
+```{r}
+organism <- "mouse"
+
+if(organism == "human"){
+  lr_network <- readRDS(url("https://zenodo.org/record/7074291/files/lr_network_human_21122021.rds"))
+  #ligand_target_matrix <- readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final.rds"))
+  weighted_networks <- readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final.rds"))
+} else if(organism == "mouse"){
+  lr_network <- readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
+  #ligand_target_matrix <- readRDS(url("https://zenodo.org/record/7074291/files/ligand_target_matrix_nsga2r_final_mouse.rds"))
+  weighted_networks <- readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
+
+}
+
+lr_network <- lr_network %>% distinct(from, to)
+head(lr_network)
+```
+
+
+7. Define receiver cell populations (KC and hepatocytes) and get features present in both
+```{r}
+# Step 1: Extract the cells belonging to each cell type
+cells_type_1 <- WhichCells(new_seurat_object, idents = "Kupffer cell")
+cells_type_2 <- WhichCells(new_seurat_object, idents = "hepatocyte")
+
+# Step 2: Subset the Seurat object to get the count matrix for each cell type
+data_matrix <- GetAssayData(new_seurat_object, slot = "counts")
+
+# Get the features (genes) expressed in each cell type
+# Features expressed in at least one cell for cell_type_1
+features_type_1 <- rownames(data_matrix)[rowSums(data_matrix[, cells_type_1] > 0) > 0]
+
+# Features expressed in at least one cell for cell_type_2
+features_type_2 <- rownames(data_matrix)[rowSums(data_matrix[, cells_type_2] > 0) > 0]
+
+# Step 3: Combine the two lists of features and remove duplicates
+combined_features <- unique(c(features_type_1, features_type_2))
+
+# Output the combined list of features
+#combined_features
+```
+
+
+```{r}
+receiver = c("Kupffer cell", "hepatocyte")
+#expressed_genes_receiver <- get_expressed_genes(receiver,  new_seurat_object@assays[["RNA"]], new_seurat_object@meta.data[["cell_ontology_class"]], pct = 0.00)
+
+#expressed_genes_receiver <- rownames(new_seurat_object@assays[["RNA"]])
+
+expressed_genes_receiver <- combined_features
+```
+
+8. Get list of all proteins (call ligands, so this should be changed)
+
+```{r}
+gr_network <- readRDS(url("https://zenodo.org/records/7074291/files/gr_network_mouse_21122021.rds"))
+
+ligands <- unique(c(weighted_networks[["lr_sig"]][["from"]], weighted_networks[["lr_sig"]][["to"]], gr_network$from))
+```
+
+9. Transpose ligand-to-target matrix (maybe do it before?)
+
+```{r}
+ligand_to_target <- t(ligand_to_target)
+```
+
+
+10. Defining potential proteins as all proteins whose interacting proteins (receptors, intermediary signalling proteins and tf) are expressed in the receiving cell populations
+```{r}
+all_receptors <- unique(rownames(ligand_to_target))  
+expressed_receptors <- intersect(all_receptors, expressed_genes_receiver)
+
+lr_sig <- weighted_networks[["lr_sig"]]
+gr <- weighted_networks[["gr"]]
+potential_ligands <- lr_sig[lr_sig$to %in% expressed_receptors, "from"]
+potential_ligands2 <- gr[gr$to %in% expressed_receptors, "from"]
+potential_ligands <- unique(c(potential_ligands$from, potential_ligands2$from))
+```
+
+New chunk new nomencalture DO NOT run until changing all Nomenclature
+
+```{r}
+all_genes <- unique(rownames(EV_cargo_target_matrix))  
+expressed_interactors <- intersect(all_genes, expressed_genes_receiver)
+
+lr_sig <- weighted_networks[["lr_sig"]]
+gr <- weighted_networks[["gr"]]
+
+potential_EV_cargo_prot <- lr_sig[lr_sig$to %in% expressed_interactors, "from"]
+potential_EV_cargo_tf <- gr[gr$to %in% expressed_interactors, "from"]
+potential_EV_cargo <- unique(c(potential_EV_cargo_prot$from, potential_EV_cargo_tf$from))
+```
+
+
+11. Upload differentially abundant proteins of interest present i the EVs data (HFD condition in this example)
+
+```{r}
+
+```
+
+12. Get list of potential proteins for sender
+
+```{r}
+potential_ligands <- intersect(potential_ligands, HFD_ligands)
+```
+
+MAYBE DELETE This
+Potential ligands as all ligands whose cognate receptors are expressed - Modification: using only proteins present in EVs (HFD)
+Run for HFD
+```{r}
+all_receptors <- unique(rownames(ligand_to_target))  
+expressed_receptors <- intersect(all_receptors, expressed_genes_receiver)
+
+lr_sig <- weighted_networks[["lr_sig"]]
+gr <- weighted_networks[["gr"]]
+potential_ligands <- lr_sig[lr_sig$to %in% expressed_receptors, "from"]
+potential_ligands2 <- gr[gr$to %in% expressed_receptors, "from"]
+potential_ligands <- unique(c(potential_ligands$from, potential_ligands2$from))
+
+potential_ligands <- intersect(potential_ligands, HFD_ligands)
+```
+
+Potential ligands as all ligands whose cognate receptors are expressed - Modification: using only proteins present in EVs (NCD)
+```{r}
+all_receptors <- unique(rownames(ligand_to_target))  
+expressed_receptors <- intersect(all_receptors, expressed_genes_receiver)
+
+lr_sig <- weighted_networks[["lr_sig"]]
+gr <- weighted_networks[["gr"]]
+potential_ligands <- lr_sig[lr_sig$to %in% expressed_receptors, "from"]
+potential_ligands2 <- gr[gr$to %in% expressed_receptors, "from"]
+potential_ligands <- unique(c(potential_ligands$from, potential_ligands2$from))
+
+EV_cargo <- intersect(EV_cargo, 
+                      potential_EV_cargo)
+```
+UNTIL HERE
+
+13. Define the gene set of interest
+Note: We had to add an identity class label with Idents
+
+```{r}
+condition_oi <-  "Kupffer cell"
+condition_reference <- "hepatocyte"
+
+#Idents(object = seurat_obj) <- seurat_obj@meta.data$celltype
+
+seurat_obj_receiver <- subset(seurat_obj, idents = receiver)
+
+DE_table_receiver <-  FindMarkers(object = seurat_obj,
+                                  ident.1 = condition_oi, ident.2 = condition_reference,
+                                  group.by = "cell_ontology_class",
+                                  min.pct = 0.05) %>% rownames_to_column("gene")
+
+geneset_oi <- DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC >= 0.25) %>% pull(gene)
+geneset_oi <- geneset_oi %>% .[. %in% rownames(ligand_to_target)]
+```
+
+14. Defining background genes
+
+```{r}
+background_expressed_genes <- expressed_genes_receiver %>% .[. %in% rownames(ligand_to_target)]
+```
+
+15. Perform protein activity analysis
+
+```{r}
+ligand_activities <- predict_ligand_activities(geneset = geneset_oi,
+                                               background_expressed_genes = background_expressed_genes,
+                                               ligand_target_matrix = big_ligand_to_target,
+                                               potential_ligands = potential_ligands)
+
+ligand_activities <- ligand_activities %>% arrange(-aupr_corrected) %>% mutate(rank = rank(desc(aupr_corrected)))
+ligand_activities
+
+```
+16. Visualization of top-ranked ligands
+
+```{r}
+p_hist_lig_activity <- ggplot(ligand_activities, aes(x=aupr_corrected)) + 
+  geom_histogram(color="black", fill="darkorange")  + 
+  geom_vline(aes(xintercept=min(ligand_activities %>% top_n(30, aupr_corrected) %>% pull(aupr_corrected))),
+             color="red", linetype="dashed", size=1) + 
+  labs(x="ligand activity (PCC)", y = "# ligands") +
+  theme_classic()
+
+p_hist_lig_activity
+```
+We can also visualize the ligand activity measure (AUPR) of these top-ranked ligands:
+changed to top 100
+
+```{r}
+best_upstream_ligands <- ligand_activities %>% top_n(30, aupr_corrected) %>% arrange(-aupr_corrected) %>% pull(test_ligand)
+
+vis_ligand_aupr <- ligand_activities %>% filter(test_ligand %in% best_upstream_ligands) %>%
+  column_to_rownames("test_ligand") %>% select(aupr_corrected) %>% arrange(aupr_corrected) %>% as.matrix(ncol = 1)
+
+(make_heatmap_ggplot(vis_ligand_aupr,
+                     "Prioritized ligands", "Ligand activity", 
+                     legend_title = "AUPR", color = "darkorange") + 
+    theme(axis.text.x.top = element_blank()))  
+```
+
+17. Infer target genes  of top-ranked proteins
+
+```{r}
+active_ligand_target_links_df <- best_upstream_ligands %>%
+  lapply(get_weighted_ligand_target_links,
+         geneset = geneset_oi,
+         ligand_target_matrix = ligand_to_target,
+         n = 100) %>%
+  bind_rows() %>% drop_na()
+```
+
+```{r}
+active_ligand_target_links <- prepare_ligand_target_visualization(
+  ligand_target_df = active_ligand_target_links_df,
+  ligand_target_matrix = ligand_to_target,
+  cutoff = 0.3) 
+```
+
+```{r}
+order_ligands <- intersect(best_upstream_ligands, colnames(active_ligand_target_links)) %>% rev()
+order_targets <- active_ligand_target_links_df$target %>% unique() %>% intersect(rownames(active_ligand_target_links))
+
+vis_ligand_target <- t(active_ligand_target_links[order_targets,order_ligands])
+
+target_genes_heatmap <- make_heatmap_ggplot(vis_ligand_target, "Prioritized ligands", "Predicted target genes",
+                    color = "purple", legend_title = "Regulatory potential") +
+  scale_fill_gradient2(low = "whitesmoke",  high = "purple")
+```
+
+```{r}
+target_genes_heatmap
+```
+
+```{r}
+png("target_genes_heatmap_HFD_hyperparameters_avg_26_02_25.png", res = 300, width = 5000, height = 2000)
+print(target_genes_heatmap)
+```
+
+Old code, cant be run, needs to be modified. Seem ok now 18/10
+
+```{r}
+
+lr_network <- active_ligand_target_links_df
+lr_network$weight <- NULL
+lr_network$from <- lr_network$ligand
+lr_network$to <- lr_network$target
+
+ligand_receptor_links_df <- get_weighted_ligand_receptor_links(
+  best_upstream_ligands, expressed_receptors,
+  lr_network, weighted_networks$lr_sig)
+
+ligand_receptor_links_df2 <- get_weighted_ligand_receptor_links(
+  best_upstream_ligands, expressed_receptors,
+  lr_network, weighted_networks$gr)
+
+ligand_receptor_links_df3 <- ligand_receptor_links_df2[1:2,]
+
+#test proteins for EVs
+ligand_receptor_links_df4 <- get_weighted_ligand_receptor_links(
+  ligand_activities$test_ligand, expressed_receptors,
+  lr_network, weighted_networks$lr_sig)
+
+test <- unique(ligand_receptor_links_df4$to)
+```
+
+Receptors of top-ranked ligands
+
+```{r}
+
+vis_ligand_receptor_network <- prepare_ligand_receptor_visualization(
+  ligand_receptor_links_df,
+  best_upstream_ligands,
+  order_hclust = "both") 
+
+heatmap_top30 <- make_heatmap_ggplot(t(vis_ligand_receptor_network), 
+                     y_name = "Ligands", x_name = "Receptors",  
+                     color = "mediumvioletred", legend_title = "Prior interaction potential")
+```
+
+```{r}
+heatmap_top30
+```
+
+```{r}
+png("top30heatmap.png", res = 300, width = 2000, height = 4400)
+print(heatmap_top30)
+```
+
+Ligands from the EVs (load data from ComparativeTreeplots_EMBO)
+
+```{r}
+
+potential_ligands_NCD <- intersect(ligands, NCD_ligands)
+potential_ligands_HFD <- intersect(ligands, HFD_ligands)
+```
+
+Loading zenodo data for signalling pathways
+Note for FNia: Check if these datasets were already loaded
+```{r}
+weighted_networks <- readRDS(url("https://zenodo.org/records/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
+ligand_tf_matrix <- readRDS(url("https://zenodo.org/records/7074291/files/ligand_tf_matrix_nsga2r_final_mouse.rds"))
+
+lr_network <- readRDS(url("https://zenodo.org/records/7074291/files/lr_network_mouse_21122021.rds"))
+sig_network <- readRDS(url("https://zenodo.org/records/7074291/files/signaling_network_mouse_21122021.rds"))
+gr_network <- readRDS(url("https://zenodo.org/records/7074291/files/gr_network_mouse_21122021.rds"))
+```
+
+Intersect 100 prioritized ligands and potential ligands NCD/HFD
+
+```{r}
+proteins_HFD <- intersect(ligand_activities$test_ligand, potential_ligands_HFD)
+```
+
+
+Inferring ligand-to-target signaling paths NCD
+
+```{r}
+ligands_oi <- "Apoe"
+targets_oi <- c("Il1b", "Cd320", "Pon2")
+
+active_signaling_network <- get_ligand_signaling_path(ligands_all = ligands_oi,
+                                                      targets_all = targets_oi, 
+                                                      weighted_networks = weighted_networks,
+                                                      ligand_tf_matrix = ligand_to_target,
+                                                      top_n_regulators = 4,
+                                                      minmax_scaling = TRUE) 
+
+
+graph_min_max <- diagrammer_format_signaling_graph(signaling_graph_list = active_signaling_network,
+                                                   ligands_all = ligands_oi, targets_all = targets_oi,
+                                                   sig_color = "indianred", gr_color = "steelblue")
+
+# To render the graph in RStudio Viewer, uncomment following line of code
+ DiagrammeR::render_graph(graph_min_max, layout = "tree")
+
+# To export/draw the svg, you need to install DiagrammeRsvg
+#graph_svg <- DiagrammeRsvg::export_svg(DiagrammeR::render_graph(graph_min_max, layout = "tree", output = "graph"))
+#cowplot::ggdraw() + cowplot::draw_image(charToRaw(graph_svg))
+```
+
+Intersect 100 prioritized ligands and potential ligands NCD
+
+```{r}
+proteins_NCD <- intersect(ligand_activities$test_ligand, potential_ligands_NCD)
+```
+
+
+Inferring ligand-to-target signaling paths HFD
+
+```{r}
+ligands_oi <- "Scly" # this can be a list of multiple ligands if required
+targets_oi <- c("Apbb1ip", "Ier5", "Il1r1", "Laptm5", "Ly86", "Pik3r5", "Prkcb", "Cxcr4", "Lilra5", "Lilra6", "Pira2", "Tbc1d1", "Tjp2", "Cd40", "Cd83", "Mmp9", "Pmaip1", "Pira6", "Siglec1", "Timd4", "Cotl1", "Frmd4a", "Odc1", "Spn", "Grb2", "Csf1r", "Ctsb", "Cd14", "Plac8", "H3f3b", "Lmo2", "Alox5ap", "Anxa3", "Foxo1", "Zeb2")
+
+active_signaling_network <- get_ligand_signaling_path(ligands_all = ligands_oi,
+                                                      targets_all = targets_oi, 
+                                                      weighted_networks = weighted_networks,
+                                                      ligand_tf_matrix = ligand_to_target,
+                                                      top_n_regulators = 4,
+                                                      minmax_scaling = TRUE) 
+
+
+#graph_min_max <- diagrammer_format_signaling_graph(signaling_graph_list = active_signaling_network,
+                                                   #ligands_all = ligands_oi, targets_all = targets_oi,
+                                                   #sig_color = "indianred", gr_color = "steelblue")
+
+# To render the graph in RStudio Viewer, uncomment following line of code
+# DiagrammeR::render_graph(graph_min_max, layout = "tree")
+
+# To export/draw the svg, you need to install DiagrammeRsvg
+#graph_svg <- DiagrammeRsvg::export_svg(DiagrammeR::render_graph(graph_min_max, layout = "tree", output = "graph"))
+#cowplot::ggdraw() + cowplot::draw_image(charToRaw(graph_svg))
+```
+
+
+Substracting NCD EVs targets (signalling, regulatory)
+
+```{r}
+vector_targets_NCD <- active_signaling_network[["sig"]][["to"]]
+vector_targets_NCD <- unique(vector_targets_NCD)
+```
+
+```{r}
+vector_targets_reg_NCD <- active_signaling_network[["gr"]][["to"]]
+vector_targets_reg_NCD <- unique(vector_targets_reg_NCD)
+```
+
+
+Cluster profiler analysis
+
+```{r}
+library("clusterProfiler")
+
+library("ggplot2")
+
+library("forcats")
+
+library("ggstance")
+
+library("org.Mm.eg.db")
+
+library("DOSE")
+
+library("ggridges")
+
+library("ggupset")
+
+library("enrichplot")
+
+library("ggrepel")
+
+library("ggnewscale")
+
+library(cowplot)
+
+library("pathview")
+
+library("ReactomePA")
+
+library(stringr)
+
+library(dplyr)
+
+library(limma)
+
+library(R.utils)
+
+library("GOSemSim")
+
+library("ggtreeExtra")
+
+options(clusterProfiler.download.method = "wininet")
+```
+
+
+Defining background genes
+
+```{r}
+background_expressed_genes <- expressed_genes_receiver %>% .[. %in% rownames(ligand_target_matrix)]
+```
+
+Dotplot analysis
+```{r}
+ego <- enrichGO(gene = vector_targets_NCD,
+ universe = background_expressed_genes,
+ keyType = "SYMBOL",
+ OrgDb = org.Mm.eg.db,
+ ont = "BP",
+ pAdjustMethod = "BH",
+ qvalueCutoff = 0.05,
+ readable = TRUE,
+ minGSSize = 10,
+  maxGSSize = 1000)
+# Output results from GO analysis to a table
+cluster_summary <- data.frame(ego)
+
+# Make a dotplot
+dotplot(ego, showCategory=20)
+```
+
+Inferring ligand-to-target signaling paths HFD (same names as in NCD, bear that in mind)
+
+```{r}
+ligands_oi <- potential_ligands # this can be a list of multiple ligands if required
+targets_oi <- expressed_receptors
+
+active_signaling_network <- get_ligand_signaling_path(ligands_all = ligands_oi,
+                                                      targets_all = targets_oi, 
+                                                      weighted_networks = weighted_networks,
+                                                      ligand_tf_matrix = ligand_tf_matrix,
+                                                      top_n_regulators = 4,
+                                                      minmax_scaling = TRUE) 
+
+
+#graph_min_max <- diagrammer_format_signaling_graph(signaling_graph_list = active_signaling_network,
+                                                   #ligands_all = ligands_oi, targets_all = targets_oi,
+                                                   #sig_color = "indianred", gr_color = "steelblue")
+
+# To render the graph in RStudio Viewer, uncomment following line of code
+# DiagrammeR::render_graph(graph_min_max, layout = "tree")
+
+# To export/draw the svg, you need to install DiagrammeRsvg
+#graph_svg <- DiagrammeRsvg::export_svg(DiagrammeR::render_graph(graph_min_max, layout = "tree", output = "graph"))
+#cowplot::ggdraw() + cowplot::draw_image(charToRaw(graph_svg))
+```
+
+Substracting HFD EVs targets (signalling, regulatory)
+
+```{r}
+vector_targets_HFD <- active_signaling_network[["sig"]][["to"]]
+vector_targets_HFD <- unique(vector_targets_HFD)
+```
+
+```{r}
+vector_targets_reg_HFD <- active_signaling_network[["gr"]][["to"]]
+vector_targets_reg_HFD <- unique(vector_targets_reg_HFD)
+```
+
+
+Visualizing network
+
+```{r}
+library(DiagrammeR)
+
+DiagrammeR::render_graph(graph_min_max, layout = "tree")
+```
+Comparison clusterprofiler
+
+Get unique genes for both groups.
+Reg targets are all the same.
+```{r}
+unique_targets_NCD <- setdiff(vector_targets_NCD, vector_targets_HFD)
+unique_targets_HFD <- setdiff(vector_targets_HFD, vector_targets_NCD)
+
+unique_targets_reg_NCD <- setdiff(vector_targets_reg_NCD, vector_targets_reg_HFD)
+unique_targets_reg_HFD <- setdiff(vector_targets_reg_HFD, vector_targets_reg_NCD)
+```
+
+```{r}
+datafNCD <- data.frame(Genes = unique_targets_NCD)
+datafNCD$group <- "NCD"
+
+datafHFD <- data.frame(Genes = unique_targets_HFD)
+datafHFD$group <- "HFD"
+```
+
+```{r}
+entre_NCD = bitr(datafNCD$Genes, fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Mm.eg.db")
+datafNCD <- merge(datafNCD, entre_NCD , by.x = "Genes", by.y ="SYMBOL")
+datafNCD$Genes <- NULL
+
+entre_HFD = bitr(datafHFD$Genes, fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Mm.eg.db")
+datafHFD <- merge(datafHFD, entre_HFD , by.x = "Genes", by.y ="SYMBOL")
+datafHFD$Genes <- NULL
+
+comparison_data <- rbind(datafNCD, datafHFD)
+comparison_data$group <- as.factor(comparison_data$group)
+```
+Comparison using Clusterprofiler
+
+```{r}
+#comparePlot <- compareCluster(OrgDb="org.Mm.eg.db", ENTREZID~group, data=comparison_data, fun="enrichGO", readable = TRUE)
+
+ pp <- dotplot(comparePlot, x= ~group, by = "count", title = "HFD vs.NCD", showCategory = REVIGO_names) + aes(x=fct_relevel(group)) + xlab(NULL) +
+ scale_color_gradientn(colours=c("#cc3300", "#ff9966", "#ffffcc"),
+ guide=guide_colorbar(reverse=TRUE, order=1)) +
+ guides(size = guide_legend(override.aes=list(shape=1))) +
+ theme(panel.grid.major.y = element_line(linetype='dotted', color='#808080'),
+ panel.grid.major.x = element_blank())
+
+
+print(pp)
+
+```
+
+```{r}
+png("MF_comparison.png", res = 300, width = 2000, height = 3500)
+print(pp)
+```
+
+Uploding REVIGO list
+
+```{r}
+REVIGO_1 <- read.csv("C:/Users/tefi1/Documents/PhD/Data_analysis/EMBO/Revigo_1.csv", check.names = FALSE)
+
+REVIGO_names <- REVIGO_1$REVIGO_1
+```
+
+
+```{r}
+
+library(writexl)
+
+comparePlotGO_tab=as.data.frame(comparePlot)
+
+write_xlsx(
+     comparePlotGO_tab,
+     path = "C:/Users/tefi1/Documents/PhD/Data_analysis//EMBO/comparePlot.xlsx",
+     col_names = TRUE,
+     format_headers = TRUE,
+     use_zip64 = FALSE)
+```
+
+
+
+Chunk make be used with a different dataset
+```{r}
+datafNCD <- data.frame(Genes = vector_targets_NCD)
+datafNCD$type <- "signalling"
+
+datafNCD2 <- data.frame(Genes = vector_targets_reg_NCD)
+datafNCD2$type <- "regulatory"
+
+datafNCD <- merge(datafNCD2, datafNCD , by = "Genes", all = TRUE)
+
+datafNCD$type <- ifelse(!is.na(datafNCD$type.x) & !is.na(datafNCD$type.y), "both", 
+                        ifelse(!is.na(datafNCD$type.x), "regulatory", "signalling"))
+```
+
+
+```{r}
+datafHFD <- data.frame(Genes = vector_targets_HFD)
+datafHFD$type <- "signalling"
+
+datafHFD2 <- data.frame(Genes = vector_targets_reg_HFD)
+datafHFD2$type <- "regulatory"
+
+datafHFD <- merge(datafHFD2, datafHFD , by = "Genes", all = TRUE)
+
+datafHFD$type <- ifelse(!is.na(datafHFD$type.x) & !is.na(datafHFD$type.y), "both", 
+                        ifelse(!is.na(datafHFD$type.x), "regulatory", "signalling"))
+```
+
+
+
+Which of the collected data sources support the interactions in this network
+
+```{r}
+data_source_network <- infer_supporting_datasources(signaling_graph_list = active_signaling_network,
+                                                    lr_network = lr_network, sig_network = sig_network, gr_network = gr_network)
+head(data_source_network) 
+```
+Exporting to cytoscape
+
+HFD
+```{r}
+output_path <- ""
+write_output <- TRUE # change to TRUE for writing output
+
+# weighted networks ('import network' in Cytoscape)
+if(write_output){
+  bind_rows(active_signaling_network$sig %>% mutate(layer = "signaling"),
+            active_signaling_network$gr %>% mutate(layer = "regulatory")) %>%
+    write_tsv(paste0(output_path,"weighted_signaling_network_HFD_potential_ligands_Scly.txt")) 
+}
+
+# networks with information of supporting data sources ('import network' in Cytoscape)
+if(write_output){
+  data_source_network %>% write_tsv(paste0(output_path,"data_source_network_HFD_potential_ligands_Scly.txt"))
+}
+
+# Node annotation table ('import table' in Cytoscape)
+specific_annotation_tbl <- bind_rows(
+  tibble(gene = ligands_oi, annotation = "ligand"),
+  tibble(gene = targets_oi, annotation = "target"),
+  tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% setdiff(c(targets_oi,ligands_oi)) %>% intersect(lr_network$to %>% unique()), annotation = "receptor"),
+  tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% setdiff(c(targets_oi,ligands_oi)) %>% intersect(gr_network$from %>% unique()) %>% setdiff(c(data_source_network$from, data_source_network$to) %>% unique() %>% intersect(lr_network$to %>% unique())),annotation = "transcriptional regulator")
+)
+non_specific_annotation_tbl <- tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% setdiff(specific_annotation_tbl$gene), annotation = "signaling mediator")
+
+if(write_output){
+  bind_rows(specific_annotation_tbl, non_specific_annotation_tbl) %>%
+    write_tsv(paste0(output_path,"annotation_table_HFD_potential_ligands_Scly.txt"))
+}
+```
+
+NCD
+```{r}
+output_path <- ""
+write_output <- TRUE # change to TRUE for writing output
+
+# weighted networks ('import network' in Cytoscape)
+if(write_output){
+  bind_rows(active_signaling_network$sig %>% mutate(layer = "signaling"),
+            active_signaling_network$gr %>% mutate(layer = "regulatory")) %>%
+    write_tsv(paste0(output_path,"weighted_signaling_network_NCD_potential_ligands_APOE.txt")) 
+}
+
+# networks with information of supporting data sources ('import network' in Cytoscape)
+if(write_output){
+  data_source_network %>% write_tsv(paste0(output_path,"data_source_network_NCD_potential_ligands_APOE.txt"))
+}
+
+# Node annotation table ('import table' in Cytoscape)
+specific_annotation_tbl <- bind_rows(
+  tibble(gene = ligands_oi, annotation = "ligand"),
+  tibble(gene = targets_oi, annotation = "target"),
+  tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% setdiff(c(targets_oi,ligands_oi)) %>% intersect(lr_network$to %>% unique()), annotation = "receptor"),
+  tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% setdiff(c(targets_oi,ligands_oi)) %>% intersect(gr_network$from %>% unique()) %>% setdiff(c(data_source_network$from, data_source_network$to) %>% unique() %>% intersect(lr_network$to %>% unique())),annotation = "transcriptional regulator")
+)
+non_specific_annotation_tbl <- tibble(gene = c(data_source_network$from, data_source_network$to) %>% unique() %>% setdiff(specific_annotation_tbl$gene), annotation = "signaling mediator")
+
+if(write_output){
+  bind_rows(specific_annotation_tbl, non_specific_annotation_tbl) %>%
+    write_tsv(paste0(output_path,"annotation_table_NCD_potential_ligands_APOE.txt"))
+}
+```
+
