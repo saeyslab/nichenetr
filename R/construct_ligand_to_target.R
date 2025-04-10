@@ -427,7 +427,7 @@ construct_ligand_target_matrix = function(weighted_networks, lr_network, ligands
     }
   }
 
-  ltf_matrix = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff, algorithm, damping_factor)
+  ltf_matrix = construct_ligand_tf_matrix(weighted_networks, lr_network, ligands, ltf_cutoff, algorithm, damping_factor)
 
   # preparing the gene regulatory matrix
   grn_matrix = construct_tf_target_matrix(weighted_networks)
