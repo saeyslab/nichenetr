@@ -179,6 +179,7 @@ jobs:
           remotes::install_cran("circlize")
           remotes::install_cran("tidyverse")
           remotes::install_cran("DiagrammeR", type = ifelse("${{ runner.os }}" == "Windows", "win.binary", getOption("pkgType")))
+          remotes::install_version("Matrix", "1.6.4")
           remotes::install_local(dependencies = TRUE, repos = BiocManager::repositories(), build_vignettes = FALSE, upgrade = TRUE)
         continue-on-error: true
         shell: Rscript {0}
