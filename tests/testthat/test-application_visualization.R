@@ -1,7 +1,7 @@
 context("Visualization functions for application")
 test_that("ligand-target signaling paths can be visualized", {
 
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human,source_weights_df)
   ligands = list("TNF","TGFB1",c("IL4","IL13"))
   ligand_tf_matrix = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.1, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
   all_ligands = c("TGFB1")
@@ -25,7 +25,7 @@ test_that("ligand-target signaling paths can be visualized", {
 })
 test_that("heatmaps can be shown", {
 
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human,source_weights_df)
   ligands = list("TNF","TGFB1",c("IL4","IL13"))
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
 

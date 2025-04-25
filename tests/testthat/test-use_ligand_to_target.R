@@ -1,7 +1,7 @@
 context("Model usage functions")
 
 test_that("Get top n or percentage targets or ligands: no error", {
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human,source_weights_df)
   ligands = list("TNF","BMP2",c("IL4","IL13"))
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 
@@ -15,7 +15,7 @@ test_that("Get top n or percentage targets or ligands: no error", {
   expect_type(extract_top_n_ligands("ID3",1,ligand_target_matrix),"double")
 })
 test_that("Get targets genes of a ligand: no error", {
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human,source_weights_df)
   ligands = list("TNF","BMP2",c("IL4","IL13"))
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 

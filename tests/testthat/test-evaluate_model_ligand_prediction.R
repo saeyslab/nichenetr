@@ -49,7 +49,7 @@ test_that("Get ligand importances: single + evaluation", {
   settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human, source_weights_df)
   ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 
@@ -81,7 +81,7 @@ test_that("Get ligand importances: multi", {
   settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = FALSE)
 
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human, source_weights_df)
   ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
   ligand_importances_glm = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances, ligand_target_matrix, algorithm = "glm"))
@@ -98,7 +98,7 @@ test_that("Get ligand importances: random forest", {
   settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = FALSE)
 
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human, source_weights_df)
   ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
   ligand_importances_rf = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_rf_importances, ligand_target_matrix, ntrees = 100, mtry = 2))
@@ -112,7 +112,7 @@ test_that("Model-based ligand activity prediction", {
   settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human, source_weights_df)
   ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
   ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix))
@@ -132,7 +132,7 @@ test_that("Get ligand importances regression: single + evaluation", {
   settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation_regression)
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human, source_weights_df)
   ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
 
@@ -156,7 +156,7 @@ test_that("Get ligand importances regression: multi", {
   settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation_regression)
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = FALSE)
 
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human, source_weights_df)
   ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
   ligand_importances_lm = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances_regression, ligand_target_matrix, algorithm = "lm"))
@@ -173,7 +173,7 @@ test_that("Get ligand importances regression: random forest", {
   settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation_regression)
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = FALSE)
 
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human, source_weights_df)
   ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
   ligand_importances_rf = bind_rows(lapply(settings_ligand_pred, get_multi_ligand_rf_importances_regression, ligand_target_matrix, ntrees = 100, mtry = 2))
@@ -187,7 +187,7 @@ test_that("Expression setting converters: tf upstream analysis", {
   settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
   settings_tf_pred = convert_settings_tf_prediction(settings, all_tfs = c("SMAD1","STAT1","RELA"), single = TRUE)
   # show how this function can be used to predict activities of TFs
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human, source_weights_df)
   tf_target = construct_tf_target_matrix(weighted_networks, tfs_as_cols = TRUE, standalone_output = TRUE)
   tf_importances = dplyr::bind_rows(lapply(settings_tf_pred,get_single_ligand_importances,tf_target,known = FALSE))
 
@@ -198,7 +198,7 @@ test_that("Expression setting converters: top n ligands", {
   settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = TRUE, single = TRUE)
 
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human, source_weights_df)
   ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
   ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
