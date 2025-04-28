@@ -106,7 +106,7 @@ test_that("Gene-cluster assignments can be converted to settings", {
 context("Ligand activity prediction for application")
 test_that("Ligand activities can be predicted well", {
 
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human,source_weights_df)
   ligands = list("TNF","IL4")
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
   potential_ligands = c("TNF","IL4")
@@ -129,7 +129,7 @@ test_that("Ligand activities can be predicted well", {
 context("Assessment target gene prediction by multi-ligand models")
 test_that("Target gene prediction can be predicted by multi-ligand models", {
 
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human,source_weights_df)
   ligands = list("TNF","IL4")
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
   potential_ligands = c("TNF","IL4")
@@ -161,7 +161,7 @@ test_that("Single-cell ligand activity prediction functions work a bit OK", {
   x = matrix(rnorm(200*2, sd = 10, mean = 5), ncol = 2)
   x_scaled = scale_quantile(x)
   expect_type(x_scaled,"double")
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human,source_weights_df)
   ligands = list("TNF","BMP2","IL4")
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
   potential_ligands = c("TNF","BMP2","IL4")

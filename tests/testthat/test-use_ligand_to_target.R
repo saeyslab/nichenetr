@@ -3,7 +3,7 @@ context("Model usage functions")
 test_that("Get top n or percentage targets or ligands: no error", {
   weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human,source_weights_df)
   ligands = list("TNF","BMP2",c("IL4","IL13"))
-  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network_human, ligands)
 
   expect_type(extract_top_fraction_targets("BMP2",0.01,ligand_target_matrix),"double")
   expect_type(extract_top_n_targets("BMP2",100,ligand_target_matrix),"double")
@@ -17,7 +17,7 @@ test_that("Get top n or percentage targets or ligands: no error", {
 test_that("Get targets genes of a ligand: no error", {
   weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human,source_weights_df)
   ligands = list("TNF","BMP2",c("IL4","IL13"))
-  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network_human, ligands)
 
   expect_type(get_target_genes_ligand_oi("BMP2", ligand_target_matrix, cutoff_method = "distribution", fdr_method = "global", output = "logical",ligands_position = "cols"),"logical")
   expect_type(get_target_genes_ligand_oi("BMP2", ligand_target_matrix, cutoff_method = "distribution", fdr_method = "global", output = "logical",ligands_position = "rows"),"logical")

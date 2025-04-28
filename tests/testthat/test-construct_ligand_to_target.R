@@ -75,20 +75,20 @@ test_that("Correct application hub correction: lr_sig_hub", {
 test_that("Construct ligand_to_tf_matrix: no error", {
   weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human,source_weights_df)
   ligands = list("BMP2",c("IL4","IL13"))
-  expect_type(construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5),"double")
-  expect_type(construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "SPL", damping_factor = 0.5),"double")
-  expect_type(construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "direct", damping_factor = 0.5),"double")
+  expect_type(construct_ligand_tf_matrix(weighted_networks, lr_network_human, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5),"double")
+  expect_type(construct_ligand_tf_matrix(weighted_networks, lr_network_human, ligands, ltf_cutoff = 0.99, algorithm = "SPL", damping_factor = 0.5),"double")
+  expect_type(construct_ligand_tf_matrix(weighted_networks, lr_network_human, ligands, ltf_cutoff = 0.99, algorithm = "direct", damping_factor = 0.5),"double")
 
 })
 test_that("Construct ligand_to_target_matrix: no error", {
   weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human,source_weights_df)
   ligands = list("BMP2",c("IL4","IL13"))
-  expect_type(construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE),"double")
-  expect_type(construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "SPL", damping_factor = 0.5, secondary_targets = FALSE),"double")
-  expect_type(construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "direct", damping_factor = 0.5, secondary_targets = FALSE),"double")
-  expect_type(construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = TRUE),"double")
-  expect_type(construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = TRUE, remove_direct_links = "ligand"),"double")
-  expect_type(construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = TRUE, remove_direct_links = "ligand-receptor"),"double")
+  expect_type(construct_ligand_target_matrix(weighted_networks, lr_network_human, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE),"double")
+  expect_type(construct_ligand_target_matrix(weighted_networks, lr_network_human, ligands, ltf_cutoff = 0.99, algorithm = "SPL", damping_factor = 0.5, secondary_targets = FALSE),"double")
+  expect_type(construct_ligand_target_matrix(weighted_networks, lr_network_human, ligands, ltf_cutoff = 0.99, algorithm = "direct", damping_factor = 0.5, secondary_targets = FALSE),"double")
+  expect_type(construct_ligand_target_matrix(weighted_networks, lr_network_human, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = TRUE),"double")
+  expect_type(construct_ligand_target_matrix(weighted_networks, lr_network_human, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = TRUE, remove_direct_links = "ligand"),"double")
+  expect_type(construct_ligand_target_matrix(weighted_networks, lr_network_human, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = TRUE, remove_direct_links = "ligand-receptor"),"double")
 })
 test_that("Construct tf_to_target_matrix: no error", {
   weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human,source_weights_df)
@@ -98,13 +98,13 @@ test_that("Construct tf_to_target_matrix: no error", {
 test_that("Correct PPR-ligand-target matrices for topolgy: no error", {
   weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human,source_weights_df)
   ligands = list("BMP2",c("IL4","IL13"))
-  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network_human, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
   expect_type(correct_topology_ppr(ligand_target_matrix,weighted_networks),"double")
 })
 test_that("Convert probabilistic ligand-target to discrete: no error", {
   weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human,source_weights_df)
   ligands = list("BMP2",c("IL4","IL13"))
-  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network_human, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
   expect_equal(dim(make_discrete_ligand_target_matrix(ligand_target_matrix, error_rate = 0.1, cutoff_method = "distribution", ligands_position = "cols")),dim(ligand_target_matrix))
 })
 
