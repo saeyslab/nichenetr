@@ -6,8 +6,8 @@ test_that("active ligand-receptor, signaling and gene regulatory networks can be
   names(expression_vector_receiver) = sample(x = geneinfo_human$symbol,size = 10000,replace = FALSE)
 
   sender_receiver_lr_network = get_active_ligand_receptor_network(expression_vector_sender,expression_vector_receiver,lr_network_human,expression_cutoff_sender = 0, expression_cutoff_receiver = 4)
-  receiver_sig_network = get_active_signaling_network(expression_vector_receiver,sig_network,expression_cutoff_receiver = 4)
-  receiver_gr_network = get_active_regulatory_network(expression_vector_receiver,gr_network,expression_cutoff_receiver = 4)
+  receiver_sig_network = get_active_signaling_network(expression_vector_receiver,signaling_network_human,expression_cutoff_receiver = 4)
+  receiver_gr_network = get_active_regulatory_network(expression_vector_receiver,gr_network_human,expression_cutoff_receiver = 4)
 
   weighted_networks_receiver = construct_weighted_networks(sender_receiver_lr_network, receiver_sig_network, receiver_gr_network, source_weights_df)
 
