@@ -85,7 +85,7 @@ convert_settings_ligand_prediction = function(settings,all_ligands,validation = 
 #'
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
 #' print(head(ligand_importances))
 #' }
@@ -137,7 +137,7 @@ get_single_ligand_importances = function(setting,ligand_target_matrix, ligands_p
 #'
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' ligand_importances_glm = dplyr::bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances,ligand_target_matrix, algorithm = "glm"))
 #' print(head(ligand_importances_glm))
 #' }
@@ -203,7 +203,7 @@ get_multi_ligand_importances = function(setting,ligand_target_matrix, ligands_po
 #'
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
 #' evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
 #' print(head(evaluation))
@@ -274,7 +274,7 @@ evaluate_importances_ligand_prediction = function(importances, normalization, al
 #'
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
 #' evaluation = evaluate_single_importances_ligand_prediction(ligand_importances,normalization = "median")
 #' print(head(evaluation))
@@ -338,14 +338,14 @@ evaluate_single_importances_ligand_prediction = function(importances,normalizati
 #'
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
 #' evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
 #'
 #' settings = lapply(expression_settings_validation[5:10],convert_expression_settings_evaluation)
 #' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = FALSE, single = TRUE)
 #' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix, known = FALSE))
 #' activity_predictions = model_based_ligand_activity_prediction(ligand_importances, evaluation$model,"median")
 #' print(head(activity_predictions))
@@ -407,7 +407,7 @@ model_based_ligand_activity_prediction = function(importances, model, normalizat
 #'
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' ligand_importances_rf = dplyr::bind_rows(lapply(settings_ligand_pred, get_multi_ligand_rf_importances,ligand_target_matrix, ntrees = 100, mtry = 2))
 #' print(head(ligand_importances_rf))
 #' }
@@ -502,7 +502,7 @@ get_multi_ligand_rf_importances = function(setting,ligand_target_matrix, ligands
 #'
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances_regression,ligand_target_matrix))
 #' print(head(ligand_importances))
 #' }
@@ -553,7 +553,7 @@ get_single_ligand_importances_regression = function(setting,ligand_target_matrix
 #'
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' ligand_importances_lm = dplyr::bind_rows(lapply(settings_ligand_pred, get_multi_ligand_importances_regression,ligand_target_matrix, algorithm = "lm"))
 #' print(head(ligand_importances_lm))
 #' }
@@ -613,7 +613,7 @@ get_multi_ligand_importances_regression = function(setting,ligand_target_matrix,
 #'
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' ligand_importances_rf = dplyr::bind_rows(lapply(settings_ligand_pred, get_multi_ligand_rf_importances_regression,ligand_target_matrix, ntrees = 100, mtry = 2))
 #' print(head(ligand_importances_rf))
 #' }
@@ -753,14 +753,14 @@ convert_settings_tf_prediction = function(settings,all_tfs, single = TRUE){
 #'
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
 #' evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
 #'
 #' settings = lapply(expression_settings_validation[5:10],convert_expression_settings_evaluation)
 #' settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = FALSE, single = TRUE)
 #' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix, known = FALSE))
 #' settings = lapply(settings,convert_settings_topn_ligand_prediction, importances = ligand_importances, model = evaluation$model, n = 3, normalization = "median" )
 #' }
@@ -809,7 +809,7 @@ convert_settings_topn_ligand_prediction = function(setting, importances, model, 
 #'
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
 #' evaluation = ligand_importances$setting %>% unique() %>% lapply(function(x){x}) %>% lapply(wrapper_evaluate_single_importances_ligand_prediction,ligand_importances) %>% bind_rows() %>% inner_join(ligand_importances %>% distinct(setting,ligand))
 #' print(head(evaluation))

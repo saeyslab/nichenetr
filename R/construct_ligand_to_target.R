@@ -159,7 +159,7 @@ apply_hub_corrections = function(weighted_networks,lr_sig_hub, gr_hub) {
 #' @description \code{construct_ligand_tf_matrix} Convert integrated weighted networks into a matrix containg ligand-tf probability scores. The higher this score, the more likely a particular ligand can signal to a downstream gene.
 #'
 #' @usage
-#' construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, ligands_as_cols = FALSE)
+#' construct_ligand_tf_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, ligands_as_cols = FALSE)
 #'
 #' @param weighted_networks A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)
 #' @param lr_network A data frame / tibble containing ligand-receptor interactions (required columns: from, to, source)
@@ -178,7 +178,7 @@ apply_hub_corrections = function(weighted_networks,lr_sig_hub, gr_hub) {
 #' ## Generate the ligand-target matrix from loaded weighted_networks
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
-#' ligand_tf = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
+#' ligand_tf = construct_ligand_tf_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
 #' }
 #' @export
 #'
@@ -347,7 +347,7 @@ construct_tf_target_matrix = function(weighted_networks, tfs_as_cols = FALSE, st
 #' @description \code{construct_ligand_target_matrix} Convert integrated weighted networks into a matrix containg ligand-target probability scores. The higher this score, the more likely a particular ligand can induce the expression of a particular target gene.
 #'
 #' @usage
-#' construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE,ligands_as_cols = TRUE, remove_direct_links = "no")
+#' construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE,ligands_as_cols = TRUE, remove_direct_links = "no")
 #'
 #' @param weighted_networks A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)
 #' @param lr_network A data frame / tibble containing ligand-receptor interactions (required columns: from, to, source)
@@ -368,7 +368,7 @@ construct_tf_target_matrix = function(weighted_networks, tfs_as_cols = FALSE, st
 #' ## Generate the ligand-target matrix from loaded weighted_networks
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE, remove_direct_links = "no")
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE, remove_direct_links = "no")
 #' }
 #' @export
 #'
@@ -486,7 +486,7 @@ construct_ligand_target_matrix = function(weighted_networks, lr_network, ligands
 #' ## Generate the ligand-target matrix from loaded weighted_networks
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 #' ligand_target_matrix = correct_topology_ppr(ligand_target_matrix,weighted_networks,ligands_position = "cols")
 #' }
 #' @export
@@ -544,7 +544,7 @@ correct_topology_ppr = function(ligand_target_matrix,weighted_networks,ligands_p
 #' ## Generate the ligand-target matrix from loaded weighted_networks
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2",c("IL4","IL13"))
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' ligand_target_matrix = make_discrete_ligand_target_matrix(ligand_target_matrix, error_rate = 0.1, cutoff_method = "distribution", ligands_position = "cols")
 #'}
 #' @export
