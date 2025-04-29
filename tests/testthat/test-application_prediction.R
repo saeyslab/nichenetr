@@ -131,7 +131,7 @@ test_that("Target gene prediction can be predicted by multi-ligand models", {
 
   weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human,source_weights_df)
   ligands = list("TNF","IL4")
-  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks; lr_network_human, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network_human, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
   potential_ligands = c("TNF","IL4")
   geneset = c("VCAM1","SOCS3", "IRF1","LTBR","STAT4")
   background_expressed_genes = c("VCAM1","SOCS3","IRF1","ICAM1","ID1","ID2","ID3","LTBR",'STAT4')
