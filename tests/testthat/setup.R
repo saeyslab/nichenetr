@@ -17,6 +17,8 @@ weighted_networks_mouse = readRDS(url("https://zenodo.org/record/7074291/files/w
 
 lr_network_human = readRDS(url("https://zenodo.org/records/10229222/files/lr_network_human_allInfo_30112033.rds"))
 lr_network_human$source = lr_network_human$sources
+lr_network_human$from = lr_network_human$ligand
+lr_network_human$to = lr_network_human$receptor
 #lr_network_human$from = unname(lr_network_human$from)
 #lr_network_human$to = unname(lr_network_human$to)
 lr_network_human = lr_network_human %>% distinct(from, to)
