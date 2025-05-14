@@ -504,6 +504,13 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
                          pearson = NA,
                          spearman = NA))
   }
+
+  if (any(is.infinite(prediction))) {
+    message("Warning: Inf values detected in prediction vector. Replacing with max value + 1e-1.")
+    max_value <- max(prediction[is.finite(prediction)], na.rm = TRUE)
+    prediction[is.infinite(prediction)] <- max_value + 1e-1
+  }
+
   prediction_ROCR = ROCR::prediction(prediction, response)
   performance1 = ROCR::performance(prediction_ROCR, measure="tpr", x.measure="fpr")
 
@@ -530,8 +537,29 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
   cor_p_pval = suppressWarnings(cor.test(as.numeric(prediction), as.numeric(response))) %>% .$p.value
   cor_s_pval = suppressWarnings(cor.test(as.numeric(prediction), as.numeric(response), method =  "s")) %>% .$p.value
 
+  # Set minimum p-value threshold
+  min_pval <- 1e-300
+
+  # Adjust p-values with a warning message if they are too low
+  if (cor_p_pval < min_pval) {
+    message("Warning: Pearson p-value was below ", min_pval, " and has been capped at this value to avoid Inf values when taking the log10.")
+    cor_p_pval = min_pval
+  }
+
+  if (cor_s_pval < min_pval) {
+    message("Warning: Spearman p-value was below ", min_pval, " and has been capped at this value to avoid Inf values when taking the log10.")
+    cor_s_pval = min_pval
+  }
+
   # Mean rank GST calculated if limma is installed
   mean_rank_GST = ifelse(rlang::is_installed("limma"), limma::wilcoxGST(response, prediction), NA)
+  # Set minimum p-value threshold
+  min_mean_rank_GST <- 1e-300
+  # Adjust p-values with a warning message if they are too low
+  if (mean_rank_GST < min_mean_rank_GST) {
+    message("Warning: mean_rank_GST p-value was below ", min_pval, " and has been capped at this value to avoid Inf values when taking the log.")
+    mean_rank_GST = min_mean_rank_GST
+  }
 
   # Calculate the AUC-iRegulon
   output_iregulon = list()
@@ -578,6 +606,7 @@ classification_evaluation_categorical_pred = function(predictions, response) {
                          fisher_odds = NA))
   }
 
+
   num_positives = sum(response)
   num_total = length(response)
 
@@ -598,6 +627,20 @@ classification_evaluation_categorical_pred = function(predictions, response) {
     fisher = list(p.value = NA, estimate = NA)
   } else {
     fisher = fisher.test(as.factor(response), predictions)
+    min_pval <- 1e-300
+    max_odds_ratio <- 1e6
+
+    # Adjust p-value if below the threshold
+    if (fisher$p.value < min_pval) {
+      message("Warning: Fisher test p-value was below ", min_pval, " and has been capped at this value.")
+      fisher$p.value <- min_pval
+    }
+
+    # Adjust odds ratio if above the threshold (Inf)
+    if (is.infinite(fisher$estimate) || fisher$estimate > max_odds_ratio) {
+      message("Warning: Fisher test odds ratio was extremely high or infinite and has been capped at ", max_odds_ratio, ".")
+      fisher$estimate <- min(fisher$estimate, max_odds_ratio)
+    }
   }
 
   mcc_S = (tp + fn)/num_total
@@ -959,6 +1002,21 @@ regression_evaluation = function(prediction,response){
 
   cor_p_pval = suppressWarnings(cor.test(as.numeric(prediction), as.numeric(response))) %>% .$p.value
   cor_s_pval = suppressWarnings(cor.test(as.numeric(prediction), as.numeric(response), method =  "s")) %>% .$p.value
+
+  # Set minimum p-value threshold
+  min_pval <- 1e-300
+
+  # Adjust p-values with a warning message if they are too low
+  if (cor_p_pval < min_pval) {
+    message("Warning: Pearson p-value was below ", min_pval, " and has been capped at this value to avoid Inf values when taking the log10.")
+    cor_p_pval = min_pval
+  }
+
+  if (cor_s_pval < min_pval) {
+    message("Warning: Spearman p-value was below ", min_pval, " and has been capped at this value to avoid Inf values when taking the log10.")
+    cor_s_pval = min_pval
+  }
+
 
   tbl_perf = tibble(r_squared = model_summary$r.squared,
                     adj_r_squared = model_summary$adj.r.squared,

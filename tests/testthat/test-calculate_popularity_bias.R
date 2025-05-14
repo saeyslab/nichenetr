@@ -40,7 +40,6 @@ test_that("Ligand popularity bias functions are ok for ligand activity predictio
   ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network_human, ligands)
   ligand_importances = dplyr::bind_rows(lapply(settings_ligand_pred,get_single_ligand_importances,ligand_target_matrix))
-
   ligand_activity_popularity_bias = lapply(0:3,ligand_activity_performance_top_i_removed, ligand_importances, ncitations) %>% bind_rows()
   slopes_auroc = get_ligand_slope_ligand_prediction_popularity("auroc",ligand_activity_popularity_bias)
   slopes_df = ligand_activity_popularity_bias %>% select(-importance_measure, -popularity_index) %>% colnames() %>% lapply(.,get_ligand_slope_ligand_prediction_popularity,ligand_activity_popularity_bias) %>% bind_rows()
