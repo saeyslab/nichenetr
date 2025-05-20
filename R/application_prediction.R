@@ -959,11 +959,11 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
 
   } else if (obj_version < 5) {
 
-    if (sum(dim(GetAssayData(seurat_obj, assay = assay_oi, slot = "data"))) == 0){
+    if (sum(dim(GetAssayData(seurat_obj, assay = assay_oi, layer = "data"))) == 0){
       stop("Seurat object should contain normalized expression data (numeric matrix). Check 'GetAssayData(seurat_obj, assay = assay_oi, layer = 'data')'")
     }
 
-    if (!class(GetAssayData(seurat_obj, assay = assay_oi, slot = "data")) %in% c("matrix", "dgCMatrix")) {
+    if (!class(GetAssayData(seurat_obj, assay = assay_oi, layer = "data")) %in% c("matrix", "dgCMatrix")) {
       warning("The normalized expression data should be a matrix object.")
     }
   }
@@ -1503,11 +1503,11 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 
   } else if (obj_version < 5) {
 
-    if (sum(dim(GetAssayData(seurat_obj, assay = assay_oi, slot = "data"))) == 0){
+    if (sum(dim(GetAssayData(seurat_obj, assay = assay_oi, layer = "data"))) == 0){
       stop("Seurat object should contain normalized expression data (numeric matrix). Check 'GetAssayData(seurat_obj, assay = assay_oi, layer = 'data')'")
     }
 
-    if (!class(GetAssayData(seurat_obj, assay = assay_oi, slot = "data")) %in% c("matrix", "dgCMatrix")) {
+    if (!class(GetAssayData(seurat_obj, assay = assay_oi, layer = "data")) %in% c("matrix", "dgCMatrix")) {
       warning("The normalized expression data should be a matrix object.")
     }
   }
@@ -1866,11 +1866,11 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
 
   } else if (obj_version < 5) {
 
-    if (sum(dim(GetAssayData(seurat_obj, assay = assay_oi, slot = "data"))) == 0){
+    if (sum(dim(GetAssayData(seurat_obj, assay = assay_oi, layer = "data"))) == 0){
       stop("Seurat object should contain normalized expression data (numeric matrix). Check 'GetAssayData(seurat_obj, assay = assay_oi, layer = 'data')'")
     }
 
-    if (!class(GetAssayData(seurat_obj, assay = assay_oi, slot = "data")) %in% c("matrix", "dgCMatrix")) {
+    if (!class(GetAssayData(seurat_obj, assay = assay_oi, layer = "data")) %in% c("matrix", "dgCMatrix")) {
       warning("The normalized expression data should be a matrix object.")
     }
   }
