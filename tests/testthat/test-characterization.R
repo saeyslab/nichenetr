@@ -1,5 +1,4 @@
 context("Data source and model characterization functions")
-#
 test_that("Settings leave-one-in can be constructed and hyperparameters added", {
   print("Settings leave-one-in can be constructed and hyperparameters added")
   weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network_human,signaling_network_human, gr_network_human, source_weights_df)
@@ -83,6 +82,7 @@ test_that("Leave-one-in models can be evaluated and results of this further proc
   settings = lapply(expression_settings_validation[1:5], convert_expression_settings_evaluation)
   weights_settings_loi = prepare_settings_leave_one_in_characterization(lr_network_human,signaling_network_human, gr_network_human, source_weights_df)
   weights_settings_loi = lapply(weights_settings_loi,add_hyperparameters_parameter_settings, lr_sig_hub = 0.25,gr_hub = 0.5,ltf_cutoff = 0,algorithm = "PPR",damping_factor = 0.8,correct_topology = TRUE)
+
   output_characterization = lapply(weights_settings_loi[2:3],evaluate_model,lr_network_human,signaling_network_human, gr_network_human,settings,calculate_popularity_bias_target_prediction = TRUE, calculate_popularity_bias_ligand_prediction = TRUE, ncitations, cutoff_method = "quantile")
   expect_type(output_characterization, "list")
 
@@ -127,7 +127,6 @@ test_that("Leave-one-in models can be evaluated for multi-ligand applications", 
   expect_gte(nrow(target_prediction_performances),1)
 
 })
-
 test_that("Influence individual data source on ligand-target scores can be assessed", {
   print("Influence individual data source on ligand-target scores can be assessed")
   ligands =  extract_ligands_from_settings(expression_settings_validation[1:4])

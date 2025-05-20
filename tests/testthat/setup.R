@@ -16,12 +16,14 @@ ligand_target_matrix_mouse = readRDS(url("https://zenodo.org/record/7074291/file
 weighted_networks_mouse = readRDS(url("https://zenodo.org/record/7074291/files/weighted_networks_nsga2r_final_mouse.rds"))
 
 lr_network_human = readRDS(url("https://zenodo.org/records/10229222/files/lr_network_human_allInfo_30112033.rds"))
-lr_network_human$source = lr_network_human$sources
-lr_network_human$from = lr_network_human$ligand
-lr_network_human$to = lr_network_human$receptor
+lr_network_human_all = lr_network_human %>% select(-source) %>% rename(source = sources, from = ligand, to = receptor) %>% select(from, to, database, source) %>% distinct()
+lr_network_human = lr_network_human_all %>% mutate(source = database)
+#lr_network_human$source = lr_network_human$sources
+#lr_network_human$from = lr_network_human$ligand
+#lr_network_human$to = lr_network_human$receptor
 lr_network_human$from = unname(lr_network_human$from)
 lr_network_human$to = unname(lr_network_human$to)
-lr_network_human = lr_network_human %>% distinct(from, to)
+#lr_network_human = lr_network_human %>% distinct(from, to)
 gr_network_human = readRDS(url("https://zenodo.org/record/7074291/files/gr_network_human_21122021.rds"))
 gr_network_human$from = unname(gr_network_human$from)
 gr_network_human$to = unname(gr_network_human$to)
