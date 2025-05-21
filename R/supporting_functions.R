@@ -556,9 +556,14 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
   # Set minimum p-value threshold
   min_mean_rank_GST <- 1e-300
   # Adjust p-values with a warning message if they are too low
-  if (mean_rank_GST < min_mean_rank_GST) {
-    message("Warning: mean_rank_GST p-value was below ", min_pval, " and has been capped at this value to avoid Inf values when taking the log.")
-    mean_rank_GST = min_mean_rank_GST
+  if (!is.na(mean_rank_GST)) {
+    if (mean_rank_GST < min_mean_rank_GST) {
+      message(
+        "Warning: mean_rank_GST p-value was below ", min_mean_rank_GST,
+        " and has been capped at this value to avoid Inf values when taking the log."
+      )
+      mean_rank_GST <- min_mean_rank_GST
+    }
   }
 
   # Calculate the AUC-iRegulon
