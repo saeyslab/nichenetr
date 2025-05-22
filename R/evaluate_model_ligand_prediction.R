@@ -693,6 +693,7 @@ get_multi_ligand_rf_importances_regression = function(setting,ligand_target_matr
 #' @return A list with following elements: $name, $tf: name of active tf(s) (only if validation is TRUE), $from (tf(s) that will be tested for activity prediction), $response
 #'
 #' @examples
+#' \dontrun{
 #' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
 #' settings_tf_pred = convert_settings_tf_prediction(settings, all_tfs = c("SMAD1","STAT1","RELA"), single = TRUE)
 #' # show how this function can be used to predict activities of TFs
@@ -700,7 +701,7 @@ get_multi_ligand_rf_importances_regression = function(setting,ligand_target_matr
 #' tf_target = construct_tf_target_matrix(weighted_networks, tfs_as_cols = TRUE, standalone_output = TRUE)
 #' tf_importances = dplyr::bind_rows(lapply(settings_tf_pred,get_single_ligand_importances,tf_target,known = FALSE))
 #' print(head(tf_importances))
-#'
+#' }
 #' @export
 #'
 #'
