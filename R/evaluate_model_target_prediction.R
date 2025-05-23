@@ -118,7 +118,7 @@ convert_expression_settings_evaluation = function(setting) {
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' setting = lapply(expression_settings_validation[1],convert_expression_settings_evaluation)
 #' ligands = extract_ligands_from_settings(setting)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' perf1 = lapply(setting,evaluate_target_prediction,ligand_target_matrix)
 #' print(head(perf1))
 #' perf2 = lapply(setting,evaluate_target_prediction,make_discrete_ligand_target_matrix(ligand_target_matrix))
@@ -203,7 +203,7 @@ evaluate_target_prediction = function(setting,ligand_target_matrix, ligands_posi
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' setting = convert_expression_settings_evaluation(expression_settings_validation$TGFB_IL6_timeseries) %>% list()
 #' ligands = extract_ligands_from_settings(setting)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' output = lapply(setting,evaluate_multi_ligand_target_prediction,ligand_target_matrix,ligands_position = "cols",algorithm = "glm")
 #' output = lapply(setting,evaluate_multi_ligand_target_prediction,make_discrete_ligand_target_matrix(ligand_target_matrix),ligands_position = "cols",algorithm = "glm" )
 #' }
@@ -306,7 +306,7 @@ evaluate_multi_ligand_target_prediction = function(setting,ligand_target_matrix,
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' setting = lapply(expression_settings_validation[1],convert_expression_settings_evaluation)
 #' ligands = extract_ligands_from_settings(setting)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' perf1 = lapply(setting,evaluate_target_prediction_interprete,ligand_target_matrix)
 #' setting = lapply(expression_settings_validation[1],convert_expression_settings_evaluation_regression)
 #' perf2 = lapply(setting,evaluate_target_prediction_interprete,ligand_target_matrix)
@@ -466,7 +466,7 @@ convert_expression_settings_evaluation_regression = function(setting) {
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' settings = lapply(expression_settings_validation[1:2],convert_expression_settings_evaluation_regression)
 #' ligands = extract_ligands_from_settings(settings)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' perf1 = lapply(settings,evaluate_target_prediction_regression,ligand_target_matrix)
 #' }
 #' @export
@@ -546,7 +546,7 @@ evaluate_target_prediction_regression = function(setting,ligand_target_matrix, l
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' setting = convert_expression_settings_evaluation_regression(expression_settings_validation$TGFB_IL6_timeseries) %>% list()
 #' ligands = extract_ligands_from_settings(setting)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' output = lapply(setting,evaluate_multi_ligand_target_prediction_regression,ligand_target_matrix,ligands_position = "cols",algorithm = "lm" )
 #' }
 #' @export
@@ -635,7 +635,7 @@ evaluate_multi_ligand_target_prediction_regression = function(setting, ligand_ta
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
 #' ligands = extract_ligands_from_settings(settings)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' perf1 = lapply(settings,evaluate_target_prediction,ligand_target_matrix)
 #' performances_target_prediction_averaged = ligands %>% lapply(wrapper_average_performances, perf1,"median") %>% bind_rows() %>% drop_na()
 #' }

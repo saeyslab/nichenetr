@@ -73,7 +73,7 @@ get_active_signaling_network = function(expression_receiver, sig_network, expres
   if(!is.numeric(expression_receiver) | is.null(names(expression_receiver)))
     stop("expression_receiver should be a named numeric vector indicating the expression value for every gene")
   if (!is.data.frame(sig_network))
-    stop("lr_network must be a data frame or tibble object")
+    stop("sig_network must be a data frame or tibble object")
   if(!is.numeric(expression_cutoff_receiver) | length(expression_cutoff_receiver) != 1 )
     stop("expression_cutoff_receiver should be a single number")
 
@@ -112,7 +112,7 @@ get_active_regulatory_network = function(expression_receiver, gr_network, expres
   if(!is.numeric(expression_receiver) | is.null(names(expression_receiver)))
     stop("expression_receiver should be a named numeric vector indicating the expression value for every gene")
   if (!is.data.frame(gr_network))
-    stop("lr_network must be a data frame or tibble object")
+    stop("gr_network must be a data frame or tibble object")
   if(!is.numeric(expression_cutoff_receiver) | length(expression_cutoff_receiver) != 1 )
     stop("expression_cutoff_receiver should be a single number")
 
@@ -142,7 +142,7 @@ get_active_regulatory_network = function(expression_receiver, gr_network, expres
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' setting = lapply(expression_settings_validation[1:2],convert_expression_settings_evaluation)
 #' ligands = extract_ligands_from_settings(setting)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' active_lt = get_active_ligand_target_matrix(setting[[1]] %>% .$response, ligand_target_matrix)
 #' }
 #' @export
@@ -189,7 +189,7 @@ get_active_ligand_target_matrix = function(response,ligand_target_matrix, ligand
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 #' setting = lapply(expression_settings_validation[1:2],convert_expression_settings_evaluation)
 #' ligands = extract_ligands_from_settings(setting)
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 #' ligand_target_matrix_discrete = make_discrete_ligand_target_matrix(ligand_target_matrix)
 #' active_lt_df = get_active_ligand_target_df(setting[[1]] %>% .$response, ligand_target_matrix_discrete)
 #' }

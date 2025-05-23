@@ -1,47 +1,4 @@
-## description of data
 
-
-#' Ligand-receptor network
-#'
-#' A data.frame/tibble describing ligand-receptor interactions and the data source describing this interaction.
-#'
-#' @format A data frame/tibble
-#' \describe{
-#'   \item{from}{the ligand}
-#'   \item{to}{receptor of the ligand}
-#'   \item{source}{name of data source describing the interaction}
-#'   \item{database}{name of the more comprehensive database the data source is part of}
-#'   }
-#'
-"lr_network"
-
-#' Signaling network
-#'
-#' A data.frame/tibble describing gene-gene interactions that are involved in signaling transduction (e.g. PPI, kinase-target,...)
-#'
-#' @format A data frame/tibble
-#' \describe{
-#'   \item{from}{source gene}
-#'   \item{to}{target gene}
-#'   \item{source}{name of data source describing the interaction}
-#'   \item{database}{name of the more comprehensive database the data source is part of}
-#'   }
-#'
-"sig_network"
-
-#' Gene regulatory network
-#'
-#' A data.frame/tibble describing gene regulatory interactions such as TF-target interactions
-#'
-#' @format A data frame/tibble
-#' \describe{
-#'   \item{from}{regulatory gene}
-#'   \item{to}{target gene}
-#'   \item{source}{name of data source describing the interaction}
-#'   \item{database}{name of the more comprehensive database the data source is part of}
-#'   }
-#'
-"gr_network"
 #' Data source weights
 #'
 #' A data.frame/tibble describing weight associated to each data source. These weights will be used for weighted aggregagion of source networks

@@ -1,20 +1,7 @@
 context("Prioritization scheme")
 test_that("Wrapper function for seurat", {
-  options(timeout = 3600)
 
-  lr_network = readRDS(url("https://zenodo.org/record/7074291/files/lr_network_mouse_21122021.rds"))
-  lr_network = lr_network %>% distinct(from, to)
-
-  seurat_obj_test = readRDS(url("https://zenodo.org/record/3531889/files/seuratObj_test.rds"))
-  seurat_obj_test = Seurat::UpdateSeuratObject(seurat_obj_test)
-
-  if (as.numeric(substr(packageVersion("Seurat"), 1, 1)) < 5){
-    seurat_obj_test = alias_to_symbol_seurat(seurat_obj_test, "mouse")
-  } else if (grepl("^5", packageVersion("Seurat")) & grepl("^5", seurat_obj_test@version)){
-    expect_warning(alias_to_symbol_seurat(seurat_obj_test, "mouse"))
-  }
-
-  lr_network_filtered <- lr_network %>% filter(from %in% rownames(seurat_obj_test), to %in% rownames(seurat_obj_test))
+  lr_network_filtered <- lr_network_mouse %>% filter(from %in% rownames(seurat_obj_test), to %in% rownames(seurat_obj_test))
 
   generate_info_tables_args <- list(
     seuratObj = seurat_obj_test,

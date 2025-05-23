@@ -5,9 +5,9 @@ test_that("active ligand-receptor, signaling and gene regulatory networks can be
   names(expression_vector_sender) = sample(x = geneinfo_human$symbol,size = 10000,replace = FALSE)
   names(expression_vector_receiver) = sample(x = geneinfo_human$symbol,size = 10000,replace = FALSE)
 
-  sender_receiver_lr_network = get_active_ligand_receptor_network(expression_vector_sender,expression_vector_receiver,lr_network,expression_cutoff_sender = 0, expression_cutoff_receiver = 4)
-  receiver_sig_network = get_active_signaling_network(expression_vector_receiver,sig_network,expression_cutoff_receiver = 4)
-  receiver_gr_network = get_active_regulatory_network(expression_vector_receiver,gr_network,expression_cutoff_receiver = 4)
+  sender_receiver_lr_network = get_active_ligand_receptor_network(expression_vector_sender,expression_vector_receiver,lr_network_human,expression_cutoff_sender = 0, expression_cutoff_receiver = 4)
+  receiver_sig_network = get_active_signaling_network(expression_vector_receiver,signaling_network_human,expression_cutoff_receiver = 4)
+  receiver_gr_network = get_active_regulatory_network(expression_vector_receiver,gr_network_human,expression_cutoff_receiver = 4)
 
   weighted_networks_receiver = construct_weighted_networks(sender_receiver_lr_network, receiver_sig_network, receiver_gr_network, source_weights_df)
 
@@ -24,10 +24,10 @@ test_that("active ligand-receptor, signaling and gene regulatory networks can be
 })
 test_that("active ligand-target matrix and network can be constructed", {
 
-  weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
+  weighted_networks = construct_weighted_networks(lr_network_human, signaling_network_human, gr_network_human, source_weights_df)
   setting = lapply(expression_settings_validation[1:3],convert_expression_settings_evaluation)
   ligands = extract_ligands_from_settings(setting)
-  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands,ligands_as_cols = TRUE)
+  ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network_human, ligands,ligands_as_cols = TRUE)
 
   # # temporary debugging solution:
   # ligands = colnames(ligand_target_matrix)

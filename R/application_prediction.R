@@ -73,7 +73,7 @@ convert_cluster_to_settings = function(i, cluster_vector, setting_name, setting_
 #' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2","IL4")
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 #' potential_ligands = c("TNF","BMP2","IL4")
 #' geneset = c("SOCS2","SOCS3", "IRF1")
 #' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
@@ -116,7 +116,7 @@ predict_ligand_activities = function(geneset,background_expressed_genes,ligand_t
 #' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2","IL4")
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 #' potential_ligand = "TNF"
 #' geneset = c("SOCS2","SOCS3", "IRF1")
 #' active_ligand_target_links_df = get_weighted_ligand_target_links(ligand = potential_ligand, geneset = geneset, ligand_target_matrix = ligand_target_matrix, n = 250)
@@ -153,7 +153,7 @@ get_weighted_ligand_target_links = function(ligand, geneset,ligand_target_matrix
 #' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2","IL4")
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 #' geneset = c("SOCS2","SOCS3", "IRF1")
 #' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
 #' active_ligand_target_links_df = potential_ligands %>% lapply(get_weighted_ligand_target_links, geneset = geneset, ligand_target_matrix = ligand_target_matrix, n = 250) %>% bind_rows()
@@ -323,7 +323,7 @@ prepare_ligand_receptor_visualization = function(lr_network_top_df_long, best_up
 #' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2","IL4")
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 #' potential_ligands = c("TNF","BMP2","IL4")
 #' geneset = c("SOCS2","SOCS3", "IRF1")
 #' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
@@ -360,7 +360,7 @@ assess_rf_class_probabilities = function(round,folds,geneset,background_expresse
 #' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2","IL4")
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 #' potential_ligands = c("TNF","BMP2","IL4")
 #' geneset = c("SOCS2","SOCS3", "IRF1")
 #' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
@@ -391,7 +391,7 @@ classification_evaluation_continuous_pred_wrapper = function(response_prediction
 #' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2","IL4")
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 #' potential_ligands = c("TNF","BMP2","IL4")
 #' geneset = c("SOCS2","SOCS3", "IRF1")
 #' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
@@ -427,7 +427,7 @@ get_top_predicted_genes = function(round,gene_prediction_list, quantile_cutoff =
 #' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2","IL4")
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 #' potential_ligands = c("TNF","BMP2","IL4")
 #' geneset = c("SOCS2","SOCS3", "IRF1")
 #' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
@@ -459,7 +459,7 @@ calculate_fraction_top_predicted = function(affected_gene_predictions, quantile_
 #' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2","IL4")
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 #' potential_ligands = c("TNF","BMP2","IL4")
 #' geneset = c("SOCS2","SOCS3", "IRF1")
 #' background_expressed_genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
@@ -648,7 +648,7 @@ scale_quantile <- function(x, outlier_cutoff = .05) {
 #' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2","IL4")
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 #' potential_ligands = c("TNF","BMP2","IL4")
 #' genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
 #' cell_ids = c("cell1","cell2")
@@ -692,7 +692,7 @@ convert_single_cell_expression_to_settings = function(cell_id, expression_matrix
 #' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2","IL4")
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 #' potential_ligands = c("TNF","BMP2","IL4")
 #' genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
 #' cell_ids = c("cell1","cell2")
@@ -733,7 +733,7 @@ predict_single_cell_ligand_activities = function(cell_ids, expression_scaled,lig
 #' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2","IL4")
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 #' potential_ligands = c("TNF","BMP2","IL4")
 #' genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
 #' cell_ids = c("cell1","cell2")
@@ -782,7 +782,7 @@ normalize_single_cell_ligand_activities = function(ligand_activities){
 #' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2","IL4")
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 #' potential_ligands = c("TNF","BMP2","IL4")
 #' genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
 #' cell_ids = c("cell1","cell2")
@@ -822,7 +822,7 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
 #' \dontrun{
 #' weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 #' ligands = list("TNF","BMP2","IL4")
-#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+#' ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 #' potential_ligands = c("TNF","BMP2","IL4")
 #' genes = c("SOCS2","SOCS3","IRF1","ICAM1","ID1","ID2","ID3")
 #' cell_ids = c("cell1","cell2")

@@ -107,7 +107,8 @@ integrated networks
 ``` r
 # in this example we will calculate target gene regulatory potential scores for TNF and the ligand combination TNF+IL6
 ligands = list("TNF",c("TNF","IL6"))
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, lr_network = lr_network,
+                                                      ligands = ligands, algorithm = "PPR",
                                                       damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
                                                       ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
@@ -147,7 +148,8 @@ weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, lr_network = lr_network,
+                                                      ligands = ligands, algorithm = "PPR",
                                                       damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
                                                       ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
@@ -200,7 +202,8 @@ weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, lr_network = new_lr_network,
+                                                      ligands = ligands, algorithm = "PPR",
                                                       damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
                                                       ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
@@ -239,7 +242,8 @@ weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, lr_network = new_lr_network,
+                                                      ligands = ligands, algorithm = "PPR",
                                                       damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
                                                       ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
@@ -280,7 +284,7 @@ input_file = "https://amp.pharm.mssm.edu/static/hdfs/harmonizome/data/hubs/gene_
 ppi_network = read_tsv(input_file, col_names = TRUE)
 
 ppi_network = ppi_network %>% transmute(from=target,to=source) %>% 
-    filter(from %in% geneinfo_human$symbol & to %in% geneinfo_human$symbol) # keep only interactions between genes with oficial gene symbols: optional step
+    filter(from %in% geneinfo_human$symbol & to %in% geneinfo_human$symbol) # keep only interactions between genes with official gene symbols: optional step
 
 # give your data source a name
 ppi_network = ppi_network %>% mutate(source = "harmonizome_hub_ppi", database = "harmonizome") 
@@ -325,7 +329,8 @@ weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, lr_network = lr_network,
+                                                      ligands = ligands, algorithm = "PPR",
                                                       damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
                                                       ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
@@ -364,7 +369,8 @@ weighted_networks = apply_hub_corrections(weighted_networks = weighted_networks,
 # Infer ligand-target regulatory potential scores based on the weighted integrated networks
 ligands = list("TNF")
 
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks, ligands = ligands, algorithm = "PPR",
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks,
+                                                      lr_network = lr_network, ligands = ligands, algorithm = "PPR",
                                                       damping_factor = hyperparameter_list %>% filter(parameter == "damping_factor") %>% pull(avg_weight),
                                                       ltf_cutoff = hyperparameter_list %>% filter(parameter == "ltf_cutoff") %>% pull(avg_weight))
 ```
