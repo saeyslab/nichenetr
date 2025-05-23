@@ -538,7 +538,7 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
   cor_s_pval = suppressWarnings(cor.test(as.numeric(prediction), as.numeric(response), method =  "s")) %>% .$p.value
 
   # Set minimum p-value threshold
-  min_pval <- 1e-300
+  min_pval <- .Machine$double.xmin
 
   # Adjust p-values with a warning message if they are too low
   if (cor_p_pval < min_pval) {
@@ -554,7 +554,7 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
   # Mean rank GST calculated if limma is installed
   mean_rank_GST = ifelse(rlang::is_installed("limma"), limma::wilcoxGST(response, prediction), NA)
   # Set minimum p-value threshold
-  min_mean_rank_GST <- 1e-300
+  min_mean_rank_GST <- .Machine$double.xmin
   # Adjust p-values with a warning message if they are too low
   if (!is.na(mean_rank_GST)) {
     if (mean_rank_GST < min_mean_rank_GST) {
@@ -632,7 +632,7 @@ classification_evaluation_categorical_pred = function(predictions, response) {
     fisher = list(p.value = NA, estimate = NA)
   } else {
     fisher = fisher.test(as.factor(response), predictions)
-    min_pval <- 1e-300
+    min_pval <- .Machine$double.xmin
     max_odds_ratio <- 1e6
 
     # Adjust p-value if below the threshold
@@ -1009,7 +1009,7 @@ regression_evaluation = function(prediction,response){
   cor_s_pval = suppressWarnings(cor.test(as.numeric(prediction), as.numeric(response), method =  "s")) %>% .$p.value
 
   # Set minimum p-value threshold
-  min_pval <- 1e-300
+  min_pval <- .Machine$double.xmin
 
   # Adjust p-values with a warning message if they are too low
   if (cor_p_pval < min_pval) {
