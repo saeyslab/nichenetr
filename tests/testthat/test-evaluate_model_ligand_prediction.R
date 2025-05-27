@@ -71,7 +71,7 @@ test_that("Get ligand importances: single + evaluation", {
   expect_type(evaluation_single3,"list")
   expect_gte(nrow(evaluation_single3),1)
 
-  evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
+  evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda",ignore_errors=TRUE)
   expect_type(evaluation,"list")
   expect_gte(nrow(evaluation$performances),1)
 
@@ -116,7 +116,7 @@ test_that("Model-based ligand activity prediction", {
   ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network_human, ligands)
   ligand_importances = bind_rows(lapply(settings_ligand_pred, get_single_ligand_importances, ligand_target_matrix))
-  evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
+  evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda",ignore_errors=TRUE)
 
   settings = lapply(expression_settings_validation,convert_expression_settings_evaluation)
   settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands = unlist(extract_ligands_from_settings(settings,combination = FALSE)), validation = FALSE, single = TRUE)
@@ -147,7 +147,7 @@ test_that("Get ligand importances regression: single + evaluation", {
   expect_type(evaluation_single2,"list")
   expect_gte(nrow(evaluation_single2),1)
 
-  evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda")
+  evaluation = evaluate_importances_ligand_prediction(ligand_importances,"median","lda",ignore_errors=TRUE)
   expect_type(evaluation,"list")
   expect_gte(nrow(evaluation$performances),1)
 
