@@ -901,6 +901,7 @@ construct_model = function(parameters_setting, lr_network, sig_network, gr_netwo
 
   # extract ligands and construct ligand-target matrix
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks,
+                                                        lr_network = lr_network,
                                                         ligands = ligands,
                                                         ltf_cutoff = ltf_cutoff,
                                                         algorithm = algorithm,
@@ -1388,6 +1389,7 @@ construct_random_model = function(parameters_setting, lr_network, sig_network, g
   weighted_networks$gr = weighted_networks$gr %>% randomize_network(output_weighted = TRUE)
   # extract ligands and construct ligand-target matrix
   ligand_target_matrix = construct_ligand_target_matrix(weighted_networks = weighted_networks,
+                                                        lr_network = lr_network,
                                                         ligands = ligands,
                                                         ltf_cutoff = ltf_cutoff,
                                                         algorithm = algorithm,
