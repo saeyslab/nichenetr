@@ -541,14 +541,22 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
   min_pval <- .Machine$double.xmin
 
   # Adjust p-values with a warning message if they are too low
-  if (cor_p_pval < min_pval) {
-    message("Warning: Pearson p-value was below ", min_pval, " and has been capped at this value to avoid Inf values when taking the log10.")
-    cor_p_pval = min_pval
+  # Pearson p-value
+  if (!is.na(cor_p_pval)) {
+    if (cor_p_pval < min_pval) {
+      message("Warning: Pearson p-value was below ", min_pval,
+              " and has been capped at this value to avoid Inf values when taking the log10.")
+      cor_p_pval <- min_pval
+    }
   }
 
-  if (cor_s_pval < min_pval) {
-    message("Warning: Spearman p-value was below ", min_pval, " and has been capped at this value to avoid Inf values when taking the log10.")
-    cor_s_pval = min_pval
+  # Spearman p-value
+  if (!is.na(cor_s_pval)) {
+    if (cor_s_pval < min_pval) {
+      message("Warning: Spearman p-value was below ", min_pval,
+              " and has been capped at this value to avoid Inf values when taking the log10.")
+      cor_s_pval <- min_pval
+    }
   }
 
   # Mean rank GST calculated if limma is installed
@@ -636,18 +644,21 @@ classification_evaluation_categorical_pred = function(predictions, response) {
     max_odds_ratio <- 1e6
 
     # Adjust p-value if below the threshold
-    if (fisher$p.value < min_pval) {
-      message("Warning: Fisher test p-value was below ", min_pval, " and has been capped at this value.")
-      fisher$p.value <- min_pval
+    if (!is.na(fisher$p.value)) {
+      if (fisher$p.value < min_pval) {
+        message("Warning: Fisher test p-value was below ", min_pval, " and has been capped at this value.")
+        fisher$p.value <- min_pval
+      }
     }
 
     # Adjust odds ratio if above the threshold (Inf)
-    if (is.infinite(fisher$estimate) || fisher$estimate > max_odds_ratio) {
+    if (!is.na(fisher$estimate)) {
+      if (is.infinite(fisher$estimate) || fisher$estimate > max_odds_ratio) {
       message("Warning: Fisher test odds ratio was extremely high or infinite and has been capped at ", max_odds_ratio, ".")
       fisher$estimate <- min(fisher$estimate, max_odds_ratio)
+      }
     }
   }
-
   mcc_S = (tp + fn)/num_total
   mcc_P = (tp + fp)/num_total
 
@@ -1012,16 +1023,20 @@ regression_evaluation = function(prediction,response){
   min_pval <- .Machine$double.xmin
 
   # Adjust p-values with a warning message if they are too low
-  if (cor_p_pval < min_pval) {
-    message("Warning: Pearson p-value was below ", min_pval, " and has been capped at this value to avoid Inf values when taking the log10.")
-    cor_p_pval = min_pval
+  if (!is.na(cor_p_pval)) {
+    if (cor_p_pval < min_pval) {
+      message("Warning: Pearson p-value was below ", min_pval,
+              " and has been capped at this value to avoid Inf values when taking the log10.")
+      cor_p_pval <- min_pval
+    }
   }
-
-  if (cor_s_pval < min_pval) {
-    message("Warning: Spearman p-value was below ", min_pval, " and has been capped at this value to avoid Inf values when taking the log10.")
-    cor_s_pval = min_pval
+  if (!is.na(cor_s_pval)) {
+    if (cor_s_pval < min_pval) {
+      message("Warning: Spearman p-value was below ", min_pval,
+              " and has been capped at this value to avoid Inf values when taking the log10.")
+      cor_s_pval <- min_pval
+    }
   }
-
 
   tbl_perf = tibble(r_squared = model_summary$r.squared,
                     adj_r_squared = model_summary$adj.r.squared,
