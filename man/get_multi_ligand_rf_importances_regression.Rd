@@ -34,7 +34,7 @@ settings_ligand_pred = convert_settings_ligand_prediction(settings, all_ligands 
 
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 ligands = extract_ligands_from_settings(settings_ligand_pred,combination = FALSE)
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 ligand_importances_rf = dplyr::bind_rows(lapply(settings_ligand_pred, get_multi_ligand_rf_importances_regression,ligand_target_matrix, ntrees = 100, mtry = 2))
 print(head(ligand_importances_rf))
 }

@@ -25,7 +25,7 @@ A data.frame with following variables: setting, ligand nd for probabilistic pred
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 setting = lapply(expression_settings_validation[1],convert_expression_settings_evaluation)
 ligands = extract_ligands_from_settings(setting)
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 perf1 = lapply(setting,evaluate_target_prediction,ligand_target_matrix)
 print(head(perf1))
 perf2 = lapply(setting,evaluate_target_prediction,make_discrete_ligand_target_matrix(ligand_target_matrix))

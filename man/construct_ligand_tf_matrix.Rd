@@ -4,10 +4,12 @@
 \alias{construct_ligand_tf_matrix}
 \title{Construct a ligand-tf signaling probability matrix for ligands of interest.}
 \usage{
-construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, ligands_as_cols = FALSE)
+construct_ligand_tf_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5, ligands_as_cols = FALSE)
 }
 \arguments{
 \item{weighted_networks}{A list of two elements: lr_sig: a data frame/ tibble containg weighted ligand-receptor and signaling interactions (from, to, weight); and gr: a data frame/tibble containng weighted gene regulatory interactions (from, to, weight)}
+
+\item{lr_network}{A data frame / tibble containing ligand-receptor interactions (required columns: from, to, source)}
 
 \item{ligands}{A list of all ligands and ligand-combinations of which target gene probability scores should be calculated. Example format: list("TNF","BMP2",c("IL4","IL13")).}
 
@@ -30,6 +32,6 @@ A matrix containing ligand-target probability scores.
 ## Generate the ligand-target matrix from loaded weighted_networks
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 ligands = list("TNF","BMP2",c("IL4","IL13"))
-ligand_tf = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
+ligand_tf = construct_ligand_tf_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
 }
 }

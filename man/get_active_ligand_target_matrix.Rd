@@ -25,7 +25,7 @@ library(dplyr)
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 setting = lapply(expression_settings_validation[1:2],convert_expression_settings_evaluation)
 ligands = extract_ligands_from_settings(setting)
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 active_lt = get_active_ligand_target_matrix(setting[[1]] \%>\% .$response, ligand_target_matrix)
 }
 }

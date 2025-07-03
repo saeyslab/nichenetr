@@ -41,7 +41,7 @@ library(dplyr)
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 setting = convert_expression_settings_evaluation_regression(expression_settings_validation$TGFB_IL6_timeseries) \%>\% list()
 ligands = extract_ligands_from_settings(setting)
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 output = lapply(setting,evaluate_multi_ligand_target_prediction_regression,ligand_target_matrix,ligands_position = "cols",algorithm = "lm" )
 }
 }

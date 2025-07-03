@@ -25,7 +25,7 @@ A tibble with columns from, to, source and layer
 \dontrun{
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 ligands = list("TNF","BMP2",c("IL4","IL13"))
-ligand_tf_matrix = construct_ligand_tf_matrix(weighted_networks, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
+ligand_tf_matrix = construct_ligand_tf_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0.99, algorithm = "PPR", damping_factor = 0.5,ligands_as_cols = TRUE)
 all_ligands = c("BMP2")
 all_targets = c("HEY1")
 top_n_regulators = 2

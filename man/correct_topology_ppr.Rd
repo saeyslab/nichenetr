@@ -24,7 +24,7 @@ A matrix containing ligand-target probability scores, after subtracting target s
 ## Generate the ligand-target matrix from loaded weighted_networks
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 ligands = list("TNF","BMP2",c("IL4","IL13"))
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 ligand_target_matrix = correct_topology_ppr(ligand_target_matrix,weighted_networks,ligands_position = "cols")
 }
 }

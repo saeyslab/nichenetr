@@ -25,7 +25,7 @@ A tibble with columns ligand, target and weight (i.e. regulatory potential score
 \dontrun{
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network,source_weights_df)
 ligands = list("TNF","BMP2","IL4")
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands, ltf_cutoff = 0, algorithm = "PPR", damping_factor = 0.5, secondary_targets = FALSE)
 potential_ligand = "TNF"
 geneset = c("SOCS2","SOCS3", "IRF1")
 active_ligand_target_links_df = get_weighted_ligand_target_links(ligand = potential_ligand, geneset = geneset, ligand_target_matrix = ligand_target_matrix, n = 250)

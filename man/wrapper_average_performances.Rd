@@ -24,7 +24,7 @@ A data frame containing classification evaluation measures for the ligand activi
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 settings = lapply(expression_settings_validation[1:5],convert_expression_settings_evaluation)
 ligands = extract_ligands_from_settings(settings)
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 perf1 = lapply(settings,evaluate_target_prediction,ligand_target_matrix)
 performances_target_prediction_averaged = ligands \%>\% lapply(wrapper_average_performances, perf1,"median") \%>\% bind_rows() \%>\% drop_na()
 }

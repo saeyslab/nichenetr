@@ -24,7 +24,7 @@ A data.frame with following variables: setting, ligand and as regression model f
 weighted_networks = construct_weighted_networks(lr_network, sig_network, gr_network, source_weights_df)
 settings = lapply(expression_settings_validation[1:2],convert_expression_settings_evaluation_regression)
 ligands = extract_ligands_from_settings(settings)
-ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, ligands)
+ligand_target_matrix = construct_ligand_target_matrix(weighted_networks, lr_network, ligands)
 perf1 = lapply(settings,evaluate_target_prediction_regression,ligand_target_matrix)
 }
 }
