@@ -129,10 +129,8 @@ get_weighted_ligand_target_links = function(ligand, geneset,ligand_target_matrix
   targets = intersect(ligand_target_matrix[,ligand] %>% .[. >= top_n_score ] %>% names(),geneset)
   if (length(targets) == 0){
     ligand_target_weighted_df = tibble(ligand = ligand, target = NA, weight = NA)
-  } else if (length(targets) == 1) {
-    ligand_target_weighted_df = tibble(ligand = ligand, target = targets, weight = ligand_target_matrix[targets,ligand])
   } else {
-    ligand_target_weighted_df = tibble(ligand = ligand, target = names(ligand_target_matrix[targets,ligand])) %>% inner_join(tibble(target = names(ligand_target_matrix[targets,ligand]), weight = ligand_target_matrix[targets,ligand]), by = "target")
+    ligand_target_weighted_df = tibble(ligand = ligand, target = targets, weight = ligand_target_matrix[targets,ligand])
   }
   return(ligand_target_weighted_df)
 }
@@ -2189,9 +2187,9 @@ get_lfc_celltype = function(celltype_oi, seurat_obj, condition_colname, conditio
   SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_sender)
 
   if(SeuratV4 == TRUE){
-    DE_table_sender = DE_table_sender %>% as_tibble() %>% select(-p_val) %>% select(gene, avg_log2FC)
+    DE_table_sender = DE_table_sender %>% as_tibble() %>% select(gene, avg_log2FC)
   } else {
-    DE_table_sender = DE_table_sender %>% as_tibble() %>% select(-p_val) %>% select(gene, avg_logFC)
+    DE_table_sender = DE_table_sender %>% as_tibble() %>% select(gene, avg_logFC)
   }
 
   colnames(DE_table_sender) = c("gene",celltype_oi)
