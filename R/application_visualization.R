@@ -614,6 +614,7 @@ make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings =
                               receptor_fill_colors = c("#FEE0D2", "#A50F15"),
                               unranked_ligand_fill_colors = c(alpha("#FFFFFF", alpha=0.2), alpha("#252525", alpha=0.2)),
                               unranked_receptor_fill_colors = c( alpha("#FFFFFF", alpha=0.2), alpha("#252525", alpha=0.2)),
+                              label_size = 3.88, # old ggplot2 label default aesthetic size
                               ...){
   size_ext <-  c("ligand", "receptor"); color_ext <- c("ligand", "receptor")
   if (size == "pct_expressed") size_ext <- c("sender", "receiver")
@@ -724,9 +725,9 @@ make_mushroom_plot <- function(prioritization_table, top_n = 30, show_rankings =
 
   # Check if legend.title is in the extra arguments
     # Multiply by ratio of 5/14: see https://stackoverflow.com/questions/25061822/ggplot-geom-text-font-size-control
-  scale_legend_title_size <- ifelse("legend.title" %in% names(theme_args), theme_args$legend.title$size*(5/14), GeomLabel$default_aes$size)
+  scale_legend_title_size <- ifelse("legend.title" %in% names(theme_args), theme_args$legend.title$size*(5/14), label_size)
   # Check if legend.text is in the extra arguments
-  scale_legend_text_size <- ifelse("legend.text" %in% names(theme_args), theme_args$legend.text$size*(5/14), GeomLabel$default_aes$size)
+  scale_legend_text_size <- ifelse("legend.text" %in% names(theme_args), theme_args$legend.text$size*(5/14), label_size)
 
   # Check if legend.justification is in the extra arguments
   if (!"legend.justification" %in% names(theme_args)) {
@@ -1212,6 +1213,9 @@ make_circos_plot <- function(vis_circos_obj, transparency = FALSE, args.circos.t
 #' @param focused_color Color representing expressed ligands from the sender-focused approach (default: "black")
 #' @param tied_color Color to shade ligands that are tied in the same rank (default: "gray75")
 #' @param inset_scale Numeric value indicating the size of the points and text in the inset (default: 1)
+#' @param label_size Numeric value indicating size of the data labels, before scaling (default: 3.88, same as older versions, but now explicitly settable)
+#' @param point_size Numeric value indicating size of the data points, before scaling (default: 1.5, same as older versions, but now explicitly settable)
+#' @param line_width Numeric value indicating size of the line width, before scaling (default: 0.5, same as older versions, but now explicitly settable)
 #' @return A ggplot object showing the distribution of sender-focused ligands, as well as a line plot inset comparing the rankings between the two approaches
 #' @examples \dontrun{
 #' # Default
@@ -1221,13 +1225,13 @@ make_circos_plot <- function(vis_circos_obj, transparency = FALSE, args.circos.t
 
 make_line_plot <- function(ligand_activities, potential_ligands, ranking_range = c(1, 20),
                            agnostic_color = "tomato", focused_color = "black", tied_color = "gray75",
-                           inset_scale = 1) {
+                           inset_scale = 1, label_size = 3.88, point_size = 1.5, line_width = 0.5) {
 
-  inset_text_size <- ggplot2::GeomLabel$default_aes$size*inset_scale
-  axis_text_size <- ggplot2::GeomLabel$default_aes$size*0.75*inset_scale
-  axis_title_size <- ggplot2::GeomLabel$default_aes$size*inset_scale
-  point_size <- ggplot2::GeomPoint$default_aes$size*inset_scale
-  segment_linewidth <- ggplot2::GeomSegment$default_aes$linewidth*inset_scale
+  inset_text_size <- label_size*inset_scale
+  axis_text_size <- label_size*0.75*inset_scale
+  axis_title_size <- label_size*inset_scale
+  point_size <- point_size*inset_scale
+  segment_linewidth <- line_width*inset_scale
   nudge_x <- 0.05/inset_scale
 
   # Check if all potential ligands are in ligand_activities
