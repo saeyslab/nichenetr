@@ -1032,7 +1032,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   # step2 nichenet analysis: define background and gene list of interest: here differential expression between two conditions of cell type of interest
   if (verbose == TRUE){print("Perform DE analysis in receiver cell")}
 
-  seurat_obj_receiver= subset(seurat_obj, idents = receiver)
+  seurat_obj_receiver[[assay_oi]]= subset(seurat_obj[[assay_oi]], idents = receiver)
   seurat_obj_receiver = SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[[condition_colname, drop=TRUE]])
   DE_table_receiver = FindMarkers(object = seurat_obj_receiver, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct, assay = assay_oi) %>% rownames_to_column("gene")
 
@@ -1190,7 +1190,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
 
   if (are_there_senders == TRUE){
     if (verbose == TRUE){print("Perform DE analysis in sender cells")}
-    seurat_obj = subset(seurat_obj, features = potential_ligands)
+    seurat_obj[[assay_oi]] = subset(seurat_obj[[assay_oi]], features = potential_ligands)
 
     DE_table_all = Idents(seurat_obj) %>% levels() %>% intersect(sender_celltypes) %>% lapply(get_lfc_celltype, seurat_obj = seurat_obj, condition_colname = condition_colname, condition_oi = condition_oi, condition_reference = condition_reference, expression_pct = expression_pct, celltype_col = NULL) %>% reduce(full_join, by = "gene") # use this if cell type labels are the identities of your Seurat object -- if not: indicate the celltype_col properly
     DE_table_all[is.na(DE_table_all)] = 0
@@ -1215,7 +1215,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
     order_ligands_adapted = real_makenames_conversion[order_ligands]
     names(order_ligands_adapted) = NULL
 
-    seurat_obj_subset = seurat_obj %>% subset(idents = sender_celltypes)
+    seurat_obj_subset[[assay_oi]] = seurat_obj[[assay_oi]] %>% subset(idents = sender_celltypes)
     seurat_obj_subset = SetIdent(seurat_obj_subset, value = seurat_obj_subset[[condition_colname, drop=TRUE]]) %>% subset(idents = condition_oi) ## only shows cells of the condition of interest
     rotated_dotplot = DotPlot(seurat_obj %>% subset(cells = Cells(seurat_obj_subset)), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
     rm(seurat_obj_subset)
@@ -1376,7 +1376,7 @@ get_expressed_genes.Seurat = function(celltype_oi, seurat_obj, pct = 0.1, assay_
   #cells_oi_in_matrix <- intersect(colnames(seurat_obj[[assay_oi]]@data), cells_oi)
   #exprs_mat = seurat_obj[[assay_oi]]@data %>% .[, cells_oi_in_matrix]
 
-  exprs_mat <- subset(seurat_obj, idents = celltype_oi) %>%
+  exprs_mat <- subset(seurat_obj[[assay_oi]], idents = celltype_oi) %>%
     GetAssayData(assay = assay_oi, ...)
 
   if (length(cells_oi) != ncol(exprs_mat)){
@@ -1739,7 +1739,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
     real_makenames_conversion = lr_network$from %>% unique() %>% magrittr::set_names(lr_network$from %>% unique() %>% make.names())
     order_ligands_adapted = real_makenames_conversion[order_ligands]
     names(order_ligands_adapted) = NULL
-    rotated_dotplot = DotPlot(seurat_obj %>% subset(idents = sender_celltypes), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
+    rotated_dotplot = DotPlot(seurat_obj[[assay_oi]] %>% subset(idents = sender_celltypes), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
 
   } else {
     rotated_dotplot = NULL
@@ -1948,13 +1948,13 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   # step2 nichenet analysis: define background and gene list of interest: here differential expression between two conditions of cell type of interest
   if (verbose == TRUE){print("Perform DE analysis between two receiver cell clusters")}
 
-  seurat_obj_receiver_affected= subset(seurat_obj, idents = receiver_affected)
+  seurat_obj_receiver_affected= subset(seurat_obj[[assay_oi]], idents = receiver_affected)
   seurat_obj_receiver_affected = SetIdent(seurat_obj_receiver_affected, value = seurat_obj_receiver_affected[[condition_colname, drop=TRUE]])
-  seurat_obj_receiver_affected= subset(seurat_obj_receiver_affected, idents = condition_oi)
+  seurat_obj_receiver_affected= subset(seurat_obj_receiver_affected[[assay_oi]], idents = condition_oi)
 
-  seurat_obj_receiver_reference= subset(seurat_obj, idents = receiver_reference)
+  seurat_obj_receiver_reference= subset(seurat_obj[[assay_oi]], idents = receiver_reference)
   seurat_obj_receiver_reference = SetIdent(seurat_obj_receiver_reference, value = seurat_obj_receiver_reference[[condition_colname, drop=TRUE]])
-  seurat_obj_receiver_reference= subset(seurat_obj_receiver_reference, idents = condition_reference)
+  seurat_obj_receiver_reference= subset(seurat_obj_receiver_reference[[assay_oi]], idents = condition_reference)
 
   seurat_obj_receiver = merge(seurat_obj_receiver_affected, seurat_obj_receiver_reference)
 
@@ -2121,7 +2121,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
     real_makenames_conversion = lr_network$from %>% unique() %>% magrittr::set_names(lr_network$from %>% unique() %>% make.names())
     order_ligands_adapted = real_makenames_conversion[order_ligands]
     names(order_ligands_adapted) = NULL
-    rotated_dotplot = DotPlot(seurat_obj %>% subset(idents = sender_celltypes), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
+    rotated_dotplot = DotPlot(seurat_obj[[assay_oi]] %>% subset(idents = sender_celltypes), features = order_ligands_adapted, cols = "RdYlBu") + coord_flip() + theme(legend.text = element_text(size = 10), legend.title = element_text(size = 12)) # flip of coordinates necessary because we want to show ligands in the rows when combining all plots
 
   } else {
     rotated_dotplot = NULL
@@ -2176,10 +2176,10 @@ get_lfc_celltype = function(celltype_oi, seurat_obj, condition_colname, conditio
   requireNamespace("dplyr")
   if(!is.null(celltype_col)){
     seurat_obj_celltype = SetIdent(seurat_obj, value = seurat_obj[[celltype_col, drop=TRUE]])
-    seuratObj_sender = subset(seurat_obj_celltype, idents = celltype_oi)
+    seuratObj_sender = subset(seurat_obj_celltype[[assay_oi]], idents = celltype_oi)
 
   } else {
-    seuratObj_sender = subset(seurat_obj, idents = celltype_oi)
+    seuratObj_sender = subset(seurat_obj[[assay_oi]], idents = celltype_oi)
 
   }
 
