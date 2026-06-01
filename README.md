@@ -16,7 +16,7 @@ Status](https://codecov.io/gh/saeyslab/nichenetr/branch/master/graph/badge.svg)]
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7074291.svg)](https://doi.org/10.5281/zenodo.7074291)
 <!-- badges: end -->
 
-**nichenetr: the R implementation of the NicheNet method.** The goal of
+**nichenetr: the R implementation of the NicheNet method.** (see [nichenetpy](https://github.com/saeyslab/nichenetpy) for the python implementation) The goal of
 NicheNet is to study intercellular communication from a computational
 perspective. NicheNet uses human or mouse gene expression data of
 interacting cells as input and combines this with a prior model that
