@@ -2,6 +2,12 @@
 .Rhistory
 .RData
 .Ruserdata
+.RDataTmp
+*.RData
+seuratObj.rds
 inst/doc
 vignettes/*.html
 omnipathr-log/
+renv/**
+codebase_review/
+*.lock

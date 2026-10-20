@@ -1,3 +1,5 @@
+^renv$
+^renv\.lock$
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^data-raw$
@@ -6,3 +8,4 @@
 ^README\.Rmd$
 ^README-.*\.png$
 ^\.github$
+^codebase_review$
