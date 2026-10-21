@@ -196,4 +196,27 @@ test_that("Single-cell ligand activity prediction functions work a bit OK", {
 
 })
 
+context("Gene set of interest from a DE table")
+test_that("get_geneset_from_DE_table applies the p-value and log fold change cutoffs in the right direction", {
+  # g1-g7 are significant, g8 is not; g2 and g5 sit exactly on the cutoff of 0.25
+  DE_table = tibble(gene = paste0("g", 1:8),
+                    avg_log2FC = c(1, 0.25, 0.1, -0.1, -0.25, -0.3, -1, -2),
+                    p_val_adj = c(rep(0.01, 7), 0.5))
+
+  expect_equal(get_geneset_from_DE_table(DE_table, "DE", 0.25), c("g1", "g2", "g5", "g6", "g7"))
+  expect_equal(get_geneset_from_DE_table(DE_table, "up", 0.25), c("g1", "g2"))
+  expect_equal(get_geneset_from_DE_table(DE_table, "down", 0.25), c("g5", "g6", "g7"))
+
+  # the sign of lfc_cutoff is ignored
+  expect_equal(get_geneset_from_DE_table(DE_table, "DE", -0.25), c("g1", "g2", "g5", "g6", "g7"))
+  expect_equal(get_geneset_from_DE_table(DE_table, "up", -0.25), c("g1", "g2"))
+  expect_equal(get_geneset_from_DE_table(DE_table, "down", -0.25), c("g5", "g6", "g7"))
+
+  # Seurat < 4 names the fold change column avg_logFC
+  DE_table_old_seurat = DE_table %>% rename(avg_logFC = avg_log2FC)
+  expect_equal(get_geneset_from_DE_table(DE_table_old_seurat, "down", 0.25), c("g5", "g6", "g7"))
+
+  expect_error(get_geneset_from_DE_table(DE_table, "both", 0.25), "geneset should be")
+})
+
 

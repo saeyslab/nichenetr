@@ -862,6 +862,31 @@ single_ligand_activity_score_regression = function(ligand_activities, scores_tbl
   output_df = output %>% bind_rows() %>% mutate(ligand = ligands)
   return(output_df)
 }
+#' @title Get the gene set of interest from a differential expression table
+#'
+#' @description \code{get_geneset_from_DE_table} Select the genes of a \code{Seurat::FindMarkers} table that are significant (adjusted p-value <= 0.05) and pass the log fold change cutoff in the direction given by \code{geneset}. Used by the Seurat wrapper functions to define the gene set of interest in the receiver.
+#'
+#' @param DE_table Data frame as returned by \code{Seurat::FindMarkers}, with the gene names in a column \code{gene}.
+#' @param geneset "DE" (all DE genes), "up" (only genes upregulated in condition 1) or "down" (only genes downregulated in condition 1).
+#' @param lfc_cutoff Minimal absolute log fold change. Its sign is ignored: the direction is set by \code{geneset}.
+#'
+#' @return A character vector of gene names.
+#'
+#' @noRd
+get_geneset_from_DE_table = function(DE_table, geneset, lfc_cutoff){
+  # Seurat >= 4 calls the fold change column avg_log2FC, older versions avg_logFC
+  lfc = if ("avg_log2FC" %in% colnames(DE_table)) DE_table$avg_log2FC else DE_table$avg_logFC
+  # a negative cutoff would otherwise loosen the "DE" and "up" filters
+  lfc_cutoff = abs(lfc_cutoff)
+  # one TRUE/FALSE per row of DE_table: does the gene pass the cutoff in the requested direction?
+  passes_lfc = switch(geneset,
+                      DE = abs(lfc) >= lfc_cutoff,
+                      up = lfc >= lfc_cutoff,
+                      down = lfc <= -lfc_cutoff,
+                      stop("geneset should be 'DE', 'up' or 'down'"))
+  # filter() drops rows where the condition is NA, which base R indexing (DE_table$gene[...]) would keep as NA
+  DE_table %>% filter(p_val_adj <= 0.05 & passes_lfc) %>% pull(gene)
+}
 #' @title Perform NicheNet analysis on Seurat object: explain DE between conditions
 #'
 #' @description \code{nichenet_seuratobj_aggregate} Perform NicheNet analysis on Seurat object: explain differential expression (DE) in a receiver celltype between two different conditions by ligands expressed by sender cells
@@ -1036,25 +1061,7 @@ nichenet_seuratobj_aggregate = function(receiver, seurat_obj, condition_colname,
   seurat_obj_receiver = SetIdent(seurat_obj_receiver, value = seurat_obj_receiver[[condition_colname, drop=TRUE]])
   DE_table_receiver = FindMarkers(object = seurat_obj_receiver, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct, assay = assay_oi) %>% rownames_to_column("gene")
 
-  SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_receiver)
-
-  if(SeuratV4 == TRUE){
-    if (geneset == "DE"){
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= lfc_cutoff) %>% pull(gene)
-    } else if (geneset == "up") {
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC >= lfc_cutoff) %>% pull(gene)
-    } else if (geneset == "down") {
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC <= lfc_cutoff) %>% pull(gene)
-    }
-  } else {
-    if (geneset == "DE"){
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_logFC) >= lfc_cutoff) %>% pull(gene)
-    } else if (geneset == "up") {
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC >= lfc_cutoff) %>% pull(gene)
-    } else if (geneset == "down") {
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC <= lfc_cutoff) %>% pull(gene)
-    }
-  }
+  geneset_oi = get_geneset_from_DE_table(DE_table_receiver, geneset, lfc_cutoff)
 
 
   geneset_oi = geneset_oi %>% .[. %in% rownames(ligand_target_matrix)]
@@ -1581,25 +1588,7 @@ nichenet_seuratobj_cluster_de = function(seurat_obj, receiver_affected, receiver
 
   DE_table_receiver = FindMarkers(object = seurat_obj, ident.1 = receiver_affected, ident.2 = receiver_reference, min.pct = expression_pct, assay = assay_oi) %>% rownames_to_column("gene")
 
-  SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_receiver)
-
-  if(SeuratV4 == TRUE){
-    if (geneset == "DE"){
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= lfc_cutoff) %>% pull(gene)
-    } else if (geneset == "up") {
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC >= lfc_cutoff) %>% pull(gene)
-    } else if (geneset == "down") {
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC <= lfc_cutoff) %>% pull(gene)
-    }
-  } else {
-    if (geneset == "DE"){
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_logFC) >= lfc_cutoff) %>% pull(gene)
-    } else if (geneset == "up") {
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC >= lfc_cutoff) %>% pull(gene)
-    } else if (geneset == "down") {
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC <= lfc_cutoff) %>% pull(gene)
-    }
-  }
+  geneset_oi = get_geneset_from_DE_table(DE_table_receiver, geneset, lfc_cutoff)
 
 
 
@@ -1966,25 +1955,7 @@ nichenet_seuratobj_aggregate_cluster_de = function(seurat_obj, receiver_affected
   DE_table_receiver = FindMarkers(object = seurat_obj_receiver, ident.1 = condition_oi, ident.2 = condition_reference, min.pct = expression_pct, assay = assay_oi) %>% rownames_to_column("gene")
 
 
-  SeuratV4 = c("avg_log2FC") %in% colnames(DE_table_receiver)
-
-  if(SeuratV4 == TRUE){
-    if (geneset == "DE"){
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_log2FC) >= lfc_cutoff) %>% pull(gene)
-    } else if (geneset == "up") {
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC >= lfc_cutoff) %>% pull(gene)
-    } else if (geneset == "down") {
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_log2FC <= lfc_cutoff) %>% pull(gene)
-    }
-  } else {
-    if (geneset == "DE"){
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & abs(avg_logFC) >= lfc_cutoff) %>% pull(gene)
-    } else if (geneset == "up") {
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC >= lfc_cutoff) %>% pull(gene)
-    } else if (geneset == "down") {
-      geneset_oi = DE_table_receiver %>% filter(p_val_adj <= 0.05 & avg_logFC <= lfc_cutoff) %>% pull(gene)
-    }
-  }
+  geneset_oi = get_geneset_from_DE_table(DE_table_receiver, geneset, lfc_cutoff)
 
   geneset_oi = geneset_oi %>% .[. %in% rownames(ligand_target_matrix)]
   if (length(geneset_oi) == 0){
