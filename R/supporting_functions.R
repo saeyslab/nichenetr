@@ -492,18 +492,43 @@ evaluate_target_prediction_strict = function(response,prediction,continuous = TR
 }
 classification_evaluation_continuous_pred = function(prediction,response, iregulon = TRUE){
 
-  if ((sd(response) == 0 & sd(prediction) == 0) | is.null(prediction) | is.null(response)){ # problems can occur otherwise in these leave-one-in models
-    return(dplyr::tibble(auroc = NA,
-                         aupr = NA,
-                         aupr_corrected = NA,
-                         sensitivity_roc = NA,
-                         specificity_roc = NA,
-                         mean_rank_GST_log_pval = NA,
-                         auc_iregulon = NA,
-                         auc_iregulon_corrected = NA,
-                         pearson = NA,
-                         spearman = NA))
-  }
+  # Returned when there is nothing to evaluate
+  na_output = dplyr::tibble(auroc = NA,
+                            aupr = NA,
+                            aupr_corrected = NA,
+                            sensitivity_roc = NA,
+                            specificity_roc = NA,
+                            mean_rank_GST_log_pval = NA,
+                            auc_iregulon = NA,
+                            auc_iregulon_corrected = NA,
+                            pearson = NA,
+                            spearman = NA)
+
+  # Test for NULL first: sd(NULL) is NA, which the checks below cannot use
+  if (is.null(prediction) | is.null(response))
+    return(na_output)
+
+  # isTRUE(): sd() is NA or NaN when a vector contains NA or Inf; such vectors count as
+  # not constant and go on to the Inf handling below, as before
+  constant_response = isTRUE(sd(response) == 0)       # only gene-set genes or only background genes, are left
+  constant_prediction = isTRUE(sd(prediction) == 0)   # every evaluated gene has the same score (e.g. all 0)
+
+  # Both constant: nothing to evaluate (problems can occur otherwise in these leave-one-in models)
+  if (constant_response & constant_prediction)
+    return(na_output)
+
+  # Ranking metrics need gene-set and background genes. Without this check, ROCR stops
+  # with "Number of classes is not equal to 2", which does not say what went wrong.
+  if (constant_response)
+    stop("All ", length(response), " evaluated genes are ",
+         ifelse(all(response), "gene-set genes", "background genes"),
+         ". Check that the gene set and the background genes are rownames of the",
+         " ligand-target matrix, e.g. that they use the same organism's symbols (human or mouse).")
+
+  # A constant prediction holds no ranking information; it gets the AUPR of a random
+  # ranking further down
+  if (constant_prediction)
+    warning("All evaluated genes have the same target score; the AUPR of a ranking by chance is returned.")
 
   if (any(is.infinite(prediction))) {
     message("Warning: Inf values detected in prediction vector. Replacing with max value + 1e-1.")
@@ -523,6 +548,9 @@ classification_evaluation_continuous_pred = function(prediction,response, iregul
   pos_class = sum(response)
   total = length(response)
   aupr_random = pos_class/total
+  # With one score for all genes, ROCR returns a single point (recall 1, precision aupr_random)
+  if (constant_prediction)
+    aupr = aupr_random
 
 
   metrics = get_split_auroc(prediction, response)
